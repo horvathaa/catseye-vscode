@@ -2,9 +2,74 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 
+let selectionRangeProviderDisposable: vscode.Disposable | undefined;
+// function registerSelectionRangeProvider() {
+// 	return vscode.languages.registerHoverProvider("*", {
+// 		provideHover: async (
+// 		  document: vscode.TextDocument,
+// 		  position: vscode.Position
+// 		) => {
+// 		  if (!store.activeEditorSteps) {
+// 			return;
+// 		  }
+	
+// 		  const tourSteps = store.activeEditorSteps.filter(
+// 			([, , , line]) => line === position.line
+// 		  );
+// 		  const hovers = tourSteps.map(([]) => {
+// 			const args = encodeURIComponent(JSON.stringify([tour.id, stepNumber]));
+// 			const command = `command:codetour._startTourById?${args}`;
+// 			return `CodeTour: ${tour.title} (Step #${
+// 			  stepNumber + 1
+// 			}) &nbsp;[Start Tour](${command} "Start Tour")\n`;
+// 		  });
+	
+// 		  const content = new vscode.MarkdownString(hovers.join("\n"));
+// 		  content.isTrusted = true;
+// 		  return new vscode.Hover(content);
+// 		}
+// 	  });
+// 	}
+// }
+
+function getSelection() {
+	const activeEditor = vscode.window.activeTextEditor;
+    if (
+      activeEditor &&
+      activeEditor.selection &&
+      !activeEditor.selection.isEmpty
+    ) {
+      const { start, end } = activeEditor.selection;
+
+      // Convert the selection from 0-based
+      // to 1-based to make it easier to
+      // edit the JSON tour file by hand.
+      const selection = {
+        start: {
+          line: start.line + 1,
+          character: start.character + 1
+        },
+        end: {
+          line: end.line + 1,
+          character: end.character + 1
+        }
+      };
+		console.log('selection', selection);
+	}
+}
+
+
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+	const DECORATOR = vscode.window.createTextEditorDecorationType({
+		gutterIconPath: vscode.Uri.parse('./constants/Adamite.png'),
+		gutterIconSize: "contain",
+		overviewRulerColor: "rgb(246,232,154)",
+		overviewRulerLane: vscode.OverviewRulerLane.Right,
+		rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
+	  });
 	
 	console.log('Congratulations, your extension "adamite" is now active!');
 	const panel = vscode.window.createWebviewPanel(
@@ -32,15 +97,24 @@ export function activate(context: vscode.ExtensionContext) {
 		  
 		vscode.window.showInformationMessage(" text editor is open!");
 		
-		const text = activeTextEditor.document.getText(
-			activeTextEditor.selection
-		);
-		console.log(text);
+		// const text = activeTextEditor.document.getText(
+		// 	activeTextEditor.selection
+		// );
+		const { start, end } = activeTextEditor.selection;
+		const r = [new vscode.Range(start, end)];
+		activeTextEditor.setDecorations(DECORATOR, r);
+		console.log('did something', DECORATOR)
 
-		panel.webview.postMessage({
-			type: "selected",
-			value: text,
-		});
+		// console.log(text);
+
+
+		// getSelection();
+		
+
+		// panel.webview.postMessage({
+		// 	type: "selected",
+		// 	value: text,
+		// });
 	})
 	);
 
@@ -73,5 +147,5 @@ function getWebviewContent() {
   </html>`;
   }
 
-// this method is called when your extension is deactivated
-export function deactivate() {}
+// // this method is called when your extension is deactivated
+// export function deactivate() {}

@@ -41,13 +41,69 @@ var __webpack_exports__ = {};
 var exports = __webpack_exports__;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.deactivate = exports.activate = void 0;
+exports.activate = void 0;
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 const vscode = __webpack_require__(1);
+let selectionRangeProviderDisposable;
+// function registerSelectionRangeProvider() {
+// 	return vscode.languages.registerHoverProvider("*", {
+// 		provideHover: async (
+// 		  document: vscode.TextDocument,
+// 		  position: vscode.Position
+// 		) => {
+// 		  if (!store.activeEditorSteps) {
+// 			return;
+// 		  }
+// 		  const tourSteps = store.activeEditorSteps.filter(
+// 			([, , , line]) => line === position.line
+// 		  );
+// 		  const hovers = tourSteps.map(([]) => {
+// 			const args = encodeURIComponent(JSON.stringify([tour.id, stepNumber]));
+// 			const command = `command:codetour._startTourById?${args}`;
+// 			return `CodeTour: ${tour.title} (Step #${
+// 			  stepNumber + 1
+// 			}) &nbsp;[Start Tour](${command} "Start Tour")\n`;
+// 		  });
+// 		  const content = new vscode.MarkdownString(hovers.join("\n"));
+// 		  content.isTrusted = true;
+// 		  return new vscode.Hover(content);
+// 		}
+// 	  });
+// 	}
+// }
+function getSelection() {
+    const activeEditor = vscode.window.activeTextEditor;
+    if (activeEditor &&
+        activeEditor.selection &&
+        !activeEditor.selection.isEmpty) {
+        const { start, end } = activeEditor.selection;
+        // Convert the selection from 0-based
+        // to 1-based to make it easier to
+        // edit the JSON tour file by hand.
+        const selection = {
+            start: {
+                line: start.line + 1,
+                character: start.character + 1
+            },
+            end: {
+                line: end.line + 1,
+                character: end.character + 1
+            }
+        };
+        console.log('selection', selection);
+    }
+}
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 function activate(context) {
+    const DECORATOR = vscode.window.createTextEditorDecorationType({
+        gutterIconPath: vscode.Uri.parse('./constants/Adamite.png'),
+        gutterIconSize: "contain",
+        overviewRulerColor: "rgb(246,232,154)",
+        overviewRulerLane: vscode.OverviewRulerLane.Right,
+        rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
+    });
     console.log('Congratulations, your extension "adamite" is now active!');
     const panel = vscode.window.createWebviewPanel('annotating', // Identifies the type of the webview. Used internally
     'ADAMITE', // Title of the panel displayed to the user
@@ -68,12 +124,19 @@ function activate(context) {
             return;
         }
         vscode.window.showInformationMessage(" text editor is open!");
-        const text = activeTextEditor.document.getText(activeTextEditor.selection);
-        console.log(text);
-        panel.webview.postMessage({
-            type: "selected",
-            value: text,
-        });
+        // const text = activeTextEditor.document.getText(
+        // 	activeTextEditor.selection
+        // );
+        const { start, end } = activeTextEditor.selection;
+        const r = [new vscode.Range(start, end)];
+        activeTextEditor.setDecorations(DECORATOR, r);
+        console.log('did something', DECORATOR);
+        // console.log(text);
+        // getSelection();
+        // panel.webview.postMessage({
+        // 	type: "selected",
+        // 	value: text,
+        // });
     }));
     context.subscriptions.push(disposable);
 }
@@ -101,9 +164,8 @@ function getWebviewContent() {
   </script>
   </html>`;
 }
-// this method is called when your extension is deactivated
-function deactivate() { }
-exports.deactivate = deactivate;
+// // this method is called when your extension is deactivated
+// export function deactivate() {}
 
 })();
 

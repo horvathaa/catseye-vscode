@@ -7,15 +7,18 @@ import * as vscode from 'vscode';
 export function activate(context: vscode.ExtensionContext) {
 	
 	console.log('Congratulations, your extension "adamite" is now active!');
-	const panel = vscode.window.createWebviewPanel(
+	let code: string[] = [];
+	let panel = vscode.window.createWebviewPanel(
 		'annotating', // Identifies the type of the webview. Used internally
 		'ADAMITE', // Title of the panel displayed to the user
 		vscode.ViewColumn.Beside, // Editor column to show the new webview panel in.
-		{} // Webview options. More on these later.
+		{
+			enableScripts: true
+		} // Webview options. More on these later.
 	  );
 	context.subscriptions.push(vscode.commands.registerCommand('adamite.annotate', () => {
 		// Create and show a new webview
-		panel.webview.html = getWebviewContent();
+		panel.webview.html = getWebviewContent("Hello", code);
 	  })
 	);
 
@@ -31,16 +34,27 @@ export function activate(context: vscode.ExtensionContext) {
 		  }
 		  
 		vscode.window.showInformationMessage(" text editor is open!");
-		
 		const text = activeTextEditor.document.getText(
 			activeTextEditor.selection
 		);
-		console.log(text);
+		//console.log(text);
+		code.push(text);
+		for(var i = 0; i < code.length; i++)
+		{ 
+    		console.log(i + ": " + code[i]); 
+		}
 
-		panel.webview.postMessage({
-			type: "selected",
-			value: text,
-		});
+		const updateTab = () => {
+			panel.webview.html = getWebviewContent(text, code);
+		}
+		updateTab();
+		//var fl = activeTextEditor.document.lineAt(activeTextEditor.selection.active.line);
+		//var el = activeTextEditor.document.lineAt(activeTextEditor.selection.active.line);
+		var r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
+
+		console.log(r);
+
+
 	})
 	);
 
@@ -49,7 +63,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(disposable);
 }
 
-function getWebviewContent() {
+function getWebviewContent(sel: string, c:string[]) {
 	return `<!DOCTYPE html>
   <html lang="en">
   <head>
@@ -58,18 +72,22 @@ function getWebviewContent() {
   </head>
   <body>
 	  <h1>Welcome to the annotation tab, where you can select code and you will see it appear here.</h1>
-	  <h2 id = "select">sfkjvdkjfbv</h2>
+	  <div id = "annotations">
+	  	<h2 id = "lines-of-code-counter">sfkjvdkjfbv</h2>
+	  </div>
+	  <script>
+	  	document.getElementById('lines-of-code-counter').textContent = "${sel}";
+		var tag = document.createElement("p");
+		tag.textContent = "${sel}";
+		document.getElementById("annotations").appendChild(tag);
+		var x = document.createElement("INPUT");
+		x.setAttribute("type", "text");
+  		x.setAttribute("value", "Start Annotating!");
+		document.getElementById("annotations").appendChild(x);
+
+	  </script>
   </body>
 
-  <script>
-  	window.addEventListener('message', event => {
-		const message = event.data; // The JSON data our extension sent
-		console.log({message})
-		switch (message.type) {
-			case 'selected':
-				document.getElementById('select').innerHTML = message.value;
-	}
-  </script>
   </html>`;
   }
 

@@ -21,11 +21,11 @@
       },
       {
         "command": "adamite.annotate",
-        "title":"Annotate"
+        "title": "Annotate"
       },
       {
         "command": "adamite.sel",
-        "title":"Select"
+        "title": "Select"
       }
     ]
   },

@@ -103,10 +103,10 @@ export function activate(context: vscode.ExtensionContext) {
 		// const text = activeTextEditor.document.getText(
 		// 	activeTextEditor.selection
 		// );
-		const { start, end } = activeTextEditor.selection;
-		const range = [new vscode.Range(start, end)];
-		activeTextEditor.setDecorations(DECORATOR, range);
-		console.log('did something', DECORATOR)
+		// const { start, end } = activeTextEditor.selection;
+		// const range = [new vscode.Range(start, end)];
+		// activeTextEditor.setDecorations(DECORATOR, range);
+		// console.log('did something', DECORATOR)
 
 		// console.log(text);
 

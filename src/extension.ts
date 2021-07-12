@@ -26,6 +26,23 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.window.showInformationMessage('Hello World from Adamite!');
 	});
 
+
+	const annotationDecorations = vscode.window.createTextEditorDecorationType({
+		borderWidth: '1px',
+		borderStyle: 'solid',
+		overviewRulerColor: 'blue',
+		overviewRulerLane: vscode.OverviewRulerLane.Right,
+		light: {
+			// this color will be used in light color themes
+			borderColor: 'darkblue'
+		},
+		dark: {
+			// this color will be used in dark color themes
+			borderColor: 'lightblue'
+		}
+	});
+
+	let activeEditor = vscode.window.activeTextEditor;
 	context.subscriptions.push(vscode.commands.registerCommand('adamite.sel', () => {
 		const { activeTextEditor } = vscode.window;
 		if (!activeTextEditor) {
@@ -51,8 +68,12 @@ export function activate(context: vscode.ExtensionContext) {
 		//var fl = activeTextEditor.document.lineAt(activeTextEditor.selection.active.line);
 		//var el = activeTextEditor.document.lineAt(activeTextEditor.selection.active.line);
 		var r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
-
 		console.log(r);
+		
+		let highLighted: vscode.Range[] = [];
+		highLighted.push(r);
+		if(activeEditor)
+			activeEditor.setDecorations(annotationDecorations, highLighted);
 
 
 	})
@@ -73,7 +94,7 @@ function getWebviewContent(sel: string, c:string[]) {
   <body>
 	  <h1>Welcome to the annotation tab, where you can select code and you will see it appear here.</h1>
 	  <div id = "annotations">
-	  	<h2 id = "lines-of-code-counter">sfkjvdkjfbv</h2>
+	  	<h2 id = "lines-of-code-counter">No code selected!</h2>
 	  </div>
 	  <script>
 	  	document.getElementById('lines-of-code-counter').textContent = "${sel}";

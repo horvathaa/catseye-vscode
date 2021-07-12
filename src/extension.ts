@@ -64,11 +64,10 @@ function getSelection() {
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 	const DECORATOR = vscode.window.createTextEditorDecorationType({
-		gutterIconPath: vscode.Uri.parse('./constants/Adamite.png'),
-		gutterIconSize: "contain",
 		overviewRulerColor: "rgb(246,232,154)",
 		overviewRulerLane: vscode.OverviewRulerLane.Right,
-		rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
+		rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+		backgroundColor: '#029aab',
 	  });
 	
 	console.log('Congratulations, your extension "adamite" is now active!');

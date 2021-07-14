@@ -69,12 +69,6 @@ const translateChanges = (originalStartLine: number, originalEndLine: number, or
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-	const DECORATOR = vscode.window.createTextEditorDecorationType({
-		overviewRulerColor: "rgb(246,232,154)",
-		overviewRulerLane: vscode.OverviewRulerLane.Right,
-		rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
-		backgroundColor: '#029aab',
-	  });
 	let highLighted: vscode.Range[] = [];
 
 	let disposableEventListener = vscode.window.onDidChangeVisibleTextEditors((textEditors) => {

@@ -12,16 +12,16 @@ class FileState {
 	endLine: number;
 	startOffset: number;
 	endOffset: number;
-	changed: boolean;
+	toDelete: boolean;
 	
-	constructor(filename: string | vscode.Uri, annotation: string, anchorStartLine: number, anchorEndLine: number, anchorStartOffset: number, anchorEndOffset: number, changed: boolean) {
+	constructor(filename: string | vscode.Uri, annotation: string, anchorStartLine: number, anchorEndLine: number, anchorStartOffset: number, anchorEndOffset: number, toDelete: boolean) {
 		this.filename = filename;
 		this.annotation = annotation;
 		this.startLine = anchorStartLine;
 		this.endLine = anchorEndLine;
 		this.startOffset = anchorStartOffset;
 		this.endOffset = anchorEndOffset;
-		this.changed = changed;
+		this.toDelete = toDelete;
 	}
 }
 
@@ -29,30 +29,48 @@ const translateChanges = (originalStartLine: number, originalEndLine: number, or
 	startLine: number, endLine: number, startOffset: number, endOffset: number, textLength: number, diff: number, rangeLength: number, annotation: string, filename: string, text: string): any => {
 		let newRange = { startLine: originalStartLine, endLine: originalEndLine, startOffset: originalStartOffset, endOffset: originalEndOffset };
 		const startAndEndLineAreSame = originalStartLine === startLine && originalEndLine === endLine && !diff;
+		const originalRange = new vscode.Range(new vscode.Position(originalStartLine, originalStartOffset), new vscode.Position(originalEndLine, originalEndOffset));
+		const changeRange = new vscode.Range(new vscode.Position(startLine, startOffset), new vscode.Position(endLine, endOffset)); 
+		// user deleted the anchor
+		if(!textLength && changeRange.contains(originalRange)) {
+			return new FileState(filename, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, true);
+		}
+
+		// user added lines above start of range
 		if (originalStartLine > startLine && diff) {
 			newRange.startLine = originalStartLine + diff;
 			newRange.endLine = originalEndLine + diff;
 		}
+		 // user added line after start and before end
 		if (originalStartLine === startLine && originalStartOffset <= startOffset && diff) {
 			newRange.endLine = originalEndLine + diff;
 		}
+		// user added line before the end of the offset so we add a line
 		if (originalEndLine === endLine && originalEndOffset >= endOffset && diff) {
 			newRange.endLine = originalEndLine + diff;
 		}
-		if (originalStartLine === startLine && startOffset <= originalStartOffset) {
+		// user made change before our start offset
+		if (originalStartLine === startLine && startOffset < originalStartOffset) {
 			newRange.startOffset = textLength ? originalStartOffset + textLength : originalStartOffset - rangeLength;
+			// if end is on the same line we need to update it too
 			if(startAndEndLineAreSame) {
 				newRange.endOffset = textLength ? originalEndOffset + textLength : originalEndOffset - rangeLength;
 			}
 		}
+		// user made change before or at our end offset
 		if(originalEndLine === endLine && endOffset <= originalEndOffset && !diff) {
 			newRange.endOffset = textLength ? originalEndOffset + textLength : originalEndOffset - rangeLength;
 		}
+		// user inserted text at our end offset ()
+		if(originalEndLine === endLine && endOffset === (originalEndOffset + textLength) && !diff) {
+			newRange.endOffset += textLength;
+		}
+		// user added lines between start and end (? not sure why we have this and the second condition)
 		if(originalStartLine < startLine && endLine < originalEndLine && diff) {
 			newRange.endLine = originalEndLine + diff;
 		}
-		const changed = !(originalStartLine === newRange.startLine && originalEndLine === newRange.endLine && originalStartOffset === newRange.startOffset &&  originalEndOffset === newRange.endOffset);
-		return new FileState(filename, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, changed);
+
+		return new FileState(filename, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, false);
 	}
 
 // add line above range start = startLine++ and endLine++
@@ -66,6 +84,9 @@ const translateChanges = (originalStartLine: number, originalEndLine: number, or
 // add multiple characters inbetween start and end of range on same line = endOffset + text length
 // delete multiple characters inbetween start and end of range on same line = endOffset - text length
 
+function createRangeFromAnnotation(annotation: FileState) {
+	return new vscode.Range(new vscode.Position(annotation.startLine, annotation.startOffset), new vscode.Position(annotation.endLine, annotation.endOffset))
+}
 
 
 // this method is called when your extension is activated
@@ -73,11 +94,8 @@ const translateChanges = (originalStartLine: number, originalEndLine: number, or
 export function activate(context: vscode.ExtensionContext) {
 	let highLighted: vscode.Range[] = [];
 
-	let disposableEventListener = vscode.window.onDidChangeVisibleTextEditors((textEditors) => {
+	let disposableEventListener = vscode.window.onDidChangeVisibleTextEditors( async (textEditors) => {
 		const textEditorFileNames = textEditors.map(t => t.document.uri.toString())
-		// get files that have changed and that are no longer visible
-		// const filesChanged = annotationList.map(a => a.changed && a.filename.toString());
-		// if(filesChanged) {
 		const serializedObjects = annotationList.map(a => { return {
 			filename: a.filename,
 			annotation: a.annotation,
@@ -90,12 +108,35 @@ export function activate(context: vscode.ExtensionContext) {
 		}})
 		let filePath = "";
 		if(vscode.workspace.workspaceFolders !== undefined)  {
-			filePath = vscode.workspace.workspaceFolders[0].uri.path + '/test.txt';
-			vscode.workspace.openTextDocument(filePath).then(doc => { 
-				vscode.workspace.fs.writeFile(doc.uri, new TextEncoder().encode(JSON.stringify(serializedObjects))).then(() => {
-					annotationList.forEach(a => a.changed = false);
+			filePath = vscode.workspace.workspaceFolders[0].uri.path + '/test.json';
+			const uri = vscode.Uri.file(filePath);
+			try {
+				await vscode.workspace.fs.stat(uri);
+				vscode.workspace.openTextDocument(filePath).then(doc => { 
+					vscode.workspace.fs.writeFile(doc.uri, new TextEncoder().encode(JSON.stringify(serializedObjects))).then(() => {
+						annotationList.forEach(a => a.toDelete = false);
+					})
 				})
-			})
+			}
+			catch {
+				// console.log('file does not exist');
+				const wsEdit = new vscode.WorkspaceEdit();
+				wsEdit.createFile(uri)
+				vscode.workspace.applyEdit(wsEdit).then((value: boolean) => {
+					if(value) { // edit applied??
+						vscode.workspace.openTextDocument(filePath).then(doc => { 
+							vscode.workspace.fs.writeFile(doc.uri, new TextEncoder().encode(JSON.stringify(serializedObjects))).then(() => {
+								annotationList.forEach(a => a.toDelete = false);
+							})
+						})
+					}
+					else {
+						vscode.window.showInformationMessage('Could not create file!');
+					}
+				});
+				
+			}
+			
 		}
 
 		const annotationsToHighlight = annotationList.filter(a => textEditorFileNames.includes(a.filename.toString()))
@@ -123,16 +164,14 @@ export function activate(context: vscode.ExtensionContext) {
 				const linesInRange = endLine - startLine;
 				const linesInserted = change.text.split("\n").length - 1;
 				const diff = linesInserted - linesInRange;
-				// if (diff === 0) { continue; }
-					
-				console.log('e', e);
+
+				console.log('e', e)
 				
 				const translatedAnnotations = currentAnnotations.map(a => translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, 
-					change.text.length, diff, change.rangeLength, a.annotation, a.filename.toString(), change.text))
+					change.text.length, diff, change.rangeLength, a.annotation, a.filename.toString(), change.text)).filter(a => !a.toDelete);
+				
+
 				annotationList = translatedAnnotations.concat(annotationList.filter(a => a.filename !== e.document.uri.toString()))
-					
-				// let newPositions = translateChanges(positions, startLine, endLine, diff, startOffset, endOffset);
-				// console.log('newPositions??', newPositions);
 			}
 		}
 		
@@ -166,34 +205,47 @@ export function activate(context: vscode.ExtensionContext) {
 		dark: {
 			// this color will be used in dark color themes
 			borderColor: 'lightblue'
-		}
+		},
+		
 	});
 
-	let activeEditor = vscode.window.activeTextEditor;
+	let activeEditor = vscode.window.activeTextEditor; // amber: this value does not update if the user changes active editors so we shouldn't use it OR should update code to keep this value update
 
 	let annotationList: FileState[] = [];
 
 	let disposable = vscode.commands.registerCommand('adamite.helloWorld', () => {
 		vscode.window.showInformationMessage('Hello World from Adamite!');
 		let filePath = "";
-		if(vscode.workspace.workspaceFolders !== undefined) 
-			filePath = vscode.workspace.workspaceFolders[0].uri.path + '/test.txt';
-			vscode.workspace.openTextDocument(filePath).then(doc => {
-			// console.log('got doc', doc);
-				let docText = JSON.parse(doc.getText())
-				// console.log('doctext', docText);
-				docText.forEach((doc: any) => {
-					annotationList.push(new FileState(doc.filename, doc.annotation, doc.anchor.startLine, doc.anchor.endLine, doc.anchor.startOffset, doc.anchor.endOffset, false))
-			})
-			console.log('annotationList', annotationList)
-
-			const filenames = [... new Set(annotationList.map(a => a.filename))]
-			if(annotationList.length && activeEditor !== undefined && filenames.includes(activeEditor?.document.uri.toString())) {
-				let ranges = annotationList.map(a => { return {filename: a.filename, range: new vscode.Range(new vscode.Position(a.startLine, a.startOffset), new vscode.Position(a.endLine, a.endOffset))}}).filter(r => r.filename === activeEditor?.document.uri.toString()).map(a => a.range);
-				activeEditor.setDecorations(annotationDecorations, ranges);
+		if(vscode.workspace.workspaceFolders !== undefined) {
+			filePath = vscode.workspace.workspaceFolders[0].uri.path + '/test.json';
+			const uri = vscode.Uri.file(filePath);
+			try {
+				vscode.workspace.fs.stat(uri);
+				vscode.workspace.openTextDocument(filePath).then(doc => { 
+					let docText = JSON.parse(doc.getText())
+					docText.forEach((doc: any) => {
+						annotationList.push(new FileState(doc.filename, doc.annotation, doc.anchor.startLine, doc.anchor.endLine, doc.anchor.startOffset, doc.anchor.endOffset, false))
+					})
+					const filenames = [... new Set(annotationList.map(a => a.filename))]
+					if(annotationList.length && activeEditor !== undefined && filenames.includes(activeEditor?.document.uri.toString())) {
+						let ranges = annotationList.map(a => { return {filename: a.filename, range: createRangeFromAnnotation(a)}}).filter(r => r.filename === activeEditor?.document.uri.toString()).map(a => a.range);
+						if(ranges.length) {
+							activeEditor.setDecorations(annotationDecorations, ranges);
+						} 
+					}
+				})
 			}
+			// file does not exist - user either deleted it or this is their first time making an annotation
+			catch {
+				// console.log('file does not exist');
+				const wsEdit = new vscode.WorkspaceEdit();
+				wsEdit.createFile(uri)
+				vscode.workspace.applyEdit(wsEdit);
+			}
+
+		}
 			
-		})
+		// })
 	});
 
 
@@ -207,29 +259,7 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		  }
 		  
-		vscode.window.showInformationMessage(" text editor is open!");
-		
-		// const text = activeTextEditor.document.getText(
-		// 	activeTextEditor.selection
-		// );
-		// const { start, end } = activeTextEditor.selection;
-		// const range = [new vscode.Range(start, end)];
-		// activeTextEditor.setDecorations(DECORATOR, range);
-		// console.log('did something', DECORATOR)
-
-		// console.log(text);
-
-
-		// getSelection();
-		
-
-		// panel.webview.postMessage({
-		// 	type: "selected",
-		// 	value: text,
-		// });
-		const text = activeTextEditor.document.getText(
-			activeTextEditor.selection
-		);
+		const text = activeTextEditor.document.getText(activeTextEditor.selection);
 		//console.log(text);
 		code.push(text);
 		for(var i = 0; i < code.length; i++)
@@ -244,22 +274,26 @@ export function activate(context: vscode.ExtensionContext) {
 		//var fl = activeTextEditor.document.lineAt(activeTextEditor.selection.active.line);
 		//var el = activeTextEditor.document.lineAt(activeTextEditor.selection.active.line);
 		var r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
-		console.log(r);
-		highLighted.push(r);
+		// highLighted.push(r); - aren't using highlighted anymore
 
-		console.log('what is r', r);
 		annotationList.push(new FileState(activeTextEditor.document.uri.toString(), 'test',  r.start.line, r.end.line, r.start.character, r.end.character, false))
-		console.log('annotationList', annotationList);
 
 		const filenames = [... new Set(annotationList.map(a => a.filename))]
-		if(annotationList.length && activeEditor !== undefined && filenames.includes(activeEditor?.document.uri.toString())) {
-			let ranges = annotationList.map(a => { return {filename: a.filename, range: new vscode.Range(new vscode.Position(a.startLine, a.startOffset), new vscode.Position(a.endLine, a.endOffset))}}).filter(r => r.filename === activeEditor?.document.uri.toString()).map(a => a.range);
-			activeEditor.setDecorations(annotationDecorations, ranges);
+		if(annotationList.length && vscode.window.activeTextEditor !== undefined && filenames.includes(vscode.window.activeTextEditor.document.uri.toString())) {
+			let ranges = annotationList
+				.map(a => { return {annotation: a.annotation, filename: a.filename, range: createRangeFromAnnotation(a)}})
+				.filter(r => r.filename === vscode.window.activeTextEditor?.document.uri.toString())
+				.map(a => a.range);
+			if(ranges.length) {
+				try {
+					vscode.window.activeTextEditor.setDecorations(annotationDecorations, ranges);
+				}
+				catch (error) {
+					console.log('couldnt highlight', error);
+				}
+			} 
 		}
 		
-		// if(activeEditor)
-		// 	activeEditor.setDecorations(annotationDecorations, highLighted);
-		// })
 	}));
 
 	context.subscriptions.push(disposable);

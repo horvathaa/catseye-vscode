@@ -52,6 +52,8 @@ exports.activate = void 0;
 // Import the module and reference it with the alias vscode in your code below
 const vscode = __webpack_require__(1);
 const util_1 = __webpack_require__(2);
+// need to add ID and timestamp so we can keep track of the annotations (i.e. don't create duplicates in the concat operation)
+// also clean up old annotations that don't exist because their range is no longer valid
 class FileState {
     constructor(filename, annotation, anchorStartLine, anchorEndLine, anchorStartOffset, anchorEndOffset, changed) {
         this.filename = filename;
@@ -104,12 +106,6 @@ const translateChanges = (originalStartLine, originalEndLine, originalStartOffse
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 function activate(context) {
-    const DECORATOR = vscode.window.createTextEditorDecorationType({
-        overviewRulerColor: "rgb(246,232,154)",
-        overviewRulerLane: vscode.OverviewRulerLane.Right,
-        rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
-        backgroundColor: '#029aab',
-    });
     let highLighted = [];
     let disposableEventListener = vscode.window.onDidChangeVisibleTextEditors((textEditors) => {
         const textEditorFileNames = textEditors.map(t => t.document.uri.toString());
@@ -150,8 +146,6 @@ function activate(context) {
         // }
     });
     vscode.workspace.onDidChangeTextDocument((e) => {
-        // need to get editor using vs.window.visibleTextEditors.find((editor) => ...) by storing URI instead of filename but for now will skip this step and assume the objects in our annotation
-        // array map to the current document
         const currentAnnotations = annotationList.filter(a => a.filename === e.document.uri.toString());
         if (!currentAnnotations.length) {
             return;
@@ -261,8 +255,14 @@ function activate(context) {
         console.log('what is r', r);
         annotationList.push(new FileState(activeTextEditor.document.uri.toString(), 'test', r.start.line, r.end.line, r.start.character, r.end.character, false));
         console.log('annotationList', annotationList);
-        if (activeEditor)
-            activeEditor.setDecorations(annotationDecorations, highLighted);
+        const filenames = [...new Set(annotationList.map(a => a.filename))];
+        if (annotationList.length && activeEditor !== undefined && filenames.includes(activeEditor === null || activeEditor === void 0 ? void 0 : activeEditor.document.uri.toString())) {
+            let ranges = annotationList.map(a => { return { filename: a.filename, range: new vscode.Range(new vscode.Position(a.startLine, a.startOffset), new vscode.Position(a.endLine, a.endOffset)) }; }).filter(r => r.filename === (activeEditor === null || activeEditor === void 0 ? void 0 : activeEditor.document.uri.toString())).map(a => a.range);
+            activeEditor.setDecorations(annotationDecorations, ranges);
+        }
+        // if(activeEditor)
+        // 	activeEditor.setDecorations(annotationDecorations, highLighted);
+        // })
     }));
     context.subscriptions.push(disposable);
 }

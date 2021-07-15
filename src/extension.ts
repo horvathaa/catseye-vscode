@@ -3,6 +3,8 @@
 import * as vscode from 'vscode';
 import { TextEncoder } from 'util';
 
+// need to add ID and timestamp so we can keep track of the annotations (i.e. don't create duplicates in the concat operation)
+// also clean up old annotations that don't exist because their range is no longer valid
 class FileState {
 	filename: string | vscode.Uri;
 	annotation: string;
@@ -110,8 +112,6 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	vscode.workspace.onDidChangeTextDocument((e: vscode.TextDocumentChangeEvent) => {
-		// need to get editor using vs.window.visibleTextEditors.find((editor) => ...) by storing URI instead of filename but for now will skip this step and assume the objects in our annotation
-		// array map to the current document
 		const currentAnnotations = annotationList.filter(a => a.filename === e.document.uri.toString());
 		if(!currentAnnotations.length) { return }
 		else {
@@ -250,11 +250,17 @@ export function activate(context: vscode.ExtensionContext) {
 		console.log('what is r', r);
 		annotationList.push(new FileState(activeTextEditor.document.uri.toString(), 'test',  r.start.line, r.end.line, r.start.character, r.end.character, false))
 		console.log('annotationList', annotationList);
+
+		const filenames = [... new Set(annotationList.map(a => a.filename))]
+		if(annotationList.length && activeEditor !== undefined && filenames.includes(activeEditor?.document.uri.toString())) {
+			let ranges = annotationList.map(a => { return {filename: a.filename, range: new vscode.Range(new vscode.Position(a.startLine, a.startOffset), new vscode.Position(a.endLine, a.endOffset))}}).filter(r => r.filename === activeEditor?.document.uri.toString()).map(a => a.range);
+			activeEditor.setDecorations(annotationDecorations, ranges);
+		}
 		
-		if(activeEditor)
-			activeEditor.setDecorations(annotationDecorations, highLighted);
-		})
-	);
+		// if(activeEditor)
+		// 	activeEditor.setDecorations(annotationDecorations, highLighted);
+		// })
+	}));
 
 	context.subscriptions.push(disposable);
 }

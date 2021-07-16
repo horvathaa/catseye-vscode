@@ -1,9 +1,9 @@
 /******/ (() => { // webpackBootstrap
-/******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ([
 /* 0 */
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
+"use strict";
 
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -20,11 +20,16 @@ exports.activate = void 0;
 // Import the module and reference it with the alias vscode in your code below
 const vscode = __webpack_require__(1);
 const util_1 = __webpack_require__(2);
+var uniqid = __webpack_require__(3);
 // need to add ID and timestamp so we can keep track of the annotations (i.e. don't create duplicates in the concat operation)
 // also clean up old annotations that don't exist because their range is no longer valid
-class FileState {
-    constructor(filename, annotation, anchorStartLine, anchorEndLine, anchorStartOffset, anchorEndOffset, toDelete) {
+// add anchor text as property - set using activeEditor.document.getText(activeEditor.selection) then in paste event check if there's something
+// in copy keyboard and if theres a match between the pasted text and the anchor text I think??
+class Annotation {
+    constructor(id, filename, anchorText, annotation, anchorStartLine, anchorEndLine, anchorStartOffset, anchorEndOffset, toDelete) {
+        this.id = id;
         this.filename = filename;
+        this.anchorText = anchorText;
         this.annotation = annotation;
         this.startLine = anchorStartLine;
         this.endLine = anchorEndLine;
@@ -33,14 +38,42 @@ class FileState {
         this.toDelete = toDelete;
     }
 }
-const translateChanges = (originalStartLine, originalEndLine, originalStartOffset, originalEndOffset, startLine, endLine, startOffset, endOffset, textLength, diff, rangeLength, annotation, filename, text) => {
+const getAnchorsInRange = (selection, annotationList) => {
+    return annotationList.map(a => { return { id: a.id, range: createRangeFromAnnotation(a) }; }).filter(a => selection.contains(a.range));
+};
+// computes boundary points of each annotation's range given the pasted new range
+const splitRange = (range, annotationList) => {
+    let ranges = annotationList.map(a => createRangeFromAnnotation(a));
+    // ensure first range in list is the beginning boundary range
+    ranges = ranges.sort((a, b) => {
+        return a.start.line - b.start.line;
+    });
+    ranges = ranges.map((r, index) => {
+        let numLines = r.end.line - r.start.line;
+        let startOffset = r.start.character;
+        let endOffset = r.end.character;
+        // first range
+        if (index === 0) {
+            return new vscode.Range(range.start, new vscode.Position(range.start.line + numLines, endOffset));
+        }
+        // last range
+        else if (index === ranges.length - 1) {
+            return new vscode.Range(new vscode.Position(range.end.line - numLines, startOffset), range.end);
+        }
+        // middle ranges
+        else {
+            // return new vscode.Range() -- something hard here
+        }
+    });
+};
+const translateChanges = (originalStartLine, originalEndLine, originalStartOffset, originalEndOffset, startLine, endLine, startOffset, endOffset, textLength, diff, rangeLength, anchorText, annotation, filename, id, text) => {
     let newRange = { startLine: originalStartLine, endLine: originalEndLine, startOffset: originalStartOffset, endOffset: originalEndOffset };
     const startAndEndLineAreSame = originalStartLine === startLine && originalEndLine === endLine && !diff;
     const originalRange = new vscode.Range(new vscode.Position(originalStartLine, originalStartOffset), new vscode.Position(originalEndLine, originalEndOffset));
     const changeRange = new vscode.Range(new vscode.Position(startLine, startOffset), new vscode.Position(endLine, endOffset));
     // user deleted the anchor
     if (!textLength && changeRange.contains(originalRange)) {
-        return new FileState(filename, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, true);
+        return new Annotation(uniqid(), filename, anchorText, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, true);
     }
     // user added lines above start of range
     if (originalStartLine > startLine && diff) {
@@ -75,7 +108,7 @@ const translateChanges = (originalStartLine, originalEndLine, originalStartOffse
     if (originalStartLine < startLine && endLine < originalEndLine && diff) {
         newRange.endLine = originalEndLine + diff;
     }
-    return new FileState(filename, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, false);
+    return new Annotation(id, filename, anchorText, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, false);
 };
 // add line above range start = startLine++ and endLine++
 // delete line above range start = startLine-- and endLine--
@@ -94,11 +127,31 @@ function createRangeFromAnnotation(annotation) {
 // your extension is activated the very first time the command is executed
 function activate(context) {
     let highLighted = [];
+    let annotationList = [];
+    let copiedAnnotations = [];
+    const overriddenClipboardPasteAction = (textEditor, edit, args) => {
+    };
+    const overriddenClipboardCopyAction = (textEditor, edit, args) => {
+        console.log('copy', textEditor, edit);
+        // let annotationList = args[0]; // ????
+        const annotationsInEditor = annotationList.filter((a) => a.filename === textEditor.document.uri.toString());
+        const annosInRange = getAnchorsInRange(textEditor.selection, annotationsInEditor);
+        if (annosInRange.length) {
+            const annoIds = annosInRange.map(a => a.id);
+            copiedAnnotations = annotationList.filter(a => annoIds.includes(a.id));
+            // write to clipboard annotation metadata? need to figure out how to structure data on clipboard
+        }
+    };
+    const clipboardDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', overriddenClipboardCopyAction);
+    // const clipboardPasteDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardPasteAction', overriddenClipboardPasteAction);
+    const cutDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCutAction', overriddenClipboardCopyAction);
     let disposableEventListener = vscode.window.onDidChangeVisibleTextEditors((textEditors) => __awaiter(this, void 0, void 0, function* () {
         const textEditorFileNames = textEditors.map(t => t.document.uri.toString());
         const serializedObjects = annotationList.map(a => {
             return {
+                id: a.id,
                 filename: a.filename,
+                anchorText: a.anchorText,
                 annotation: a.annotation,
                 anchor: {
                     startLine: a.startLine,
@@ -143,7 +196,7 @@ function activate(context) {
             return;
         }
         ;
-        let ranges = annotationsToHighlight.map(a => { return { filename: a.filename, range: new vscode.Range(new vscode.Position(a.startLine, a.startOffset), new vscode.Position(a.endLine, a.endOffset)) }; });
+        let ranges = annotationsToHighlight.map(a => { return { filename: a.filename, range: createRangeFromAnnotation(a) }; });
         textEditors.forEach(t => {
             let annos = ranges.filter(r => r.filename === t.document.uri.toString()).map(a => a.range);
             t.setDecorations(annotationDecorations, annos);
@@ -165,7 +218,20 @@ function activate(context) {
                 const linesInserted = change.text.split("\n").length - 1;
                 const diff = linesInserted - linesInRange;
                 console.log('e', e);
-                const translatedAnnotations = currentAnnotations.map(a => translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, change.text.length, diff, change.rangeLength, a.annotation, a.filename.toString(), change.text)).filter(a => !a.toDelete);
+                // check to see if user pasted a copied annotation... 
+                if (copiedAnnotations.length) {
+                    const copiedAnnotationText = copiedAnnotations.map(a => a.anchorText);
+                    if (copiedAnnotationText.includes(change.text)) {
+                        let rangeAdjustedAnnotations = [];
+                        // if(copiedAnnotations.length > 1) {
+                        rangeAdjustedAnnotations = copiedAnnotations.length > 1 ? splitRange(change.range, copiedAnnotations) : copiedAnnotations;
+                        // }
+                        // copiedAnnotations.forEach(a => {
+                        // 	annotationList.push(new Annotation(uniqid, a.filename, a.anchorText, a.annotation, ))
+                        // })
+                    }
+                }
+                const translatedAnnotations = currentAnnotations.map(a => translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), a.id, change.text)).filter(a => !a.toDelete);
                 annotationList = translatedAnnotations.concat(annotationList.filter(a => a.filename !== e.document.uri.toString()));
             }
         }
@@ -198,7 +264,6 @@ function activate(context) {
         },
     });
     let activeEditor = vscode.window.activeTextEditor; // amber: this value does not update if the user changes active editors so we shouldn't use it OR should update code to keep this value update
-    let annotationList = [];
     let disposable = vscode.commands.registerCommand('adamite.helloWorld', () => {
         vscode.window.showInformationMessage('Hello World from Adamite!');
         let filePath = "";
@@ -210,7 +275,7 @@ function activate(context) {
                 vscode.workspace.openTextDocument(filePath).then(doc => {
                     let docText = JSON.parse(doc.getText());
                     docText.forEach((doc) => {
-                        annotationList.push(new FileState(doc.filename, doc.annotation, doc.anchor.startLine, doc.anchor.endLine, doc.anchor.startOffset, doc.anchor.endOffset, false));
+                        annotationList.push(new Annotation(doc.id, doc.filename, doc.anchorText, doc.annotation, doc.anchor.startLine, doc.anchor.endLine, doc.anchor.startOffset, doc.anchor.endOffset, false));
                     });
                     const filenames = [...new Set(annotationList.map(a => a.filename))];
                     if (annotationList.length && activeEditor !== undefined && filenames.includes(activeEditor === null || activeEditor === void 0 ? void 0 : activeEditor.document.uri.toString())) {
@@ -251,7 +316,7 @@ function activate(context) {
         //var el = activeTextEditor.document.lineAt(activeTextEditor.selection.active.line);
         var r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
         // highLighted.push(r); - aren't using highlighted anymore
-        annotationList.push(new FileState(activeTextEditor.document.uri.toString(), 'test', r.start.line, r.end.line, r.start.character, r.end.character, false));
+        annotationList.push(new Annotation(uniqid(), activeTextEditor.document.uri.toString(), text, 'test', r.start.line, r.end.line, r.start.character, r.end.character, false));
         const filenames = [...new Set(annotationList.map(a => a.filename))];
         if (annotationList.length && vscode.window.activeTextEditor !== undefined && filenames.includes(vscode.window.activeTextEditor.document.uri.toString())) {
             let ranges = annotationList
@@ -269,6 +334,7 @@ function activate(context) {
         }
     }));
     context.subscriptions.push(disposable);
+    context.subscriptions.push(clipboardDisposable);
 }
 exports.activate = activate;
 function getWebviewContent(sel, c) {
@@ -307,13 +373,51 @@ function getWebviewContent(sel, c) {
 /* 1 */
 /***/ ((module) => {
 
+"use strict";
 module.exports = require("vscode");;
 
 /***/ }),
 /* 2 */
 /***/ ((module) => {
 
+"use strict";
 module.exports = require("util");;
+
+/***/ }),
+/* 3 */
+/***/ ((module) => {
+
+/* 
+(The MIT License)
+Copyright (c) 2014-2021 Halász Ádám <adam@aimform.com>
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+//  Unique Hexatridecimal ID Generator
+// ================================================
+
+//  Dependencies
+// ================================================
+var pid = typeof process !== 'undefined' && process.pid ? process.pid.toString(36) : '' ;
+var address = '';
+if(false){ var i, mac, networkInterfaces; } 
+
+//  Exports
+// ================================================
+module.exports = module.exports.default = function(prefix, suffix){ return (prefix ? prefix : '') + address + pid + now().toString(36) + (suffix ? suffix : ''); }
+module.exports.process = function(prefix, suffix){ return (prefix ? prefix : '') + pid + now().toString(36) + (suffix ? suffix : ''); }
+module.exports.time    = function(prefix, suffix){ return (prefix ? prefix : '') + now().toString(36) + (suffix ? suffix : ''); }
+
+//  Helpers
+// ================================================
+function now(){
+    var time = Date.now();
+    var last = now.last || time;
+    return now.last = time > last ? time : last + 1;
+}
+
 
 /***/ })
 /******/ 	]);

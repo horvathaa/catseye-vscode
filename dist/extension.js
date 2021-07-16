@@ -42,29 +42,46 @@ const getAnchorsInRange = (selection, annotationList) => {
     return annotationList.map(a => { return { id: a.id, range: createRangeFromAnnotation(a) }; }).filter(a => selection.contains(a.range));
 };
 // computes boundary points of each annotation's range given the pasted new range
-const splitRange = (range, annotationList) => {
-    let ranges = annotationList.map(a => createRangeFromAnnotation(a));
+const splitRange = (range, annotationList, filename) => {
+    console.log('in here');
+    let annoRanges = annotationList.map(a => { return { id: a.id, range: createRangeFromAnnotation(a) }; });
     // ensure first range in list is the beginning boundary range
-    ranges = ranges.sort((a, b) => {
-        return a.start.line - b.start.line;
+    console.log('annoRanges', annoRanges);
+    annoRanges = annoRanges.sort((a, b) => {
+        return a.range.start.line - b.range.start.line;
     });
-    ranges = ranges.map((r, index) => {
+    console.log('annoRanges after sort', annoRanges);
+    annoRanges = annoRanges.map((a, index) => {
+        console.log('a', a);
+        let r = a.range;
         let numLines = r.end.line - r.start.line;
         let startOffset = r.start.character;
         let endOffset = r.end.character;
+        const lastRange = index > 0 ? annoRanges[index - 1].range : r;
+        console.log('index', index);
         // first range
         if (index === 0) {
-            return new vscode.Range(range.start, new vscode.Position(range.start.line + numLines, endOffset));
+            let newRange = { id: a.id, range: new vscode.Range(range.start, new vscode.Position(range.start.line + numLines, endOffset)) };
+            console.log('in here', newRange);
+            return newRange;
         }
         // last range
-        else if (index === ranges.length - 1) {
-            return new vscode.Range(new vscode.Position(range.end.line - numLines, startOffset), range.end);
+        else if (index === annoRanges.length - 1) {
+            return { id: a.id, range: new vscode.Range(new vscode.Position(range.end.line - numLines, startOffset), range.end) };
         }
         // middle ranges
         else {
-            // return new vscode.Range() -- something hard here
+            return { id: a.id, range: new vscode.Range(new vscode.Position(lastRange === null || lastRange === void 0 ? void 0 : lastRange.end.line, (lastRange === null || lastRange === void 0 ? void 0 : lastRange.end.character) + startOffset), new vscode.Position((lastRange === null || lastRange === void 0 ? void 0 : lastRange.end.line) + numLines, endOffset)) };
         }
     });
+    console.log('annoRanges after map', annoRanges);
+    const rangeAdjustedAnnotations = annotationList.map(a => {
+        const index = annoRanges.findIndex(r => r.id === a.id);
+        const annoRange = annoRanges[index].range;
+        return new Annotation(uniqid(), filename, a.anchorText, a.annotation, annoRange.start.line, annoRange.end.line, annoRange.start.character, annoRange.end.character, false);
+    });
+    console.log('rangeadjusteed', rangeAdjustedAnnotations);
+    return rangeAdjustedAnnotations;
 };
 const translateChanges = (originalStartLine, originalEndLine, originalStartOffset, originalEndOffset, startLine, endLine, startOffset, endOffset, textLength, diff, rangeLength, anchorText, annotation, filename, id, text) => {
     let newRange = { startLine: originalStartLine, endLine: originalEndLine, startOffset: originalStartOffset, endOffset: originalEndOffset };
@@ -139,12 +156,14 @@ function activate(context) {
         if (annosInRange.length) {
             const annoIds = annosInRange.map(a => a.id);
             copiedAnnotations = annotationList.filter(a => annoIds.includes(a.id));
+            console.log('what is happening', copiedAnnotations, textEditor.document.getText(textEditor.selection));
             // write to clipboard annotation metadata? need to figure out how to structure data on clipboard
         }
+        vscode.env.clipboard.writeText(textEditor.document.getText(textEditor.selection)).then(() => console.log('wrote'));
     };
     const clipboardDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', overriddenClipboardCopyAction);
     // const clipboardPasteDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardPasteAction', overriddenClipboardPasteAction);
-    const cutDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCutAction', overriddenClipboardCopyAction);
+    // const cutDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCutAction', overriddenClipboardCopyAction);
     let disposableEventListener = vscode.window.onDidChangeVisibleTextEditors((textEditors) => __awaiter(this, void 0, void 0, function* () {
         const textEditorFileNames = textEditors.map(t => t.document.uri.toString());
         const serializedObjects = annotationList.map(a => {
@@ -204,6 +223,7 @@ function activate(context) {
         // }
     }));
     vscode.workspace.onDidChangeTextDocument((e) => {
+        var _a;
         const currentAnnotations = annotationList.filter(a => a.filename === e.document.uri.toString());
         if (!currentAnnotations.length) {
             return;
@@ -219,20 +239,34 @@ function activate(context) {
                 const diff = linesInserted - linesInRange;
                 console.log('e', e);
                 // check to see if user pasted a copied annotation... 
+                let rangeAdjustedAnnotations = [];
+                let didPaste = false;
                 if (copiedAnnotations.length) {
-                    const copiedAnnotationText = copiedAnnotations.map(a => a.anchorText);
-                    if (copiedAnnotationText.includes(change.text)) {
-                        let rangeAdjustedAnnotations = [];
-                        // if(copiedAnnotations.length > 1) {
-                        rangeAdjustedAnnotations = copiedAnnotations.length > 1 ? splitRange(change.range, copiedAnnotations) : copiedAnnotations;
-                        // }
-                        // copiedAnnotations.forEach(a => {
-                        // 	annotationList.push(new Annotation(uniqid, a.filename, a.anchorText, a.annotation, ))
-                        // })
+                    const copiedAnnotationText = copiedAnnotations.map(a => a.anchorText).join('').replace(/\s+/g, '');
+                    console.log('in first if', copiedAnnotationText, 'change', change.text);
+                    const cleanChangeText = change.text.replace(/\s+/g, '');
+                    if (cleanChangeText.includes(copiedAnnotationText)) {
+                        console.log('in second if');
+                        const numLines = (change.text.match(/\n/g) || []).length;
+                        const computedEndOffset = change.text.substr(change.text.lastIndexOf('\n') + 1).length;
+                        const actuallyUsefulRange = new vscode.Range(startLine, startOffset, startLine + numLines, computedEndOffset);
+                        console.log('what is happening');
+                        rangeAdjustedAnnotations = copiedAnnotations.length > 1 ? splitRange(actuallyUsefulRange, copiedAnnotations, e.document.uri.toString()) :
+                            [new Annotation(uniqid(), e.document.uri.toString(), change.text, 'test', startLine, actuallyUsefulRange.end.line, startOffset, actuallyUsefulRange.end.character, false)];
+                        // annotationList = annotationList.concat(rangeAdjustedAnnotations);
+                        console.log('updated Annotation List', rangeAdjustedAnnotations);
+                        didPaste = true;
+                        // copiedAnnotations = []; // we pasted?
                     }
                 }
                 const translatedAnnotations = currentAnnotations.map(a => translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), a.id, change.text)).filter(a => !a.toDelete);
-                annotationList = translatedAnnotations.concat(annotationList.filter(a => a.filename !== e.document.uri.toString()));
+                annotationList = translatedAnnotations.concat(annotationList.filter(a => a.filename !== e.document.uri.toString()), rangeAdjustedAnnotations);
+                if (didPaste && vscode.window.activeTextEditor) {
+                    console.log('in here');
+                    const ranges = annotationList.map(a => createRangeFromAnnotation(a));
+                    console.log('ranges', ranges);
+                    (_a = vscode.window.activeTextEditor) === null || _a === void 0 ? void 0 : _a.setDecorations(annotationDecorations, ranges);
+                }
             }
         }
     });

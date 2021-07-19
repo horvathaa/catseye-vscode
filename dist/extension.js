@@ -194,16 +194,12 @@ function activate(context) {
     let highLighted = [];
     let annotationList = [];
     let copiedAnnotations = [];
-    const overriddenClipboardPasteAction = (textEditor, edit, args) => {
-    };
     const overriddenClipboardCopyAction = (textEditor, edit, args) => {
-        // let annotationList = args[0]; // ????
         const annotationsInEditor = annotationList.filter((a) => a.filename === textEditor.document.uri.toString());
         const annosInRange = getAnchorsInRange(textEditor.selection, annotationsInEditor);
         if (annosInRange.length) {
             const annoIds = annosInRange.map(a => a.id);
             copiedAnnotations = annotationList.filter(a => annoIds.includes(a.id));
-            // write to clipboard annotation metadata? need to figure out how to structure data on clipboard
         }
         vscode.env.clipboard.writeText(textEditor.document.getText(textEditor.selection));
     };

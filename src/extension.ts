@@ -214,19 +214,12 @@ export function activate(context: vscode.ExtensionContext) {
 	let annotationList: Annotation[] = [];
 	let copiedAnnotations: Annotation[] = [];
 
-	const overriddenClipboardPasteAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
-
-	}
-
 	const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
-		// let annotationList = args[0]; // ????
 		const annotationsInEditor = annotationList.filter((a: Annotation) => a.filename === textEditor.document.uri.toString());
 		const annosInRange = getAnchorsInRange(textEditor.selection, annotationsInEditor);
 		if(annosInRange.length) {
 			const annoIds = annosInRange.map(a => a.id)
 			copiedAnnotations = annotationList.filter(a => annoIds.includes(a.id));
-			
-			// write to clipboard annotation metadata? need to figure out how to structure data on clipboard
 		}
 		vscode.env.clipboard.writeText(textEditor.document.getText(textEditor.selection));
 	
@@ -375,10 +368,6 @@ export function activate(context: vscode.ExtensionContext) {
 		// })
 	});
 
-
-	
-	
-		
 	context.subscriptions.push(vscode.commands.registerCommand('adamite.sel', () => {
 		const { activeTextEditor } = vscode.window;
 		if (!activeTextEditor) {

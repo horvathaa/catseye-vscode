@@ -36,6 +36,7 @@ class Annotation {
 	}
 }
 
+
 const handleSaveCloseEvent = (annotationList: Annotation[], filePath: string, currentFile: string) => {
 	const annotationsInCurrentFile = annotationList.filter(a => a.filename === currentFile);
 	if(annotationsInCurrentFile.length && vscode.workspace.workspaceFolders !== undefined) {

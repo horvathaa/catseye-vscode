@@ -1,6 +1,10 @@
 /******/ (() => { // webpackBootstrap
-/******/ 	var __webpack_modules__ = ([
-/* 0 */
+/******/ 	var __webpack_modules__ = ({
+
+/***/ "./source/extension.ts":
+/*!*****************************!*\
+  !*** ./source/extension.ts ***!
+  \*****************************/
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -15,12 +19,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.activate = void 0;
+exports.deactivate = exports.activate = void 0;
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-const vscode = __webpack_require__(1);
-const util_1 = __webpack_require__(2);
-var uniqid = __webpack_require__(3);
+const vscode = __webpack_require__(/*! vscode */ "vscode");
+const util_1 = __webpack_require__(/*! util */ "util");
+var uniqid = __webpack_require__(/*! uniqid */ "./node_modules/uniqid/index.js");
 // need to add ID and timestamp so we can keep track of the annotations (i.e. don't create duplicates in the concat operation)
 // also clean up old annotations that don't exist because their range is no longer valid
 // add anchor text as property - set using activeEditor.document.getText(activeEditor.selection) then in paste event check if there's something
@@ -331,6 +335,10 @@ function activate(context) {
                 vscode.workspace.applyEdit(wsEdit);
             }
         }
+        // if(vscode.workspace.workspaceFolders) {
+        // 	let view = new ViewLoader(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
+        // 	console.log('view', view)
+        // }
         // })
     });
     context.subscriptions.push(vscode.commands.registerCommand('adamite.sel', () => {
@@ -381,6 +389,8 @@ function getWebviewContent(sel, c) {
   <head>
 	  <meta charset="UTF-8">
 	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	  <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+	  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
   </head>
   <body>
 	  <h1>Welcome to the annotation tab, where you can select code and you will see it appear here.</h1>
@@ -403,25 +413,16 @@ function getWebviewContent(sel, c) {
   </html>`;
 }
 // // this method is called when your extension is deactivated
-// export function deactivate() {}
+function deactivate() { }
+exports.deactivate = deactivate;
 
 
 /***/ }),
-/* 1 */
-/***/ ((module) => {
 
-"use strict";
-module.exports = require("vscode");;
-
-/***/ }),
-/* 2 */
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("util");;
-
-/***/ }),
-/* 3 */
+/***/ "./node_modules/uniqid/index.js":
+/*!**************************************!*\
+  !*** ./node_modules/uniqid/index.js ***!
+  \**************************************/
 /***/ ((module) => {
 
 /* 
@@ -456,8 +457,31 @@ function now(){
 }
 
 
+/***/ }),
+
+/***/ "util":
+/*!***********************!*\
+  !*** external "util" ***!
+  \***********************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("util");
+
+/***/ }),
+
+/***/ "vscode":
+/*!*************************!*\
+  !*** external "vscode" ***!
+  \*************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("vscode");
+
 /***/ })
-/******/ 	]);
+
+/******/ 	});
 /************************************************************************/
 /******/ 	// The module cache
 /******/ 	var __webpack_module_cache__ = {};
@@ -488,7 +512,7 @@ function now(){
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __webpack_require__(0);
+/******/ 	var __webpack_exports__ = __webpack_require__("./source/extension.ts");
 /******/ 	module.exports = __webpack_exports__;
 /******/ 	
 /******/ })()

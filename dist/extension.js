@@ -42,15 +42,12 @@ const getAnchorsInRange = (selection, annotationList) => {
     return annotationList.map(a => { return { id: a.id, range: createRangeFromAnnotation(a) }; }).filter(a => selection.contains(a.range));
 };
 // computes boundary points of each annotation's range given the pasted new range
-const splitRange = (range, annotationList, filename) => {
-    console.log('in here');
-    let annoRanges = annotationList.map(a => { return { id: a.id, range: createRangeFromAnnotation(a) }; });
+const splitRange = (range, annotationList, filename, changeText) => {
+    let annoRanges = annotationList.map(a => { return { id: a.id, range: createRangeFromAnnotation(a), anchorText: a.anchorText }; });
     // ensure first range in list is the beginning boundary range
-    console.log('annoRanges', annoRanges);
     annoRanges = annoRanges.sort((a, b) => {
         return a.range.start.line - b.range.start.line;
     });
-    console.log('annoRanges after sort', annoRanges);
     annoRanges = annoRanges.map((a, index) => {
         console.log('a', a);
         let r = a.range;
@@ -58,20 +55,23 @@ const splitRange = (range, annotationList, filename) => {
         let startOffset = r.start.character;
         let endOffset = r.end.character;
         const lastRange = index > 0 ? annoRanges[index - 1].range : r;
-        console.log('index', index);
+        const cleanAnchorText = a.anchorText.split(' ').join('');
+        const cleanChangeText = changeText.split(' ').join('');
+        const stringUntilAnchorText = cleanChangeText.substring(0, cleanChangeText.indexOf(cleanAnchorText));
+        const numLinesBeforeAnchorStart = (stringUntilAnchorText.match(/\n/g) || []).length;
         // first range
         if (index === 0) {
-            let newRange = { id: a.id, range: new vscode.Range(range.start, new vscode.Position(range.start.line + numLines, endOffset)) };
-            console.log('in here', newRange);
+            let newRange = { id: a.id, range: new vscode.Range(new vscode.Position(range.start.line + numLinesBeforeAnchorStart, range.start.character), new vscode.Position(range.start.line + numLines + numLinesBeforeAnchorStart, endOffset)), anchorText: a.anchorText };
             return newRange;
         }
         // last range
         else if (index === annoRanges.length - 1) {
-            return { id: a.id, range: new vscode.Range(new vscode.Position(range.end.line - numLines, startOffset), range.end) };
+            return { id: a.id, range: new vscode.Range(new vscode.Position(range.end.line - numLines, startOffset), range.end), anchorText: a.anchorText };
         }
         // middle ranges
         else {
-            return { id: a.id, range: new vscode.Range(new vscode.Position(lastRange === null || lastRange === void 0 ? void 0 : lastRange.end.line, (lastRange === null || lastRange === void 0 ? void 0 : lastRange.end.character) + startOffset), new vscode.Position((lastRange === null || lastRange === void 0 ? void 0 : lastRange.end.line) + numLines, endOffset)) };
+            return { id: a.id, range: new vscode.Range(new vscode.Position(lastRange === null || lastRange === void 0 ? void 0 : lastRange.end.line, (lastRange === null || lastRange === void 0 ? void 0 : lastRange.end.character) + startOffset), new vscode.Position((lastRange === null || lastRange === void 0 ? void 0 : lastRange.end.line) + numLines, endOffset)),
+                anchorText: a.anchorText };
         }
     });
     console.log('annoRanges after map', annoRanges);
@@ -242,19 +242,18 @@ function activate(context) {
                 let rangeAdjustedAnnotations = [];
                 let didPaste = false;
                 if (copiedAnnotations.length) {
-                    const copiedAnnotationText = copiedAnnotations.map(a => a.anchorText).join('').replace(/\s+/g, '');
-                    console.log('in first if', copiedAnnotationText, 'change', change.text);
+                    const copiedAnnotationTextArr = copiedAnnotations.map(a => a.anchorText.replace(/\s+/g, ''));
                     const cleanChangeText = change.text.replace(/\s+/g, '');
-                    if (cleanChangeText.includes(copiedAnnotationText)) {
-                        console.log('in second if');
+                    const doesContain = copiedAnnotationTextArr.map(t => cleanChangeText.includes(t));
+                    // can be improved by using filter and only computing new anchors for annotations that
+                    // are included in the pasted text - can maybe get the offset earlier too???
+                    if (doesContain.includes(true)) {
                         const numLines = (change.text.match(/\n/g) || []).length;
                         const computedEndOffset = change.text.substr(change.text.lastIndexOf('\n') + 1).length;
                         const actuallyUsefulRange = new vscode.Range(startLine, startOffset, startLine + numLines, computedEndOffset);
-                        console.log('what is happening');
-                        rangeAdjustedAnnotations = copiedAnnotations.length > 1 ? splitRange(actuallyUsefulRange, copiedAnnotations, e.document.uri.toString()) :
+                        rangeAdjustedAnnotations = copiedAnnotations.length > 1 ? splitRange(actuallyUsefulRange, copiedAnnotations, e.document.uri.toString(), change.text) :
                             [new Annotation(uniqid(), e.document.uri.toString(), change.text, 'test', startLine, actuallyUsefulRange.end.line, startOffset, actuallyUsefulRange.end.character, false)];
                         // annotationList = annotationList.concat(rangeAdjustedAnnotations);
-                        console.log('updated Annotation List', rangeAdjustedAnnotations);
                         didPaste = true;
                         // copiedAnnotations = []; // we pasted?
                     }
@@ -296,6 +295,7 @@ function activate(context) {
             // this color will be used in dark color themes
             borderColor: 'lightblue'
         },
+        rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
     });
     let activeEditor = vscode.window.activeTextEditor; // amber: this value does not update if the user changes active editors so we shouldn't use it OR should update code to keep this value update
     let disposable = vscode.commands.registerCommand('adamite.helloWorld', () => {

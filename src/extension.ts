@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import { TextEncoder } from 'util';
 import { start } from 'repl';
+import { write } from 'fs';
 var uniqid = require('uniqid');
 
 // need to add ID and timestamp so we can keep track of the annotations (i.e. don't create duplicates in the concat operation)
@@ -32,6 +33,59 @@ class Annotation {
 		this.startOffset = anchorStartOffset;
 		this.endOffset = anchorEndOffset;
 		this.toDelete = toDelete;
+	}
+}
+
+const handleSaveCloseEvent = (annotationList: Annotation[], filePath: string, currentFile: string) => {
+	const annotationsInCurrentFile = annotationList.filter(a => a.filename === currentFile);
+	if(annotationsInCurrentFile.length && vscode.workspace.workspaceFolders !== undefined) {
+		writeAnnotationsToFile(annotationList, filePath);
+	}
+}
+
+const writeAnnotationsToFile = async (annotationList: Annotation[], filePath: string) => {
+	const serializedObjects = annotationList.map(a => { return {
+		id: a.id,
+		filename: a.filename,
+		anchorText: a.anchorText,
+		annotation: a.annotation,
+		anchor: {
+			startLine: a.startLine,
+			endLine: a.endLine,
+			startOffset: a.startOffset,
+			endOffset: a.endOffset
+		}
+	}})
+
+	if(vscode.workspace.workspaceFolders !== undefined)  {
+		const uri = vscode.Uri.file(filePath);
+		try {
+			await vscode.workspace.fs.stat(uri);
+			vscode.workspace.openTextDocument(filePath).then(doc => { 
+				vscode.workspace.fs.writeFile(doc.uri, new TextEncoder().encode(JSON.stringify(serializedObjects))).then(() => {
+					annotationList.forEach(a => a.toDelete = false);
+				})
+			})
+		}
+		catch {
+			// console.log('file does not exist');
+			const wsEdit = new vscode.WorkspaceEdit();
+			wsEdit.createFile(uri)
+			vscode.workspace.applyEdit(wsEdit).then((value: boolean) => {
+				if(value) { // edit applied??
+					vscode.workspace.openTextDocument(filePath).then(doc => { 
+						vscode.workspace.fs.writeFile(doc.uri, new TextEncoder().encode(JSON.stringify(serializedObjects))).then(() => {
+							annotationList.forEach(a => a.toDelete = false);
+						})
+					})
+				}
+				else {
+					vscode.window.showInformationMessage('Could not create file!');
+				}
+			});
+			
+		}
+		
 	}
 }
 
@@ -77,16 +131,11 @@ const splitRange = (range: vscode.Range, annotationList: Annotation[], filename:
 		}
 	});
 
-	console.log('annoRanges after map', annoRanges)
-
 	const rangeAdjustedAnnotations = annotationList.map(a => {
 		const index = annoRanges.findIndex(r => r.id === a.id);
 		const annoRange = annoRanges[index].range;
 		return new Annotation(uniqid(), filename, a.anchorText, a.annotation, annoRange.start.line, annoRange.end.line, annoRange.start.character, annoRange.end.character, false);
 	});
-
-	console.log('rangeadjusteed', rangeAdjustedAnnotations);
-
 	return rangeAdjustedAnnotations;
 
 }
@@ -170,75 +219,25 @@ export function activate(context: vscode.ExtensionContext) {
 	}
 
 	const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
-		console.log('copy', textEditor, edit);
 		// let annotationList = args[0]; // ????
 		const annotationsInEditor = annotationList.filter((a: Annotation) => a.filename === textEditor.document.uri.toString());
 		const annosInRange = getAnchorsInRange(textEditor.selection, annotationsInEditor);
 		if(annosInRange.length) {
 			const annoIds = annosInRange.map(a => a.id)
 			copiedAnnotations = annotationList.filter(a => annoIds.includes(a.id));
-			console.log('what is happening', copiedAnnotations, textEditor.document.getText(textEditor.selection));
 			
 			// write to clipboard annotation metadata? need to figure out how to structure data on clipboard
 		}
-		vscode.env.clipboard.writeText(textEditor.document.getText(textEditor.selection)).then(() => console.log('wrote'));
+		vscode.env.clipboard.writeText(textEditor.document.getText(textEditor.selection));
 	
 	}
 
 	const clipboardDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', overriddenClipboardCopyAction);
-	// const clipboardPasteDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardPasteAction', overriddenClipboardPasteAction);
-	// const cutDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCutAction', overriddenClipboardCopyAction);
-
-	
-
 
 	let disposableEventListener = vscode.window.onDidChangeVisibleTextEditors( async (textEditors) => {
-		const textEditorFileNames = textEditors.map(t => t.document.uri.toString())
-		const serializedObjects = annotationList.map(a => { return {
-			id: a.id,
-			filename: a.filename,
-			anchorText: a.anchorText,
-			annotation: a.annotation,
-			anchor: {
-				startLine: a.startLine,
-				endLine: a.endLine,
-				startOffset: a.startOffset,
-				endOffset: a.endOffset
-			}
-		}})
-		let filePath = "";
-		if(vscode.workspace.workspaceFolders !== undefined)  {
-			filePath = vscode.workspace.workspaceFolders[0].uri.path + '/test.json';
-			const uri = vscode.Uri.file(filePath);
-			try {
-				await vscode.workspace.fs.stat(uri);
-				vscode.workspace.openTextDocument(filePath).then(doc => { 
-					vscode.workspace.fs.writeFile(doc.uri, new TextEncoder().encode(JSON.stringify(serializedObjects))).then(() => {
-						annotationList.forEach(a => a.toDelete = false);
-					})
-				})
-			}
-			catch {
-				// console.log('file does not exist');
-				const wsEdit = new vscode.WorkspaceEdit();
-				wsEdit.createFile(uri)
-				vscode.workspace.applyEdit(wsEdit).then((value: boolean) => {
-					if(value) { // edit applied??
-						vscode.workspace.openTextDocument(filePath).then(doc => { 
-							vscode.workspace.fs.writeFile(doc.uri, new TextEncoder().encode(JSON.stringify(serializedObjects))).then(() => {
-								annotationList.forEach(a => a.toDelete = false);
-							})
-						})
-					}
-					else {
-						vscode.window.showInformationMessage('Could not create file!');
-					}
-				});
-				
-			}
-			
-		}
-
+		const textEditorFileNames = textEditors.map(t => t.document.uri.toString());
+		if(vscode.workspace.workspaceFolders !== undefined) writeAnnotationsToFile(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json');
+		
 		const annotationsToHighlight = annotationList.filter(a => textEditorFileNames.includes(a.filename.toString()))
 		if(!annotationsToHighlight.length) { return };
 		let ranges = annotationsToHighlight.map(a => { return {filename: a.filename, range: createRangeFromAnnotation(a)}});
@@ -246,10 +245,14 @@ export function activate(context: vscode.ExtensionContext) {
 			let annos = ranges.filter(r => r.filename === t.document.uri.toString()).map(a => a.range)
 			t.setDecorations(annotationDecorations, annos)
 		} );
-				
-			
-		// }
-		
+	});
+
+	vscode.workspace.onDidSaveTextDocument((TextDocument: vscode.TextDocument) => {
+		if(vscode.workspace.workspaceFolders) handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextDocument.uri.toString());
+	});
+
+	vscode.workspace.onDidCloseTextDocument((TextDocument: vscode.TextDocument) => {
+		if(vscode.workspace.workspaceFolders) handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextDocument.uri.toString());
 	});
 
 	vscode.workspace.onDidChangeTextDocument((e: vscode.TextDocumentChangeEvent) => {
@@ -293,9 +296,7 @@ export function activate(context: vscode.ExtensionContext) {
 				
 				annotationList = translatedAnnotations.concat(annotationList.filter(a => a.filename !== e.document.uri.toString()), rangeAdjustedAnnotations);
 				if(didPaste && vscode.window.activeTextEditor) {
-					console.log('in here');
 					const ranges = annotationList.map(a => createRangeFromAnnotation(a));
-					console.log('ranges', ranges);
 					vscode.window.activeTextEditor?.setDecorations(annotationDecorations, ranges);
 				}
 			}

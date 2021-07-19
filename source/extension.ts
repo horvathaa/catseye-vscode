@@ -2,10 +2,11 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { TextEncoder } from 'util';
+import React = require('react');
 import { start } from 'repl';
 import { write } from 'fs';
 var uniqid = require('uniqid');
-
+import ViewLoader from './view/ViewLoader';
 // need to add ID and timestamp so we can keep track of the annotations (i.e. don't create duplicates in the concat operation)
 // also clean up old annotations that don't exist because their range is no longer valid
 
@@ -365,7 +366,11 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 
 		}
-			
+		// if(vscode.workspace.workspaceFolders) {
+		// 	let view = new ViewLoader(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
+		// 	console.log('view', view)
+		// }
+		
 		// })
 	});
 
@@ -421,11 +426,16 @@ export function activate(context: vscode.ExtensionContext) {
 
 function getWebviewContent(sel: string, c:string[]) {
 	console.log('sel', sel);
+	
+
+
 	return `<!DOCTYPE html>
   <html lang="en">
   <head>
 	  <meta charset="UTF-8">
 	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	  <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+	  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
   </head>
   <body>
 	  <h1>Welcome to the annotation tab, where you can select code and you will see it appear here.</h1>
@@ -449,4 +459,4 @@ function getWebviewContent(sel: string, c:string[]) {
   }
 
 // // this method is called when your extension is deactivated
-// export function deactivate() {}
+export function deactivate() {}

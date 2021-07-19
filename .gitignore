@@ -9,6 +9,7 @@
 # production
 /build
 /dist
+/configViewer
 
 # misc
 .DS_Store

@@ -299,19 +299,11 @@ export function activate(context: vscode.ExtensionContext) {
 		
 	})
 	
-	console.log('Congratulations, your extension "adamite" is now active!');
+	// console.log('Congratulations, your extension "adamite" is now active!');
 	let code: string[] = [];
-	let panel = vscode.window.createWebviewPanel(
-		'annotating', // Identifies the type of the webview. Used internally
-		'ADAMITE', // Title of the panel displayed to the user
-		vscode.ViewColumn.Beside, // Editor column to show the new webview panel in.
-		{
-			enableScripts: true
-		} // Webview options. More on these later.
-	  );
 	context.subscriptions.push(vscode.commands.registerCommand('adamite.annotate', () => {
 		// Create and show a new webview
-		panel.webview.html = getWebviewContent("Hello", code);
+		
 	  })
 	);
 
@@ -366,10 +358,13 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 
 		}
-		// if(vscode.workspace.workspaceFolders) {
-		// 	let view = new ViewLoader(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
-		// 	console.log('view', view)
-		// }
+
+		console.log('making sidepanel')
+		if(vscode.workspace.workspaceFolders) {
+			let view = new ViewLoader(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
+			console.log('view', view)
+		}
+		
 		
 		// })
 	});
@@ -389,10 +384,10 @@ export function activate(context: vscode.ExtensionContext) {
     		console.log(i + ": " + code[i]); 
 		}
 
-		const updateTab = () => {
-			panel.webview.html = getWebviewContent(text, code);
-		}
-		updateTab();
+		// const updateTab = () => {
+		// 	panel.webview.html = getWebviewContent(text, code);
+		// }
+		// updateTab();
 		//var fl = activeTextEditor.document.lineAt(activeTextEditor.selection.active.line);
 		//var el = activeTextEditor.document.lineAt(activeTextEditor.selection.active.line);
 		var r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
@@ -424,39 +419,40 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 
-function getWebviewContent(sel: string, c:string[]) {
-	console.log('sel', sel);
+// function getWebviewContent(sel: string, c:string[]) {
+// 	console.log('sel', sel);
 	
 
 
-	return `<!DOCTYPE html>
-  <html lang="en">
-  <head>
-	  <meta charset="UTF-8">
-	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	  <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
-	  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
-  </head>
-  <body>
-	  <h1>Welcome to the annotation tab, where you can select code and you will see it appear here.</h1>
-	  <div id = "annotations">
-	  	<h2 id = "lines-of-code-counter">No code selected!</h2>
-	  </div>
-	  <script>
-	  	document.getElementById('lines-of-code-counter').textContent = "${sel}";
-		var tag = document.createElement("p");
-		tag.textContent = "${sel}";
-		document.getElementById("annotations").appendChild(tag);
-		var x = document.createElement("INPUT");
-		x.setAttribute("type", "text");
-  		x.setAttribute("value", "Start Annotating!");
-		document.getElementById("annotations").appendChild(x);
+// 	return `<!DOCTYPE html>
+//   <html lang="en">
+//   <head>
+// 	  <meta charset="UTF-8">
+// 	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+// 	  <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+// 	  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+//   </head>
+//   <body>
+// 	  <h1>Welcome to the annotation tab, where you can select code and you will see it appear here.</h1>
+// 	  <div id="root></div>
+// 	  <div id = "annotations">
+// 	  	<h2 id = "lines-of-code-counter">No code selected!</h2>
+// 	  </div>
+// 	  <script>
+// 	  	document.getElementById('lines-of-code-counter').textContent = "${sel}";
+// 		var tag = document.createElement("p");
+// 		tag.textContent = "${sel}";
+// 		document.getElementById("annotations").appendChild(tag);
+// 		var x = document.createElement("INPUT");
+// 		x.setAttribute("type", "text");
+//   		x.setAttribute("value", "Start Annotating!");
+// 		document.getElementById("annotations").appendChild(x);
 
-	  </script>
-  </body>
+// 	  </script>
+//   </body>
 
-  </html>`;
-  }
+//   </html>`;
+//   }
 
 // // this method is called when your extension is deactivated
 export function deactivate() {}

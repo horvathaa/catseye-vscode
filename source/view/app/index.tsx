@@ -1,19 +1,19 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
-import { IConfig } from "./model";
-import Config from "./config";
+import { AnnotationList } from "./model";
+import AdamitePanel from "./adamite";
 
 declare global {
   interface Window {
     acquireVsCodeApi(): any;
-    initialData: IConfig;
+    initialData: AnnotationList;
   }
 }
 
 const vscode = window.acquireVsCodeApi();
 
 ReactDOM.render(
-  <Config vscode={vscode} initialData={window.initialData} />,
+  <AdamitePanel vscode={vscode} initialData={window.initialData} />,
   document.getElementById("root")
 );

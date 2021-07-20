@@ -2,7 +2,8 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 
-import { IConfig, ICommand, CommandAction } from "./app/model";
+
+import { AnnotationList, Annotation, ICommand, CommandAction } from "./app/model";
 
 export default class ViewLoader {
   private readonly _panel: vscode.WebviewPanel | undefined;
@@ -12,22 +13,22 @@ export default class ViewLoader {
   constructor(fileUri: vscode.Uri, extensionPath: string) {
     this._extensionPath = extensionPath;
 
-    let config = this.getFileContent(fileUri);
-    if (config) {
+    let annotationList = this.getFileContent(fileUri);
+    if (annotationList) {
       this._panel = vscode.window.createWebviewPanel(
-        "configView",
-        "Config View",
+        "adamite",
+        "Adamite",
         vscode.ViewColumn.One,
         {
           enableScripts: true,
 
           localResourceRoots: [
-            vscode.Uri.file(path.join(extensionPath, "configViewer"))
+            vscode.Uri.file(path.join(extensionPath, "dist"))
           ]
         }
       );
 
-      this._panel.webview.html = this.getWebviewContent(config);
+      this._panel.webview.html = this.getWebviewContent(annotationList);
 
       this._panel.webview.onDidReceiveMessage(
         (command: ICommand) => {
@@ -43,14 +44,16 @@ export default class ViewLoader {
     }
   }
 
-  private getWebviewContent(config: IConfig): string {
+  private getWebviewContent(annotationList: AnnotationList): string {
     // Local path to main script run in the webview
     const reactAppPathOnDisk = vscode.Uri.file(
-      path.join(this._extensionPath, "configViewer", "configViewer.js")
+      path.join(this._extensionPath, "dist", "configViewer.js")
     );
+    console.log('react app', reactAppPathOnDisk);
     const reactAppUri = reactAppPathOnDisk.with({ scheme: "vscode-resource" });
+    console.log('reactAppUri', reactAppUri);
 
-    // const configJson = JSON.stringify(config);
+    const annotationJson = JSON.stringify(annotationList);
 
     return `<!DOCTYPE html>
     <html lang="en">
@@ -67,6 +70,7 @@ export default class ViewLoader {
 
         <script>
           window.acquireVsCodeApi = acquireVsCodeApi;
+          window.initialData = ${annotationJson}
         </script>
     </head>
     <body>
@@ -77,23 +81,24 @@ export default class ViewLoader {
     </html>`;
   }
 
-  private getFileContent(fileUri: vscode.Uri): IConfig | undefined {
-    if (fs.existsSync(fileUri.fsPath)) {
-      let content = fs.readFileSync(fileUri.fsPath, "utf8");
-      let config: IConfig = JSON.parse(content);
+  private getFileContent(fileUri: vscode.Uri): AnnotationList | undefined {
+    if (fs.existsSync(fileUri.fsPath + '/test.json')) {
+      let content = fs.readFileSync(fileUri.fsPath + '/test.json', "utf8");
+      let annotationList: AnnotationList = JSON.parse(content);
+      console.log('annotationList', annotationList);
 
-      return config;
+      return annotationList;
     }
     return undefined;
   }
 
-  private saveFileContent(fileUri: vscode.Uri, config: IConfig) {
-    if (fs.existsSync(fileUri.fsPath)) {
-      let content: string = JSON.stringify(config);
-      fs.writeFileSync(fileUri.fsPath, content);
+  private saveFileContent(fileUri: vscode.Uri, annotationList: AnnotationList) {
+    if (fs.existsSync(fileUri.fsPath + '/test.json')) {
+      let content: string = JSON.stringify(annotationList);
+      fs.writeFileSync(fileUri.fsPath + '/test.json', content);
 
       vscode.window.showInformationMessage(
-        `👍 Configuration saved to ${fileUri.fsPath}`
+        `👍 Annotations saved to ${fileUri.fsPath + '/test.json'}`
       );
     }
   }

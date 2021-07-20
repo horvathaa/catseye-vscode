@@ -25,6 +25,7 @@ exports.deactivate = exports.activate = void 0;
 const vscode = __webpack_require__(/*! vscode */ "vscode");
 const util_1 = __webpack_require__(/*! util */ "util");
 var uniqid = __webpack_require__(/*! uniqid */ "./node_modules/uniqid/index.js");
+const ViewLoader_1 = __webpack_require__(/*! ./view/ViewLoader */ "./source/view/ViewLoader.ts");
 // need to add ID and timestamp so we can keep track of the annotations (i.e. don't create duplicates in the concat operation)
 // also clean up old annotations that don't exist because their range is no longer valid
 // add anchor text as property - set using activeEditor.document.getText(activeEditor.selection) then in paste event check if there's something
@@ -276,18 +277,10 @@ function activate(context) {
             }
         }
     });
-    console.log('Congratulations, your extension "adamite" is now active!');
+    // console.log('Congratulations, your extension "adamite" is now active!');
     let code = [];
-    let panel = vscode.window.createWebviewPanel('annotating', // Identifies the type of the webview. Used internally
-    'ADAMITE', // Title of the panel displayed to the user
-    vscode.ViewColumn.Beside, // Editor column to show the new webview panel in.
-    {
-        enableScripts: true
-    } // Webview options. More on these later.
-    );
     context.subscriptions.push(vscode.commands.registerCommand('adamite.annotate', () => {
         // Create and show a new webview
-        panel.webview.html = getWebviewContent("Hello", code);
     }));
     const annotationDecorations = vscode.window.createTextEditorDecorationType({
         borderWidth: '1px',
@@ -335,10 +328,11 @@ function activate(context) {
                 vscode.workspace.applyEdit(wsEdit);
             }
         }
-        // if(vscode.workspace.workspaceFolders) {
-        // 	let view = new ViewLoader(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
-        // 	console.log('view', view)
-        // }
+        console.log('making sidepanel');
+        if (vscode.workspace.workspaceFolders) {
+            let view = new ViewLoader_1.default(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
+            console.log('view', view);
+        }
         // })
     });
     context.subscriptions.push(vscode.commands.registerCommand('adamite.sel', () => {
@@ -353,10 +347,10 @@ function activate(context) {
         for (var i = 0; i < code.length; i++) {
             console.log(i + ": " + code[i]);
         }
-        const updateTab = () => {
-            panel.webview.html = getWebviewContent(text, code);
-        };
-        updateTab();
+        // const updateTab = () => {
+        // 	panel.webview.html = getWebviewContent(text, code);
+        // }
+        // updateTab();
         //var fl = activeTextEditor.document.lineAt(activeTextEditor.selection.active.line);
         //var el = activeTextEditor.document.lineAt(activeTextEditor.selection.active.line);
         var r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
@@ -382,39 +376,145 @@ function activate(context) {
     context.subscriptions.push(clipboardDisposable);
 }
 exports.activate = activate;
-function getWebviewContent(sel, c) {
-    console.log('sel', sel);
-    return `<!DOCTYPE html>
-  <html lang="en">
-  <head>
-	  <meta charset="UTF-8">
-	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	  <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
-	  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
-  </head>
-  <body>
-	  <h1>Welcome to the annotation tab, where you can select code and you will see it appear here.</h1>
-	  <div id = "annotations">
-	  	<h2 id = "lines-of-code-counter">No code selected!</h2>
-	  </div>
-	  <script>
-	  	document.getElementById('lines-of-code-counter').textContent = "${sel}";
-		var tag = document.createElement("p");
-		tag.textContent = "${sel}";
-		document.getElementById("annotations").appendChild(tag);
-		var x = document.createElement("INPUT");
-		x.setAttribute("type", "text");
-  		x.setAttribute("value", "Start Annotating!");
-		document.getElementById("annotations").appendChild(x);
-
-	  </script>
-  </body>
-
-  </html>`;
-}
+// function getWebviewContent(sel: string, c:string[]) {
+// 	console.log('sel', sel);
+// 	return `<!DOCTYPE html>
+//   <html lang="en">
+//   <head>
+// 	  <meta charset="UTF-8">
+// 	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+// 	  <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+// 	  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+//   </head>
+//   <body>
+// 	  <h1>Welcome to the annotation tab, where you can select code and you will see it appear here.</h1>
+// 	  <div id="root></div>
+// 	  <div id = "annotations">
+// 	  	<h2 id = "lines-of-code-counter">No code selected!</h2>
+// 	  </div>
+// 	  <script>
+// 	  	document.getElementById('lines-of-code-counter').textContent = "${sel}";
+// 		var tag = document.createElement("p");
+// 		tag.textContent = "${sel}";
+// 		document.getElementById("annotations").appendChild(tag);
+// 		var x = document.createElement("INPUT");
+// 		x.setAttribute("type", "text");
+//   		x.setAttribute("value", "Start Annotating!");
+// 		document.getElementById("annotations").appendChild(x);
+// 	  </script>
+//   </body>
+//   </html>`;
+//   }
 // // this method is called when your extension is deactivated
 function deactivate() { }
 exports.deactivate = deactivate;
+
+
+/***/ }),
+
+/***/ "./source/view/ViewLoader.ts":
+/*!***********************************!*\
+  !*** ./source/view/ViewLoader.ts ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const vscode = __webpack_require__(/*! vscode */ "vscode");
+const fs = __webpack_require__(/*! fs */ "fs");
+const path = __webpack_require__(/*! path */ "path");
+const model_1 = __webpack_require__(/*! ./app/model */ "./source/view/app/model.ts");
+class ViewLoader {
+    constructor(fileUri, extensionPath) {
+        this._disposables = [];
+        this._extensionPath = extensionPath;
+        let annotationList = this.getFileContent(fileUri);
+        if (annotationList) {
+            this._panel = vscode.window.createWebviewPanel("adamite", "Adamite", vscode.ViewColumn.One, {
+                enableScripts: true,
+                localResourceRoots: [
+                    vscode.Uri.file(path.join(extensionPath, "dist"))
+                ]
+            });
+            this._panel.webview.html = this.getWebviewContent(annotationList);
+            this._panel.webview.onDidReceiveMessage((command) => {
+                switch (command.action) {
+                    case model_1.CommandAction.Save:
+                        this.saveFileContent(fileUri, command.content);
+                        return;
+                }
+            }, undefined, this._disposables);
+        }
+    }
+    getWebviewContent(annotationList) {
+        // Local path to main script run in the webview
+        const reactAppPathOnDisk = vscode.Uri.file(path.join(this._extensionPath, "dist", "configViewer.js"));
+        console.log('react app', reactAppPathOnDisk);
+        const reactAppUri = reactAppPathOnDisk.with({ scheme: "vscode-resource" });
+        console.log('reactAppUri', reactAppUri);
+        const annotationJson = JSON.stringify(annotationList);
+        return `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Config View</title>
+
+        <meta http-equiv="Content-Security-Policy"
+                    content="default-src 'none';
+                             img-src https:;
+                             script-src 'unsafe-eval' 'unsafe-inline' vscode-resource:;
+                             style-src vscode-resource: 'unsafe-inline';">
+
+        <script>
+          window.acquireVsCodeApi = acquireVsCodeApi;
+          window.initialData = ${annotationJson}
+        </script>
+    </head>
+    <body>
+        <div id="root"></div>
+
+        <script src="${reactAppUri}"></script>
+    </body>
+    </html>`;
+    }
+    getFileContent(fileUri) {
+        if (fs.existsSync(fileUri.fsPath + '/test.json')) {
+            let content = fs.readFileSync(fileUri.fsPath + '/test.json', "utf8");
+            let annotationList = JSON.parse(content);
+            console.log('annotationList', annotationList);
+            return annotationList;
+        }
+        return undefined;
+    }
+    saveFileContent(fileUri, annotationList) {
+        if (fs.existsSync(fileUri.fsPath + '/test.json')) {
+            let content = JSON.stringify(annotationList);
+            fs.writeFileSync(fileUri.fsPath + '/test.json', content);
+            vscode.window.showInformationMessage(`👍 Annotations saved to ${fileUri.fsPath + '/test.json'}`);
+        }
+    }
+}
+exports.default = ViewLoader;
+
+
+/***/ }),
+
+/***/ "./source/view/app/model.ts":
+/*!**********************************!*\
+  !*** ./source/view/app/model.ts ***!
+  \**********************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.CommandAction = void 0;
+var CommandAction;
+(function (CommandAction) {
+    CommandAction[CommandAction["Save"] = 0] = "Save";
+})(CommandAction = exports.CommandAction || (exports.CommandAction = {}));
 
 
 /***/ }),
@@ -456,6 +556,28 @@ function now(){
     return now.last = time > last ? time : last + 1;
 }
 
+
+/***/ }),
+
+/***/ "fs":
+/*!*********************!*\
+  !*** external "fs" ***!
+  \*********************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("fs");
+
+/***/ }),
+
+/***/ "path":
+/*!***********************!*\
+  !*** external "path" ***!
+  \***********************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("path");
 
 /***/ }),
 

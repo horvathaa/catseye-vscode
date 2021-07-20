@@ -4,9 +4,10 @@
 		"target": "es6",
 		"outDir": "out",
 		"lib": [
-			"es6"
+			"es6", "DOM"
 		],
 		"sourceMap": true,
+		"jsx": "react",
 		"skipLibCheck": true,
 		"rootDir": "source",
 		"strict": true   /* enable all strict type-checking options */

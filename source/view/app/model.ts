@@ -1,19 +1,18 @@
-export interface IConfig {
+export interface Annotation {
     name: string;
     description: string;
-    users: IUser[];
-  }
-  export interface IUser {
-    name: string;
-    active: boolean;
-    roles: string[];
-  }
+    anchorText: string;
+    anchorLocation: string
+}
+
+export interface AnnotationList {
+  annotations?: Annotation[]
+}
+export interface ICommand {
+  action: CommandAction;
+  content: AnnotationList;
+}
   
-  export interface ICommand {
-    action: CommandAction;
-    content: IConfig;
-  }
-  
-  export enum CommandAction {
-    Save
-  }
+export enum CommandAction {
+  Save
+}

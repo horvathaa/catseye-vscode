@@ -2,7 +2,7 @@
 	"compilerOptions": {
 		"module": "commonjs",
 		"target": "es6",
-		"outDir": "out",
+		"outDir": "dist",
 		"lib": [
 			"es6", "DOM"
 		],
@@ -19,8 +19,5 @@
 	"exclude": [
 		"node_modules",
 		".vscode-test",
-		"**/view/app/index.tsx",
-		"**/view/app/tsconfig.json",
-		"**/view/app/config.tsx"
 	]
 }

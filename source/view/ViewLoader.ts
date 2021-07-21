@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 
-import { AnnotationList, Annotation, ICommand, CommandAction } from "./app/model";
+import { AnnotationList,  ICommand, CommandAction } from "./app/model";
 
 export default class ViewLoader {
   private readonly _panel: vscode.WebviewPanel | undefined;
@@ -49,11 +49,10 @@ export default class ViewLoader {
     const reactAppPathOnDisk = vscode.Uri.file(
       path.join(this._extensionPath, "dist", "configViewer.js")
     );
-    console.log('react app', reactAppPathOnDisk);
     const reactAppUri = reactAppPathOnDisk.with({ scheme: "vscode-resource" });
-    console.log('reactAppUri', reactAppUri);
 
     const annotationJson = JSON.stringify(annotationList);
+    console.log('annotationJson', annotationJson)
 
     return `<!DOCTYPE html>
     <html lang="en">

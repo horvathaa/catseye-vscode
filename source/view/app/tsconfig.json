@@ -3,14 +3,13 @@
         "module": "esnext",
         "moduleResolution": "node",
         "target": "es6",
-        "outDir": "configViewer",
+        "outDir": "dist",
         "lib": [
             "es6",
             "dom"
         ],  
         "jsx": "react",
         "sourceMap": true,
-        "rootDir": "..",
         "skipLibCheck": true,
         "noUnusedLocals": true,
         "noImplicitReturns": true,

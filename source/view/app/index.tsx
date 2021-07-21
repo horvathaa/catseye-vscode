@@ -1,17 +1,18 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
-import { AnnotationList } from "./model";
 import AdamitePanel from "./adamite";
+import Annotation from '../../extension'
 
 declare global {
   interface Window {
     acquireVsCodeApi(): any;
-    initialData: AnnotationList;
+    initialData: Annotation[];
   }
 }
 
 const vscode = window.acquireVsCodeApi();
+console.log('in index', window.initialData)
 
 ReactDOM.render(
   <AdamitePanel vscode={vscode} initialData={window.initialData} />,

@@ -1,13 +1,13 @@
 import * as React from "react";
-import { AnnotationList, ICommand, CommandAction } from "./model";
+import Annotation from "../../extension";
 
 interface IConfigProps {
   vscode: any;
-  initialData: AnnotationList;
+  initialData: Annotation[];
 }
 
 interface IConfigState {
-  config: AnnotationList;
+  config: Annotation[];
 }
 
 export default class AdamitePanel extends React.Component<
@@ -31,17 +31,16 @@ export default class AdamitePanel extends React.Component<
   
 
   render() {
-    // vscode.window.showInformationMessage(
-    //   `👍 Annotations saved to ${fileUri.fsPath + '/test.json'}`
-    // );
+    
     return (
       <React.Fragment>
         <h1>Hello World</h1>
         <div>
-          {this.props.initialData.annotations?.map((anno) => {
+          {this.props.initialData.map((anno) => {
+            console.log('anno', anno);
             return(
               <li>
-              {anno.anchorText}
+                {anno.anchorText}
               </li>
             )
           })}

@@ -2,9 +2,6 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { TextEncoder } from 'util';
-import React = require('react');
-import { start } from 'repl';
-import { write } from 'fs';
 var uniqid = require('uniqid');
 import ViewLoader from './view/ViewLoader';
 // need to add ID and timestamp so we can keep track of the annotations (i.e. don't create duplicates in the concat operation)
@@ -13,7 +10,7 @@ import ViewLoader from './view/ViewLoader';
 // add anchor text as property - set using activeEditor.document.getText(activeEditor.selection) then in paste event check if there's something
 // in copy keyboard and if theres a match between the pasted text and the anchor text I think??
 
-class Annotation {
+export default class Annotation {
 	id: string;
 	filename: string | vscode.Uri;
 	anchorText: string;
@@ -211,7 +208,7 @@ function createRangeFromAnnotation(annotation: Annotation) {
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-	let highLighted: vscode.Range[] = [];
+	// let highLighted: vscode.Range[] = [];
 	
 	let annotationList: Annotation[] = [];
 	let copiedAnnotations: Annotation[] = [];
@@ -361,9 +358,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 		console.log('making sidepanel')
 		if(vscode.workspace.workspaceFolders) {
-			let view = new ViewLoader(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
-			console.log('view', view)
+			new ViewLoader(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
 		}
+		console.log('what huh aaaa')
 		
 		
 		// })
@@ -415,6 +412,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(disposable);
 	context.subscriptions.push(clipboardDisposable);
+	context.subscriptions.push(disposableEventListener);
 }
 
 

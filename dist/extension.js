@@ -1,14 +1,4 @@
-/******/ (() => { // webpackBootstrap
-/******/ 	var __webpack_modules__ = ({
-
-/***/ "./source/extension.ts":
-/*!*****************************!*\
-  !*** ./source/extension.ts ***!
-  \*****************************/
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
 "use strict";
-
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -18,14 +8,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-Object.defineProperty(exports, "__esModule", ({ value: true }));
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-const vscode = __webpack_require__(/*! vscode */ "vscode");
-const util_1 = __webpack_require__(/*! util */ "util");
-var uniqid = __webpack_require__(/*! uniqid */ "./node_modules/uniqid/index.js");
-const ViewLoader_1 = __webpack_require__(/*! ./view/ViewLoader */ "./source/view/ViewLoader.ts");
+const vscode = require("vscode");
+const util_1 = require("util");
+var uniqid = require('uniqid');
+const ViewLoader_1 = require("./view/ViewLoader");
 // need to add ID and timestamp so we can keep track of the annotations (i.e. don't create duplicates in the concat operation)
 // also clean up old annotations that don't exist because their range is no longer valid
 // add anchor text as property - set using activeEditor.document.getText(activeEditor.selection) then in paste event check if there's something
@@ -43,6 +33,7 @@ class Annotation {
         this.toDelete = toDelete;
     }
 }
+exports.default = Annotation;
 const handleSaveCloseEvent = (annotationList, filePath, currentFile) => {
     const annotationsInCurrentFile = annotationList.filter(a => a.filename === currentFile);
     if (annotationsInCurrentFile.length && vscode.workspace.workspaceFolders !== undefined) {
@@ -196,7 +187,7 @@ function createRangeFromAnnotation(annotation) {
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 function activate(context) {
-    let highLighted = [];
+    // let highLighted: vscode.Range[] = [];
     let annotationList = [];
     let copiedAnnotations = [];
     const overriddenClipboardCopyAction = (textEditor, edit, args) => {
@@ -330,9 +321,9 @@ function activate(context) {
         }
         console.log('making sidepanel');
         if (vscode.workspace.workspaceFolders) {
-            let view = new ViewLoader_1.default(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
-            console.log('view', view);
+            new ViewLoader_1.default(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
         }
+        console.log('what huh aaaa');
         // })
     });
     context.subscriptions.push(vscode.commands.registerCommand('adamite.sel', () => {
@@ -374,6 +365,7 @@ function activate(context) {
     }));
     context.subscriptions.push(disposable);
     context.subscriptions.push(clipboardDisposable);
+    context.subscriptions.push(disposableEventListener);
 }
 exports.activate = activate;
 // function getWebviewContent(sel: string, c:string[]) {
@@ -408,235 +400,4 @@ exports.activate = activate;
 // // this method is called when your extension is deactivated
 function deactivate() { }
 exports.deactivate = deactivate;
-
-
-/***/ }),
-
-/***/ "./source/view/ViewLoader.ts":
-/*!***********************************!*\
-  !*** ./source/view/ViewLoader.ts ***!
-  \***********************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const vscode = __webpack_require__(/*! vscode */ "vscode");
-const fs = __webpack_require__(/*! fs */ "fs");
-const path = __webpack_require__(/*! path */ "path");
-const model_1 = __webpack_require__(/*! ./app/model */ "./source/view/app/model.ts");
-class ViewLoader {
-    constructor(fileUri, extensionPath) {
-        this._disposables = [];
-        this._extensionPath = extensionPath;
-        let annotationList = this.getFileContent(fileUri);
-        if (annotationList) {
-            this._panel = vscode.window.createWebviewPanel("adamite", "Adamite", vscode.ViewColumn.One, {
-                enableScripts: true,
-                localResourceRoots: [
-                    vscode.Uri.file(path.join(extensionPath, "dist"))
-                ]
-            });
-            this._panel.webview.html = this.getWebviewContent(annotationList);
-            this._panel.webview.onDidReceiveMessage((command) => {
-                switch (command.action) {
-                    case model_1.CommandAction.Save:
-                        this.saveFileContent(fileUri, command.content);
-                        return;
-                }
-            }, undefined, this._disposables);
-        }
-    }
-    getWebviewContent(annotationList) {
-        // Local path to main script run in the webview
-        const reactAppPathOnDisk = vscode.Uri.file(path.join(this._extensionPath, "dist", "configViewer.js"));
-        console.log('react app', reactAppPathOnDisk);
-        const reactAppUri = reactAppPathOnDisk.with({ scheme: "vscode-resource" });
-        console.log('reactAppUri', reactAppUri);
-        const annotationJson = JSON.stringify(annotationList);
-        return `<!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Config View</title>
-
-        <meta http-equiv="Content-Security-Policy"
-                    content="default-src 'none';
-                             img-src https:;
-                             script-src 'unsafe-eval' 'unsafe-inline' vscode-resource:;
-                             style-src vscode-resource: 'unsafe-inline';">
-
-        <script>
-          window.acquireVsCodeApi = acquireVsCodeApi;
-          window.initialData = ${annotationJson}
-        </script>
-    </head>
-    <body>
-        <div id="root"></div>
-
-        <script src="${reactAppUri}"></script>
-    </body>
-    </html>`;
-    }
-    getFileContent(fileUri) {
-        if (fs.existsSync(fileUri.fsPath + '/test.json')) {
-            let content = fs.readFileSync(fileUri.fsPath + '/test.json', "utf8");
-            let annotationList = JSON.parse(content);
-            console.log('annotationList', annotationList);
-            return annotationList;
-        }
-        return undefined;
-    }
-    saveFileContent(fileUri, annotationList) {
-        if (fs.existsSync(fileUri.fsPath + '/test.json')) {
-            let content = JSON.stringify(annotationList);
-            fs.writeFileSync(fileUri.fsPath + '/test.json', content);
-            vscode.window.showInformationMessage(`👍 Annotations saved to ${fileUri.fsPath + '/test.json'}`);
-        }
-    }
-}
-exports.default = ViewLoader;
-
-
-/***/ }),
-
-/***/ "./source/view/app/model.ts":
-/*!**********************************!*\
-  !*** ./source/view/app/model.ts ***!
-  \**********************************/
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.CommandAction = void 0;
-var CommandAction;
-(function (CommandAction) {
-    CommandAction[CommandAction["Save"] = 0] = "Save";
-})(CommandAction = exports.CommandAction || (exports.CommandAction = {}));
-
-
-/***/ }),
-
-/***/ "./node_modules/uniqid/index.js":
-/*!**************************************!*\
-  !*** ./node_modules/uniqid/index.js ***!
-  \**************************************/
-/***/ ((module) => {
-
-/* 
-(The MIT License)
-Copyright (c) 2014-2021 Halász Ádám <adam@aimform.com>
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
-
-//  Unique Hexatridecimal ID Generator
-// ================================================
-
-//  Dependencies
-// ================================================
-var pid = typeof process !== 'undefined' && process.pid ? process.pid.toString(36) : '' ;
-var address = '';
-if(false){ var i, mac, networkInterfaces; } 
-
-//  Exports
-// ================================================
-module.exports = module.exports.default = function(prefix, suffix){ return (prefix ? prefix : '') + address + pid + now().toString(36) + (suffix ? suffix : ''); }
-module.exports.process = function(prefix, suffix){ return (prefix ? prefix : '') + pid + now().toString(36) + (suffix ? suffix : ''); }
-module.exports.time    = function(prefix, suffix){ return (prefix ? prefix : '') + now().toString(36) + (suffix ? suffix : ''); }
-
-//  Helpers
-// ================================================
-function now(){
-    var time = Date.now();
-    var last = now.last || time;
-    return now.last = time > last ? time : last + 1;
-}
-
-
-/***/ }),
-
-/***/ "fs":
-/*!*********************!*\
-  !*** external "fs" ***!
-  \*********************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("fs");
-
-/***/ }),
-
-/***/ "path":
-/*!***********************!*\
-  !*** external "path" ***!
-  \***********************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("path");
-
-/***/ }),
-
-/***/ "util":
-/*!***********************!*\
-  !*** external "util" ***!
-  \***********************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("util");
-
-/***/ }),
-
-/***/ "vscode":
-/*!*************************!*\
-  !*** external "vscode" ***!
-  \*************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("vscode");
-
-/***/ })
-
-/******/ 	});
-/************************************************************************/
-/******/ 	// The module cache
-/******/ 	var __webpack_module_cache__ = {};
-/******/ 	
-/******/ 	// The require function
-/******/ 	function __webpack_require__(moduleId) {
-/******/ 		// Check if module is in cache
-/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
-/******/ 		if (cachedModule !== undefined) {
-/******/ 			return cachedModule.exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = __webpack_module_cache__[moduleId] = {
-/******/ 			// no module.id needed
-/******/ 			// no module.loaded needed
-/******/ 			exports: {}
-/******/ 		};
-/******/ 	
-/******/ 		// Execute the module function
-/******/ 		__webpack_modules__[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-/******/ 	
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
-/******/ 	
-/************************************************************************/
-/******/ 	
-/******/ 	// startup
-/******/ 	// Load entry module and return exports
-/******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __webpack_require__("./source/extension.ts");
-/******/ 	module.exports = __webpack_exports__;
-/******/ 	
-/******/ })()
-;
 //# sourceMappingURL=extension.js.map

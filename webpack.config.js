@@ -12,15 +12,13 @@ const config = {
   entry: 
   {
     configViewer: './source/view/app/index.tsx',
-    extension: './source/extension.ts'
   }, // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
   output: {
     // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
     path: path.resolve(__dirname, 'dist'),
-    filename: '[name].js',
-    libraryTarget: 'commonjs2'
+    filename: '[name].js'
   },
-  devtool: 'nosources-source-map',
+  devtool: 'eval-source-map',
   externals: {
     vscode: 'commonjs vscode' // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
     // modules added here also need to be added in the .vsceignore file

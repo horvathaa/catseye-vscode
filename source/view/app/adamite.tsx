@@ -1,5 +1,6 @@
 import * as React from "react";
 import Annotation from "../../extension";
+import './styles/annotation.css';
 
 interface IConfigProps {
   vscode: any;
@@ -18,7 +19,6 @@ export default class AdamitePanel extends React.Component<
     super(props);
 
     let initialData = this.props.initialData;
-    console.log('init', initialData)
 
     let oldState = this.props.vscode.getState();
     if (oldState) {
@@ -31,20 +31,26 @@ export default class AdamitePanel extends React.Component<
   
 
   render() {
-    
     return (
       <React.Fragment>
-        <h1>Hello World</h1>
-        <div>
+        <h1>Your Annotations</h1>
+        <ul style={{ margin: 0, padding: '0px 0px 0px 0px' }}>
           {this.props.initialData.map((anno) => {
-            console.log('anno', anno);
-            return(
-              <li>
-                {anno.anchorText}
+            return (
+              <li className="AnnotationContainer">
+                <div>
+                  Code: {anno.anchorText}
+                </div>
+                <div>
+                  Annotation: {anno.annotation}
+                </div>
+                <div>
+                  Location: Line {anno.startLine + 1} to Line {anno.endLine + 1}
+                </div>
               </li>
             )
           })}
-          </div>
+        </ul>
       </React.Fragment>
     );
   }

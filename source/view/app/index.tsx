@@ -8,11 +8,21 @@ declare global {
   interface Window {
     acquireVsCodeApi(): any;
     initialData: Annotation[];
+    addEventListener(): any;
   }
 }
 
 const vscode = window.acquireVsCodeApi();
-console.log('in index', window.initialData)
+window.addEventListener('message', event => {
+  const message = event.data;
+  switch(message.command) {
+    case 'update': 
+      ReactDOM.render(
+        <AdamitePanel vscode={vscode} initialData={message.payload.annotationList} />, 
+        document.getElementById('root')
+      );
+  }
+})
 
 ReactDOM.render(
   <AdamitePanel vscode={vscode} initialData={window.initialData} />,

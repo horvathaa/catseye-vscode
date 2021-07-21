@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deactivate = exports.activate = void 0;
+exports.deactivate = exports.activate = exports.convertFromJSONtoAnnotationList = void 0;
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 const vscode = require("vscode");
@@ -184,12 +184,21 @@ const translateChanges = (originalStartLine, originalEndLine, originalStartOffse
 function createRangeFromAnnotation(annotation) {
     return new vscode.Range(new vscode.Position(annotation.startLine, annotation.startOffset), new vscode.Position(annotation.endLine, annotation.endOffset));
 }
+const convertFromJSONtoAnnotationList = (json) => {
+    let annotationList = [];
+    JSON.parse(json).forEach((doc) => {
+        annotationList.push(new Annotation(doc.id, doc.filename, doc.anchorText, doc.annotation, doc.anchor.startLine, doc.anchor.endLine, doc.anchor.startOffset, doc.anchor.endOffset, false));
+    });
+    return annotationList;
+};
+exports.convertFromJSONtoAnnotationList = convertFromJSONtoAnnotationList;
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 function activate(context) {
     // let highLighted: vscode.Range[] = [];
     let annotationList = [];
     let copiedAnnotations = [];
+    let view = undefined;
     const overriddenClipboardCopyAction = (textEditor, edit, args) => {
         const annotationsInEditor = annotationList.filter((a) => a.filename === textEditor.document.uri.toString());
         const annosInRange = getAnchorsInRange(textEditor.selection, annotationsInEditor);
@@ -265,6 +274,7 @@ function activate(context) {
                     const ranges = annotationList.map(a => createRangeFromAnnotation(a));
                     (_a = vscode.window.activeTextEditor) === null || _a === void 0 ? void 0 : _a.setDecorations(annotationDecorations, ranges);
                 }
+                view === null || view === void 0 ? void 0 : view.updateDisplay(annotationList);
             }
         }
     });
@@ -319,11 +329,9 @@ function activate(context) {
                 vscode.workspace.applyEdit(wsEdit);
             }
         }
-        console.log('making sidepanel');
         if (vscode.workspace.workspaceFolders) {
-            new ViewLoader_1.default(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
+            view = new ViewLoader_1.default(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
         }
-        console.log('what huh aaaa');
         // })
     });
     context.subscriptions.push(vscode.commands.registerCommand('adamite.sel', () => {

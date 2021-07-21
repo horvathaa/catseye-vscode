@@ -1,16 +1,7 @@
-export interface Annotation {
-    name: string;
-    description: string;
-    anchorText: string;
-    anchorLocation: string
-}
-
-export interface AnnotationList {
-  annotations?: Annotation[]
-}
+import Annotation from '../../extension';
 export interface ICommand {
   action: CommandAction;
-  content: AnnotationList;
+  content: Annotation[];
 }
   
 export enum CommandAction {

@@ -1,0 +1,24 @@
+.AnnotationItem {
+    width: 100%;
+    display: flex;
+    position: relative;
+    /* padding: 15px 15px 5px 15px; */
+    padding: 15px 5px 5px 5px;
+    margin-bottom: 2%;
+  }
+
+.AnnotationContainer {
+    padding: 5px;
+    background: white;
+    box-shadow: 5px 5px 2px #88888866;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    flex: 1;
+    min-width: 0;
+    transition: all 0.1s ease-in;
+    position: relative;
+    list-style-type: none;
+    color: #000;
+}

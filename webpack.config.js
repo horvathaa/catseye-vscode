@@ -37,6 +37,18 @@ const config = {
             loader: 'ts-loader'
           }
         ]
+      },
+      {
+        test:  /\.css$/,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: "style-loader"
+          },
+          {
+            loader: 'css-loader'
+          }
+        ]
       }
     ]
   }

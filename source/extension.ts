@@ -205,6 +205,14 @@ function createRangeFromAnnotation(annotation: Annotation) {
 }
 
 
+export const convertFromJSONtoAnnotationList = (json: string) => {
+	let annotationList: Annotation[] = [];
+	JSON.parse(json).forEach((doc: any) => {
+		annotationList.push(new Annotation(doc.id, doc.filename, doc.anchorText, doc.annotation, doc.anchor.startLine, doc.anchor.endLine, doc.anchor.startOffset, doc.anchor.endOffset, false))
+	})
+	return annotationList;
+}
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -212,6 +220,7 @@ export function activate(context: vscode.ExtensionContext) {
 	
 	let annotationList: Annotation[] = [];
 	let copiedAnnotations: Annotation[] = [];
+	let view: ViewLoader | undefined = undefined;
 
 	const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
 		const annotationsInEditor = annotationList.filter((a: Annotation) => a.filename === textEditor.document.uri.toString());
@@ -291,6 +300,7 @@ export function activate(context: vscode.ExtensionContext) {
 					const ranges = annotationList.map(a => createRangeFromAnnotation(a));
 					vscode.window.activeTextEditor?.setDecorations(annotationDecorations, ranges);
 				}
+				view?.updateDisplay(annotationList);
 			}
 		}
 		
@@ -356,11 +366,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 		}
 
-		console.log('making sidepanel')
 		if(vscode.workspace.workspaceFolders) {
-			new ViewLoader(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
+			view = new ViewLoader(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
 		}
-		console.log('what huh aaaa')
 		
 		
 		// })
@@ -380,6 +388,8 @@ export function activate(context: vscode.ExtensionContext) {
 		{ 
     		console.log(i + ": " + code[i]); 
 		}
+
+		
 
 		// const updateTab = () => {
 		// 	panel.webview.html = getWebviewContent(text, code);

@@ -3,12 +3,14 @@ import * as fs from "fs";
 import * as path from "path";
 
 
-import { AnnotationList,  ICommand, CommandAction } from "./app/model";
+import { ICommand, CommandAction } from "./app/model";
+import Annotation, { convertFromJSONtoAnnotationList} from '../extension';
 
 export default class ViewLoader {
-  private readonly _panel: vscode.WebviewPanel | undefined;
+  public _panel: vscode.WebviewPanel | undefined;
   private readonly _extensionPath: string;
   private _disposables: vscode.Disposable[] = [];
+  private _annotationList: Annotation[] = [];
 
   constructor(fileUri: vscode.Uri, extensionPath: string) {
     this._extensionPath = extensionPath;
@@ -29,6 +31,7 @@ export default class ViewLoader {
       );
 
       this._panel.webview.html = this.getWebviewContent(annotationList);
+      this._annotationList = annotationList;
 
       this._panel.webview.onDidReceiveMessage(
         (command: ICommand) => {
@@ -44,7 +47,7 @@ export default class ViewLoader {
     }
   }
 
-  private getWebviewContent(annotationList: AnnotationList): string {
+  private getWebviewContent(annotationList: Annotation[]): string {
     // Local path to main script run in the webview
     const reactAppPathOnDisk = vscode.Uri.file(
       path.join(this._extensionPath, "dist", "configViewer.js")
@@ -80,10 +83,25 @@ export default class ViewLoader {
     </html>`;
   }
 
-  private getFileContent(fileUri: vscode.Uri): AnnotationList | undefined {
+  public updateDisplay(annotationList: Annotation[]) {
+    if(this._annotationList !== annotationList) {
+      this._annotationList = annotationList;
+      if(this._panel) {
+        this._panel.webview.postMessage({
+          command: 'update',
+          payload: {
+            annotationList: this._annotationList
+          }
+        })
+      }
+      
+    }
+  }
+
+  private getFileContent(fileUri: vscode.Uri): Annotation[] | undefined {
     if (fs.existsSync(fileUri.fsPath + '/test.json')) {
       let content = fs.readFileSync(fileUri.fsPath + '/test.json', "utf8");
-      let annotationList: AnnotationList = JSON.parse(content);
+      let annotationList: Annotation[] = convertFromJSONtoAnnotationList(content);
       console.log('annotationList', annotationList);
 
       return annotationList;
@@ -91,7 +109,7 @@ export default class ViewLoader {
     return undefined;
   }
 
-  private saveFileContent(fileUri: vscode.Uri, annotationList: AnnotationList) {
+  private saveFileContent(fileUri: vscode.Uri, annotationList: Annotation[]) {
     if (fs.existsSync(fileUri.fsPath + '/test.json')) {
       let content: string = JSON.stringify(annotationList);
       fs.writeFileSync(fileUri.fsPath + '/test.json', content);

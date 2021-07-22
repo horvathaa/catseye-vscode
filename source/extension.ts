@@ -248,6 +248,8 @@ export function activate(context: vscode.ExtensionContext) {
 		} );
 	});
 
+	
+
 	vscode.workspace.onDidSaveTextDocument((TextDocument: vscode.TextDocument) => {
 		if(vscode.workspace.workspaceFolders) handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextDocument.uri.toString());
 	});
@@ -368,6 +370,19 @@ export function activate(context: vscode.ExtensionContext) {
 
 		if(vscode.workspace.workspaceFolders) {
 			view = new ViewLoader(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
+			if(view) {
+				 view._panel?.webview.onDidReceiveMessage((message) => {
+					 switch(message.command) {
+						 case 'scrollInEditor':
+							 const anno = annotationList.filter(anno => anno.id === message.id)[0];
+							 if(anno) {
+								 const range = createRangeFromAnnotation(anno);
+								 const text = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === anno.filename)[0];
+								 text.revealRange(range, 1);
+							 }
+					 }
+				 })
+			}
 		}
 		
 		

@@ -13,6 +13,7 @@ declare global {
 }
 
 const vscode = window.acquireVsCodeApi();
+
 window.addEventListener('message', event => {
   const message = event.data;
   switch(message.command) {

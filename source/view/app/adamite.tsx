@@ -28,7 +28,12 @@ export default class AdamitePanel extends React.Component<
     }
   }
 
-  
+  scrollInEditor = (annoId: any) => {
+    this.props.vscode.postMessage({
+      command: 'scrollInEditor',
+      id: annoId
+    })
+  }  
 
   render() {
     return (
@@ -37,7 +42,7 @@ export default class AdamitePanel extends React.Component<
         <ul style={{ margin: 0, padding: '0px 0px 0px 0px' }}>
           {this.props.initialData.map((anno) => {
             return (
-              <li className="AnnotationContainer">
+              <li className="AnnotationContainer" onClick={() => this.scrollInEditor(anno.id)}>
                 <div>
                   Code: {anno.anchorText}
                 </div>

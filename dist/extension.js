@@ -300,6 +300,7 @@ function activate(context) {
     });
     let activeEditor = vscode.window.activeTextEditor; // amber: this value does not update if the user changes active editors so we shouldn't use it OR should update code to keep this value update
     let disposable = vscode.commands.registerCommand('adamite.helloWorld', () => {
+        var _a;
         vscode.window.showInformationMessage('Hello World from Adamite!');
         let filePath = "";
         if (vscode.workspace.workspaceFolders !== undefined) {
@@ -322,7 +323,7 @@ function activate(context) {
                 });
             }
             // file does not exist - user either deleted it or this is their first time making an annotation
-            catch (_a) {
+            catch (_b) {
                 // console.log('file does not exist');
                 const wsEdit = new vscode.WorkspaceEdit();
                 wsEdit.createFile(uri);
@@ -331,6 +332,20 @@ function activate(context) {
         }
         if (vscode.workspace.workspaceFolders) {
             view = new ViewLoader_1.default(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
+            if (view) {
+                (_a = view._panel) === null || _a === void 0 ? void 0 : _a.webview.onDidReceiveMessage((message) => {
+                    var _a;
+                    switch (message.command) {
+                        case 'scrollInEditor':
+                            const anno = annotationList.filter(anno => anno.id === message.id)[0];
+                            if (anno) {
+                                const range = createRangeFromAnnotation(anno);
+                                const text = (_a = vscode.window.visibleTextEditors) === null || _a === void 0 ? void 0 : _a.filter(doc => doc.document.uri.toString() === anno.filename)[0];
+                                text.revealRange(range, 1);
+                            }
+                    }
+                });
+            }
         }
         // })
     });

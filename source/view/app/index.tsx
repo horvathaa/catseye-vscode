@@ -22,6 +22,8 @@ window.addEventListener('message', event => {
         <AdamitePanel vscode={vscode} initialData={message.payload.annotationList} />, 
         document.getElementById('root')
       );
+      return;
+
   }
 })
 

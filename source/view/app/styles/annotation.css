@@ -22,3 +22,10 @@
     list-style-type: none;
     color: #000;
 }
+
+code {
+  color: var(--vscode-editor-foreground) !important;
+  font-family: var(--vscode-editor-font-family) !important;
+  font-weight: var(--vscode-editor-font-weight) !important;
+  font-size: var(--vscode-editor-font-size) !important;
+}

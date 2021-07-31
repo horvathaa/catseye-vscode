@@ -3,11 +3,11 @@ import * as ReactDOM from "react-dom";
 
 import AdamitePanel from "./adamite";
 import Annotation from '../../extension'
-
 declare global {
   interface Window {
     acquireVsCodeApi(): any;
-    initialData: Annotation[];
+    data: Annotation[];
+    selection: string;
     addEventListener(): any;
   }
 }
@@ -19,15 +19,23 @@ window.addEventListener('message', event => {
   switch(message.command) {
     case 'update': 
       ReactDOM.render(
-        <AdamitePanel vscode={vscode} initialData={message.payload.annotationList} />, 
+        <AdamitePanel vscode={vscode} data={message.payload.annotationList} selection={""} />, 
         document.getElementById('root')
       );
+      return;
+    case 'newAnno':
+      ReactDOM.render(
+        <AdamitePanel vscode={vscode} data={message.payload.annotationList} selection={message.payload.selection} />, 
+        document.getElementById('root')
+      );
+      return;
+    default:
       return;
 
   }
 })
 
 ReactDOM.render(
-  <AdamitePanel vscode={vscode} initialData={window.initialData} />,
+  <AdamitePanel vscode={vscode} data={window.data} selection={""} />,
   document.getElementById("root")
 );

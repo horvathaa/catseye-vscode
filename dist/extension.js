@@ -20,6 +20,7 @@ const ViewLoader_1 = require("./view/ViewLoader");
 // also clean up old annotations that don't exist because their range is no longer valid
 // add anchor text as property - set using activeEditor.document.getText(activeEditor.selection) then in paste event check if there's something
 // in copy keyboard and if theres a match between the pasted text and the anchor text I think??
+var shiki = require('shiki');
 class Annotation {
     constructor(id, filename, anchorText, annotation, anchorStartLine, anchorEndLine, anchorStartOffset, anchorEndOffset, toDelete) {
         this.id = id;
@@ -199,6 +200,7 @@ function activate(context) {
     let annotationList = [];
     let copiedAnnotations = [];
     let view = undefined;
+    let tempAnno = null;
     const overriddenClipboardCopyAction = (textEditor, edit, args) => {
         const annotationsInEditor = annotationList.filter((a) => a.filename === textEditor.document.uri.toString());
         const annosInRange = getAnchorsInRange(textEditor.selection, annotationsInEditor);
@@ -235,9 +237,9 @@ function activate(context) {
     vscode.workspace.onDidChangeTextDocument((e) => {
         var _a;
         const currentAnnotations = annotationList.filter(a => a.filename === e.document.uri.toString());
-        if (!currentAnnotations.length) {
+        if (!currentAnnotations.length && !tempAnno) {
             return;
-        }
+        } // no annotations are affected by this change
         else {
             for (const change of e.contentChanges) {
                 const startLine = change.range.start.line;
@@ -247,7 +249,6 @@ function activate(context) {
                 const linesInRange = endLine - startLine;
                 const linesInserted = change.text.split("\n").length - 1;
                 const diff = linesInserted - linesInRange;
-                console.log('e', e);
                 // check to see if user pasted a copied annotation... 
                 let rangeAdjustedAnnotations = [];
                 let didPaste = false;
@@ -269,6 +270,8 @@ function activate(context) {
                     }
                 }
                 const translatedAnnotations = currentAnnotations.map(a => translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), a.id, change.text)).filter(a => !a.toDelete);
+                // if the user is on the process of creating an annotation, update that annotation as well
+                tempAnno = tempAnno ? translateChanges(tempAnno.startLine, tempAnno.endLine, tempAnno.startOffset, tempAnno.endOffset, startLine, endLine, startOffset, endOffset, change.text.length, diff, change.rangeLength, tempAnno.anchorText, tempAnno.annotation, tempAnno.filename.toString(), tempAnno.id, change.text) : null;
                 annotationList = translatedAnnotations.concat(annotationList.filter(a => a.filename !== e.document.uri.toString()), rangeAdjustedAnnotations);
                 if (didPaste && vscode.window.activeTextEditor) {
                     const ranges = annotationList.map(a => createRangeFromAnnotation(a));
@@ -279,7 +282,9 @@ function activate(context) {
         }
     });
     // console.log('Congratulations, your extension "adamite" is now active!');
-    let code = [];
+    // let code: string[] = [];
+    // consider changing selection command name to "Annotate" (e.g., move sel code here) as this is
+    // a more accurate name
     context.subscriptions.push(vscode.commands.registerCommand('adamite.annotate', () => {
         // Create and show a new webview
     }));
@@ -301,7 +306,7 @@ function activate(context) {
     let activeEditor = vscode.window.activeTextEditor; // amber: this value does not update if the user changes active editors so we shouldn't use it OR should update code to keep this value update
     let disposable = vscode.commands.registerCommand('adamite.helloWorld', () => {
         var _a;
-        vscode.window.showInformationMessage('Hello World from Adamite!');
+        // vscode.window.showInformationMessage('Hello World from Adamite!');
         let filePath = "";
         if (vscode.workspace.workspaceFolders !== undefined) {
             filePath = vscode.workspace.workspaceFolders[0].uri.path + '/test.json';
@@ -330,24 +335,68 @@ function activate(context) {
                 vscode.workspace.applyEdit(wsEdit);
             }
         }
+        // VIEW LISTENERS //
         if (vscode.workspace.workspaceFolders) {
             view = new ViewLoader_1.default(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
             if (view) {
                 (_a = view._panel) === null || _a === void 0 ? void 0 : _a.webview.onDidReceiveMessage((message) => {
-                    var _a;
+                    var _a, _b;
                     switch (message.command) {
-                        case 'scrollInEditor':
+                        // get anno and scroll to it in the editor
+                        case 'scrollInEditor': {
                             const anno = annotationList.filter(anno => anno.id === message.id)[0];
                             if (anno) {
                                 const range = createRangeFromAnnotation(anno);
                                 const text = (_a = vscode.window.visibleTextEditors) === null || _a === void 0 ? void 0 : _a.filter(doc => doc.document.uri.toString() === anno.filename)[0];
                                 text.revealRange(range, 1);
                             }
+                            break;
+                        }
+                        case 'createAnnotation': {
+                            // finalize annotation creation
+                            if (tempAnno) {
+                                tempAnno.annotation = message.anno;
+                                annotationList.push(tempAnno);
+                                const text = (_b = vscode.window.visibleTextEditors) === null || _b === void 0 ? void 0 : _b.filter(doc => doc.document.uri.toString() === (tempAnno === null || tempAnno === void 0 ? void 0 : tempAnno.filename))[0];
+                                tempAnno = null;
+                                view === null || view === void 0 ? void 0 : view.updateDisplay(annotationList);
+                                const filenames = [...new Set(annotationList.map(a => a.filename))];
+                                // shiki.getHighlighter({theme: 'nord'}).then((highlighter: any) => {
+                                // 	const html = highlighter.codeToHtml(annotationList[0].anchorText, annotationList[0].filename.toString().match(/\.[0-9a-z]+$/i))[0].replace(".", "")
+                                // 	console.log('html', html);
+                                // 	if(html) return html;
+                                // })
+                                // add highlight for new anno
+                                if (annotationList.length && text !== undefined && filenames.includes(text.document.uri.toString())) {
+                                    let ranges = annotationList
+                                        .map(a => { return { annotation: a.annotation, filename: a.filename, range: createRangeFromAnnotation(a) }; })
+                                        .filter(r => r.filename === (text === null || text === void 0 ? void 0 : text.document.uri.toString()))
+                                        .map(a => a.range);
+                                    if (ranges.length) {
+                                        try {
+                                            text.setDecorations(annotationDecorations, ranges);
+                                        }
+                                        catch (error) {
+                                            console.log('couldnt highlight', error);
+                                        }
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                        case 'cancelAnnotation': {
+                            // reset temp object and re-render
+                            tempAnno = null;
+                            view === null || view === void 0 ? void 0 : view.updateDisplay(annotationList);
+                            break;
+                        }
+                        default: {
+                            break;
+                        }
                     }
                 });
             }
         }
-        // })
     });
     context.subscriptions.push(vscode.commands.registerCommand('adamite.sel', () => {
         const { activeTextEditor } = vscode.window;
@@ -356,70 +405,15 @@ function activate(context) {
             return;
         }
         const text = activeTextEditor.document.getText(activeTextEditor.selection);
-        //console.log(text);
-        code.push(text);
-        for (var i = 0; i < code.length; i++) {
-            console.log(i + ": " + code[i]);
-        }
-        // const updateTab = () => {
-        // 	panel.webview.html = getWebviewContent(text, code);
-        // }
-        // updateTab();
-        //var fl = activeTextEditor.document.lineAt(activeTextEditor.selection.active.line);
-        //var el = activeTextEditor.document.lineAt(activeTextEditor.selection.active.line);
-        var r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
-        // highLighted.push(r); - aren't using highlighted anymore
-        annotationList.push(new Annotation(uniqid(), activeTextEditor.document.uri.toString(), text, 'test', r.start.line, r.end.line, r.start.character, r.end.character, false));
-        const filenames = [...new Set(annotationList.map(a => a.filename))];
-        if (annotationList.length && vscode.window.activeTextEditor !== undefined && filenames.includes(vscode.window.activeTextEditor.document.uri.toString())) {
-            let ranges = annotationList
-                .map(a => { return { annotation: a.annotation, filename: a.filename, range: createRangeFromAnnotation(a) }; })
-                .filter(r => { var _a; return r.filename === ((_a = vscode.window.activeTextEditor) === null || _a === void 0 ? void 0 : _a.document.uri.toString()); })
-                .map(a => a.range);
-            if (ranges.length) {
-                try {
-                    vscode.window.activeTextEditor.setDecorations(annotationDecorations, ranges);
-                }
-                catch (error) {
-                    console.log('couldnt highlight', error);
-                }
-            }
-        }
+        const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
+        tempAnno = new Annotation(uniqid(), activeTextEditor.document.uri.toString(), text, 'test', r.start.line, r.end.line, r.start.character, r.end.character, false);
+        view === null || view === void 0 ? void 0 : view.createNewAnno(text, annotationList);
     }));
     context.subscriptions.push(disposable);
     context.subscriptions.push(clipboardDisposable);
     context.subscriptions.push(disposableEventListener);
 }
 exports.activate = activate;
-// function getWebviewContent(sel: string, c:string[]) {
-// 	console.log('sel', sel);
-// 	return `<!DOCTYPE html>
-//   <html lang="en">
-//   <head>
-// 	  <meta charset="UTF-8">
-// 	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-// 	  <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
-// 	  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
-//   </head>
-//   <body>
-// 	  <h1>Welcome to the annotation tab, where you can select code and you will see it appear here.</h1>
-// 	  <div id="root></div>
-// 	  <div id = "annotations">
-// 	  	<h2 id = "lines-of-code-counter">No code selected!</h2>
-// 	  </div>
-// 	  <script>
-// 	  	document.getElementById('lines-of-code-counter').textContent = "${sel}";
-// 		var tag = document.createElement("p");
-// 		tag.textContent = "${sel}";
-// 		document.getElementById("annotations").appendChild(tag);
-// 		var x = document.createElement("INPUT");
-// 		x.setAttribute("type", "text");
-//   		x.setAttribute("value", "Start Annotating!");
-// 		document.getElementById("annotations").appendChild(x);
-// 	  </script>
-//   </body>
-//   </html>`;
-//   }
 // // this method is called when your extension is deactivated
 function deactivate() { }
 exports.deactivate = deactivate;

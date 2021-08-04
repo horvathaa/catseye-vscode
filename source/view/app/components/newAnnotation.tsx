@@ -1,6 +1,13 @@
 import * as React from "react";
 import '../styles/annotation.css';
 
+interface SynProps {
+    html: string;
+  }
+  
+  const Syntax: React.FC<SynProps> = ({ html }) => {
+    return ( <code dangerouslySetInnerHTML={{__html: html}}></code> );
+  }
 interface Props {
     selection: string;
     vscode: any;
@@ -26,7 +33,7 @@ const NewAnnotation: React.FC<Props> = ({ selection, vscode }) => {
 
     return (
         <div className="AnnotationContainer" >
-            Code: {selection}
+            <Syntax html={selection} />
             <textarea id="newAnno" onKeyDown={(e) => {
                             if(e.key === "Enter") {
                                 createAnnotation();

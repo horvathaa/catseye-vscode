@@ -22,7 +22,7 @@ const ViewLoader_1 = require("./view/ViewLoader");
 // in copy keyboard and if theres a match between the pasted text and the anchor text I think??
 var shiki = require('shiki');
 class Annotation {
-    constructor(id, filename, anchorText, annotation, anchorStartLine, anchorEndLine, anchorStartOffset, anchorEndOffset, toDelete) {
+    constructor(id, filename, anchorText, annotation, anchorStartLine, anchorEndLine, anchorStartOffset, anchorEndOffset, toDelete, html) {
         this.id = id;
         this.filename = filename;
         this.anchorText = anchorText;
@@ -32,9 +32,18 @@ class Annotation {
         this.startOffset = anchorStartOffset;
         this.endOffset = anchorEndOffset;
         this.toDelete = toDelete;
+        this.html = html;
     }
 }
 exports.default = Annotation;
+const getShikiCodeHighlighting = (filename, anchorText) => __awaiter(void 0, void 0, void 0, function* () {
+    const highlighter = yield shiki.getHighlighter({ theme: 'dark-plus' });
+    const regexMatch = filename.match(/\.[0-9a-z]+$/i);
+    const pl = regexMatch ? regexMatch[0].replace(".", "") : "js";
+    const html = highlighter.codeToHtml(anchorText, pl);
+    // either return the marked-up HTML or just return the basic anchor text
+    return html ? html : anchorText;
+});
 const handleSaveCloseEvent = (annotationList, filePath, currentFile) => {
     const annotationsInCurrentFile = annotationList.filter(a => a.filename === currentFile);
     if (annotationsInCurrentFile.length && vscode.workspace.workspaceFolders !== undefined) {
@@ -53,7 +62,8 @@ const writeAnnotationsToFile = (annotationList, filePath) => __awaiter(void 0, v
                 endLine: a.endLine,
                 startOffset: a.startOffset,
                 endOffset: a.endOffset
-            }
+            },
+            html: a.html
         };
     });
     if (vscode.workspace.workspaceFolders !== undefined) {
@@ -124,18 +134,18 @@ const splitRange = (range, annotationList, filename, changeText) => {
     const rangeAdjustedAnnotations = annotationList.map(a => {
         const index = annoRanges.findIndex(r => r.id === a.id);
         const annoRange = annoRanges[index].range;
-        return new Annotation(uniqid(), filename, a.anchorText, a.annotation, annoRange.start.line, annoRange.end.line, annoRange.start.character, annoRange.end.character, false);
+        return new Annotation(uniqid(), filename, a.anchorText, a.annotation, annoRange.start.line, annoRange.end.line, annoRange.start.character, annoRange.end.character, false, a.html);
     });
     return rangeAdjustedAnnotations;
 };
-const translateChanges = (originalStartLine, originalEndLine, originalStartOffset, originalEndOffset, startLine, endLine, startOffset, endOffset, textLength, diff, rangeLength, anchorText, annotation, filename, id, text) => {
+const translateChanges = (originalStartLine, originalEndLine, originalStartOffset, originalEndOffset, startLine, endLine, startOffset, endOffset, textLength, diff, rangeLength, anchorText, annotation, filename, id, text, html) => {
     let newRange = { startLine: originalStartLine, endLine: originalEndLine, startOffset: originalStartOffset, endOffset: originalEndOffset };
     const startAndEndLineAreSame = originalStartLine === startLine && originalEndLine === endLine && !diff;
     const originalRange = new vscode.Range(new vscode.Position(originalStartLine, originalStartOffset), new vscode.Position(originalEndLine, originalEndOffset));
     const changeRange = new vscode.Range(new vscode.Position(startLine, startOffset), new vscode.Position(endLine, endOffset));
     // user deleted the anchor
     if (!textLength && changeRange.contains(originalRange)) {
-        return new Annotation(uniqid(), filename, anchorText, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, true);
+        return new Annotation(uniqid(), filename, anchorText, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, true, html);
     }
     // user added lines above start of range
     if (originalStartLine > startLine && diff) {
@@ -170,7 +180,7 @@ const translateChanges = (originalStartLine, originalEndLine, originalStartOffse
     if (originalStartLine < startLine && endLine < originalEndLine && diff) {
         newRange.endLine = originalEndLine + diff;
     }
-    return new Annotation(id, filename, anchorText, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, false);
+    return new Annotation(id, filename, anchorText, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, false, html);
 };
 // add line above range start = startLine++ and endLine++
 // delete line above range start = startLine-- and endLine--
@@ -188,7 +198,7 @@ function createRangeFromAnnotation(annotation) {
 const convertFromJSONtoAnnotationList = (json) => {
     let annotationList = [];
     JSON.parse(json).forEach((doc) => {
-        annotationList.push(new Annotation(doc.id, doc.filename, doc.anchorText, doc.annotation, doc.anchor.startLine, doc.anchor.endLine, doc.anchor.startOffset, doc.anchor.endOffset, false));
+        annotationList.push(new Annotation(doc.id, doc.filename, doc.anchorText, doc.annotation, doc.anchor.startLine, doc.anchor.endLine, doc.anchor.startOffset, doc.anchor.endOffset, false, doc.html));
     });
     return annotationList;
 };
@@ -263,15 +273,15 @@ function activate(context) {
                         const computedEndOffset = change.text.substr(change.text.lastIndexOf('\n') + 1).length;
                         const actuallyUsefulRange = new vscode.Range(startLine, startOffset, startLine + numLines, computedEndOffset);
                         rangeAdjustedAnnotations = copiedAnnotations.length > 1 ? splitRange(actuallyUsefulRange, copiedAnnotations, e.document.uri.toString(), change.text) :
-                            [new Annotation(uniqid(), e.document.uri.toString(), change.text, 'test', startLine, actuallyUsefulRange.end.line, startOffset, actuallyUsefulRange.end.character, false)];
+                            [new Annotation(uniqid(), e.document.uri.toString(), change.text, copiedAnnotations[0].annotation, startLine, actuallyUsefulRange.end.line, startOffset, actuallyUsefulRange.end.character, false, copiedAnnotations[0].html)];
                         // annotationList = annotationList.concat(rangeAdjustedAnnotations);
                         didPaste = true;
                         // copiedAnnotations = []; // we pasted?
                     }
                 }
-                const translatedAnnotations = currentAnnotations.map(a => translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), a.id, change.text)).filter(a => !a.toDelete);
+                const translatedAnnotations = currentAnnotations.map(a => translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), a.id, change.text, a.html)).filter(a => !a.toDelete);
                 // if the user is on the process of creating an annotation, update that annotation as well
-                tempAnno = tempAnno ? translateChanges(tempAnno.startLine, tempAnno.endLine, tempAnno.startOffset, tempAnno.endOffset, startLine, endLine, startOffset, endOffset, change.text.length, diff, change.rangeLength, tempAnno.anchorText, tempAnno.annotation, tempAnno.filename.toString(), tempAnno.id, change.text) : null;
+                tempAnno = tempAnno ? translateChanges(tempAnno.startLine, tempAnno.endLine, tempAnno.startOffset, tempAnno.endOffset, startLine, endLine, startOffset, endOffset, change.text.length, diff, change.rangeLength, tempAnno.anchorText, tempAnno.annotation, tempAnno.filename.toString(), tempAnno.id, change.text, tempAnno.html) : null;
                 annotationList = translatedAnnotations.concat(annotationList.filter(a => a.filename !== e.document.uri.toString()), rangeAdjustedAnnotations);
                 if (didPaste && vscode.window.activeTextEditor) {
                     const ranges = annotationList.map(a => createRangeFromAnnotation(a));
@@ -316,7 +326,7 @@ function activate(context) {
                 vscode.workspace.openTextDocument(filePath).then(doc => {
                     let docText = JSON.parse(doc.getText());
                     docText.forEach((doc) => {
-                        annotationList.push(new Annotation(doc.id, doc.filename, doc.anchorText, doc.annotation, doc.anchor.startLine, doc.anchor.endLine, doc.anchor.startOffset, doc.anchor.endOffset, false));
+                        annotationList.push(new Annotation(doc.id, doc.filename, doc.anchorText, doc.annotation, doc.anchor.startLine, doc.anchor.endLine, doc.anchor.startOffset, doc.anchor.endOffset, false, doc.html));
                     });
                     const filenames = [...new Set(annotationList.map(a => a.filename))];
                     if (annotationList.length && activeEditor !== undefined && filenames.includes(activeEditor === null || activeEditor === void 0 ? void 0 : activeEditor.document.uri.toString())) {
@@ -340,7 +350,7 @@ function activate(context) {
             view = new ViewLoader_1.default(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
             if (view) {
                 (_a = view._panel) === null || _a === void 0 ? void 0 : _a.webview.onDidReceiveMessage((message) => {
-                    var _a, _b;
+                    var _a;
                     switch (message.command) {
                         // get anno and scroll to it in the editor
                         case 'scrollInEditor': {
@@ -354,34 +364,35 @@ function activate(context) {
                         }
                         case 'createAnnotation': {
                             // finalize annotation creation
-                            if (tempAnno) {
-                                tempAnno.annotation = message.anno;
-                                annotationList.push(tempAnno);
-                                const text = (_b = vscode.window.visibleTextEditors) === null || _b === void 0 ? void 0 : _b.filter(doc => doc.document.uri.toString() === (tempAnno === null || tempAnno === void 0 ? void 0 : tempAnno.filename))[0];
-                                tempAnno = null;
-                                view === null || view === void 0 ? void 0 : view.updateDisplay(annotationList);
-                                const filenames = [...new Set(annotationList.map(a => a.filename))];
-                                // shiki.getHighlighter({theme: 'nord'}).then((highlighter: any) => {
-                                // 	const html = highlighter.codeToHtml(annotationList[0].anchorText, annotationList[0].filename.toString().match(/\.[0-9a-z]+$/i))[0].replace(".", "")
-                                // 	console.log('html', html);
-                                // 	if(html) return html;
-                                // })
-                                // add highlight for new anno
-                                if (annotationList.length && text !== undefined && filenames.includes(text.document.uri.toString())) {
-                                    let ranges = annotationList
-                                        .map(a => { return { annotation: a.annotation, filename: a.filename, range: createRangeFromAnnotation(a) }; })
-                                        .filter(r => r.filename === (text === null || text === void 0 ? void 0 : text.document.uri.toString()))
-                                        .map(a => a.range);
-                                    if (ranges.length) {
-                                        try {
-                                            text.setDecorations(annotationDecorations, ranges);
-                                        }
-                                        catch (error) {
-                                            console.log('couldnt highlight', error);
+                            if (!tempAnno)
+                                return;
+                            getShikiCodeHighlighting(tempAnno.filename.toString(), tempAnno.anchorText).then(html => {
+                                var _a;
+                                if (tempAnno) {
+                                    tempAnno.annotation = message.anno;
+                                    tempAnno.html = html;
+                                    annotationList.push(tempAnno);
+                                    const text = (_a = vscode.window.visibleTextEditors) === null || _a === void 0 ? void 0 : _a.filter(doc => doc.document.uri.toString() === (tempAnno === null || tempAnno === void 0 ? void 0 : tempAnno.filename))[0];
+                                    tempAnno = null;
+                                    view === null || view === void 0 ? void 0 : view.updateDisplay(annotationList);
+                                    const filenames = [...new Set(annotationList.map(a => a.filename))];
+                                    // add highlight for new anno
+                                    if (annotationList.length && text !== undefined && filenames.includes(text.document.uri.toString())) {
+                                        let ranges = annotationList
+                                            .map(a => { return { annotation: a.annotation, filename: a.filename, range: createRangeFromAnnotation(a) }; })
+                                            .filter(r => r.filename === (text === null || text === void 0 ? void 0 : text.document.uri.toString()))
+                                            .map(a => a.range);
+                                        if (ranges.length) {
+                                            try {
+                                                text.setDecorations(annotationDecorations, ranges);
+                                            }
+                                            catch (error) {
+                                                console.log('couldnt highlight', error);
+                                            }
                                         }
                                     }
                                 }
-                            }
+                            });
                             break;
                         }
                         case 'cancelAnnotation': {
@@ -406,8 +417,10 @@ function activate(context) {
         }
         const text = activeTextEditor.document.getText(activeTextEditor.selection);
         const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
-        tempAnno = new Annotation(uniqid(), activeTextEditor.document.uri.toString(), text, 'test', r.start.line, r.end.line, r.start.character, r.end.character, false);
-        view === null || view === void 0 ? void 0 : view.createNewAnno(text, annotationList);
+        getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then(html => {
+            tempAnno = new Annotation(uniqid(), activeTextEditor.document.uri.toString(), text, 'test', r.start.line, r.end.line, r.start.character, r.end.character, false, html);
+            view === null || view === void 0 ? void 0 : view.createNewAnno(html, annotationList);
+        });
     }));
     context.subscriptions.push(disposable);
     context.subscriptions.push(clipboardDisposable);

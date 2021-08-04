@@ -3,7 +3,13 @@ import '../styles/annotation.css';
 import Annotation from '../../../extension';
 import { useEffect } from "react";
 
-var shiki = require('shiki');
+interface SynProps {
+  html: string;
+}
+
+const Syntax: React.FC<SynProps> = ({ html }) => {
+  return ( <code dangerouslySetInnerHTML={{__html: html}}></code> );
+}
 
 interface Props {
   annotation: Annotation;
@@ -17,7 +23,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode }) => {
       if(JSON.stringify(anno) !== JSON.stringify(annotation)) {
         setAnno(annotation);
       }
-    }, [anno]);
+    });
 
     const scrollInEditor = () => {
         vscode.postMessage({
@@ -32,13 +38,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode }) => {
             <div>
                 <li className="AnnotationContainer" onClick={() => scrollInEditor()}>
                   <div>
-                    <code>
-                      {/* {shiki.getHighlighter({theme: 'nord'}).then((highlighter: any) => {
-                        const html = highlighter.codeToHtml(anno.anchorText, anno.filename.toString().match(/\.[0-9a-z]+$/i))[0]
-                        if(html) return html;
-                      })} */}
-                      {anno.anchorText}
-                    </code>
+                    <Syntax html={anno.html} />
                   </div>
                   <div>
                     Annotation: {anno.annotation}

@@ -36,6 +36,20 @@ class Annotation {
     }
 }
 exports.default = Annotation;
+// sort annotations by files then by range (so annotations on the top of the list will be
+// annotations that are in currently-open file and who are at the top of the file)
+const sortAnnotationsByLocation = (annotationList, filename) => {
+    annotationList.sort((a, b) => {
+        return b.startLine - a.startLine === 0 ? b.startOffset - a.startOffset : b.startLine - a.startLine;
+    });
+    annotationList.sort((a, b) => {
+        // if a is the same as the filename and b isn't OR if a and b are both pointing at the same file, keep the order
+        // else move annotation b before a
+        const order = (a.filename === filename && b.filename !== filename) || (a.filename === b.filename && a.filename === filename) ? -1 : 1;
+        return order;
+    });
+    return annotationList;
+};
 const getShikiCodeHighlighting = (filename, anchorText) => __awaiter(void 0, void 0, void 0, function* () {
     const highlighter = yield shiki.getHighlighter({ theme: 'dark-plus' });
     const regexMatch = filename.match(/\.[0-9a-z]+$/i);
@@ -106,7 +120,6 @@ const splitRange = (range, annotationList, filename, changeText) => {
         return a.range.start.line - b.range.start.line;
     });
     annoRanges = annoRanges.map((a, index) => {
-        console.log('a', a);
         let r = a.range;
         let numLines = r.end.line - r.start.line;
         let startOffset = r.start.character;
@@ -287,6 +300,7 @@ function activate(context) {
                     const ranges = annotationList.map(a => createRangeFromAnnotation(a));
                     (_a = vscode.window.activeTextEditor) === null || _a === void 0 ? void 0 : _a.setDecorations(annotationDecorations, ranges);
                 }
+                annotationList = sortAnnotationsByLocation(annotationList, e.document.uri.toString());
                 view === null || view === void 0 ? void 0 : view.updateDisplay(annotationList);
             }
         }
@@ -328,6 +342,8 @@ function activate(context) {
                     docText.forEach((doc) => {
                         annotationList.push(new Annotation(doc.id, doc.filename, doc.anchorText, doc.annotation, doc.anchor.startLine, doc.anchor.endLine, doc.anchor.startOffset, doc.anchor.endOffset, false, doc.html));
                     });
+                    // if we have an active editor, sort by that file - else, leave the list
+                    annotationList = activeEditor ? sortAnnotationsByLocation(annotationList, activeEditor === null || activeEditor === void 0 ? void 0 : activeEditor.document.uri.toString()) : annotationList;
                     const filenames = [...new Set(annotationList.map(a => a.filename))];
                     if (annotationList.length && activeEditor !== undefined && filenames.includes(activeEditor === null || activeEditor === void 0 ? void 0 : activeEditor.document.uri.toString())) {
                         let ranges = annotationList.map(a => { return { filename: a.filename, range: createRangeFromAnnotation(a) }; }).filter(r => r.filename === (activeEditor === null || activeEditor === void 0 ? void 0 : activeEditor.document.uri.toString())).map(a => a.range);
@@ -374,6 +390,7 @@ function activate(context) {
                                     annotationList.push(tempAnno);
                                     const text = (_a = vscode.window.visibleTextEditors) === null || _a === void 0 ? void 0 : _a.filter(doc => doc.document.uri.toString() === (tempAnno === null || tempAnno === void 0 ? void 0 : tempAnno.filename))[0];
                                     tempAnno = null;
+                                    annotationList = sortAnnotationsByLocation(annotationList, text.document.uri.toString());
                                     view === null || view === void 0 ? void 0 : view.updateDisplay(annotationList);
                                     const filenames = [...new Set(annotationList.map(a => a.filename))];
                                     // add highlight for new anno

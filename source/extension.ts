@@ -62,7 +62,7 @@ const getShikiCodeHighlighting = async (filename: string, anchorText: string): P
 
 
 const handleSaveCloseEvent = (annotationList: Annotation[], filePath: string, currentFile: string) => {
-	const annotationsInCurrentFile = annotationList.filter(a => a.filename === currentFile);
+	const annotationsInCurrentFile = currentFile !== "all" ? annotationList.filter(a => a.filename === currentFile) : annotationList;
 	if(annotationsInCurrentFile.length && vscode.workspace.workspaceFolders !== undefined) {
 		writeAnnotationsToFile(annotationList, filePath);
 	}
@@ -248,6 +248,7 @@ export function activate(context: vscode.ExtensionContext) {
 	let copiedAnnotations: Annotation[] = [];
 	let view: ViewLoader | undefined = undefined;
 	let tempAnno: Annotation | null = null;
+	let activeEditor = vscode.window.activeTextEditor;
 
 	const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
 		const annotationsInEditor = annotationList.filter((a: Annotation) => a.filename === textEditor.document.uri.toString());
@@ -268,14 +269,27 @@ export function activate(context: vscode.ExtensionContext) {
 		
 		const annotationsToHighlight = annotationList.filter(a => textEditorFileNames.includes(a.filename.toString()))
 		if(!annotationsToHighlight.length) { return };
-		let ranges = annotationsToHighlight.map(a => { return {filename: a.filename, range: createRangeFromAnnotation(a)}});
+		let ranges = annotationsToHighlight.map(a => { return {filename: a.filename, range: createRangeFromAnnotation(a), annotation: a.annotation}});
 		textEditors.forEach(t => {
-			let annos = ranges.filter(r => r.filename === t.document.uri.toString()).map(a => a.range)
-			t.setDecorations(annotationDecorations, annos)
+			// TODO: see if we can change the behavior of markdown string so it has an onclick event to navigate to the annotation
+			const decorationOptions: vscode.DecorationOptions[] = ranges.filter(r => r.filename === t.document.uri.toString()).map(r => { return { range: r.range, hoverMessage: r.annotation } });
+			t.setDecorations(annotationDecorations, decorationOptions)
 		} );
 	});
 
-	
+	vscode.window.onDidChangeActiveTextEditor((TextEditor: vscode.TextEditor | undefined) => {
+		if(vscode.workspace.workspaceFolders) {
+			if(TextEditor) {
+				handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextEditor.document.uri.toString());
+				annotationList = sortAnnotationsByLocation(annotationList, TextEditor.document.uri.toString());
+				view?.updateDisplay(annotationList);
+			}
+			else {
+				handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', "all");
+			}
+		}
+		activeEditor = TextEditor;
+	});
 
 	vscode.workspace.onDidSaveTextDocument((TextDocument: vscode.TextDocument) => {
 		if(vscode.workspace.workspaceFolders) handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextDocument.uri.toString());
@@ -363,11 +377,7 @@ export function activate(context: vscode.ExtensionContext) {
 		
 	});
 
-	let activeEditor = vscode.window.activeTextEditor; // amber: this value does not update if the user changes active editors so we shouldn't use it OR should update code to keep this value update
-
-
 	let disposable = vscode.commands.registerCommand('adamite.helloWorld', () => {
-		// vscode.window.showInformationMessage('Hello World from Adamite!');
 		let filePath = "";
 		if(vscode.workspace.workspaceFolders !== undefined) {
 			filePath = vscode.workspace.workspaceFolders[0].uri.path + '/test.json';
@@ -381,7 +391,7 @@ export function activate(context: vscode.ExtensionContext) {
 					})
 					// if we have an active editor, sort by that file - else, leave the list
 					annotationList = activeEditor ? sortAnnotationsByLocation(annotationList, activeEditor?.document.uri.toString()) : annotationList;
-					const filenames = [... new Set(annotationList.map(a => a.filename))]
+					const filenames = [... new Set(annotationList.map(a => a.filename))];
 					if(annotationList.length && activeEditor !== undefined && filenames.includes(activeEditor?.document.uri.toString())) {
 						let ranges = annotationList.map(a => { return {filename: a.filename, range: createRangeFromAnnotation(a)}}).filter(r => r.filename === activeEditor?.document.uri.toString()).map(a => a.range);
 						if(ranges.length) {
@@ -435,10 +445,11 @@ export function activate(context: vscode.ExtensionContext) {
 										let ranges = annotationList
 											.map(a => { return {annotation: a.annotation, filename: a.filename, range: createRangeFromAnnotation(a)}})
 											.filter(r => r.filename === text?.document.uri.toString())
-											.map(a => a.range);
+											.map(a => { return {annotation: a.annotation, range: a.range }});
 										if(ranges.length) {
 											try {
-												text.setDecorations(annotationDecorations, ranges);
+												const decorationOptions: vscode.DecorationOptions[] = ranges.map(r => { return { range: r.range, hoverMessage: r.annotation } });
+												text.setDecorations(annotationDecorations, decorationOptions);
 											}
 											catch (error) {
 												console.log('couldnt highlight', error);

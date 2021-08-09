@@ -59,7 +59,7 @@ const getShikiCodeHighlighting = (filename, anchorText) => __awaiter(void 0, voi
     return html ? html : anchorText;
 });
 const handleSaveCloseEvent = (annotationList, filePath, currentFile) => {
-    const annotationsInCurrentFile = annotationList.filter(a => a.filename === currentFile);
+    const annotationsInCurrentFile = currentFile !== "all" ? annotationList.filter(a => a.filename === currentFile) : annotationList;
     if (annotationsInCurrentFile.length && vscode.workspace.workspaceFolders !== undefined) {
         writeAnnotationsToFile(annotationList, filePath);
     }
@@ -224,6 +224,7 @@ function activate(context) {
     let copiedAnnotations = [];
     let view = undefined;
     let tempAnno = null;
+    let activeEditor = vscode.window.activeTextEditor;
     const overriddenClipboardCopyAction = (textEditor, edit, args) => {
         const annotationsInEditor = annotationList.filter((a) => a.filename === textEditor.document.uri.toString());
         const annosInRange = getAnchorsInRange(textEditor.selection, annotationsInEditor);
@@ -243,12 +244,26 @@ function activate(context) {
             return;
         }
         ;
-        let ranges = annotationsToHighlight.map(a => { return { filename: a.filename, range: createRangeFromAnnotation(a) }; });
+        let ranges = annotationsToHighlight.map(a => { return { filename: a.filename, range: createRangeFromAnnotation(a), annotation: a.annotation }; });
         textEditors.forEach(t => {
-            let annos = ranges.filter(r => r.filename === t.document.uri.toString()).map(a => a.range);
-            t.setDecorations(annotationDecorations, annos);
+            // TODO: see if we can change the behavior of markdown string so it has an onclick event to navigate to the annotation
+            const decorationOptions = ranges.filter(r => r.filename === t.document.uri.toString()).map(r => { return { range: r.range, hoverMessage: r.annotation }; });
+            t.setDecorations(annotationDecorations, decorationOptions);
         });
     }));
+    vscode.window.onDidChangeActiveTextEditor((TextEditor) => {
+        if (vscode.workspace.workspaceFolders) {
+            if (TextEditor) {
+                handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextEditor.document.uri.toString());
+                annotationList = sortAnnotationsByLocation(annotationList, TextEditor.document.uri.toString());
+                view === null || view === void 0 ? void 0 : view.updateDisplay(annotationList);
+            }
+            else {
+                handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', "all");
+            }
+        }
+        activeEditor = TextEditor;
+    });
     vscode.workspace.onDidSaveTextDocument((TextDocument) => {
         if (vscode.workspace.workspaceFolders)
             handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextDocument.uri.toString());
@@ -327,10 +342,8 @@ function activate(context) {
         },
         rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
     });
-    let activeEditor = vscode.window.activeTextEditor; // amber: this value does not update if the user changes active editors so we shouldn't use it OR should update code to keep this value update
     let disposable = vscode.commands.registerCommand('adamite.helloWorld', () => {
         var _a;
-        // vscode.window.showInformationMessage('Hello World from Adamite!');
         let filePath = "";
         if (vscode.workspace.workspaceFolders !== undefined) {
             filePath = vscode.workspace.workspaceFolders[0].uri.path + '/test.json';
@@ -398,10 +411,11 @@ function activate(context) {
                                         let ranges = annotationList
                                             .map(a => { return { annotation: a.annotation, filename: a.filename, range: createRangeFromAnnotation(a) }; })
                                             .filter(r => r.filename === (text === null || text === void 0 ? void 0 : text.document.uri.toString()))
-                                            .map(a => a.range);
+                                            .map(a => { return { annotation: a.annotation, range: a.range }; });
                                         if (ranges.length) {
                                             try {
-                                                text.setDecorations(annotationDecorations, ranges);
+                                                const decorationOptions = ranges.map(r => { return { range: r.range, hoverMessage: r.annotation }; });
+                                                text.setDecorations(annotationDecorations, decorationOptions);
                                             }
                                             catch (error) {
                                                 console.log('couldnt highlight', error);

@@ -2,14 +2,11 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 
-
-import { ICommand, CommandAction } from "./app/model";
-import Annotation, { convertFromJSONtoAnnotationList} from '../extension';
+import Annotation, { convertFromJSONtoAnnotationList } from '../extension';
 
 export default class ViewLoader {
   public _panel: vscode.WebviewPanel | undefined;
   private readonly _extensionPath: string;
-  private _disposables: vscode.Disposable[] = [];
   private _annotationList: Annotation[] = [];
 
   constructor(fileUri: vscode.Uri, extensionPath: string) {
@@ -33,17 +30,6 @@ export default class ViewLoader {
       this._panel.webview.html = this.getWebviewContent(annotationList);
       this._annotationList = annotationList;
 
-      this._panel.webview.onDidReceiveMessage(
-        (command: ICommand) => {
-          switch (command.action) {
-            case CommandAction.Save:
-              this.saveFileContent(fileUri, command.content);
-              return;
-          }
-        },
-        undefined,
-        this._disposables
-      );
     }
   }
 
@@ -55,7 +41,6 @@ export default class ViewLoader {
     const reactAppUri = reactAppPathOnDisk.with({ scheme: "vscode-resource" });
 
     const annotationJson = JSON.stringify(annotationList);
-    console.log('annotationJson', annotationJson)
 
     return `<!DOCTYPE html>
     <html lang="en">
@@ -72,7 +57,7 @@ export default class ViewLoader {
 
         <script>
           window.acquireVsCodeApi = acquireVsCodeApi;
-          window.initialData = ${annotationJson}
+          window.data = ${annotationJson}
         </script>
     </head>
     <body>
@@ -84,17 +69,27 @@ export default class ViewLoader {
   }
 
   public updateDisplay(annotationList: Annotation[]) {
-    if(this._annotationList !== annotationList) {
       this._annotationList = annotationList;
       if(this._panel) {
         this._panel.webview.postMessage({
           command: 'update',
           payload: {
-            annotationList: this._annotationList
+            annotationList: annotationList
           }
         })
+        this._panel.webview.html = this.getWebviewContent(this._annotationList);
       }
-      
+  }
+
+  public createNewAnno(selection: string, annotationList: Annotation[]) {
+    if(this._panel) {
+      this._panel.webview.postMessage({
+        command: 'newAnno',
+        payload: {
+          selection,
+          annotations: annotationList
+        }
+      })
     }
   }
 
@@ -102,21 +97,19 @@ export default class ViewLoader {
     if (fs.existsSync(fileUri.fsPath + '/test.json')) {
       let content = fs.readFileSync(fileUri.fsPath + '/test.json', "utf8");
       let annotationList: Annotation[] = convertFromJSONtoAnnotationList(content);
-      console.log('annotationList', annotationList);
-
       return annotationList;
     }
     return undefined;
   }
 
-  private saveFileContent(fileUri: vscode.Uri, annotationList: Annotation[]) {
-    if (fs.existsSync(fileUri.fsPath + '/test.json')) {
-      let content: string = JSON.stringify(annotationList);
-      fs.writeFileSync(fileUri.fsPath + '/test.json', content);
+  // private saveFileContent(fileUri: vscode.Uri, annotationList: Annotation[]) {
+  //   if (fs.existsSync(fileUri.fsPath + '/test.json')) {
+  //     let content: string = JSON.stringify(annotationList);
+  //     fs.writeFileSync(fileUri.fsPath + '/test.json', content);
 
-      vscode.window.showInformationMessage(
-        `👍 Annotations saved to ${fileUri.fsPath + '/test.json'}`
-      );
-    }
-  }
+  //     vscode.window.showInformationMessage(
+  //       `👍 Annotations saved to ${fileUri.fsPath + '/test.json'}`
+  //     );
+  //   }
+  // }
 }

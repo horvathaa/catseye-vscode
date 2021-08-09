@@ -27,6 +27,13 @@
         "command": "adamite.sel",
         "title": "Select"
       }
+    ],
+    "keybindings": [
+      {
+        "command": "adamite.sel",
+        "key": "ctrl+alt+s",
+        "mac": "cmd+alt+s"
+      }
     ]
   },
   "scripts": {
@@ -72,6 +79,7 @@
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-scripts": "^4.0.3",
+    "shiki": "^0.9.5",
     "style-loader": "^3.2.1",
     "uuid": "^8.3.2"
   }

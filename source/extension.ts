@@ -1,6 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import firebase from './firebase/firebase';
+import { getCurrentUser, provider } from './firebase';
 import { TextEncoder } from 'util';
 var uniqid = require('uniqid');
 import ViewLoader from './view/ViewLoader';
@@ -272,9 +274,12 @@ export function activate(context: vscode.ExtensionContext) {
 		let ranges = annotationsToHighlight.map(a => { return {filename: a.filename, range: createRangeFromAnnotation(a), annotation: a.annotation}});
 		textEditors.forEach(t => {
 			// TODO: see if we can change the behavior of markdown string so it has an onclick event to navigate to the annotation
-			const decorationOptions: vscode.DecorationOptions[] = ranges.filter(r => r.filename === t.document.uri.toString()).map(r => { return { range: r.range, hoverMessage: r.annotation } });
+			const decorationOptions: vscode.DecorationOptions[] = ranges.
+				filter(r => r.filename === t.document.uri.toString()).
+				map(r => { return { range: r.range, hoverMessage: r.annotation } });
 			t.setDecorations(annotationDecorations, decorationOptions)
 		} );
+		
 	});
 
 	vscode.window.onDidChangeActiveTextEditor((TextEditor: vscode.TextEditor | undefined) => {
@@ -379,6 +384,12 @@ export function activate(context: vscode.ExtensionContext) {
 
 	let disposable = vscode.commands.registerCommand('adamite.helloWorld', () => {
 		let filePath = "";
+		console.log('firebase', getCurrentUser());
+		firebase.auth().signInWithEmailAndPassword('test123@gmail.com', '12345678').then((result) => {
+			console.log('result', result)
+		}).catch((error) => {
+			console.log('err', error);
+		});
 		if(vscode.workspace.workspaceFolders !== undefined) {
 			filePath = vscode.workspace.workspaceFolders[0].uri.path + '/test.json';
 			const uri = vscode.Uri.file(filePath);

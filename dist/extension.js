@@ -13,6 +13,8 @@ exports.deactivate = exports.activate = exports.convertFromJSONtoAnnotationList 
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 const vscode = require("vscode");
+const firebase_1 = require("./firebase/firebase");
+const firebase_2 = require("./firebase");
 const util_1 = require("util");
 var uniqid = require('uniqid');
 const ViewLoader_1 = require("./view/ViewLoader");
@@ -247,7 +249,9 @@ function activate(context) {
         let ranges = annotationsToHighlight.map(a => { return { filename: a.filename, range: createRangeFromAnnotation(a), annotation: a.annotation }; });
         textEditors.forEach(t => {
             // TODO: see if we can change the behavior of markdown string so it has an onclick event to navigate to the annotation
-            const decorationOptions = ranges.filter(r => r.filename === t.document.uri.toString()).map(r => { return { range: r.range, hoverMessage: r.annotation }; });
+            const decorationOptions = ranges.
+                filter(r => r.filename === t.document.uri.toString()).
+                map(r => { return { range: r.range, hoverMessage: r.annotation }; });
             t.setDecorations(annotationDecorations, decorationOptions);
         });
     }));
@@ -345,6 +349,12 @@ function activate(context) {
     let disposable = vscode.commands.registerCommand('adamite.helloWorld', () => {
         var _a;
         let filePath = "";
+        console.log('firebase', firebase_2.getCurrentUser());
+        firebase_1.default.auth().signInWithEmailAndPassword('test123@gmail.com', '12345678').then((result) => {
+            console.log('result', result);
+        }).catch((error) => {
+            console.log('err', error);
+        });
         if (vscode.workspace.workspaceFolders !== undefined) {
             filePath = vscode.workspace.workspaceFolders[0].uri.path + '/test.json';
             const uri = vscode.Uri.file(filePath);

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useEffect } from "react";
 import { useState } from "react";
-import Annotation from '../../extension';
+import Annotation from '../../constants/constants';
 import ReactAnnotation from './components/annotation';
 import NewAnnotation from "./components/newAnnotation";
 import LogIn from './components/login';
@@ -54,7 +54,7 @@ const AdamitePanel: React.FC<Props> = ({ vscode, data, selection, login }) => {
 
   const AnnotationList: JSX.Element = (
     <React.Fragment>
-        <h1>Your Annotations</h1>
+        <h1>Annotations</h1>
           <ul style={{ margin: 0, padding: '0px 0px 0px 0px' }}>
             {annotations.map((anno: Annotation) => {
               return (

@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-
-import Annotation, { convertFromJSONtoAnnotationList } from '../extension';
+import Annotation from '../constants/constants';
+import { convertFromJSONtoAnnotationList } from '../utils/utils';
 
 export default class ViewLoader {
   public _panel: vscode.WebviewPanel | undefined;

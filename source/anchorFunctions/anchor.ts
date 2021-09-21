@@ -1,0 +1,118 @@
+import * as vscode from 'vscode';
+import Annotation from '../constants/constants';
+import { v4 as uuidv4 } from 'uuid';
+
+export const getAnchorsInRange = (selection: vscode.Selection, annotationList: Annotation[]) => {
+	return annotationList.map(a =>{ return { id: a.id, range: createRangeFromAnnotation(a) } }).filter(a => selection.contains(a.range));
+}
+
+// computes boundary points of each annotation's range given the pasted new range
+export const splitRange = (range: vscode.Range, annotationList: Annotation[], filename: string, changeText: string) => {
+	let annoRanges = annotationList.map(a =>{ return {id: a.id, range: createRangeFromAnnotation(a), anchorText: a.anchorText }});
+	// ensure first range in list is the beginning boundary range
+	annoRanges = annoRanges.sort((a, b) => {
+		return a.range.start.line - b.range.start.line;
+	});
+
+	annoRanges = annoRanges.map((a: any, index: number) => {
+		let r = a.range;
+		let numLines = r.end.line - r.start.line;
+		let startOffset = r.start.character;
+		let endOffset = r.end.character;
+		const lastRange = index > 0 ? annoRanges[index - 1].range : r;
+		const cleanAnchorText = a.anchorText.split(' ').join('');
+		const cleanChangeText = changeText.split(' ').join('');
+		const stringUntilAnchorText = cleanChangeText.substring(0, cleanChangeText.indexOf(cleanAnchorText));
+		const numLinesBeforeAnchorStart = (stringUntilAnchorText.match(/\n/g) || []).length;
+		// first range
+		if(index === 0) {
+			let newRange = { id: a.id, range: new vscode.Range(new vscode.Position(range.start.line + numLinesBeforeAnchorStart, range.start.character), new vscode.Position(range.start.line + numLines + numLinesBeforeAnchorStart, endOffset)), anchorText: a.anchorText};
+			return newRange;
+		}
+		// last range
+		else if(index === annoRanges.length - 1) {
+			return {id: a.id, range: new vscode.Range(new vscode.Position(range.end.line - numLines,  startOffset), range.end), anchorText: a.anchorText};
+		}
+		// middle ranges
+		else {
+			return {id: a.id, range: new vscode.Range(
+				new vscode.Position(lastRange?.end.line, lastRange?.end.character + startOffset), 
+				new vscode.Position(lastRange?.end.line + numLines, endOffset)),
+			anchorText: a.anchorText} 
+			
+		}
+	});
+
+	const rangeAdjustedAnnotations = annotationList.map(a => {
+		const index = annoRanges.findIndex(r => r.id === a.id);
+		const annoRange = annoRanges[index].range;
+		return new Annotation(uuidv4(), filename, a.anchorText, a.annotation, annoRange.start.line, annoRange.end.line, annoRange.start.character, annoRange.end.character, false, a.html);
+	});
+	return rangeAdjustedAnnotations;
+
+}
+
+export const translateChanges = (originalStartLine: number, originalEndLine: number, originalStartOffset: number, 
+	originalEndOffset: number, startLine: number, endLine: number, startOffset: number, 
+	endOffset: number, textLength: number, diff: number, rangeLength: number, 
+	anchorText: string, annotation: string, filename: string, id: string, text: string, html: string): any => {
+		let newRange = { startLine: originalStartLine, endLine: originalEndLine, startOffset: originalStartOffset, endOffset: originalEndOffset };
+		const startAndEndLineAreSame = originalStartLine === startLine && originalEndLine === endLine && !diff;
+		const originalRange = new vscode.Range(new vscode.Position(originalStartLine, originalStartOffset), new vscode.Position(originalEndLine, originalEndOffset));
+		const changeRange = new vscode.Range(new vscode.Position(startLine, startOffset), new vscode.Position(endLine, endOffset)); 
+		// user deleted the anchor
+		if(!textLength && changeRange.contains(originalRange)) {
+			return new Annotation(uuidv4(), filename, anchorText, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, true, html);
+		}
+
+		// user added lines above start of range
+		if (originalStartLine > startLine && diff) {
+			newRange.startLine = originalStartLine + diff;
+			newRange.endLine = originalEndLine + diff;
+		}
+		 // user added line after start and before end
+		if (originalStartLine === startLine && originalStartOffset <= startOffset && diff) {
+			newRange.endLine = originalEndLine + diff;
+		}
+		// user added line before the end of the offset so we add a line
+		if (originalEndLine === endLine && originalEndOffset >= endOffset && diff) {
+			newRange.endLine = originalEndLine + diff;
+		}
+		// user made change before our start offset
+		if (originalStartLine === startLine && startOffset < originalStartOffset) {
+			newRange.startOffset = textLength ? originalStartOffset + textLength : originalStartOffset - rangeLength;
+			// if end is on the same line we need to update it too
+			if(startAndEndLineAreSame) {
+				newRange.endOffset = textLength ? originalEndOffset + textLength : originalEndOffset - rangeLength;
+			}
+		}
+		// user made change before or at our end offset
+		if(originalEndLine === endLine && endOffset <= originalEndOffset && !diff) {
+			newRange.endOffset = textLength ? originalEndOffset + textLength : originalEndOffset - rangeLength;
+		}
+		// user inserted text at our end offset ()
+		if(originalEndLine === endLine && endOffset === (originalEndOffset + textLength) && !diff) {
+			newRange.endOffset += textLength;
+		}
+		// user added lines between start and end (? not sure why we have this and the second condition)
+		if(originalStartLine < startLine && endLine < originalEndLine && diff) {
+			newRange.endLine = originalEndLine + diff;
+		}
+
+		return new Annotation(id, filename, anchorText, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, false, html);
+	}
+
+// add line above range start = startLine++ and endLine++
+// delete line above range start = startLine-- and endLine--
+// add character(s) before range start on same line = startOffset++ (text length)
+// delete character before range start on same line = startOffset-- (text length)
+// add character before range end on same line = endOffset++ (text length)
+// delete character before range end on same line = endOffset-- (text length)
+// add line inbetween range start and range end = endLine++
+// delete line inbetween range start and range end = endLine--
+// add multiple characters inbetween start and end of range on same line = endOffset + text length
+// delete multiple characters inbetween start and end of range on same line = endOffset - text length
+
+export function createRangeFromAnnotation(annotation: Annotation) {
+	return new vscode.Range(new vscode.Position(annotation.startLine, annotation.startOffset), new vscode.Position(annotation.endLine, annotation.endOffset))
+}

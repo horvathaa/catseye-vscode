@@ -1,6 +1,6 @@
 import * as React from "react";
 import '../styles/annotation.css';
-import Annotation from '../../../extension';
+import Annotation from '../../../constants/constants';
 import { useEffect } from "react";
 
 interface SynProps {
@@ -41,7 +41,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode }) => {
                     <Syntax html={anno.html} />
                   </div>
                   <div>
-                    Annotation: {anno.annotation}
+                    {anno.annotation}
                   </div>
                   <div>
                     Location: Line {anno.startLine + 1} to Line {anno.endLine + 1}

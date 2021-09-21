@@ -1,5 +1,5 @@
 import * as React from "react";
-
+import '../styles/login.css';
 interface Props {
     vscode: any;
   }
@@ -17,14 +17,18 @@ const LogIn: React.FC<Props> = ({ vscode }) => {
     }
 
     return (
-        <div>
-            Email:
-            <input type="text" value={email} placeholder="email" name="email" 
+        <div className="AuthContainer">
+            <div className="InputFieldContainer row">
+                <input type="text" value={email} placeholder="email" name="email" 
                 onChange={(e) => setEmail(e.target.value)}/>
-            Password:
-            <input type="password" value={pass} placeholder="password" name="password" 
+            </div>
+            <div className="InputFieldContainer row">
+                <input type="password" value={pass} placeholder="password" name="password" 
                 onChange={(e) => setPass(e.target.value)}/>
-            <input type="submit" value="submit" onClick={() => postEmailAndPass()} />
+            </div>
+            <div className="InputFieldContainer row">
+                <button type="submit" value="submit" onClick={() => postEmailAndPass()}>Submit</button>
+            </div>
         </div>
     )
 }

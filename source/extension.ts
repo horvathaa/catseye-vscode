@@ -2,9 +2,10 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import firebase from './firebase/firebase';
-import { getCurrentUser, provider } from './firebase';
+// import { getAuth, getRedirectResult, GoogleAuthProvider } from "firebase/auth";
+// import { getCurrentUser, googleProvider } from './firebase';
 import { TextEncoder } from 'util';
-var uniqid = require('uniqid');
+import { v4 as uuidv4 } from 'uuid';
 import ViewLoader from './view/ViewLoader';
 // need to add ID and timestamp so we can keep track of the annotations (i.e. don't create duplicates in the concat operation)
 // also clean up old annotations that don't exist because their range is no longer valid
@@ -12,6 +13,20 @@ import ViewLoader from './view/ViewLoader';
 // add anchor text as property - set using activeEditor.document.getText(activeEditor.selection) then in paste event check if there's something
 // in copy keyboard and if theres a match between the pasted text and the anchor text I think??
 var shiki = require('shiki');
+
+function safeArrayCheck(objProperty: any) {
+	return objProperty && Array.isArray(objProperty) && objProperty.length;
+}
+
+function getListFromSnapshots(snapshots: firebase.firestore.QuerySnapshot) {
+    let out: any = [];
+    snapshots.forEach(snapshot => {
+        out.push({
+            id: snapshot.id, ...snapshot.data(),
+        });
+    });
+    return out;
+}
 export default class Annotation {
 	id: string;
 	filename: string | vscode.Uri;
@@ -161,7 +176,7 @@ const splitRange = (range: vscode.Range, annotationList: Annotation[], filename:
 	const rangeAdjustedAnnotations = annotationList.map(a => {
 		const index = annoRanges.findIndex(r => r.id === a.id);
 		const annoRange = annoRanges[index].range;
-		return new Annotation(uniqid(), filename, a.anchorText, a.annotation, annoRange.start.line, annoRange.end.line, annoRange.start.character, annoRange.end.character, false, a.html);
+		return new Annotation(uuidv4(), filename, a.anchorText, a.annotation, annoRange.start.line, annoRange.end.line, annoRange.start.character, annoRange.end.character, false, a.html);
 	});
 	return rangeAdjustedAnnotations;
 
@@ -177,7 +192,7 @@ const translateChanges = (originalStartLine: number, originalEndLine: number, or
 		const changeRange = new vscode.Range(new vscode.Position(startLine, startOffset), new vscode.Position(endLine, endOffset)); 
 		// user deleted the anchor
 		if(!textLength && changeRange.contains(originalRange)) {
-			return new Annotation(uniqid(), filename, anchorText, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, true, html);
+			return new Annotation(uuidv4(), filename, anchorText, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, true, html);
 		}
 
 		// user added lines above start of range
@@ -331,7 +346,7 @@ export function activate(context: vscode.ExtensionContext) {
 						const computedEndOffset = change.text.substr(change.text.lastIndexOf('\n') + 1).length;
 						const actuallyUsefulRange = new vscode.Range(startLine, startOffset, startLine + numLines, computedEndOffset);
 						rangeAdjustedAnnotations = copiedAnnotations.length > 1 ? splitRange(actuallyUsefulRange, copiedAnnotations, e.document.uri.toString(), change.text) : 
-							[new Annotation(uniqid(), e.document.uri.toString(), change.text, copiedAnnotations[0].annotation, startLine, actuallyUsefulRange.end.line, startOffset, actuallyUsefulRange.end.character, false, copiedAnnotations[0].html)];
+							[new Annotation(uuidv4(), e.document.uri.toString(), change.text, copiedAnnotations[0].annotation, startLine, actuallyUsefulRange.end.line, startOffset, actuallyUsefulRange.end.character, false, copiedAnnotations[0].html)];
 						// annotationList = annotationList.concat(rangeAdjustedAnnotations);
 						didPaste = true;
 						// copiedAnnotations = []; // we pasted?
@@ -384,12 +399,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	let disposable = vscode.commands.registerCommand('adamite.helloWorld', () => {
 		let filePath = "";
-		console.log('firebase', getCurrentUser());
-		firebase.auth().signInWithEmailAndPassword('test123@gmail.com', '12345678').then((result) => {
-			console.log('result', result)
-		}).catch((error) => {
-			console.log('err', error);
-		});
+		
 		if(vscode.workspace.workspaceFolders !== undefined) {
 			filePath = vscode.workspace.workspaceFolders[0].uri.path + '/test.json';
 			const uri = vscode.Uri.file(filePath);
@@ -426,7 +436,8 @@ export function activate(context: vscode.ExtensionContext) {
 		if(vscode.workspace.workspaceFolders) {
 			view = new ViewLoader(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
 			if(view) {
-				 view._panel?.webview.onDidReceiveMessage((message) => {
+				view?.logIn();
+				view._panel?.webview.onDidReceiveMessage((message) => {
 					 switch(message.command) {
 						 // get anno and scroll to it in the editor
 						 case 'scrollInEditor': {
@@ -437,6 +448,47 @@ export function activate(context: vscode.ExtensionContext) {
 								 text.revealRange(range, 1);
 							 }
 							 break;
+						 }
+						 case 'emailAndPassReceived': {
+							 const { email, pass } = message;
+							 firebase.auth().signInWithEmailAndPassword(email, pass).then((result: any) => {
+								console.log('result', result);
+								const db = firebase.firestore();
+								const annotationsRef = db.collection('annotations');
+								// const vscodeAnnotationsRef = db.collection('vscode-annotations');
+								annotationsRef.where('authorId', '==', result.user.uid).get().then((snapshot: firebase.firestore.QuerySnapshot) => {
+									const annoDocs = getListFromSnapshots(snapshot);
+									console.log('any', annoDocs)
+									// const serializedObjects: Annotation[] = annoDocs.map((a: any) => {
+									// 	if(safeArrayCheck(a.url) && safeArrayCheck(a.childAnchor)) return new Annotation(a.id, a.url[0], a.childAnchor[0].anchor, a.content, a.childAnchor[0].url, a.childAnchor[0].url, a.childAnchor[0].url, a.childAnchor[0].url, false, a.content);
+									// })
+									view?.updateDisplay(annotationList);
+								});
+								
+								// const serializedObjects = annotationList.map(a => { return {
+								// 	id: a.id,
+								// 	filename: a.filename,
+								// 	authorId: result.user.uid,
+								// 	anchorText: a.anchorText,
+								// 	annotation: a.annotation,
+								// 	anchor: {
+								// 		startLine: a.startLine,
+								// 		endLine: a.endLine,
+								// 		startOffset: a.startOffset,
+								// 		endOffset: a.endOffset
+								// 	},
+								// 	html: a.html ? a.html : "",
+								// 	programmingLanguage: a.filename.toString().split('.')[1],
+								// 	createdTimestamp: new Date().getTime()
+								// }})
+								// serializedObjects.forEach(a => {
+								// 	vscodeAnnotationsRef.doc(a.id).set(a)
+								// })
+							}).catch((error) => {
+								console.log('err', error);
+								view?.logIn();
+							});
+							break;
 						 }
 						 case 'createAnnotation': {
 							 // finalize annotation creation
@@ -484,6 +536,7 @@ export function activate(context: vscode.ExtensionContext) {
 						}
 							
 					}
+					
 				 })
 			}
 		}
@@ -499,7 +552,7 @@ export function activate(context: vscode.ExtensionContext) {
 		const text = activeTextEditor.document.getText(activeTextEditor.selection);
 		const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
 		getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then(html => {
-			tempAnno = new Annotation(uniqid(), activeTextEditor.document.uri.toString(), text, 'test',  r.start.line, r.end.line, r.start.character, r.end.character, false, html);
+			tempAnno = new Annotation(uuidv4(), activeTextEditor.document.uri.toString(), text, 'test',  r.start.line, r.end.line, r.start.character, r.end.character, false, html);
 			view?.createNewAnno(html, annotationList);
 		})
 			

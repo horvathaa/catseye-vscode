@@ -9,6 +9,7 @@
 # production
 /build
 /dist
+dist/
 /configViewer
 
 # misc

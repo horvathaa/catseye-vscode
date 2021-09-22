@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-
-import Annotation, { convertFromJSONtoAnnotationList } from '../extension';
+import Annotation from '../constants/constants';
+import { convertFromJSONtoAnnotationList } from '../utils/utils';
 
 export default class ViewLoader {
   public _panel: vscode.WebviewPanel | undefined;
@@ -93,6 +93,14 @@ export default class ViewLoader {
     }
   }
 
+  public logIn() {
+    if(this._panel) {
+      this._panel.webview.postMessage({
+        command: 'login',
+      })
+    }
+  }
+
   private getFileContent(fileUri: vscode.Uri): Annotation[] | undefined {
     if (fs.existsSync(fileUri.fsPath + '/test.json')) {
       let content = fs.readFileSync(fileUri.fsPath + '/test.json', "utf8");
@@ -101,15 +109,4 @@ export default class ViewLoader {
     }
     return undefined;
   }
-
-  // private saveFileContent(fileUri: vscode.Uri, annotationList: Annotation[]) {
-  //   if (fs.existsSync(fileUri.fsPath + '/test.json')) {
-  //     let content: string = JSON.stringify(annotationList);
-  //     fs.writeFileSync(fileUri.fsPath + '/test.json', content);
-
-  //     vscode.window.showInformationMessage(
-  //       `👍 Annotations saved to ${fileUri.fsPath + '/test.json'}`
-  //     );
-  //   }
-  // }
 }

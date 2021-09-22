@@ -10,6 +10,7 @@
 /build
 /dist
 dist/
+dist
 /configViewer
 
 # misc

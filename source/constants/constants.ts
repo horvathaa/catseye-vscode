@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 export default class Annotation {
 	id: string;
 	filename: string | vscode.Uri;
+	visiblePath: string;
 	anchorText: string;
 	annotation: string;
 	startLine: number;
@@ -12,9 +13,10 @@ export default class Annotation {
 	toDelete: boolean;
 	html: string;
 	
-	constructor(id: string, filename: string | vscode.Uri, anchorText: string, annotation: string, anchorStartLine: number, anchorEndLine: number, anchorStartOffset: number, anchorEndOffset: number, toDelete: boolean, html: string) {
+	constructor(id: string, filename: string | vscode.Uri, visiblePath: string, anchorText: string, annotation: string, anchorStartLine: number, anchorEndLine: number, anchorStartOffset: number, anchorEndOffset: number, toDelete: boolean, html: string) {
 		this.id = id;
 		this.filename = filename;
+		this.visiblePath = visiblePath;
 		this.anchorText = anchorText;
 		this.annotation = annotation;
 		this.startLine = anchorStartLine;

@@ -1,5 +1,5 @@
 import * as React from "react";
-import '../styles/login.css';
+import styles from '../styles/login.module.css';
 interface Props {
     vscode: any;
   }
@@ -17,16 +17,16 @@ const LogIn: React.FC<Props> = ({ vscode }) => {
     }
 
     return (
-        <div className="AuthContainer">
-            <div className="InputFieldContainer row">
+        <div className={styles['AuthContainer']}>
+            <div className={`${styles.InputFieldContainer} ${styles.row}`}>
                 <input type="text" value={email} placeholder="email" name="email" 
                 onChange={(e) => setEmail(e.target.value)}/>
             </div>
-            <div className="InputFieldContainer row">
+            <div className={`${styles.InputFieldContainer} ${styles.row}`}>
                 <input type="password" value={pass} placeholder="password" name="password" 
                 onChange={(e) => setPass(e.target.value)}/>
             </div>
-            <div className="InputFieldContainer row">
+            <div className={`${styles.InputFieldContainer} ${styles.row}`}>
                 <button type="submit" value="submit" onClick={() => postEmailAndPass()}>Submit</button>
             </div>
         </div>

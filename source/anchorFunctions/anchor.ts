@@ -46,7 +46,7 @@ export const splitRange = (range: vscode.Range, annotationList: Annotation[], fi
 	const rangeAdjustedAnnotations = annotationList.map(a => {
 		const index = annoRanges.findIndex(r => r.id === a.id);
 		const annoRange = annoRanges[index].range;
-		return new Annotation(uuidv4(), filename, a.anchorText, a.annotation, annoRange.start.line, annoRange.end.line, annoRange.start.character, annoRange.end.character, false, a.html);
+		return new Annotation(uuidv4(), filename, a.anchorText, a.annotation, a.visiblePath, annoRange.start.line, annoRange.end.line, annoRange.start.character, annoRange.end.character, false, a.html);
 	});
 	return rangeAdjustedAnnotations;
 
@@ -55,14 +55,14 @@ export const splitRange = (range: vscode.Range, annotationList: Annotation[], fi
 export const translateChanges = (originalStartLine: number, originalEndLine: number, originalStartOffset: number, 
 	originalEndOffset: number, startLine: number, endLine: number, startOffset: number, 
 	endOffset: number, textLength: number, diff: number, rangeLength: number, 
-	anchorText: string, annotation: string, filename: string, id: string, text: string, html: string): any => {
+	anchorText: string, annotation: string, filename: string, visiblePath: string, id: string, text: string, html: string): any => {
 		let newRange = { startLine: originalStartLine, endLine: originalEndLine, startOffset: originalStartOffset, endOffset: originalEndOffset };
 		const startAndEndLineAreSame = originalStartLine === startLine && originalEndLine === endLine && !diff;
 		const originalRange = new vscode.Range(new vscode.Position(originalStartLine, originalStartOffset), new vscode.Position(originalEndLine, originalEndOffset));
 		const changeRange = new vscode.Range(new vscode.Position(startLine, startOffset), new vscode.Position(endLine, endOffset)); 
 		// user deleted the anchor
 		if(!textLength && changeRange.contains(originalRange)) {
-			return new Annotation(uuidv4(), filename, anchorText, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, true, html);
+			return new Annotation(uuidv4(), filename, visiblePath, anchorText, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, true, html);
 		}
 
 		// user added lines above start of range
@@ -99,7 +99,7 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 			newRange.endLine = originalEndLine + diff;
 		}
 
-		return new Annotation(id, filename, anchorText, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, false, html);
+		return new Annotation(id, filename, visiblePath, anchorText, annotation, newRange.startLine, newRange.endLine, newRange.startOffset, newRange.endOffset, false, html);
 	}
 
 // add line above range start = startLine++ and endLine++

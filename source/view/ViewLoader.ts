@@ -2,7 +2,8 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 import Annotation from '../constants/constants';
-import { convertFromJSONtoAnnotationList } from '../utils/utils';
+import { annotationList } from '../extension';
+
 
 export default class ViewLoader {
   public _panel: vscode.WebviewPanel | undefined;
@@ -12,7 +13,7 @@ export default class ViewLoader {
   constructor(fileUri: vscode.Uri, extensionPath: string) {
     this._extensionPath = extensionPath;
 
-    let annotationList = this.getFileContent(fileUri);
+    // let annotationList = this.getFileContent(fileUri);
     if (annotationList) {
       this._panel = vscode.window.createWebviewPanel(
         "adamite",
@@ -101,12 +102,4 @@ export default class ViewLoader {
     }
   }
 
-  private getFileContent(fileUri: vscode.Uri): Annotation[] | undefined {
-    if (fs.existsSync(fileUri.fsPath + '/test.json')) {
-      let content = fs.readFileSync(fileUri.fsPath + '/test.json', "utf8");
-      let annotationList: Annotation[] = convertFromJSONtoAnnotationList(content);
-      return annotationList;
-    }
-    return undefined;
-  }
 }

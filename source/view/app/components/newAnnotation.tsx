@@ -1,5 +1,5 @@
 import * as React from "react";
-import '../styles/annotation.css';
+import annoStyles from '../styles/annotation.module.css';
 
 interface SynProps {
     html: string;
@@ -32,15 +32,17 @@ const NewAnnotation: React.FC<Props> = ({ selection, vscode }) => {
     }
 
     return (
-        <div className="AnnotationContainer" >
-            <Syntax html={selection} />
-            <textarea id="newAnno" onKeyDown={(e) => {
-                            if(e.key === "Enter") {
-                                createAnnotation();
-                            }
-                        }} onChange={_ => setAnno((document.getElementById('newAnno') as HTMLInputElement).value)}/>
-            <button onClick={() => createAnnotation()}>Submit</button>
-            <button onClick={() => cancelAnnotation()}>Cancel</button>
+        <div className={annoStyles['Pad']}>
+            <div className={annoStyles['AnnotationContainer']} >
+                <Syntax html={selection} />
+                <textarea id="newAnno" onKeyDown={(e) => {
+                                if(e.key === "Enter") {
+                                    createAnnotation();
+                                }
+                            }} onChange={_ => setAnno((document.getElementById('newAnno') as HTMLInputElement).value)}/>
+                <button onClick={() => createAnnotation()}>Submit</button>
+                <button className={annoStyles['cancel']} onClick={() => cancelAnnotation()}>Cancel</button>
+            </div>
         </div>
     )
 

@@ -63,11 +63,11 @@ export function activate(context: vscode.ExtensionContext) {
 	/******************************** EXTENSION LISTENERS  *******************************/
 	/*************************************************************************************/
 	
-	let disposableDidChangeVisibleListener = vscode.window.onDidChangeVisibleTextEditors(eventHandlers.handleChangeVisibleTextEditors);
-	let disposableActiveEditorListener = vscode.window.onDidChangeActiveTextEditor(eventHandlers.handleChangeActiveTextEditor);
-	let disposableDidSaveListener = vscode.workspace.onDidSaveTextDocument(eventHandlers.handleDidSaveDidClose);
-	let disposableDidCloseListener = vscode.workspace.onDidCloseTextDocument(eventHandlers.handleDidSaveDidClose)
-	let disposableDidChangeTextDocument = vscode.workspace.onDidChangeTextDocument(eventHandlers.handleDidChangeTextDocument)
+	let didChangeVisibleListenerDisposable = vscode.window.onDidChangeVisibleTextEditors(eventHandlers.handleChangeVisibleTextEditors);
+	let activeEditorListenerDisposable = vscode.window.onDidChangeActiveTextEditor(eventHandlers.handleChangeActiveTextEditor);
+	let didSaveListenerDisposable = vscode.workspace.onDidSaveTextDocument(eventHandlers.handleDidSaveDidClose);
+	let didCloseListenerDisposable = vscode.workspace.onDidCloseTextDocument(eventHandlers.handleDidSaveDidClose)
+	let didChangeTextDocumentDisposable = vscode.workspace.onDidChangeTextDocument(eventHandlers.handleDidChangeTextDocument)
 		
 	/*************************************************************************************/
 	/**************************************** COMMANDS ***********************************/
@@ -85,11 +85,11 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(clipboardDisposable);
 	context.subscriptions.push(annotateDisposable);
 	
-	context.subscriptions.push(disposableDidChangeVisibleListener);
-	context.subscriptions.push(disposableActiveEditorListener);
-	context.subscriptions.push(disposableDidSaveListener);
-	context.subscriptions.push(disposableDidCloseListener);
-	context.subscriptions.push(disposableDidChangeTextDocument);
+	context.subscriptions.push(didChangeVisibleListenerDisposable);
+	context.subscriptions.push(activeEditorListenerDisposable);
+	context.subscriptions.push(didSaveListenerDisposable);
+	context.subscriptions.push(didCloseListenerDisposable);
+	context.subscriptions.push(didChangeTextDocumentDisposable);
 }
 
 // // this method is called when your extension is deactivated

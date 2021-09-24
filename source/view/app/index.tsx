@@ -1,6 +1,5 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-
 import AdamitePanel from "./adamite";
 import Annotation from '../../constants/constants'
 declare global {
@@ -41,7 +40,6 @@ window.addEventListener('message', event => {
       );
       return;
     case 'newAnno':
-      console.log('in new anno')
       ReactDOM.render(
         <AdamitePanel 
           vscode={vscode} 

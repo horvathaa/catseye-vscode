@@ -4,6 +4,7 @@ require("firebase/functions")
 export const DB_COLLECTIONS = {
   USERS: 'users',
   ANNOTATIONS: 'annotations',
+  VSCODE_ANNOTATIONS: 'vscode-annotations',
   GROUPS: 'groups'
 };
 

@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export const handleChangeVisibleTextEditors = async (textEditors: vscode.TextEditor[]) => {
     const textEditorFileNames = textEditors.map(t => t.document.uri.toString());
-    if(vscode.workspace.workspaceFolders !== undefined) utils.writeAnnotationsToFile(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json');
+    // nneed to decide if we want to write to DB that often... if(vscode.workspace.workspaceFolders !== undefined) utils.saveAnnotations(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json');
     
     const annotationsToHighlight = annotationList.filter(a => textEditorFileNames.includes(a.filename.toString()))
     if(!annotationsToHighlight.length) return;
@@ -68,11 +68,27 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
                     const numLines = (change.text.match(/\n/g) || []).length;
                     const computedEndOffset = change.text.substr(change.text.lastIndexOf('\n') + 1).length;
                     const actuallyUsefulRange = new vscode.Range(startLine, startOffset, startLine + numLines, computedEndOffset);
+                    const adjustedAnno = {
+                        id: uuidv4(),
+                        filename: e.document.uri.toString(),
+                        visiblePath,
+                        anchorText: change.text,
+                        annotation: copiedAnnotations[0].annotation,
+                        anchor: {
+                            startLine,
+                            startOffset,
+                            endLine: actuallyUsefulRange.end.line,
+                            endOffset: actuallyUsefulRange.end.character
+                        },
+                        toDelete: false,
+                        html: copiedAnnotations[0].html,
+                        authorId: copiedAnnotations[0].authorId,
+                        createdTimestamp: new Date().getTime(),
+                        programmingLang: copiedAnnotations[0].programmingLang
+                    }
 
-                        rangeAdjustedAnnotations = copiedAnnotations.length > 1 ? anchor.splitRange(actuallyUsefulRange, copiedAnnotations, e.document.uri.toString(), change.text) : 
-                        [new Annotation(uuidv4(), e.document.uri.toString(), visiblePath, change.text, copiedAnnotations[0].annotation, startLine, actuallyUsefulRange.end.line, startOffset, actuallyUsefulRange.end.character, false, copiedAnnotations[0].html)];
-                    
-                    
+                    rangeAdjustedAnnotations = copiedAnnotations.length > 1 ? anchor.splitRange(actuallyUsefulRange, copiedAnnotations, e.document.uri.toString(), change.text) : 
+                    [utils.buildAnnotation(adjustedAnno)];
                     // annotationList = annotationList.concat(rangeAdjustedAnnotations);
                     didPaste = true;
                     // copiedAnnotations = []; // we pasted?
@@ -80,10 +96,10 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
             }
             
             const translatedAnnotations = currentAnnotations.map(a => anchor.translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, 
-                change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), visiblePath, a.id, change.text, a.html)).filter(a => !a.toDelete);
+                change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), visiblePath, a.id, a.createdTimestamp, a.html)).filter(a => !a.toDelete);
             // if the user is on the process of creating an annotation, update that annotation as well
             tempAnno ? setTempAnno(anchor.translateChanges(tempAnno.startLine, tempAnno.endLine, tempAnno.startOffset, tempAnno.endOffset, startLine, endLine, startOffset, endOffset, 
-                change.text.length, diff, change.rangeLength, tempAnno.anchorText, tempAnno.annotation, tempAnno.filename.toString(), visiblePath, tempAnno.id, change.text, tempAnno.html)) : setTempAnno(null);
+                change.text.length, diff, change.rangeLength, tempAnno.anchorText, tempAnno.annotation, tempAnno.filename.toString(), visiblePath, tempAnno.id, tempAnno.createdTimestamp, tempAnno.html)) : setTempAnno(null);
             setAnnotationList(translatedAnnotations.concat(annotationList.filter(a => a.filename !== e.document.uri.toString()), rangeAdjustedAnnotations));
             if(didPaste && vscode.window.activeTextEditor) {
                 const ranges = annotationList.map(a => anchor.createRangeFromAnnotation(a));

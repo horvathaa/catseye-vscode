@@ -3,11 +3,11 @@ import Annotation from '../constants/constants';
 import * as vscode from 'vscode';
 var shiki = require('shiki');
 
-export function safeArrayCheck(objProperty: any) {
+export function safeArrayCheck(objProperty: any) : boolean {
 	return objProperty && Array.isArray(objProperty) && objProperty.length;
 }
 
-export function getListFromSnapshots(snapshots: firebase.firestore.QuerySnapshot) {
+export function getListFromSnapshots(snapshots: firebase.firestore.QuerySnapshot) : any[] {
     let out: any = [];
     snapshots.forEach(snapshot => {
         out.push({
@@ -17,7 +17,7 @@ export function getListFromSnapshots(snapshots: firebase.firestore.QuerySnapshot
     return out;
 }
 
-export const sortAnnotationsByLocation = (annotationList: Annotation[], filename: string): Annotation[] => {
+export const sortAnnotationsByLocation = (annotationList: Annotation[], filename: string) : Annotation[] => {
 	annotationList.sort((a: Annotation, b: Annotation) => {
 		return b.startLine - a.startLine === 0 ? b.startOffset - a.startOffset : b.startLine - a.startLine;
 	});
@@ -40,17 +40,18 @@ export const getShikiCodeHighlighting = async (filename: string, anchorText: str
 }
 
 
-export const handleSaveCloseEvent = (annotationList: Annotation[], filePath: string, currentFile: string) => {
+export const handleSaveCloseEvent = (annotationList: Annotation[], filePath: string, currentFile: string) : void => {
 	const annotationsInCurrentFile = currentFile !== "all" ? annotationList.filter(a => a.filename === currentFile) : annotationList;
 	if(annotationsInCurrentFile.length && vscode.workspace.workspaceFolders !== undefined) {
 		writeAnnotationsToFile(annotationList, filePath);
 	}
 }
 
-export const writeAnnotationsToFile = async (annotationList: Annotation[], filePath: string) => {
+export const writeAnnotationsToFile = async (annotationList: Annotation[], filePath: string) : Promise<void> => {
 	const serializedObjects = annotationList.map(a => { return {
 		id: a.id,
 		filename: a.filename,
+		visiblePath: a.visiblePath,
 		anchorText: a.anchorText,
 		annotation: a.annotation,
 		anchor: {
@@ -95,10 +96,19 @@ export const writeAnnotationsToFile = async (annotationList: Annotation[], fileP
 }
 
 
-export const convertFromJSONtoAnnotationList = (json: string) => {
+export const convertFromJSONtoAnnotationList = (json: string) : Annotation[] => {
 	let annotationList: Annotation[] = [];
 	JSON.parse(json).forEach((doc: any) => {
-		annotationList.push(new Annotation(doc.id, doc.filename, doc.anchorText, doc.annotation, doc.anchor.startLine, doc.anchor.endLine, doc.anchor.startOffset, doc.anchor.endOffset, false, doc.html))
+		annotationList.push(new Annotation(doc.id, doc.filename, doc.visiblePath, doc.anchorText, doc.annotation, doc.anchor.startLine, doc.anchor.endLine, doc.anchor.startOffset, doc.anchor.endOffset, false, doc.html))
 	})
 	return annotationList;
 }
+
+export const getVisiblePath = (filePath: string, workspacePath: string) : string => {
+	const slash = workspacePath.includes('/') ? '/' : '\\';
+	const workspaceHead = workspacePath.split(slash).pop() ? workspacePath.split(slash).pop() : slash;
+	const path = workspaceHead ? workspaceHead + filePath.split(workspaceHead).pop() : filePath;
+	if(path) return path;
+	return filePath;
+	
+}  

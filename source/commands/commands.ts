@@ -28,7 +28,7 @@ export const init = (context: vscode.ExtensionContext) => {
 				vscode.workspace.openTextDocument(filePath).then(doc => { 
 					let docText = JSON.parse(doc.getText())
 					docText.forEach((doc: any) => {
-						annotationList.push(new Annotation(doc.id, doc.filename, doc.anchorText, doc.annotation, doc.anchor.startLine, doc.anchor.endLine, doc.anchor.startOffset, doc.anchor.endOffset, false, doc.html))
+						annotationList.push(new Annotation(doc.id, doc.filename, doc.visiblePath, doc.anchorText, doc.annotation, doc.anchor.startLine, doc.anchor.endLine, doc.anchor.startOffset, doc.anchor.endOffset, false, doc.html))
 					})
 					// if we have an active editor, sort by that file - else, leave the list
 					vscode.window.activeTextEditor ? setAnnotationList(utils.sortAnnotationsByLocation(annotationList, vscode.window.activeTextEditor?.document.uri.toString())) : setAnnotationList(annotationList);
@@ -67,7 +67,7 @@ export const init = (context: vscode.ExtensionContext) => {
 							 if(anno) {
 								 const range = anchor.createRangeFromAnnotation(anno);
 								 const text = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === anno.filename)[0];
-								 text.revealRange(range, 1);
+								 text?.revealRange(range, 1);
 							 }
 							 break;
 						 }
@@ -127,7 +127,7 @@ export const init = (context: vscode.ExtensionContext) => {
 									view?.updateDisplay(annotationList);
 									const filenames = [... new Set(annotationList.map(a => a.filename))];
 									// add highlight for new anno
-									if(annotationList.length && text !== undefined && filenames.includes(text.document.uri.toString())) {
+									if(annotationList.length && text && filenames.includes(text.document.uri.toString())) {
 										let ranges = annotationList
 											.map(a => { return {annotation: a.annotation, filename: a.filename, range: anchor.createRangeFromAnnotation(a)}})
 											.filter(r => r.filename === text?.document.uri.toString())
@@ -175,7 +175,9 @@ export const createNewAnnotation = () => {
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
     const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
     utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then(html => {
-        setTempAnno(new Annotation(uuidv4(), activeTextEditor.document.uri.toString(), text, 'test',  r.start.line, r.end.line, r.start.character, r.end.character, false, html));
+		!vscode.workspace.workspaceFolders ? 
+			setTempAnno(new Annotation(uuidv4(), activeTextEditor.document.uri.toString(), activeTextEditor.document.uri.fsPath, text, 'test',  r.start.line, r.end.line, r.start.character, r.end.character, false, html)) 
+			: setTempAnno(new Annotation(uuidv4(), activeTextEditor.document.uri.toString(), utils.getVisiblePath(activeTextEditor.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath), text, 'test',  r.start.line, r.end.line, r.start.character, r.end.character, false, html));
         view?.createNewAnno(html, annotationList);
     })
 }

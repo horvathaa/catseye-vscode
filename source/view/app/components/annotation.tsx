@@ -1,5 +1,5 @@
 import * as React from "react";
-import '../styles/annotation.css';
+import styles from '../styles/annotation.module.css';
 import Annotation from '../../../constants/constants';
 import { useEffect } from "react";
 
@@ -35,16 +35,16 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode }) => {
 
     return (
         <React.Fragment>
-            <div>
-                <li className="AnnotationContainer" onClick={() => scrollInEditor()}>
-                  <div>
+            <div className={styles['Pad']}>
+                <li key={anno.id} className={styles['AnnotationContainer']} onClick={() => scrollInEditor()}>
+                  <div className={styles['AnchorContainer']}>
                     <Syntax html={anno.html} />
                   </div>
-                  <div>
+                  <div className={styles['ContentContainer']}>
                     {anno.annotation}
                   </div>
-                  <div>
-                    Location: Line {anno.startLine + 1} to Line {anno.endLine + 1}
+                  <div className={styles['LocationContainer']}>
+                    {anno.visiblePath}: Line {anno.startLine + 1} to Line {anno.endLine + 1}
                   </div>
                 </li>
               </div>

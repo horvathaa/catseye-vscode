@@ -80,13 +80,12 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
                             endLine: actuallyUsefulRange.end.line,
                             endOffset: actuallyUsefulRange.end.character
                         },
-                        toDelete: false,
+                        deleted: false,
                         html: copiedAnnotations[0].html,
                         authorId: copiedAnnotations[0].authorId,
                         createdTimestamp: new Date().getTime(),
                         programmingLang: copiedAnnotations[0].programmingLang
                     }
-
                     rangeAdjustedAnnotations = copiedAnnotations.length > 1 ? anchor.splitRange(actuallyUsefulRange, copiedAnnotations, e.document.uri.toString(), change.text) : 
                     [utils.buildAnnotation(adjustedAnno)];
                     // annotationList = annotationList.concat(rangeAdjustedAnnotations);
@@ -96,7 +95,7 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
             }
             
             const translatedAnnotations = currentAnnotations.map(a => anchor.translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, 
-                change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), visiblePath, a.id, a.createdTimestamp, a.html)).filter(a => !a.toDelete);
+                change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), visiblePath, a.id, a.createdTimestamp, a.html)).filter(a => !a.deleted);
             // if the user is on the process of creating an annotation, update that annotation as well
             tempAnno ? setTempAnno(anchor.translateChanges(tempAnno.startLine, tempAnno.endLine, tempAnno.startOffset, tempAnno.endOffset, startLine, endLine, startOffset, endOffset, 
                 change.text.length, diff, change.rangeLength, tempAnno.anchorText, tempAnno.annotation, tempAnno.filename.toString(), visiblePath, tempAnno.id, tempAnno.createdTimestamp, tempAnno.html)) : setTempAnno(null);

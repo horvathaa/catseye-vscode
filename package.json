@@ -73,6 +73,7 @@
     "webpack-cli": "^4.7.2"
   },
   "dependencies": {
+    "@types/react-icons": "^3.0.0",
     "create-react-app": "^4.0.3",
     "css-loader": "^6.2.0",
     "css-modules-typescript-loader": "^4.0.1",
@@ -80,6 +81,7 @@
     "firebase": "^8.10.0",
     "npm-run-all": "^4.1.5",
     "react": "^17.0.2",
+    "react-bootstrap": "^1.6.4",
     "react-dom": "^17.0.2",
     "react-scripts": "^4.0.3",
     "shiki": "^0.9.5",

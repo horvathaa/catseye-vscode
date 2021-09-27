@@ -40,7 +40,7 @@ const NewAnnotation: React.FC<Props> = ({ selection, vscode }) => {
                                     createAnnotation();
                                 }
                             }} onChange={_ => setAnno((document.getElementById('newAnno') as HTMLInputElement).value)}/>
-                <button onClick={() => createAnnotation()}>Submit</button>
+                <button className={annoStyles['submit']} onClick={() => createAnnotation()}>Submit</button>
                 <button className={annoStyles['cancel']} onClick={() => cancelAnnotation()}>Cancel</button>
             </div>
         </div>

@@ -50,7 +50,7 @@ export const handleSaveCloseEvent = (annotationList: Annotation[], filePath: str
 }
 
 export const saveAnnotations = async (annotationList: Annotation[], filePath: string) : Promise<void> => {
-	const serializedObjects = annotationList.map(a => { return {
+	const serializedObjects = annotationList.map(a => { console.log('a', a); return {
 		id: a.id,
 		filename: a.filename,
 		visiblePath: a.visiblePath,
@@ -65,8 +65,9 @@ export const saveAnnotations = async (annotationList: Annotation[], filePath: st
 		html: a.html,
 		authorId: a.authorId,
 		createdTimestamp: a.createdTimestamp,
-		programmingLang: a.programmingLang
-	}})
+		programmingLang: a.programmingLang,
+		deleted: a.deleted
+	}});
 
 	if(user) {
 		const db = firebase.firestore();
@@ -85,7 +86,7 @@ const writeToFile = async (serializedObjects: { [key: string] : any }[], annotat
 		await vscode.workspace.fs.stat(uri);
 		vscode.workspace.openTextDocument(filePath).then(doc => { 
 			vscode.workspace.fs.writeFile(doc.uri, new TextEncoder().encode(JSON.stringify(serializedObjects))).then(() => {
-				annotationList.forEach(a => a.toDelete = false);
+				annotationList.forEach(a => a.deleted = false);
 			})
 		})
 	}
@@ -97,7 +98,7 @@ const writeToFile = async (serializedObjects: { [key: string] : any }[], annotat
 			if(value) { // edit applied??
 				vscode.workspace.openTextDocument(filePath).then(doc => { 
 					vscode.workspace.fs.writeFile(doc.uri, new TextEncoder().encode(JSON.stringify(serializedObjects))).then(() => {
-						annotationList.forEach(a => a.toDelete = false);
+						annotationList.forEach(a => a.deleted = false);
 					})
 				})
 			}
@@ -119,7 +120,7 @@ const writeToFile = async (serializedObjects: { [key: string] : any }[], annotat
 // 				let docText = JSON.parse(doc.getText())
 // 				const tempAnnoList: Annotation[] = [];
 // 				docText.forEach((doc: any) => {
-// 					const readAnno = { toDelete: false, ...doc };
+// 					const readAnno = { deleted: false, ...doc };
 // 					tempAnnoList.push(readAnno);
 // 				})
 // 				// if we have an active editor, sort by that file - else, leave the list
@@ -147,7 +148,7 @@ const writeToFile = async (serializedObjects: { [key: string] : any }[], annotat
 // export const convertFromJSONtoAnnotationList = (json: string) : Annotation[] => {
 // 	let annotationList: Annotation[] = [];
 // 	JSON.parse(json).forEach((doc: any) => {
-// 		annotationList.push(buildAnnotation({...doc, toDelete: false}))
+// 		annotationList.push(buildAnnotation({...doc, deleted: false}))
 // 	})
 // 	return annotationList;
 // }
@@ -186,7 +187,7 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 		annoObj['endLine'],
 		annoObj['startOffset'],
 		annoObj['endOffset'],
-		annoObj['toDelete'],
+		annoObj['deleted'],
 		annoObj['html'],
 		annoObj['authorId'],
 		annoObj['createdTimestamp'],

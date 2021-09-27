@@ -44,8 +44,7 @@ export const init = (context: vscode.ExtensionContext) => {
 								const db = firebase.firestore();
 								const annotationsRef = db.collection('vscode-annotations');
 								setUser(result.user);
-								// 
-								annotationsRef.where('authorId', '==', result.user.uid).get().then((snapshot: firebase.firestore.QuerySnapshot) => {
+								annotationsRef.where('authorId', '==', result.user.uid).where('deleted', '==', false).get().then((snapshot: firebase.firestore.QuerySnapshot) => {
 									const annoDocs = utils.getListFromSnapshots(snapshot);
 									const annotations: Annotation[] = annoDocs && annoDocs.length ? annoDocs.map((a: any) => {
 										return utils.buildAnnotation(a);
@@ -79,7 +78,22 @@ export const init = (context: vscode.ExtensionContext) => {
 								}
 
 							});
-
+							break;
+						}
+						case 'updateAnnotation': {
+							const updatedAnno = utils.buildAnnotation({ ...annotationList.filter(a => a.id === message.annoId)[0], annotation: message.newAnnoContent });
+							const updatedList = annotationList.filter(a => a.id !== message.annoId).concat([updatedAnno]);
+							const text = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === updatedAnno?.filename)[0];
+							setAnnotationList(utils.sortAnnotationsByLocation(updatedList, text.document.uri.toString()));
+							view?.updateDisplay(annotationList);
+							break;
+						}
+						case 'deleteAnnotation': {
+							const updatedAnno = utils.buildAnnotation({ ...annotationList.filter(a => a.id === message.annoId)[0], deleted: true });
+							const updatedList = annotationList.filter(a => a.id !== message.annoId).concat([updatedAnno]);
+							utils.saveAnnotations(updatedList, ""); // bad - that should point to JSON but we are also not using that rn so whatever
+							setAnnotationList(updatedList.filter(a => a.id !== message.annoId));
+							view?.updateDisplay(annotationList);
 							break;
 						}
 						case 'cancelAnnotation': {
@@ -117,7 +131,7 @@ export const createNewAnnotation = () => {
 				activeTextEditor.document.uri.fsPath,
 			anchorText: text,
 			annotation: '',
-			toDelete: false,
+			deleted: false,
 			html,
 			programmingLang: activeTextEditor.document.uri.toString().split('.')[1],
 			createdTimestamp: new Date().getTime(),

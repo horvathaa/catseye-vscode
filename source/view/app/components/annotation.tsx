@@ -40,11 +40,11 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode }) => {
                   <div className={styles['AnchorContainer']}>
                     <Syntax html={anno.html} />
                   </div>
-                  <div className={styles['ContentContainer']}>
-                    {anno.annotation}
-                  </div>
                   <div className={styles['LocationContainer']}>
                     {anno.visiblePath}: Line {anno.startLine + 1} to Line {anno.endLine + 1}
+                  </div>
+                  <div className={styles['ContentContainer']}>
+                    {anno.annotation}
                   </div>
                 </li>
               </div>

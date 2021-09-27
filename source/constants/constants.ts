@@ -12,8 +12,17 @@ export default class Annotation {
 	endOffset: number;
 	toDelete: boolean;
 	html: string;
+	authorId: string;
+	createdTimestamp: number;
+	programmingLang: string;
 	
-	constructor(id: string, filename: string | vscode.Uri, visiblePath: string, anchorText: string, annotation: string, anchorStartLine: number, anchorEndLine: number, anchorStartOffset: number, anchorEndOffset: number, toDelete: boolean, html: string) {
+	constructor(
+			id: string, filename: string | vscode.Uri, visiblePath: string, anchorText: string, annotation: string, 
+			anchorStartLine: number, anchorEndLine: number, anchorStartOffset: number, 
+			anchorEndOffset: number, toDelete: boolean, html: string, authorId: string,
+			createdTimestamp: number, programmingLang: string
+		) 
+	{
 		this.id = id;
 		this.filename = filename;
 		this.visiblePath = visiblePath;
@@ -25,5 +34,8 @@ export default class Annotation {
 		this.endOffset = anchorEndOffset;
 		this.toDelete = toDelete;
 		this.html = html;
+		this.authorId = authorId;
+		this.createdTimestamp = createdTimestamp;
+		this.programmingLang = programmingLang;
 	}
 }

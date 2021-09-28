@@ -1,13 +1,21 @@
 import firebase from '../firebase/firebase';
 import Annotation from '../constants/constants';
-import { user, setAnnotationList, annotationList, annotationDecorations } from '../extension';
-import { createRangeFromAnnotation } from '../anchorFunctions/anchor';
+import { user, annotationList } from '../extension';
 import * as vscode from 'vscode';
 var shiki = require('shiki');
 
-export function safeArrayCheck(objProperty: any) : boolean {
-	return objProperty && Array.isArray(objProperty) && objProperty.length;
-}
+let lastSavedAnnotations: Annotation[] = annotationList && annotationList.length ? annotationList : [];
+
+// https://stackoverflow.com/questions/27030/comparing-arrays-of-objects-in-javascript
+const objectsEqual = (o1: { [key: string ] : any }, o2: { [key: string ] : any }) : boolean => 
+    typeof o1 === 'object' && Object.keys(o1).length > 0 
+        ? Object.keys(o1).length === Object.keys(o2).length 
+            && Object.keys(o1).every(p => objectsEqual(o1[p], o2[p]))
+        : o1 === o2;
+
+const arraysEqual = (a1: any[], a2: any[]) : boolean => {
+	return a1.length === a2.length && a1.every((o, idx) => objectsEqual(o, a2[idx]));
+} 
 
 export function getListFromSnapshots(snapshots: firebase.firestore.QuerySnapshot) : any[] {
     let out: any = [];
@@ -44,13 +52,14 @@ export const getShikiCodeHighlighting = async (filename: string, anchorText: str
 
 export const handleSaveCloseEvent = (annotationList: Annotation[], filePath: string, currentFile: string) : void => {
 	const annotationsInCurrentFile = currentFile !== "all" ? annotationList.filter(a => a.filename === currentFile) : annotationList;
-	if(annotationsInCurrentFile.length && vscode.workspace.workspaceFolders !== undefined) {
+	if(annotationsInCurrentFile.length && vscode.workspace.workspaceFolders && !arraysEqual(annotationList, lastSavedAnnotations)) {
+		lastSavedAnnotations = annotationList;
 		saveAnnotations(annotationList, filePath);
 	}
 }
 
 export const saveAnnotations = async (annotationList: Annotation[], filePath: string) : Promise<void> => {
-	const serializedObjects = annotationList.map(a => { console.log('a', a); return {
+	const serializedObjects = annotationList.map(a => { return {
 		id: a.id,
 		filename: a.filename,
 		visiblePath: a.visiblePath,

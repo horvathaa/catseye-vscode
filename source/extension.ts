@@ -73,9 +73,10 @@ export function activate(context: vscode.ExtensionContext) {
 	/**************************************** COMMANDS ***********************************/
 	/*************************************************************************************/
 
-	let initDisposable = vscode.commands.registerCommand('adamite.helloWorld', () => commands.init(context));
+	let initDisposable = vscode.commands.registerCommand('adamite.launch', () => commands.init(context));
 	let clipboardDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', commands.overriddenClipboardCopyAction);
 	let annotateDisposable = vscode.commands.registerCommand('adamite.sel', () => commands.createNewAnnotation());
+	let questionDisposable = vscode.commands.registerCommand('adamite.addQuestion', () => commands.addNewQuestion());
 
 	/*************************************************************************************/
 	/**************************************** DISPOSABLES ********************************/
@@ -84,6 +85,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(initDisposable);
 	context.subscriptions.push(clipboardDisposable);
 	context.subscriptions.push(annotateDisposable);
+	context.subscriptions.push(questionDisposable);
 	
 	context.subscriptions.push(didChangeVisibleListenerDisposable);
 	context.subscriptions.push(activeEditorListenerDisposable);

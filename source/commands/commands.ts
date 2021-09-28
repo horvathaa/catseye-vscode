@@ -7,17 +7,6 @@ import firebase from '../firebase/firebase';
 import ViewLoader from "../view/ViewLoader";
 import { v4 as uuidv4 } from 'uuid';
 
-export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
-    const annotationsInEditor = annotationList.filter((a: Annotation) => a.filename === textEditor.document.uri.toString());
-    const annosInRange = anchor.getAnchorsInRange(textEditor.selection, annotationsInEditor);
-    if(annosInRange.length) {
-        const annoIds = annosInRange.map(a => a.id)
-        setCopiedAnnotationList(annotationList.filter(a => annoIds.includes(a.id)));
-    }
-    vscode.env.clipboard.writeText(textEditor.document.getText(textEditor.selection));
-
-}
-
 export const init = (context: vscode.ExtensionContext) => {
 	/***********************************************************************************/
 	/**************************************** VIEW LISTENERS ******************************/
@@ -25,7 +14,8 @@ export const init = (context: vscode.ExtensionContext) => {
 		if(vscode.workspace.workspaceFolders) {
 			setView(new ViewLoader(vscode.workspace.workspaceFolders[0].uri, context.extensionPath));
 			if(view) {
-				view?.logIn();
+				view?.init();
+				// view?.logIn();
 				view._panel?.webview.onDidReceiveMessage((message) => {
 					 switch(message.command) {
 						 // get anno and scroll to it in the editor
@@ -44,6 +34,7 @@ export const init = (context: vscode.ExtensionContext) => {
 								const db = firebase.firestore();
 								const annotationsRef = db.collection('vscode-annotations');
 								setUser(result.user);
+								view?.setLoggedIn();
 								annotationsRef.where('authorId', '==', result.user.uid).where('deleted', '==', false).get().then((snapshot: firebase.firestore.QuerySnapshot) => {
 									const annoDocs = utils.getListFromSnapshots(snapshot);
 									const annotations: Annotation[] = annoDocs && annoDocs.length ? annoDocs.map((a: any) => {
@@ -118,7 +109,7 @@ export const createNewAnnotation = () => {
     if (!activeTextEditor) {
         vscode.window.showInformationMessage("No text editor is open!");
         return;
-        }
+    }
         
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
     const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
@@ -140,6 +131,51 @@ export const createNewAnnotation = () => {
 		setTempAnno(utils.buildAnnotation(temp, r));
         view?.createNewAnno(html, annotationList);
     })
+}
+
+export const addNewQuestion = () => {
+	const { activeTextEditor } = vscode.window;
+    if (!activeTextEditor) {
+        vscode.window.showInformationMessage("No text editor is open!");
+        return;
+    }
+        
+    const text = activeTextEditor.document.getText(activeTextEditor.selection);
+    const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
+    utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then(html => {
+		const temp = {
+			id: uuidv4(),
+			filename: activeTextEditor.document.uri.toString(),
+			visiblePath: vscode.workspace.workspaceFolders ? 
+				utils.getVisiblePath(activeTextEditor.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath) :
+				activeTextEditor.document.uri.fsPath,
+			anchorText: text,
+			annotation: 'What is the intent of this code?',
+			deleted: false,
+			html,
+			programmingLang: activeTextEditor.document.uri.toString().split('.')[1],
+			createdTimestamp: new Date().getTime(),
+			authorId: user?.uid
+		};
+		// setTempAnno(utils.buildAnnotation(temp, r));
+        setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));
+		const textEdit = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === temp?.filename)[0];
+		// setTempAnno(null);
+		setAnnotationList(utils.sortAnnotationsByLocation(annotationList, textEdit.document.uri.toString()));
+		view?.updateDisplay(annotationList);
+		addHighlightsToEditor(annotationList, textEdit);
+    })
+}
+
+export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
+    const annotationsInEditor = annotationList.filter((a: Annotation) => a.filename === textEditor.document.uri.toString());
+    const annosInRange = anchor.getAnchorsInRange(textEditor.selection, annotationsInEditor);
+    if(annosInRange.length) {
+        const annoIds = annosInRange.map(a => a.id)
+        setCopiedAnnotationList(annotationList.filter(a => annoIds.includes(a.id)));
+    }
+    vscode.env.clipboard.writeText(textEditor.document.getText(textEditor.selection));
+
 }
 
 const addHighlightsToEditor = (annotationList: Annotation[], text: vscode.TextEditor | undefined) : void => {

@@ -60,7 +60,7 @@ interface Props {
 const ReactAnnotation: React.FC<Props> = ({ annotation, vscode }) => {
   const [anno, setAnno] = React.useState(annotation);
   const [edit, setEdit] = React.useState(false);
-  const [newContent, setNewContent] = React.useState(annotation.annotation);
+  const [newContent, setNewContent] = React.useState(anno.annotation);
 
   useEffect(() => {
     if(JSON.stringify(anno) !== JSON.stringify(annotation)) {
@@ -87,6 +87,8 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode }) => {
       annoId: anno.id,
       newAnnoContent: anno.annotation
     });
+    setNewContent("");
+    setEdit(false);
   }
 
   const cancelAnnotation = (e: React.SyntheticEvent) => {
@@ -107,7 +109,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode }) => {
   return (
       <React.Fragment>
           <div className={styles['Pad']}>
-              <li key={anno.id} className={styles['AnnotationContainer']}>
+              <li key={annotation.id} className={styles['AnnotationContainer']}>
                 <div className={styles['IconContainer']}>
                   <AnnotationDropDown id={anno.id} editAnnotation={() => {setEdit(!edit)}} deleteAnnotation={(e) => deleteAnnotation(e)}/>
                 </div>
@@ -120,7 +122,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode }) => {
                 <div className={styles['ContentContainer']}>
                   {edit ? (
                     <React.Fragment>
-                      <textarea onChange={updateAnnotationContent} id="editContent" />
+                      <textarea value={newContent} onChange={updateAnnotationContent} id="editContent" />
                       <button className={styles['submit']} onClick={(e) => updateContent(e)}>Submit</button>
                       <button className={styles['cancel']} onClick={(e) => cancelAnnotation(e)}>Cancel</button>
                     </React.Fragment>

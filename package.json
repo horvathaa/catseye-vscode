@@ -10,22 +10,22 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:adamite.helloWorld"
+    "onCommand:adamite.launch"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "adamite.helloWorld",
-        "title": "Hello World"
-      },
-      {
-        "command": "adamite.annotate",
-        "title": "Annotate"
+        "command": "adamite.launch",
+        "title": "Adamite: Launch Adamite"
       },
       {
         "command": "adamite.sel",
-        "title": "Select"
+        "title": "Adamite: Create Annotation"
+      },
+      {
+        "command": "adamite.addQuestion",
+        "title": "Adamite: What is the intent of this code?"
       }
     ],
     "keybindings": [
@@ -33,6 +33,11 @@
         "command": "adamite.sel",
         "key": "ctrl+alt+s",
         "mac": "cmd+alt+s"
+      },
+      {
+        "command": "adamite.addQuestion",
+        "key": "ctrl+alt+q",
+        "mac": "cmd+alt+q"
       }
     ]
   },

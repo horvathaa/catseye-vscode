@@ -8,7 +8,6 @@ import { annotationList } from '../extension';
 export default class ViewLoader {
   public _panel: vscode.WebviewPanel | undefined;
   private readonly _extensionPath: string;
-  private _annotationList: Annotation[] = [];
 
   constructor(fileUri: vscode.Uri, extensionPath: string) {
     this._extensionPath = extensionPath;
@@ -29,8 +28,6 @@ export default class ViewLoader {
       );
 
       this._panel.webview.html = this.getWebviewContent(annotationList);
-      this._annotationList = annotationList;
-
     }
   }
 
@@ -69,8 +66,15 @@ export default class ViewLoader {
     </html>`;
   }
 
+  public init() {
+    if(this._panel) {
+      this._panel.webview.postMessage({
+        command: 'init',
+      })
+    }
+  }
+
   public updateDisplay(annotationList: Annotation[]) {
-      this._annotationList = annotationList;
       if(this._panel) {
         this._panel.webview.postMessage({
           command: 'update',
@@ -78,7 +82,6 @@ export default class ViewLoader {
             annotationList: annotationList
           }
         })
-        this._panel.webview.html = this.getWebviewContent(this._annotationList);
       }
   }
 
@@ -102,4 +105,11 @@ export default class ViewLoader {
     }
   }
 
+  public setLoggedIn() {
+    if(this._panel) {
+      this._panel.webview.postMessage({
+        command: 'loggedIn',
+      })
+    }
+  }
 }

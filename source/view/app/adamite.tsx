@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useEffect } from "react";
+// import { useEffect } from "react"; -- may bring back for prop bugs
 import { useState } from "react";
 import Annotation from '../../constants/constants';
 import ReactAnnotation from './components/annotation';
@@ -8,9 +8,7 @@ import LogIn from './components/login';
 
 interface Props {
   vscode: any;
-  data: Annotation[];
-  selection: string;
-  login: boolean;
+  window: Window
 }
 
 const areListsTheSame = (obj1: any, obj2: any) => {
@@ -38,39 +36,61 @@ const areListsTheSame = (obj1: any, obj2: any) => {
 		  if (typeof (obj1[p]) == 'undefined') return false;
 	  }
 	  return true;
-  }
-  
+}
 
-const AdamitePanel: React.FC<Props> = ({ vscode, data, selection, login }) => {
-  const [annotations, setAnnotations] = useState(data);
+interface AnnoListProps {
+  annotations: Annotation[];
+  vscode: any;
+}
 
-  useEffect(() => {
-    if(!areListsTheSame(annotations, data)) {
-      setAnnotations(data);
+const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode }) => {
+  return <ul style={{ margin: 0, padding: '0px 0px 0px 0px' }}>
+    {annotations.map((anno: Annotation) => {
+      return (
+        <ReactAnnotation annotation={anno} vscode={vscode} />
+      )
+    })}
+  </ul>
+}
+
+const AdamitePanel: React.FC<Props> = ({ vscode, window }) => {
+  const [annotations, setAnnotations] = useState([]);
+  const [showLogin, setShowLogin] = useState(true);
+  const [selection, setSelection] = useState("");
+  const [showNewAnnotation, setShowNewAnnotation] = useState(false);
+
+  window.addEventListener('message', event => {
+    const message = event.data;
+    switch(message.command) {
+      case 'login':
+        setShowLogin(true);
+        return;
+      case 'loggedIn':
+        setShowLogin(false);
+        return;
+      case 'update':
+        setAnnotations(message.payload.annotationList);
+        return;
+      case 'newAnno':
+        setSelection(message.payload.selection);
+        setShowNewAnnotation(true);
+        return;
     }
-  }, [annotations]);
+  })
 
-  const AnnotationList: JSX.Element = (
-    <ul style={{ margin: 0, padding: '0px 0px 0px 0px' }}>
-      {annotations.map((anno: Annotation) => {
-        return (
-          <ReactAnnotation annotation={anno} vscode={vscode} />
-        )
-      })}
-    </ul>
-  )
+  const notifyDone = () : void => {
+    setShowNewAnnotation(false);
+  }
 
   return (
     <React.Fragment>
-      {selection !== "" ? (
-        <NewAnnotation selection={selection} vscode={vscode} />
+      {showNewAnnotation ? (
+        <NewAnnotation selection={selection} vscode={vscode} notifyDone={notifyDone} />
       ) : (null)}
-      {!login && AnnotationList}
-      {login && <LogIn vscode={vscode} />}
+      {!showLogin && <AnnotationList annotations={annotations} vscode={vscode} />}
+      {showLogin && <LogIn vscode={vscode} />}
     </React.Fragment>
   )
-
-
 }
 
 export default AdamitePanel;

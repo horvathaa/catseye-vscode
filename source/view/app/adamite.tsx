@@ -1,15 +1,12 @@
 import * as React from "react";
-// import { useEffect } from "react"; -- may bring back for prop bugs
+import { useEffect } from "react"; // -- may bring back for prop bugs
 import { useState } from "react";
 import Annotation from '../../constants/constants';
 import ReactAnnotation from './components/annotation';
 import NewAnnotation from "./components/newAnnotation";
 import LogIn from './components/login';
+// import { annotationList } from '../../extension';
 
-interface Props {
-  vscode: any;
-  window: Window
-}
 
 const areListsTheSame = (obj1: any, obj2: any) => {
 	for (var p in obj1) {
@@ -41,21 +38,28 @@ const areListsTheSame = (obj1: any, obj2: any) => {
 interface AnnoListProps {
   annotations: Annotation[];
   vscode: any;
+  window: Window;
 }
 
-const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode }) => {
+const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window }) => {
   return <ul style={{ margin: 0, padding: '0px 0px 0px 0px' }}>
     {annotations.map((anno: Annotation) => {
       return (
-        <ReactAnnotation annotation={anno} vscode={vscode} />
+        <ReactAnnotation annotation={anno} vscode={vscode} window={window} />
       )
     })}
   </ul>
 }
 
-const AdamitePanel: React.FC<Props> = ({ vscode, window }) => {
+interface Props {
+  vscode: any;
+  window: Window;
+  showLogIn: boolean
+}
+
+const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn }) => {
   const [annotations, setAnnotations] = useState([]);
-  const [showLogin, setShowLogin] = useState(true);
+  const [showLogin, setShowLogin] = useState(showLogIn);
   const [selection, setSelection] = useState("");
   const [showNewAnnotation, setShowNewAnnotation] = useState(false);
 
@@ -87,7 +91,7 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window }) => {
       {showNewAnnotation ? (
         <NewAnnotation selection={selection} vscode={vscode} notifyDone={notifyDone} />
       ) : (null)}
-      {!showLogin && <AnnotationList annotations={annotations} vscode={vscode} />}
+      {!showLogin && <AnnotationList annotations={annotations} vscode={vscode} window={window} />}
       {showLogin && <LogIn vscode={vscode} />}
     </React.Fragment>
   )

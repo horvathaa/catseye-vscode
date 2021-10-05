@@ -13,31 +13,6 @@ export let view: ViewLoader | undefined = undefined;
 export let user: firebase.User | null = null;
 export let tempAnno: Annotation | null = null;
 export let activeEditor = vscode.window.activeTextEditor;
-
-export const setActiveEditor = (newActiveEditor: vscode.TextEditor | undefined) => {
-	activeEditor = newActiveEditor;
-}
-
-export const setTempAnno = (newAnno: Annotation | null) => {
-	tempAnno = newAnno;
-}
-
-export const setUser = (newUser: firebase.User | null) => {
-	user = newUser;
-}
-
-export const setView = (newView: ViewLoader | undefined) => {
-	view = newView;
-}
-
-export const setAnnotationList = (newAnnotationList: Annotation[]) => {
-	annotationList = newAnnotationList;
-}
-
-export const setCopiedAnnotationList = (newCopiedAnnotationList: Annotation[]) => {
-	copiedAnnotations = newCopiedAnnotationList;
-}
-
 export const annotationDecorations = vscode.window.createTextEditorDecorationType({
 	borderWidth: '1px',
 	borderStyle: 'solid',
@@ -55,6 +30,30 @@ export const annotationDecorations = vscode.window.createTextEditorDecorationTyp
 	
 });
 
+export const setActiveEditor = (newActiveEditor: vscode.TextEditor | undefined) : void => {
+	activeEditor = newActiveEditor;
+}
+
+export const setTempAnno = (newAnno: Annotation | null) : void => {
+	tempAnno = newAnno;
+}
+
+export const setUser = (newUser: firebase.User | null) : void => {
+	user = newUser;
+}
+
+export const setView = (newView: ViewLoader | undefined) : void => {
+	view = newView;
+}
+
+export const setAnnotationList = (newAnnotationList: Annotation[]) : void => {
+	annotationList = newAnnotationList;
+}
+
+export const setCopiedAnnotationList = (newCopiedAnnotationList: Annotation[]) : void => {
+	copiedAnnotations = newCopiedAnnotationList;
+}
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -64,31 +63,36 @@ export function activate(context: vscode.ExtensionContext) {
 	/*************************************************************************************/
 	
 	let didChangeVisibleListenerDisposable = vscode.window.onDidChangeVisibleTextEditors(eventHandlers.handleChangeVisibleTextEditors);
-	let activeEditorListenerDisposable = vscode.window.onDidChangeActiveTextEditor(eventHandlers.handleChangeActiveTextEditor);
+	let didChangeactiveEditorListenerDisposable = vscode.window.onDidChangeActiveTextEditor(eventHandlers.handleChangeActiveTextEditor);
+	let didChangeTextEditorSelection = vscode.window.onDidChangeTextEditorSelection(eventHandlers.handleDidChangeTextEditorSelection);
+	
 	let didSaveListenerDisposable = vscode.workspace.onDidSaveTextDocument(eventHandlers.handleDidSaveDidClose);
 	let didCloseListenerDisposable = vscode.workspace.onDidCloseTextDocument(eventHandlers.handleDidSaveDidClose)
 	let didChangeTextDocumentDisposable = vscode.workspace.onDidChangeTextDocument(eventHandlers.handleDidChangeTextDocument)
+	
 		
 	/*************************************************************************************/
 	/**************************************** COMMANDS ***********************************/
 	/*************************************************************************************/
 
 	let initDisposable = vscode.commands.registerCommand('adamite.launch', () => commands.init(context));
-	let clipboardDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', commands.overriddenClipboardCopyAction);
 	let annotateDisposable = vscode.commands.registerCommand('adamite.sel', () => commands.createNewAnnotation());
-	let questionDisposable = vscode.commands.registerCommand('adamite.addQuestion', () => commands.addNewQuestion());
+	let highlightDisposable = vscode.commands.registerCommand('adamite.addHighlight', () => commands.addNewHighlight());
+
+	let clipboardDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', commands.overriddenClipboardCopyAction);
 
 	/*************************************************************************************/
 	/**************************************** DISPOSABLES ********************************/
 	/*************************************************************************************/
 
 	context.subscriptions.push(initDisposable);
-	context.subscriptions.push(clipboardDisposable);
 	context.subscriptions.push(annotateDisposable);
-	context.subscriptions.push(questionDisposable);
+	context.subscriptions.push(highlightDisposable);
+	context.subscriptions.push(clipboardDisposable);
 	
 	context.subscriptions.push(didChangeVisibleListenerDisposable);
-	context.subscriptions.push(activeEditorListenerDisposable);
+	context.subscriptions.push(didChangeactiveEditorListenerDisposable);
+	context.subscriptions.push(didChangeTextEditorSelection);
 	context.subscriptions.push(didSaveListenerDisposable);
 	context.subscriptions.push(didCloseListenerDisposable);
 	context.subscriptions.push(didChangeTextDocumentDisposable);

@@ -140,6 +140,7 @@
 
 .AnchorContainer {
   color: white;
+  cursor: pointer;
 }
 
 .ContentContainer {
@@ -150,6 +151,7 @@
 .LocationContainer {
   font-family: var(--vscode-editor-font-family);
   overflow-wrap: anywhere;
+  cursor: pointer;
   padding: 4px 0px;
 }
 

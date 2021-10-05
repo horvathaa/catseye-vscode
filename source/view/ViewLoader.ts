@@ -1,8 +1,7 @@
 import * as vscode from "vscode";
-import * as fs from "fs";
 import * as path from "path";
 import Annotation from '../constants/constants';
-import { annotationList } from '../extension';
+import { annotationList, user } from '../extension';
 
 
 export default class ViewLoader {
@@ -67,15 +66,23 @@ export default class ViewLoader {
   }
 
   public init() {
-    if(this._panel) {
+    if(this._panel && this._panel.webview) {
       this._panel.webview.postMessage({
         command: 'init',
       })
     }
   }
 
+  public reload() {
+    if(this._panel && this._panel.webview) {
+      this._panel.webview.postMessage({
+        command: 'reload',
+      })
+    }
+  }
+
   public updateDisplay(annotationList: Annotation[]) {
-      if(this._panel) {
+      if(this._panel && this._panel.webview) {
         this._panel.webview.postMessage({
           command: 'update',
           payload: {
@@ -86,7 +93,7 @@ export default class ViewLoader {
   }
 
   public createNewAnno(selection: string, annotationList: Annotation[]) {
-    if(this._panel) {
+    if(this._panel && this._panel.webview) {
       this._panel.webview.postMessage({
         command: 'newAnno',
         payload: {
@@ -98,7 +105,7 @@ export default class ViewLoader {
   }
 
   public logIn() {
-    if(this._panel) {
+    if(this._panel && this._panel.webview) {
       this._panel.webview.postMessage({
         command: 'login',
       })
@@ -106,7 +113,7 @@ export default class ViewLoader {
   }
 
   public setLoggedIn() {
-    if(this._panel) {
+    if(this._panel && this._panel.webview) {
       this._panel.webview.postMessage({
         command: 'loggedIn',
       })

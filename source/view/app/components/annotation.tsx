@@ -2,9 +2,7 @@ import * as React from "react";
 import styles from '../styles/annotation.module.css';
 import Annotation from '../../../constants/constants';
 import { useEffect } from "react";
-import { AiOutlineMenu, AiOutlineEdit } from 'react-icons/ai';
-import { BsTrash } from 'react-icons/bs';
-import Dropdown from 'react-bootstrap/esm/Dropdown';
+import AnnotationDropDown from './annotationComponents/annotationMenu';
 
 interface SynProps {
   html: string;
@@ -14,59 +12,51 @@ const Syntax: React.FC<SynProps> = ({ html }) => {
   return ( <code dangerouslySetInnerHTML={{__html: html}}></code> );
 }
 
-interface MenuProps {
-  id: string,
-  editAnnotation: () => void
-  deleteAnnotation: (e: React.SyntheticEvent) => void
-}
-
-const AnnotationDropDown: React.FC<MenuProps> = ({ id, editAnnotation = () => {}, deleteAnnotation = () => {} }) => {
-
-  return (
-    <div className={styles['AnnotationsOptions']}>
-      <Dropdown id={id}>
-          <Dropdown.Toggle id={id + '-toggle'} className={styles['vertical-center']}>
-              <AiOutlineMenu className={styles['profile']} />
-          </Dropdown.Toggle>
-          <Dropdown.Menu style={{ width: '220px', border: '1px solid white', background: 'var(--vscode-editor-background)' }}>
-              <Dropdown.Header className={styles["AnnotationOptionsTitle"]}>
-                  Annotation Options
-                  <hr></hr>
-              </Dropdown.Header>
-              <Dropdown.Item onClick={editAnnotation} className={styles['DropdownItemOverwrite']}>
-                  <div className={styles['DropdownIconsWrapper']}>
-                      <AiOutlineEdit className={styles['DropdownIcons']} id={id + "-edit"} />
-                  </div>
-                  Edit
-              </Dropdown.Item>
-              <Dropdown.Item onClick={deleteAnnotation} className={styles['DropdownItemOverwrite']}>
-                  <div className={styles['DropdownIconsWrapper']}>
-                      <BsTrash className={styles['DropdownIcons']} id={id + "-trash"} />
-                  </div>
-                  Delete
-              </Dropdown.Item>
-          </Dropdown.Menu>
-      </Dropdown>
-    </div>
-  )
-  
-}
 
 interface Props {
   annotation: Annotation;
   vscode: any;
+  window: Window;
 }
 
-const ReactAnnotation: React.FC<Props> = ({ annotation, vscode }) => {
+const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
   const [anno, setAnno] = React.useState(annotation);
   const [edit, setEdit] = React.useState(false);
   const [newContent, setNewContent] = React.useState(anno.annotation);
+  // let keys = {};
 
   useEffect(() => {
     if(JSON.stringify(anno) !== JSON.stringify(annotation)) {
       setAnno(annotation);
     }
   });
+
+  window.addEventListener('message', event => {
+    const message = event.data;
+    switch(message.command) {
+      case 'dragNewAnno':
+        console.log('yes');
+        break;
+    }
+  });
+
+  // const handleSelect = (e: any) => {
+  //   console.log('e', e);
+  // }
+
+  // const handleKeyUp = (e: React.SyntheticEvent) => {
+  //   console.log('e', e, anno.id);
+  //   // keys[e.key] = true;
+  // }
+
+
+  // const handleKeyDown = (e: any) => {
+  //   console.log('e', e);
+  // }
+  // document.addEventListener('mouseenter', handleCopy);
+  // Idea: use onDragOver and onDrop to allow user to drop code into the sidebar - may have to have
+  // similar event listener in the editor? but I'm not sure how we can override some of these things
+  // I guess the "onDidChangeSelection"? maybe???
 
   const scrollInEditor = () => {
     vscode.postMessage({
@@ -108,15 +98,15 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode }) => {
 
   return (
       <React.Fragment>
-          <div className={styles['Pad']}>
-              <li key={annotation.id} className={styles['AnnotationContainer']}>
+          <div className={styles['Pad']} >
+              <li key={annotation.id} className={styles['AnnotationContainer']}  >
                 <div className={styles['IconContainer']}>
                   <AnnotationDropDown id={anno.id} editAnnotation={() => {setEdit(!edit)}} deleteAnnotation={(e) => deleteAnnotation(e)}/>
                 </div>
                 <div className={styles['AnchorContainer']} onClick={() => scrollInEditor()}>
                   <Syntax html={anno.html} />
                 </div>
-                <div className={styles['LocationContainer']}>
+                <div className={styles['LocationContainer']} onClick={() => scrollInEditor()}>
                   {anno.visiblePath}: Line {anno.startLine + 1} to Line {anno.endLine + 1}
                 </div>
                 <div className={styles['ContentContainer']}>

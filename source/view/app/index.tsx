@@ -14,56 +14,19 @@ declare global {
 
 const vscode = window.acquireVsCodeApi();
 
-// window.addEventListener('message', event => {
-//   const message = event.data;
-//   switch(message.command) {
-//     case 'login':
-//       ReactDOM.render(
-//         <AdamitePanel 
-//           vscode={vscode} 
-//           data={[]} 
-//           selection={""} 
-//           login={true}
-//           window={window}
-//         />, 
-//         document.getElementById('root')
-//       );
-//       return;
-//     case 'update': 
-//       ReactDOM.render(
-//         <AdamitePanel 
-//           vscode={vscode} 
-//           data={message.payload.annotationList} 
-//           selection={""} 
-//           login={false}
-//         />, 
-//         document.getElementById('root')
-//       );
-//       return;
-//     case 'newAnno':
-//       ReactDOM.render(
-//         <AdamitePanel 
-//           vscode={vscode} 
-//           data={message.payload.annotationList} 
-//           selection={message.payload.selection} 
-//           login={false}
-//         />, 
-//         document.getElementById('root')
-//       );
-//       return;
-//     default:
-//       return;
-//   }
-// })
-
 window.addEventListener('message', event => {
   const message = event.data;
   if(message.command === 'init') {
-    console.log('rendering')
     ReactDOM.render(
-      <AdamitePanel vscode={vscode} window={window} />,
+      <AdamitePanel vscode={vscode} window={window} showLogIn={true} />,
       document.getElementById("root")
     );
     return;
+  }
+  else if (message.command === 'reload') {
+    ReactDOM.render(
+      <AdamitePanel vscode={vscode} window={window} showLogIn={false} />,
+      document.getElementById("root")
+    );
   }
 })

@@ -50,7 +50,7 @@ export const getShikiCodeHighlighting = async (filename: string, anchorText: str
 }
 
 
-export const handleSaveCloseEvent = (annotationList: Annotation[], filePath: string, currentFile: string) : void => {
+export const handleSaveCloseEvent = (annotationList: Annotation[], filePath: string = "", currentFile: string = "all") : void => {
 	const annotationsInCurrentFile = currentFile !== "all" ? annotationList.filter(a => a.filename === currentFile) : annotationList;
 	if(annotationsInCurrentFile.length && vscode.workspace.workspaceFolders && !arraysEqual(annotationList, lastSavedAnnotations)) {
 		lastSavedAnnotations = annotationList;

@@ -24,8 +24,8 @@
         "title": "Adamite: Create Annotation"
       },
       {
-        "command": "adamite.addQuestion",
-        "title": "Adamite: What is the intent of this code?"
+        "command": "adamite.addHighlight",
+        "title": "Adamite: Create Highlight"
       }
     ],
     "keybindings": [
@@ -35,9 +35,9 @@
         "mac": "cmd+alt+s"
       },
       {
-        "command": "adamite.addQuestion",
-        "key": "ctrl+alt+q",
-        "mac": "cmd+alt+q"
+        "command": "adamite.addHighlight",
+        "key": "ctrl+alt+h",
+        "mac": "cmd+alt+h"
       }
     ]
   },

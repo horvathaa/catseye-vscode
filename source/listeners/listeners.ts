@@ -4,6 +4,7 @@ import * as anchor from '../anchorFunctions/anchor';
 import * as utils from '../utils/utils';
 import Annotation from '../constants/constants';
 import { v4 as uuidv4 } from 'uuid';
+import { addHighlightsToEditor } from '../commands/commands';
 
 export const handleChangeVisibleTextEditors = async (textEditors: vscode.TextEditor[]) => {
     const textEditorFileNames = textEditors.map(t => t.document.uri.toString());
@@ -14,10 +15,11 @@ export const handleChangeVisibleTextEditors = async (textEditors: vscode.TextEdi
     let ranges = annotationsToHighlight.map(a => { return {filename: a.filename, range: anchor.createRangeFromAnnotation(a), annotation: a.annotation}});
     textEditors.forEach(t => {
         // TODO: see if we can change the behavior of markdown string so it has an onclick event to navigate to the annotation
-        const decorationOptions: vscode.DecorationOptions[] = ranges.
-            filter(r => r.filename === t.document.uri.toString()).
-            map(r => { return { range: r.range, hoverMessage: r.annotation } });
-        t.setDecorations(annotationDecorations, decorationOptions)
+        // const decorationOptions: vscode.DecorationOptions[] = ranges.
+        //     filter(r => r.filename === t.document.uri.toString()).
+        //     map(r => { return { range: r.range, hoverMessage: r.annotation } });
+        // t.setDecorations(annotationDecorations, decorationOptions)
+        addHighlightsToEditor(annotationsToHighlight, t);
     } );
 		
 }
@@ -101,11 +103,16 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
                 change.text.length, diff, change.rangeLength, tempAnno.anchorText, tempAnno.annotation, tempAnno.filename.toString(), visiblePath, tempAnno.id, tempAnno.createdTimestamp, tempAnno.html)) : setTempAnno(null);
             setAnnotationList(translatedAnnotations.concat(annotationList.filter(a => a.filename !== e.document.uri.toString()), rangeAdjustedAnnotations));
             if(didPaste && vscode.window.activeTextEditor) {
-                const ranges = annotationList.map(a => anchor.createRangeFromAnnotation(a));
-                vscode.window.activeTextEditor?.setDecorations(annotationDecorations, ranges);
+                // const ranges = annotationList.map(a => anchor.createRangeFromAnnotation(a));
+                // vscode.window.activeTextEditor?.setDecorations(annotationDecorations, ranges);
+                addHighlightsToEditor(annotationList, vscode.window.activeTextEditor);
             }
             setAnnotationList(utils.sortAnnotationsByLocation(annotationList, e.document.uri.toString()));
             view?.updateDisplay(annotationList);
         }
     }
+}
+
+export const handleDidChangeTextEditorSelection = (e: vscode.TextEditorSelectionChangeEvent) => {
+    // console.log('e', e);
 }

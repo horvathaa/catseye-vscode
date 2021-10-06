@@ -1,0 +1,13 @@
+.showing {
+    display: block;
+}
+
+.hiding {
+    display: none;
+}
+
+.subheading {
+    font-size: medium;
+    font-family: var(--vscode-editor-font-family);
+    cursor: pointer;
+}

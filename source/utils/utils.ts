@@ -27,14 +27,15 @@ export function getListFromSnapshots(snapshots: firebase.firestore.QuerySnapshot
     return out;
 }
 
-export const sortAnnotationsByLocation = (annotationList: Annotation[], filename: string) : Annotation[] => {
+export const sortAnnotationsByLocation = (annotationList: Annotation[], filename: string | undefined) : Annotation[] => {
 	annotationList.sort((a: Annotation, b: Annotation) => {
 		return b.startLine - a.startLine === 0 ? b.startOffset - a.startOffset : b.startLine - a.startLine;
 	});
 	annotationList.sort((a: Annotation, b: Annotation) => {
 		// if a is the same as the filename and b isn't OR if a and b are both pointing at the same file, keep the order
 		// else move annotation b before a
-		const order = (a.filename === filename && b.filename !== filename) || (a.filename === b.filename && a.filename === filename) ? -1 : 1;
+		let order: number = -1;
+		if(filename) order = (a.filename === filename && b.filename !== filename) || (a.filename === b.filename && a.filename === filename) ? -1 : 1;
 		return order;
 	})
 	return annotationList;
@@ -118,6 +119,93 @@ const writeToFile = async (serializedObjects: { [key: string] : any }[], annotat
 	}
 }
 
+export const getVisiblePath = (filePath: string | undefined, workspacePath: string | undefined) : string => {
+	if(filePath && workspacePath) {
+		const slash = workspacePath.includes('/') ? '/' : '\\';
+		const workspaceHead = workspacePath.split(slash).pop() ? workspacePath.split(slash).pop() : slash;
+		const path = workspaceHead ? workspaceHead + filePath.split(workspaceHead).pop() : filePath;
+		if(path) return path;
+	}
+	else if(filePath) {
+		return filePath;
+	}
+	return "unknown";
+
+}
+
+export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefined) : Annotation => {
+	const annoObj : { [key: string]: any } = range ? 
+	{
+		startLine: range.start.line,
+		endLine: range.end.line,
+		startOffset: range.start.character,
+		endOffset: range.end.character,
+		...annoInfo
+	} : annoInfo.anchor ? {
+		startLine: annoInfo.anchor.startLine,
+		endLine: annoInfo.anchor.endLine,
+		startOffset: annoInfo.anchor.startOffset,
+		endOffset: annoInfo.anchor.endOffset,
+		...annoInfo
+	} : annoInfo;
+
+	return new Annotation(
+		annoObj['id'], 
+		annoObj['filename'], 
+		annoObj['visiblePath'], 
+		annoObj['anchorText'],
+		annoObj['annotation'],
+		annoObj['startLine'],
+		annoObj['endLine'],
+		annoObj['startOffset'],
+		annoObj['endOffset'],
+		annoObj['deleted'],
+		annoObj['html'],
+		annoObj['authorId'],
+		annoObj['createdTimestamp'],
+		annoObj['programmingLang']
+	)
+}
+
+// export const writeConsoleLogToFile = async (text: string[]) : Promise<void> => {
+// 	let uri;
+// 	let str = "";
+// 	text.forEach(t => str += t + '\n');
+// 	if(vscode.workspace.workspaceFolders)
+// 	uri = vscode.Uri.file(vscode.workspace.workspaceFolders[0].uri.path + '/list.txt');
+// 	try {
+// 		if(uri && vscode.workspace.workspaceFolders) {
+// 			await vscode.workspace.fs.stat(uri);
+// 			vscode.workspace.openTextDocument(vscode.workspace.workspaceFolders[0].uri.path + '/list.txt').then(doc => { 
+// 				vscode.workspace.fs.writeFile(doc.uri, new TextEncoder().encode(str)).then(() => {
+// 					console.log('done')
+// 				})
+// 			})
+// 		}
+		
+// 	}
+// 	catch {
+// 		// console.log('file does not exist');
+// 		const wsEdit = new vscode.WorkspaceEdit();
+// 		if(uri && vscode.workspace.workspaceFolders) {
+// 			wsEdit.createFile(uri)
+// 			vscode.workspace.applyEdit(wsEdit).then((value: boolean) => {
+// 				if(value && vscode.workspace.workspaceFolders) { // edit applied??
+// 					vscode.workspace.openTextDocument(vscode.workspace.workspaceFolders[0].uri.path + '/list.txt').then(doc => { 
+// 						vscode.workspace.fs.writeFile(doc.uri, new TextEncoder().encode(str)).then(() => {
+// 							console.log('done')
+// 						})
+// 					})
+// 				}
+// 				else {
+// 					vscode.window.showInformationMessage('Could not create file!');
+// 				}
+// 			});
+// 		}
+		
+// 	}
+// }
+
 // export const readAnnotationsFromFile = () : void => {
 // 	let filePath = "";
 // 	if(vscode.workspace.workspaceFolders !== undefined) {
@@ -162,44 +250,3 @@ const writeToFile = async (serializedObjects: { [key: string] : any }[], annotat
 // 	return annotationList;
 // }
 
-export const getVisiblePath = (filePath: string, workspacePath: string) : string => {
-	const slash = workspacePath.includes('/') ? '/' : '\\';
-	const workspaceHead = workspacePath.split(slash).pop() ? workspacePath.split(slash).pop() : slash;
-	const path = workspaceHead ? workspaceHead + filePath.split(workspaceHead).pop() : filePath;
-	if(path) return path;
-	return filePath;
-}
-
-export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefined) : Annotation => {
-	const annoObj : { [key: string]: any } = range ? 
-	{
-		startLine: range.start.line,
-		endLine: range.end.line,
-		startOffset: range.start.character,
-		endOffset: range.end.character,
-		...annoInfo
-	} : annoInfo.anchor ? {
-		startLine: annoInfo.anchor.startLine,
-		endLine: annoInfo.anchor.endLine,
-		startOffset: annoInfo.anchor.startOffset,
-		endOffset: annoInfo.anchor.endOffset,
-		...annoInfo
-	} : annoInfo;
-
-	return new Annotation(
-		annoObj['id'], 
-		annoObj['filename'], 
-		annoObj['visiblePath'], 
-		annoObj['anchorText'],
-		annoObj['annotation'],
-		annoObj['startLine'],
-		annoObj['endLine'],
-		annoObj['startOffset'],
-		annoObj['endOffset'],
-		annoObj['deleted'],
-		annoObj['html'],
-		annoObj['authorId'],
-		annoObj['createdTimestamp'],
-		annoObj['programmingLang']
-	)
-}

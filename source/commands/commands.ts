@@ -35,7 +35,7 @@ export const init = (context: vscode.ExtensionContext) => {
 										});
 									}
 									else {
-										text?.revealRange(range, 1);
+										text.revealRange(range, 1);
 									}
 								}
 								break;
@@ -52,8 +52,9 @@ export const init = (context: vscode.ExtensionContext) => {
 										const annotations: Annotation[] = annoDocs && annoDocs.length ? annoDocs.map((a: any) => {
 											return utils.buildAnnotation(a);
 										}) : [];
-										setAnnotationList(annotations);
-										view?.updateDisplay(annotations);
+										setAnnotationList(utils.sortAnnotationsByLocation(annotations, vscode.window.activeTextEditor?.document.uri.path.toString()));
+										if(vscode.workspace.workspaceFolders)
+											view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
 										const annoFiles: string[] = annotations.map(a => a.filename.toString());
 										vscode.window.visibleTextEditors.forEach((v: vscode.TextEditor) => {
 											if(annoFiles.includes(v.document.uri.toString())) {
@@ -79,7 +80,8 @@ export const init = (context: vscode.ExtensionContext) => {
 										const text = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === tempAnno?.filename)[0];
 										setTempAnno(null);
 										setAnnotationList(utils.sortAnnotationsByLocation(annotationList, text.document.uri.toString()));
-										view?.updateDisplay(annotationList);
+										if(vscode.workspace.workspaceFolders)
+											view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
 										addHighlightsToEditor(annotationList, text);
 									}
 
@@ -91,7 +93,8 @@ export const init = (context: vscode.ExtensionContext) => {
 								const updatedList = annotationList.filter(a => a.id !== message.annoId).concat([updatedAnno]);
 								const text = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === updatedAnno?.filename)[0];
 								setAnnotationList(utils.sortAnnotationsByLocation(updatedList, text.document.uri.toString()));
-								view?.updateDisplay(annotationList);
+								if(vscode.workspace.workspaceFolders)
+									view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
 								break;
 							}
 							case 'deleteAnnotation': {
@@ -99,13 +102,14 @@ export const init = (context: vscode.ExtensionContext) => {
 								const updatedList = annotationList.filter(a => a.id !== message.annoId).concat([updatedAnno]);
 								utils.saveAnnotations(updatedList, ""); // bad - that should point to JSON but we are also not using that rn so whatever
 								setAnnotationList(updatedList.filter(a => a.id !== message.annoId));
-								view?.updateDisplay(annotationList);
+								if(vscode.workspace.workspaceFolders)
+									view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
 								break;
 							}
 							case 'cancelAnnotation': {
 								// reset temp object and re-render
 								setTempAnno(null);
-								view?.updateDisplay(annotationList);
+								view?.updateDisplay(annotationList, vscode.window.activeTextEditor?.document.fileName.toString());
 								break;
 							}
 							default: {
@@ -128,7 +132,11 @@ export const init = (context: vscode.ExtensionContext) => {
 					newView._panel?.onDidChangeViewState((e: vscode.WebviewPanelOnDidChangeViewStateEvent) => {
 						if(user) {
 							view?.reload();
-							view?.updateDisplay(annotationList);
+							// known bug : will default to 0 annotations until a new window is made active again when the panel is dragged sigh
+							// for now will do but should find a better solution (may consider switching to having vs code handle the state when 
+							// panel is not active)
+							if(vscode.workspace.workspaceFolders && !e.webviewPanel.active)
+								view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
 						} else {
 							view?.init();
 						}
@@ -169,7 +177,7 @@ export const createNewAnnotation = () => {
 		};
 		setTempAnno(utils.buildAnnotation(temp, r));
         view?.createNewAnno(html, annotationList);
-    })
+    });
 }
 
 export const addNewHighlight = () => {
@@ -201,9 +209,10 @@ export const addNewHighlight = () => {
 		const textEdit = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === temp?.filename)[0];
 		// setTempAnno(null);
 		setAnnotationList(utils.sortAnnotationsByLocation(annotationList, textEdit.document.uri.toString()));
-		view?.updateDisplay(annotationList);
+		if(vscode.workspace.workspaceFolders)
+			view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
 		addHighlightsToEditor(annotationList, textEdit);
-    })
+    });
 }
 
 export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
@@ -215,6 +224,17 @@ export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edi
     }
     vscode.env.clipboard.writeText(textEditor.document.getText(textEditor.selection));
 
+}
+
+export const overriddenFindAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
+	console.log('finding...', textEditor, args, edit);
+	vscode.commands.executeCommand('editor.action.startFindReplaceAction')
+	// vscode.commands.getCommands().then((value: string[]) => utils.writeConsoleLogToFile(value))
+}
+
+export const overridenRevealDefinitionAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
+	console.log('this is what we are doing');
+	vscode.commands.executeCommand('editor.action.showReferences');
 }
 
 export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode.TextEditor | undefined) : void => {

@@ -81,12 +81,13 @@ export default class ViewLoader {
     }
   }
 
-  public updateDisplay(annotationList: Annotation[]) {
+  public updateDisplay(annotationList: Annotation[], currentFile: string | undefined) {
       if(this._panel && this._panel.webview) {
         this._panel.webview.postMessage({
           command: 'update',
           payload: {
-            annotationList: annotationList
+            annotationList,
+            currentFile
           }
         })
       }

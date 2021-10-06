@@ -29,7 +29,8 @@ export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | und
         if(TextEditor) {
             utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextEditor.document.uri.toString());
             setAnnotationList(utils.sortAnnotationsByLocation(annotationList, TextEditor.document.uri.toString()));
-            if(user) view?.updateDisplay(annotationList);
+            if(user && vscode.workspace.workspaceFolders)
+                view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
         }
         else {
             utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', "all");
@@ -108,7 +109,8 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
                 addHighlightsToEditor(annotationList, vscode.window.activeTextEditor);
             }
             setAnnotationList(utils.sortAnnotationsByLocation(annotationList, e.document.uri.toString()));
-            view?.updateDisplay(annotationList);
+            if(vscode.workspace.workspaceFolders)
+				view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
         }
     }
 }

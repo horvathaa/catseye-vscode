@@ -9,22 +9,25 @@ import * as eventHandlers from './listeners/listeners';
 
 export let annotationList: Annotation[] = [];
 export let copiedAnnotations: Annotation[] = [];
+export let deletedAnnotations: Annotation[] = [];
 export let view: ViewLoader | undefined = undefined;
 export let user: firebase.User | null = null;
 export let tempAnno: Annotation | null = null;
 export let activeEditor = vscode.window.activeTextEditor;
 export const annotationDecorations = vscode.window.createTextEditorDecorationType({
-	borderWidth: '1px',
-	borderStyle: 'solid',
-	overviewRulerColor: 'blue',
+	// borderWidth: '0.25px',
+	// borderStyle: 'solid',
 	overviewRulerLane: vscode.OverviewRulerLane.Right,
+	border: '0.5px solid rgba(217, 234, 247, .5)',
 	light: {
 		// this color will be used in light color themes
-		borderColor: 'darkblue'
+		// borderColor: 'darkblue',
+		overviewRulerColor: 'darkblue',
 	},
 	dark: {
 		// this color will be used in dark color themes
-		borderColor: 'lightblue'
+		// borderColor: ,
+		overviewRulerColor: 'lightblue',
 	},
 	rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
 	
@@ -54,6 +57,10 @@ export const setCopiedAnnotationList = (newCopiedAnnotationList: Annotation[]) :
 	copiedAnnotations = newCopiedAnnotationList;
 }
 
+export const setDeletedAnnotationList = (newDeletedAnnotationList: Annotation[]) : void => {
+	deletedAnnotations = newDeletedAnnotationList;
+}
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -79,7 +86,8 @@ export function activate(context: vscode.ExtensionContext) {
 	let annotateDisposable = vscode.commands.registerCommand('adamite.sel', () => commands.createNewAnnotation());
 	let highlightDisposable = vscode.commands.registerCommand('adamite.addHighlight', () => commands.addNewHighlight());
 
-	let clipboardDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', commands.overriddenClipboardCopyAction);
+	let copyDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', commands.overriddenClipboardCopyAction);
+	let cutDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCutAction', commands.overriddenClipboardCutAction);
 	// let findDisposable = vscode.commands.registerTextEditorCommand('actions.find', commands.overriddenFindAction);
 	// let revealDisposable = vscode.commands.registerTextEditorCommand('editor.action.revealDefinition', commands.overridenRevealDefinitionAction);
 
@@ -90,7 +98,8 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(initDisposable);
 	context.subscriptions.push(annotateDisposable);
 	context.subscriptions.push(highlightDisposable);
-	context.subscriptions.push(clipboardDisposable);
+	context.subscriptions.push(copyDisposable);
+	context.subscriptions.push(cutDisposable);
 	// context.subscriptions.push(findDisposable);
 	// context.subscriptions.push(revealDisposable);
 	

@@ -2,8 +2,7 @@ import * as vscode from 'vscode';
 import Annotation from '../constants/constants';
 import { v4 as uuidv4 } from 'uuid';
 import { buildAnnotation } from '../utils/utils';
-import { annotationList, setAnnotationList, user, view } from '../extension';
-import * as utils from '../utils/utils';
+import { user, deletedAnnotations, setDeletedAnnotationList } from '../extension';
 
 export const getAnchorsInRange = (selection: vscode.Selection, annotationList: Annotation[]) : {[key: string] : any}[] => {
 	return annotationList.map(a =>{ return { id: a.id, range: createRangeFromAnnotation(a) } }).filter(a => selection.contains(a.range));
@@ -78,7 +77,11 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 				createdTimestamp: new Date().getTime(),
 				programmingLang: filename.split('.')[1]
 			}
-			return buildAnnotation(newAnno);
+			const deletedAnno = buildAnnotation(newAnno);
+			// console.log('deletedAnnotations', deletedAnnotations);
+			// console.log('newly deleted', deletedAnno);
+			setDeletedAnnotationList(deletedAnnotations.concat([deletedAnno]));
+			return deletedAnno;
 		}
 
 		let changeOccurredInRange : boolean = false;
@@ -105,11 +108,13 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 			newRange.startOffset = textLength ? originalStartOffset + textLength : originalStartOffset - rangeLength;
 			// if end is on the same line we need to update it too
 			if(startAndEndLineAreSame) {
+				// console.log('change before start offset on same line', originalEndOffset - rangeLength)
 				newRange.endOffset = textLength ? originalEndOffset + textLength : originalEndOffset - rangeLength;
 			}
 		}
 		// user made change before or at our end offset -- need to update anchor text
 		if(originalEndLine === endLine && endOffset <= originalEndOffset && !diff) {
+			// console.log('end offset change', originalEndOffset - rangeLength)
 			newRange.endOffset = textLength ? originalEndOffset + textLength : originalEndOffset - rangeLength;
 			changeOccurredInRange = true;
 		}
@@ -127,29 +132,10 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 
 		// the edit happened within the anchor of the annotation
 		// if(changeOccurredInRange) {
-		// 	const newVscodeRange = new vscode.Range(new vscode.Position(newRange.startLine, newRange.startOffset), new vscode.Position(newRange.endLine, newRange.endOffset));
-		// 	const newAnchorText = doc.getText(newVscodeRange);
-		// 	utils.getShikiCodeHighlighting(filename, newAnchorText).then((newHtml: string) => {
-		// 		const newAnno = {
-		// 			id,
-		// 			filename,
-		// 			visiblePath,
-		// 			anchorText: newAnchorText,
-		// 			annotation,
-		// 			...newRange,
-		// 			deleted: false,
-		// 			html: newHtml,
-		// 			authorId : user?.uid,
-		// 			createdTimestamp,
-		// 			programmingLang: filename.split('.')[1]
-		// 		}
-		// 		view?.updateHtml(newHtml, newAnchorText, id);
-		// 		const newAnnoObj : Annotation = buildAnnotation(newAnno);
-		// 		setAnnotationList(annotationList.filter((a: Annotation) => a.id !== id).concat([newAnnoObj]));
-		// 		return newAnnoObj;
-		// 	})
-			
+		// 	maybe do special checks here - flag annos that need updating?
 		// }
+
+		// console.log('made this range', newRange);
 
 
 		const newAnno = {
@@ -182,4 +168,8 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 
 export function createRangeFromAnnotation(annotation: Annotation) : vscode.Range {
 	return new vscode.Range(new vscode.Position(annotation.startLine, annotation.startOffset), new vscode.Position(annotation.endLine, annotation.endOffset))
+}
+
+export function createRangeFromObject(obj: {[key: string] : any}) : vscode.Range {
+	return new vscode.Range(obj.startLine, obj.startOffset, obj.endLine, obj.endOffset);
 }

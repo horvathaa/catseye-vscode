@@ -1,6 +1,6 @@
 import firebase from '../firebase/firebase';
 import Annotation from '../constants/constants';
-import { user, annotationList } from '../extension';
+import { user, annotationList, view, setAnnotationList } from '../extension';
 import * as vscode from 'vscode';
 var shiki = require('shiki');
 
@@ -50,10 +50,35 @@ export const getShikiCodeHighlighting = async (filename: string, anchorText: str
 	return html ? html : anchorText;
 }
 
+const updateHtml = async (annos: Annotation[], doc: vscode.TextDocument) : Promise<Annotation[]> => {
+	let updatedList : Annotation [] = [];
+	for(let x = 0; x < annos.length; x++) {
+		const newVscodeRange = new vscode.Range(new vscode.Position(annos[x].startLine, annos[x].startOffset), new vscode.Position(annos[x].endLine, annos[x].endOffset));
+		const newAnchorText = doc.getText(newVscodeRange);
+		const newHtml = await getShikiCodeHighlighting(annos[x].filename.toString(), newAnchorText);
+		const newAnno = buildAnnotation({
+			...annos[x], html: newHtml, anchorText: newAnchorText
+		});
+		// probably should do a more conservative check (e.g., strip whitespace?)
+		if(newAnchorText !== annos[x].anchorText) view?.updateHtml(newHtml, newAnchorText, annos[x].id);
+		updatedList.push(newAnno);
+	}
 
-export const handleSaveCloseEvent = (annotationList: Annotation[], filePath: string = "", currentFile: string = "all") : void => {
+	return updatedList;
+
+}
+
+
+export const handleSaveCloseEvent = async (annotationList: Annotation[], filePath: string = "", currentFile: string = "all", doc : vscode.TextDocument | undefined = undefined) : Promise<void> => {
 	const annotationsInCurrentFile = currentFile !== "all" ? annotationList.filter(a => a.filename === currentFile) : annotationList;
-	if(annotationsInCurrentFile.length && vscode.workspace.workspaceFolders && !arraysEqual(annotationList, lastSavedAnnotations)) {
+	if(doc) {
+		let newList = await updateHtml(annotationsInCurrentFile, doc);
+		const ids = newList.map(a => a.id);
+		currentFile === 'all' ? setAnnotationList(newList) : setAnnotationList(annotationList.filter(a => !ids.includes(a.id)).concat(newList))
+		lastSavedAnnotations = annotationList;
+		saveAnnotations(annotationList, filePath);
+	}
+	else if(annotationsInCurrentFile.length && vscode.workspace.workspaceFolders && !arraysEqual(annotationList, lastSavedAnnotations)) {
 		lastSavedAnnotations = annotationList;
 		saveAnnotations(annotationList, filePath);
 	}

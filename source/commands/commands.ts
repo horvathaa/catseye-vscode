@@ -160,7 +160,7 @@ export const createNewAnnotation = () => {
         
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
     const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
-    utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then(html => {
+    utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then((html: string) => {
 		const temp = {
 			id: uuidv4(),
 			filename: activeTextEditor.document.uri.toString(),

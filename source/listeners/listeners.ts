@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { annotationList, copiedAnnotations, tempAnno, setTempAnno, user, view, setActiveEditor, setAnnotationList, annotationDecorations } from '../extension';
+import { annotationList, copiedAnnotations, tempAnno, setTempAnno, user, view, setActiveEditor, setAnnotationList } from '../extension';
 import * as anchor from '../anchorFunctions/anchor';
 import * as utils from '../utils/utils';
 import Annotation from '../constants/constants';
@@ -12,7 +12,7 @@ export const handleChangeVisibleTextEditors = async (textEditors: vscode.TextEdi
     
     const annotationsToHighlight = annotationList.filter(a => textEditorFileNames.includes(a.filename.toString()))
     if(!annotationsToHighlight.length) return;
-    let ranges = annotationsToHighlight.map(a => { return {filename: a.filename, range: anchor.createRangeFromAnnotation(a), annotation: a.annotation}});
+    // let ranges = annotationsToHighlight.map(a => { return {filename: a.filename, range: anchor.createRangeFromAnnotation(a), annotation: a.annotation}});
     textEditors.forEach(t => {
         // TODO: see if we can change the behavior of markdown string so it has an onclick event to navigate to the annotation
         // const decorationOptions: vscode.DecorationOptions[] = ranges.
@@ -27,7 +27,7 @@ export const handleChangeVisibleTextEditors = async (textEditors: vscode.TextEdi
 export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | undefined) => {
     if(vscode.workspace.workspaceFolders) {
         if(TextEditor) {
-            utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextEditor.document.uri.toString());
+            utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextEditor.document.uri.toString(), TextEditor.document);
             setAnnotationList(utils.sortAnnotationsByLocation(annotationList, TextEditor.document.uri.toString()));
             if(user && vscode.workspace.workspaceFolders)
                 view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
@@ -40,10 +40,10 @@ export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | und
 }
 
 export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
-    if(vscode.workspace.workspaceFolders) utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextDocument.uri.toString());
+    if(vscode.workspace.workspaceFolders) utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextDocument.uri.toString(), TextDocument);
 }
 
-export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) => {
+export const handleDidChangeTextDocument = async (e: vscode.TextDocumentChangeEvent) => {
     const currentAnnotations = annotationList.filter(a => a.filename === e.document.uri.toString());
     if(!currentAnnotations.length && !tempAnno) { return } // no annotations are affected by this change
     else {
@@ -96,12 +96,13 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
                     // copiedAnnotations = []; // we pasted?
                 }
             }
-            
-            const translatedAnnotations = currentAnnotations.map(a => anchor.translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, 
-                change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), visiblePath, a.id, a.createdTimestamp, a.html)).filter(a => !a.deleted);
-            // if the user is on the process of creating an annotation, update that annotation as well
-            tempAnno ? setTempAnno(anchor.translateChanges(tempAnno.startLine, tempAnno.endLine, tempAnno.startOffset, tempAnno.endOffset, startLine, endLine, startOffset, endOffset, 
-                change.text.length, diff, change.rangeLength, tempAnno.anchorText, tempAnno.annotation, tempAnno.filename.toString(), visiblePath, tempAnno.id, tempAnno.createdTimestamp, tempAnno.html)) : setTempAnno(null);
+            const translatedAnnotations : Annotation[] = currentAnnotations.map(a => anchor.translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, 
+                change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), visiblePath, a.id, a.createdTimestamp, a.html, e.document)).filter(a => !a.deleted);
+            if(tempAnno) {
+                const newTemp = anchor.translateChanges(tempAnno.startLine, tempAnno.endLine, tempAnno.startOffset, tempAnno.endOffset, startLine, endLine, startOffset, endOffset, 
+                    change.text.length, diff, change.rangeLength, tempAnno.anchorText, tempAnno.annotation, tempAnno.filename.toString(), visiblePath, tempAnno.id, tempAnno.createdTimestamp, tempAnno.html, e.document)
+                setTempAnno(newTemp);
+            }
             setAnnotationList(translatedAnnotations.concat(annotationList.filter(a => a.filename !== e.document.uri.toString()), rangeAdjustedAnnotations));
             if(didPaste && vscode.window.activeTextEditor) {
                 // const ranges = annotationList.map(a => anchor.createRangeFromAnnotation(a));
@@ -110,7 +111,9 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
             }
             setAnnotationList(utils.sortAnnotationsByLocation(annotationList, e.document.uri.toString()));
             if(vscode.workspace.workspaceFolders)
-				view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
+                view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath)); 
+            // if the user is on the process of creating an annotation, update that annotation as well
+            
         }
     }
 }

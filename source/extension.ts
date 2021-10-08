@@ -80,8 +80,8 @@ export function activate(context: vscode.ExtensionContext) {
 	let highlightDisposable = vscode.commands.registerCommand('adamite.addHighlight', () => commands.addNewHighlight());
 
 	let clipboardDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', commands.overriddenClipboardCopyAction);
-	let findDisposable = vscode.commands.registerTextEditorCommand('actions.find', commands.overriddenFindAction);
-	let revealDisposable = vscode.commands.registerTextEditorCommand('editor.action.revealDefinition', commands.overridenRevealDefinitionAction);
+	// let findDisposable = vscode.commands.registerTextEditorCommand('actions.find', commands.overriddenFindAction);
+	// let revealDisposable = vscode.commands.registerTextEditorCommand('editor.action.revealDefinition', commands.overridenRevealDefinitionAction);
 
 	/*************************************************************************************/
 	/**************************************** DISPOSABLES ********************************/
@@ -91,8 +91,8 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(annotateDisposable);
 	context.subscriptions.push(highlightDisposable);
 	context.subscriptions.push(clipboardDisposable);
-	context.subscriptions.push(findDisposable);
-	context.subscriptions.push(revealDisposable);
+	// context.subscriptions.push(findDisposable);
+	// context.subscriptions.push(revealDisposable);
 	
 	context.subscriptions.push(didChangeVisibleListenerDisposable);
 	context.subscriptions.push(didChangeactiveEditorListenerDisposable);

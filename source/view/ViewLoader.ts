@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import Annotation from '../constants/constants';
-import { annotationList, user } from '../extension';
+import { annotationList } from '../extension';
 
 
 export default class ViewLoader {
@@ -77,6 +77,19 @@ export default class ViewLoader {
     if(this._panel && this._panel.webview) {
       this._panel.webview.postMessage({
         command: 'reload',
+      })
+    }
+  }
+
+  public updateHtml(html: string, anchorText: string, id: string) {
+    if(this._panel && this._panel.webview) {
+      this._panel.webview.postMessage({
+        command: 'newHtml',
+        payload: {
+          html,
+          anchorText,
+          id
+        }
       })
     }
   }

@@ -15,7 +15,7 @@ const AnnotationDropDown: React.FC<MenuProps> = ({ id, editAnnotation = () => {}
         <div className={styles['AnnotationsOptions']}>
         <Dropdown id={id}>
             <Dropdown.Toggle id={id + '-toggle'} className={styles['vertical-center']}>
-                <AiOutlineMenu className={styles['profile']} />
+                <AiOutlineMenu  />
             </Dropdown.Toggle>
             <Dropdown.Menu style={{ width: '220px', border: '1px solid white', background: 'var(--vscode-editor-background)' }}>
                 <Dropdown.Header className={styles["AnnotationOptionsTitle"]}>
@@ -24,13 +24,13 @@ const AnnotationDropDown: React.FC<MenuProps> = ({ id, editAnnotation = () => {}
                 </Dropdown.Header>
                 <Dropdown.Item onClick={editAnnotation} className={styles['DropdownItemOverwrite']}>
                     <div className={styles['DropdownIconsWrapper']}>
-                        <AiOutlineEdit className={styles['DropdownIcons']} id={id + "-edit"} />
+                        <AiOutlineEdit  />
                     </div>
                     Edit
                 </Dropdown.Item>
                 <Dropdown.Item onClick={deleteAnnotation} className={styles['DropdownItemOverwrite']}>
                     <div className={styles['DropdownIconsWrapper']}>
-                        <BsTrash className={styles['DropdownIcons']} id={id + "-trash"} />
+                        <BsTrash   />
                     </div>
                     Delete
                 </Dropdown.Item>
@@ -41,3 +41,7 @@ const AnnotationDropDown: React.FC<MenuProps> = ({ id, editAnnotation = () => {}
 }
 
 export default AnnotationDropDown;
+
+// className={styles['DropdownIcons']} id={id + "-trash"}
+// className={styles['DropdownIcons']} id={id + "-edit"}
+// className={styles['profile']}

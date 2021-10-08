@@ -1,4 +1,4 @@
-import { annotationList, view, user, setUser, setView, tempAnno, setTempAnno, annotationDecorations, setAnnotationList, setCopiedAnnotationList } from "../extension";
+import { annotationList, view, user, setUser, setView, tempAnno, setTempAnno, annotationDecorations, setAnnotationList, setCopiedAnnotationList, copiedAnnotations } from "../extension";
 import Annotation from '../constants/constants';
 import * as anchor from '../anchorFunctions/anchor';
 import * as vscode from 'vscode';
@@ -31,7 +31,7 @@ export const init = (context: vscode.ExtensionContext) => {
 									if(!text) {
 										vscode.workspace.openTextDocument(vscode.Uri.parse(anno.filename.toString()))
 										.then((doc: vscode.TextDocument) => {
-											vscode.window.showTextDocument(doc, { preserveFocus: true, preview: true, selection: range, viewColumn: vscode.ViewColumn.Beside });
+											vscode.window.showTextDocument(doc, { preserveFocus: true, preview: true, selection: range, viewColumn: view?._panel?.viewColumn === vscode.ViewColumn.One ? vscode.ViewColumn.Two : vscode.ViewColumn.One });
 										});
 									}
 									else {
@@ -219,11 +219,27 @@ export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edi
     const annotationsInEditor = annotationList.filter((a: Annotation) => a.filename === textEditor.document.uri.toString());
     const annosInRange = anchor.getAnchorsInRange(textEditor.selection, annotationsInEditor);
     if(annosInRange.length) {
-        const annoIds = annosInRange.map(a => a.id)
+        const annoIds = annosInRange.map(a => a.id);
         setCopiedAnnotationList(annotationList.filter(a => annoIds.includes(a.id)));
     }
+	else if(copiedAnnotations.length) {
+		setCopiedAnnotationList([]); // we no longer are copying annotations
+	}
     vscode.env.clipboard.writeText(textEditor.document.getText(textEditor.selection));
+}
 
+export const overriddenClipboardCutAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
+    const annotationsInEditor = annotationList.filter((a: Annotation) => a.filename === textEditor.document.uri.toString());
+    const annosInRange = anchor.getAnchorsInRange(textEditor.selection, annotationsInEditor);
+    if(annosInRange.length) {
+        const annoIds = annosInRange.map(a => a.id);
+        setCopiedAnnotationList(annotationList.filter(a => annoIds.includes(a.id)));
+    }
+	else if(copiedAnnotations.length) {
+		setCopiedAnnotationList([]); // we no longer are copying annotations
+	}
+    vscode.env.clipboard.writeText(textEditor.document.getText(textEditor.selection));
+	edit.delete(textEditor.selection);
 }
 
 export const overriddenFindAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {

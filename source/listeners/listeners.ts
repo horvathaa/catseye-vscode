@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { annotationList, copiedAnnotations, tempAnno, setTempAnno, user, view, setActiveEditor, setAnnotationList } from '../extension';
+import { annotationList, copiedAnnotations, tempAnno, setTempAnno, user, view, setActiveEditor, setAnnotationList, setCopiedAnnotationList, deletedAnnotations, setDeletedAnnotationList } from '../extension';
 import * as anchor from '../anchorFunctions/anchor';
 import * as utils from '../utils/utils';
 import Annotation from '../constants/constants';
@@ -57,45 +57,29 @@ export const handleDidChangeTextDocument = async (e: vscode.TextDocumentChangeEv
             const diff = linesInserted - linesInRange;
             const visiblePath: string = vscode.workspace.workspaceFolders ? utils.getVisiblePath(e.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath) : e.document.uri.fsPath;
 
-            // check to see if user pasted a copied annotation... 
+            // check to see if user pasted a copied or previously-deleted annotation... 
             let rangeAdjustedAnnotations: Annotation[] = [];
             let didPaste: boolean = false;
+            let didUndo: boolean = false;
             if(copiedAnnotations.length) {
-                const copiedAnnotationTextArr = copiedAnnotations.map(a => a.anchorText.replace(/\s+/g, ''));
-                const cleanChangeText = change.text.replace(/\s+/g, '');
-                const doesContain = copiedAnnotationTextArr.map(t => cleanChangeText.includes(t));
-                // can be improved by using filter and only computing new anchors for annotations that
-                // are included in the pasted text - can maybe get the offset earlier too???
-                
-                if(doesContain.includes(true)) {
-                    const numLines = (change.text.match(/\n/g) || []).length;
-                    const computedEndOffset = change.text.substr(change.text.lastIndexOf('\n') + 1).length;
-                    const actuallyUsefulRange = new vscode.Range(startLine, startOffset, startLine + numLines, computedEndOffset);
-                    const adjustedAnno = {
-                        id: uuidv4(),
-                        filename: e.document.uri.toString(),
-                        visiblePath,
-                        anchorText: change.text,
-                        annotation: copiedAnnotations[0].annotation,
-                        anchor: {
-                            startLine,
-                            startOffset,
-                            endLine: actuallyUsefulRange.end.line,
-                            endOffset: actuallyUsefulRange.end.character
-                        },
-                        deleted: false,
-                        html: copiedAnnotations[0].html,
-                        authorId: copiedAnnotations[0].authorId,
-                        createdTimestamp: new Date().getTime(),
-                        programmingLang: copiedAnnotations[0].programmingLang
-                    }
-                    rangeAdjustedAnnotations = copiedAnnotations.length > 1 ? anchor.splitRange(actuallyUsefulRange, copiedAnnotations, e.document.uri.toString(), change.text) : 
-                    [utils.buildAnnotation(adjustedAnno)];
-                    // annotationList = annotationList.concat(rangeAdjustedAnnotations);
+                const copiedAnnos = utils.checkIfChangeIncludesAnchor(copiedAnnotations, change.text);
+                if(copiedAnnos.length && vscode.workspace.workspaceFolders) {
+                    rangeAdjustedAnnotations = utils.reconstructAnnotations(copiedAnnos, change.text, startLine, e.document.uri, vscode.workspace.workspaceFolders[0].uri);
                     didPaste = true;
-                    // copiedAnnotations = []; // we pasted?
                 }
             }
+
+            if(deletedAnnotations.length) {
+                const deletedAnnos = utils.checkIfChangeIncludesAnchor(deletedAnnotations, change.text);
+                if(deletedAnnos.length && vscode.workspace.workspaceFolders) {
+                    rangeAdjustedAnnotations = utils.reconstructAnnotations(deletedAnnos, change.text, startLine, e.document.uri, vscode.workspace.workspaceFolders[0].uri)
+                    didUndo = true;
+                    const deletedIds = deletedAnnos.map(a => a.id);
+                    setDeletedAnnotationList(deletedAnnotations.filter((a: Annotation) => !deletedIds?.includes(a.id))); // undo stack has been popped
+                }
+            }
+
+
             const translatedAnnotations : Annotation[] = currentAnnotations.map(a => anchor.translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, 
                 change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), visiblePath, a.id, a.createdTimestamp, a.html, e.document)).filter(a => !a.deleted);
             if(tempAnno) {
@@ -104,7 +88,7 @@ export const handleDidChangeTextDocument = async (e: vscode.TextDocumentChangeEv
                 setTempAnno(newTemp);
             }
             setAnnotationList(translatedAnnotations.concat(annotationList.filter(a => a.filename !== e.document.uri.toString()), rangeAdjustedAnnotations));
-            if(didPaste && vscode.window.activeTextEditor) {
+            if((didPaste || didUndo) && vscode.window.activeTextEditor) {
                 // const ranges = annotationList.map(a => anchor.createRangeFromAnnotation(a));
                 // vscode.window.activeTextEditor?.setDecorations(annotationDecorations, ranges);
                 addHighlightsToEditor(annotationList, vscode.window.activeTextEditor);

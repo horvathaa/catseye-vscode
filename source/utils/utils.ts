@@ -1,7 +1,9 @@
 import firebase from '../firebase/firebase';
 import Annotation from '../constants/constants';
+import { splitRange, createRangeFromObject } from '../anchorFunctions/anchor';
 import { user, annotationList, view, setAnnotationList } from '../extension';
 import * as vscode from 'vscode';
+import { v4 as uuidv4 } from 'uuid';
 var shiki = require('shiki');
 
 let lastSavedAnnotations: Annotation[] = annotationList && annotationList.length ? annotationList : [];
@@ -25,6 +27,42 @@ export function getListFromSnapshots(snapshots: firebase.firestore.QuerySnapshot
         });
     });
     return out;
+}
+
+export const reconstructAnnotations = (annotationList: Annotation[], text: string, startLine: number, filePath: vscode.Uri, workspace: vscode.Uri) : Annotation[] => {
+	const numLines = (text.match(/\n/g) || []).length;
+	const computedEndOffset = text.substr(text.lastIndexOf('\n') + 1).length;
+	const endPosition = new vscode.Position(startLine + numLines, computedEndOffset);
+	const adjustedAnno = {
+		id: annotationList[0].id,
+		filename: filePath.toString(),
+		visiblePath: getVisiblePath(filePath.fsPath, workspace.fsPath),
+		anchorText: text,
+		annotation: annotationList[0].annotation,
+		anchor: {
+			startLine,
+			startOffset: annotationList[0].startOffset,
+			endLine: endPosition.line,
+			endOffset: endPosition.character
+		},
+		deleted: false,
+		html: annotationList[0].html,
+		authorId: annotationList[0].authorId,
+		createdTimestamp: new Date().getTime(),
+		programmingLang: annotationList[0].programmingLang
+	}
+	return annotationList.length > 1 ? splitRange(createRangeFromObject(adjustedAnno.anchor), annotationList, filePath.toString(), text) : 
+	[buildAnnotation(adjustedAnno)];
+}
+
+export const checkIfChangeIncludesAnchor = (annotationList : Annotation[], text: string) : Annotation[] => {
+	const anchorTextArr : {[key: string] : any}[] = annotationList.map((a : Annotation) => { return { cleanText: a.anchorText.replace(/\s+/g, ''), id: a.id } });
+	console.log('anchor text', anchorTextArr);
+	const cleanChangeText = text.replace(/\s+/g, '');
+	console.log('clean text', cleanChangeText);
+	const matches: string[] = anchorTextArr.filter((a: {[key: string] : any}) => (a.cleanText.includes(cleanChangeText) || cleanChangeText.includes(a.cleanText))).map(a => a.id);
+	console.log('matches', matches);
+	return annotationList.filter((a: Annotation) => matches.includes(a.id));
 }
 
 export const sortAnnotationsByLocation = (annotationList: Annotation[], filename: string | undefined) : Annotation[] => {

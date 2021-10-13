@@ -58,7 +58,7 @@ export const init = (context: vscode.ExtensionContext) => {
 										const annoFiles: string[] = annotations.map(a => a.filename.toString());
 										vscode.window.visibleTextEditors.forEach((v: vscode.TextEditor) => {
 											if(annoFiles.includes(v.document.uri.toString())) {
-												addHighlightsToEditor(annotations, v); 
+												anchor.addHighlightsToEditor(annotations, v); 
 											}
 										});
 									});
@@ -82,7 +82,7 @@ export const init = (context: vscode.ExtensionContext) => {
 										setAnnotationList(utils.sortAnnotationsByLocation(annotationList, text.document.uri.toString()));
 										if(vscode.workspace.workspaceFolders)
 											view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
-										addHighlightsToEditor(annotationList, text);
+										anchor.addHighlightsToEditor(annotationList, text);
 									}
 
 								});
@@ -104,6 +104,10 @@ export const init = (context: vscode.ExtensionContext) => {
 								setAnnotationList(updatedList.filter(a => a.id !== message.annoId));
 								if(vscode.workspace.workspaceFolders)
 									view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
+								const visible : vscode.TextEditor = vscode.window.visibleTextEditors.filter((v: vscode.TextEditor) => v.document.uri.toString() === updatedAnno.filename)[0];
+								if(visible) {
+									anchor.addHighlightsToEditor(annotationList, visible);
+								}
 								break;
 							}
 							case 'cancelAnnotation': {
@@ -211,16 +215,17 @@ export const addNewHighlight = () => {
 		setAnnotationList(utils.sortAnnotationsByLocation(annotationList, textEdit.document.uri.toString()));
 		if(vscode.workspace.workspaceFolders)
 			view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
-		addHighlightsToEditor(annotationList, textEdit);
+		anchor.addHighlightsToEditor(annotationList, textEdit);
     });
 }
 
 export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
     const annotationsInEditor = annotationList.filter((a: Annotation) => a.filename === textEditor.document.uri.toString());
-    const annosInRange = anchor.getAnchorsInRange(textEditor.selection, annotationsInEditor);
+	const annosInRange = anchor.getAnchorsInRange(textEditor.selection, annotationsInEditor);
+	console.log('annos in range', annosInRange);
     if(annosInRange.length) {
         const annoIds = annosInRange.map(a => a.id);
-        setCopiedAnnotationList(annotationList.filter(a => annoIds.includes(a.id)));
+		setCopiedAnnotationList(annotationList.filter(a => annoIds.includes(a.id)));
     }
 	else if(copiedAnnotations.length) {
 		setCopiedAnnotationList([]); // we no longer are copying annotations
@@ -228,12 +233,15 @@ export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edi
     vscode.env.clipboard.writeText(textEditor.document.getText(textEditor.selection));
 }
 
+// probs should merge this with copy - only difference is removing the selection
 export const overriddenClipboardCutAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
     const annotationsInEditor = annotationList.filter((a: Annotation) => a.filename === textEditor.document.uri.toString());
     const annosInRange = anchor.getAnchorsInRange(textEditor.selection, annotationsInEditor);
     if(annosInRange.length) {
         const annoIds = annosInRange.map(a => a.id);
-        setCopiedAnnotationList(annotationList.filter(a => annoIds.includes(a.id)));
+		const cutAnnos = annotationList.filter(a => annoIds.includes(a.id));
+		anchor.addHighlightsToEditor(cutAnnos, textEditor);
+		setCopiedAnnotationList(cutAnnos);
     }
 	else if(copiedAnnotations.length) {
 		setCopiedAnnotationList([]); // we no longer are copying annotations
@@ -253,21 +261,3 @@ export const overridenRevealDefinitionAction = (textEditor: vscode.TextEditor, e
 	vscode.commands.executeCommand('editor.action.showReferences');
 }
 
-export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode.TextEditor | undefined) : void => {
-	const filenames = [... new Set(annotationList.map(a => a.filename))];
-	if(annotationList.length && text && filenames.includes(text.document.uri.toString())) {
-		let ranges = annotationList
-			.map(a => { return {annotation: a.annotation, filename: a.filename, range: anchor.createRangeFromAnnotation(a)}})
-			.filter(r => r.filename === text?.document.uri.toString())
-			.map(a => { return {annotation: a.annotation, range: a.range }});
-		if(ranges.length) {
-			try {
-				const decorationOptions: vscode.DecorationOptions[] = ranges.map(r => { return { range: r.range, hoverMessage: r.annotation } });
-				text.setDecorations(annotationDecorations, decorationOptions);
-			}
-			catch (error) {
-				console.log('couldnt highlight', error);
-			}
-		} 
-	}
-}

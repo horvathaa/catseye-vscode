@@ -10,6 +10,7 @@ import * as eventHandlers from './listeners/listeners';
 export let annotationList: Annotation[] = [];
 export let copiedAnnotations: Annotation[] = [];
 export let deletedAnnotations: Annotation[] = [];
+export let tabSize: number | string = 4;
 export let view: ViewLoader | undefined = undefined;
 export let user: firebase.User | null = null;
 export let tempAnno: Annotation | null = null;
@@ -47,6 +48,10 @@ export const setUser = (newUser: firebase.User | null) : void => {
 
 export const setView = (newView: ViewLoader | undefined) : void => {
 	view = newView;
+}
+
+export const setTabSize = (newTabSize: number | string) : void => {
+	tabSize = newTabSize;
 }
 
 export const setAnnotationList = (newAnnotationList: Annotation[]) : void => {

@@ -1,6 +1,6 @@
 import firebase from '../firebase/firebase';
 import Annotation from '../constants/constants';
-import { splitRange, createRangeFromObject } from '../anchorFunctions/anchor';
+import { splitRange, createRangeFromObject, findAnchorInRange } from '../anchorFunctions/anchor';
 import { user, annotationList, view, setAnnotationList } from '../extension';
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
@@ -29,39 +29,30 @@ export function getListFromSnapshots(snapshots: firebase.firestore.QuerySnapshot
     return out;
 }
 
-export const reconstructAnnotations = (annotationList: Annotation[], text: string, startLine: number, filePath: vscode.Uri, workspace: vscode.Uri) : Annotation[] => {
-	const numLines = (text.match(/\n/g) || []).length;
-	const computedEndOffset = text.substr(text.lastIndexOf('\n') + 1).length;
-	const endPosition = new vscode.Position(startLine + numLines, computedEndOffset);
-	const adjustedAnno = {
-		id: annotationList[0].id,
-		filename: filePath.toString(),
-		visiblePath: getVisiblePath(filePath.fsPath, workspace.fsPath),
-		anchorText: text,
-		annotation: annotationList[0].annotation,
-		anchor: {
-			startLine,
-			startOffset: annotationList[0].startOffset,
-			endLine: endPosition.line,
-			endOffset: endPosition.character
-		},
-		deleted: false,
-		html: annotationList[0].html,
-		authorId: annotationList[0].authorId,
-		createdTimestamp: new Date().getTime(),
-		programmingLang: annotationList[0].programmingLang
-	}
-	return annotationList.length > 1 ? splitRange(createRangeFromObject(adjustedAnno.anchor), annotationList, filePath.toString(), text) : 
-	[buildAnnotation(adjustedAnno)];
+export const reconstructAnnotations = (annotationList: Annotation[], text: string, changeRange: vscode.Range, filePath: vscode.Uri, workspace: vscode.Uri, doc: vscode.TextDocument) : Annotation[] => {
+	return annotationList.map((a: Annotation) => {
+		const adjustedAnno = {
+			id: uuidv4(),
+			filename: filePath.toString(),
+			visiblePath: getVisiblePath(filePath.fsPath, workspace.fsPath),
+			anchorText: a.anchorText,
+			annotation: a.annotation,
+			anchor: findAnchorInRange(changeRange, a.anchorText, doc, text, a.endLine - a.startLine, a.startLine === a.endLine),
+			deleted: false,
+			html: a.html,
+			authorId: a.authorId,
+			createdTimestamp: new Date().getTime(),
+			programmingLang: a.programmingLang
+		}
+		return buildAnnotation(adjustedAnno);
+	});
 }
 
 export const checkIfChangeIncludesAnchor = (annotationList : Annotation[], text: string) : Annotation[] => {
 	const anchorTextArr : {[key: string] : any}[] = annotationList.map((a : Annotation) => { return { cleanText: a.anchorText.replace(/\s+/g, ''), id: a.id } });
-	console.log('anchor text', anchorTextArr);
 	const cleanChangeText = text.replace(/\s+/g, '');
-	console.log('clean text', cleanChangeText);
-	const matches: string[] = anchorTextArr.filter((a: {[key: string] : any}) => (a.cleanText.includes(cleanChangeText) || cleanChangeText.includes(a.cleanText))).map(a => a.id);
-	console.log('matches', matches);
+	if(cleanChangeText === "") return [];
+	const matches: string[] = anchorTextArr.filter((a: {[key: string] : any}) => (cleanChangeText.includes(a.cleanText))).map(a => a.id); // bug: if the user annotates something common like just "console" this will match on other instances it shouldn't
 	return annotationList.filter((a: Annotation) => matches.includes(a.id));
 }
 
@@ -109,15 +100,18 @@ const updateHtml = async (annos: Annotation[], doc: vscode.TextDocument) : Promi
 
 export const handleSaveCloseEvent = async (annotationList: Annotation[], filePath: string = "", currentFile: string = "all", doc : vscode.TextDocument | undefined = undefined) : Promise<void> => {
 	const annotationsInCurrentFile = currentFile !== "all" ? annotationList.filter(a => a.filename === currentFile) : annotationList;
+	console.log('in current file', annotationsInCurrentFile, 'bool', !arraysEqual(annotationList, lastSavedAnnotations), 'doc', doc)
 	if(doc) {
 		let newList = await updateHtml(annotationsInCurrentFile, doc);
 		const ids = newList.map(a => a.id);
 		currentFile === 'all' ? setAnnotationList(newList) : setAnnotationList(annotationList.filter(a => !ids.includes(a.id)).concat(newList))
 		lastSavedAnnotations = annotationList;
+		console.log('saving', annotationList);
 		saveAnnotations(annotationList, filePath);
 	}
 	else if(annotationsInCurrentFile.length && vscode.workspace.workspaceFolders && !arraysEqual(annotationList, lastSavedAnnotations)) {
 		lastSavedAnnotations = annotationList;
+		console.log('saving...');
 		saveAnnotations(annotationList, filePath);
 	}
 }

@@ -1,26 +1,21 @@
 import * as vscode from 'vscode';
-import { annotationList, copiedAnnotations, tempAnno, setTempAnno, user, view, setActiveEditor, setAnnotationList, setCopiedAnnotationList, deletedAnnotations, setDeletedAnnotationList } from '../extension';
+import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, setCopiedAnnotationList, deletedAnnotations, setDeletedAnnotationList } from '../extension';
 import * as anchor from '../anchorFunctions/anchor';
 import * as utils from '../utils/utils';
 import Annotation from '../constants/constants';
 import { v4 as uuidv4 } from 'uuid';
-import { addHighlightsToEditor } from '../commands/commands';
+
 
 export const handleChangeVisibleTextEditors = async (textEditors: vscode.TextEditor[]) => {
-    const textEditorFileNames = textEditors.map(t => t.document.uri.toString());
+    const textEditorFileNames = textEditors.map(t => {return {fileName: t.document.uri.toString(), lineCount: t.document.lineCount }} );
+    if(textEditors && textEditors.length && textEditors[0].options?.tabSize) setTabSize(textEditors[0].options.tabSize);
     // nneed to decide if we want to write to DB that often... if(vscode.workspace.workspaceFolders !== undefined) utils.saveAnnotations(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json');
     
-    const annotationsToHighlight = annotationList.filter(a => textEditorFileNames.includes(a.filename.toString()))
+    const annotationsToHighlight = annotationList.filter(a => textEditorFileNames.filter((t) => t.fileName === a.filename.toString())[0].lineCount >= a.endLine); // holy shit this sucks
     if(!annotationsToHighlight.length) return;
-    // let ranges = annotationsToHighlight.map(a => { return {filename: a.filename, range: anchor.createRangeFromAnnotation(a), annotation: a.annotation}});
-    textEditors.forEach(t => {
-        // TODO: see if we can change the behavior of markdown string so it has an onclick event to navigate to the annotation
-        // const decorationOptions: vscode.DecorationOptions[] = ranges.
-        //     filter(r => r.filename === t.document.uri.toString()).
-        //     map(r => { return { range: r.range, hoverMessage: r.annotation } });
-        // t.setDecorations(annotationDecorations, decorationOptions)
-        addHighlightsToEditor(annotationsToHighlight, t);
-    } );
+    // TODO: see if we can change the behavior of markdown string so it has an onclick event to navigate to the annotation
+    anchor.addHighlightsToEditor(annotationsToHighlight);
+
 		
 }
 
@@ -28,7 +23,7 @@ export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | und
     if(vscode.workspace.workspaceFolders) {
         if(TextEditor) {
             utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextEditor.document.uri.toString(), TextEditor.document);
-            setAnnotationList(utils.sortAnnotationsByLocation(annotationList, TextEditor.document.uri.toString()));
+            setAnnotationList(utils.sortAnnotationsByLocation(annotationList, TextEditor.document.uri.toString()).filter(a => a.endLine <= TextEditor.document.lineCount)); // mark these annos as out of date
             if(user && vscode.workspace.workspaceFolders)
                 view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
         }
@@ -61,10 +56,11 @@ export const handleDidChangeTextDocument = async (e: vscode.TextDocumentChangeEv
             let rangeAdjustedAnnotations: Annotation[] = [];
             let didPaste: boolean = false;
             let didUndo: boolean = false;
-            if(copiedAnnotations.length) {
+            if(copiedAnnotations.length && change.text.length) { // make sure this isn't a cut w/o paste
+                console.log('in copied', change.text, copiedAnnotations);
                 const copiedAnnos = utils.checkIfChangeIncludesAnchor(copiedAnnotations, change.text);
                 if(copiedAnnos.length && vscode.workspace.workspaceFolders) {
-                    rangeAdjustedAnnotations = utils.reconstructAnnotations(copiedAnnos, change.text, startLine, e.document.uri, vscode.workspace.workspaceFolders[0].uri);
+                    rangeAdjustedAnnotations = utils.reconstructAnnotations(copiedAnnos, change.text, change.range, e.document.uri, vscode.workspace.workspaceFolders[0].uri, e.document);
                     didPaste = true;
                 }
             }
@@ -72,7 +68,8 @@ export const handleDidChangeTextDocument = async (e: vscode.TextDocumentChangeEv
             if(deletedAnnotations.length) {
                 const deletedAnnos = utils.checkIfChangeIncludesAnchor(deletedAnnotations, change.text);
                 if(deletedAnnos.length && vscode.workspace.workspaceFolders) {
-                    rangeAdjustedAnnotations = utils.reconstructAnnotations(deletedAnnos, change.text, startLine, e.document.uri, vscode.workspace.workspaceFolders[0].uri)
+                    // rangeAdjustedAnnotations = utils.reconstructAnnotations(deletedAnnos, change.text, change.range, e.document.uri, vscode.workspace.workspaceFolders[0].uri, e.document)
+                    rangeAdjustedAnnotations = deletedAnnos;
                     didUndo = true;
                     const deletedIds = deletedAnnos.map(a => a.id);
                     setDeletedAnnotationList(deletedAnnotations.filter((a: Annotation) => !deletedIds?.includes(a.id))); // undo stack has been popped
@@ -81,17 +78,17 @@ export const handleDidChangeTextDocument = async (e: vscode.TextDocumentChangeEv
 
 
             const translatedAnnotations : Annotation[] = currentAnnotations.map(a => anchor.translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, 
-                change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), visiblePath, a.id, a.createdTimestamp, a.html, e.document)).filter(a => !a.deleted);
+                change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), visiblePath, a.id, a.createdTimestamp, a.html, e.document, change.text)).filter(a => !a.deleted);
             if(tempAnno) {
                 const newTemp = anchor.translateChanges(tempAnno.startLine, tempAnno.endLine, tempAnno.startOffset, tempAnno.endOffset, startLine, endLine, startOffset, endOffset, 
-                    change.text.length, diff, change.rangeLength, tempAnno.anchorText, tempAnno.annotation, tempAnno.filename.toString(), visiblePath, tempAnno.id, tempAnno.createdTimestamp, tempAnno.html, e.document)
+                    change.text.length, diff, change.rangeLength, tempAnno.anchorText, tempAnno.annotation, tempAnno.filename.toString(), visiblePath, tempAnno.id, tempAnno.createdTimestamp, tempAnno.html, e.document, change.text)
                 setTempAnno(newTemp);
             }
             setAnnotationList(translatedAnnotations.concat(annotationList.filter(a => a.filename !== e.document.uri.toString()), rangeAdjustedAnnotations));
             if((didPaste || didUndo) && vscode.window.activeTextEditor) {
                 // const ranges = annotationList.map(a => anchor.createRangeFromAnnotation(a));
                 // vscode.window.activeTextEditor?.setDecorations(annotationDecorations, ranges);
-                addHighlightsToEditor(annotationList, vscode.window.activeTextEditor);
+                anchor.addHighlightsToEditor(annotationList, vscode.window.activeTextEditor);
             }
             setAnnotationList(utils.sortAnnotationsByLocation(annotationList, e.document.uri.toString()));
             if(vscode.workspace.workspaceFolders)

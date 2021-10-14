@@ -1,7 +1,7 @@
 import firebase from '../firebase/firebase';
 import Annotation from '../constants/constants';
-import { splitRange, createRangeFromObject, findAnchorInRange } from '../anchorFunctions/anchor';
-import { user, annotationList, view, setAnnotationList } from '../extension';
+import { createRangeFromAnnotation, createRangeFromObject, findAnchorInRange } from '../anchorFunctions/anchor';
+import { user, annotationList, view, setAnnotationList, setOutOfDateAnnotationList } from '../extension';
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
 var shiki = require('shiki');
@@ -18,6 +18,10 @@ const objectsEqual = (o1: { [key: string ] : any }, o2: { [key: string ] : any }
 const arraysEqual = (a1: any[], a2: any[]) : boolean => {
 	return a1.length === a2.length && a1.every((o, idx) => objectsEqual(o, a2[idx]));
 } 
+
+export const removeOutOfDateAnnotations = (annotationList: Annotation[]) : Annotation[] => {
+	return annotationList.filter(a => !a.deleted);
+}
 
 export function getListFromSnapshots(snapshots: firebase.firestore.QuerySnapshot) : any[] {
     let out: any = [];
@@ -54,6 +58,33 @@ export const checkIfChangeIncludesAnchor = (annotationList : Annotation[], text:
 	if(cleanChangeText === "") return [];
 	const matches: string[] = anchorTextArr.filter((a: {[key: string] : any}) => (cleanChangeText.includes(a.cleanText))).map(a => a.id); // bug: if the user annotates something common like just "console" this will match on other instances it shouldn't
 	return annotationList.filter((a: Annotation) => matches.includes(a.id));
+}
+
+export const findOutOfDateAnchors = (annotationList: Annotation[], doc: vscode.TextDocument) : void => {
+	const cleanAnchorAnnos : Annotation[] = annotationList.map((a: Annotation) => buildAnnotation(a, doc.validateRange(createRangeFromAnnotation(a))));
+	console.log('cleaned', cleanAnchorAnnos);
+	const anchorTextNotFoundAnnos : Annotation[] = cleanAnchorAnnos.filter((a: Annotation) => doc.getText(createRangeFromAnnotation(a)) !== a.anchorText);
+	console.log('anchorTextNotFound', anchorTextNotFoundAnnos);
+	// try and find anchor text elsewhere in document
+	const searchedAnchorAnnos = anchorTextNotFoundAnnos.map((a) => buildAnnotation(a, createRangeFromObject(findAnchorInRange(undefined, a.anchorText, doc, doc.getText(), (a.anchorText.match(/\n/g) || []).length, (a.anchorText.match(/\n/g) || []).length === 0))));
+	const foundAnnos = searchedAnchorAnnos.filter((a) => a.anchorText === doc.getText(createRangeFromAnnotation(a)));
+	const didNotFindAnnos = searchedAnchorAnnos.filter((a) => a.anchorText === '' || a.anchorText !== doc.getText(createRangeFromAnnotation(a)));
+	console.log('found annos', foundAnnos, 'did not find', didNotFindAnnos);
+	setOutOfDateAnnotationList(didNotFindAnnos);
+	const outOfDateIds = didNotFindAnnos.map(a => a.id);
+	const foundAnchorTextAnnos = foundAnnos.map(a => a.id);
+	const updatedList = cleanAnchorAnnos.map((a) => {
+		if(foundAnchorTextAnnos.includes(a.id)) {
+			return foundAnnos.filter(anno => anno.id === a.id)[0]
+		}
+		else if(outOfDateIds.includes(a.id)) {
+			return buildAnnotation({...searchedAnchorAnnos.filter(anno => anno.id === a.id)[0], deleted: true})
+		}
+		else {
+			return a;
+		}
+	});
+	// setAnnotationList(updatedList);
 }
 
 export const sortAnnotationsByLocation = (annotationList: Annotation[], filename: string | undefined) : Annotation[] => {

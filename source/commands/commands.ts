@@ -94,7 +94,7 @@ export const init = (context: vscode.ExtensionContext) => {
 								const text = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === updatedAnno?.filename)[0];
 								setAnnotationList(utils.sortAnnotationsByLocation(updatedList, text.document.uri.toString()));
 								if(vscode.workspace.workspaceFolders)
-									view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
+									view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList), utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
 								break;
 							}
 							case 'deleteAnnotation': {
@@ -103,7 +103,7 @@ export const init = (context: vscode.ExtensionContext) => {
 								utils.saveAnnotations(updatedList, ""); // bad - that should point to JSON but we are also not using that rn so whatever
 								setAnnotationList(updatedList.filter(a => a.id !== message.annoId));
 								if(vscode.workspace.workspaceFolders)
-									view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
+									view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList), utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
 								const visible : vscode.TextEditor = vscode.window.visibleTextEditors.filter((v: vscode.TextEditor) => v.document.uri.toString() === updatedAnno.filename)[0];
 								if(visible) {
 									anchor.addHighlightsToEditor(annotationList, visible);
@@ -113,7 +113,7 @@ export const init = (context: vscode.ExtensionContext) => {
 							case 'cancelAnnotation': {
 								// reset temp object and re-render
 								setTempAnno(null);
-								view?.updateDisplay(annotationList, vscode.window.activeTextEditor?.document.fileName.toString());
+								view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList), vscode.window.activeTextEditor?.document.fileName.toString());
 								break;
 							}
 							default: {
@@ -140,7 +140,7 @@ export const init = (context: vscode.ExtensionContext) => {
 							// for now will do but should find a better solution (may consider switching to having vs code handle the state when 
 							// panel is not active)
 							if(vscode.workspace.workspaceFolders && !e.webviewPanel.active)
-								view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
+								view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList), utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
 						} else {
 							view?.init();
 						}
@@ -214,7 +214,7 @@ export const addNewHighlight = () => {
 		// setTempAnno(null);
 		setAnnotationList(utils.sortAnnotationsByLocation(annotationList, textEdit.document.uri.toString()));
 		if(vscode.workspace.workspaceFolders)
-			view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
+			view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList), utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
 		anchor.addHighlightsToEditor(annotationList, textEdit);
     });
 }

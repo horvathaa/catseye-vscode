@@ -10,6 +10,7 @@ import * as eventHandlers from './listeners/listeners';
 export let annotationList: Annotation[] = [];
 export let copiedAnnotations: Annotation[] = [];
 export let deletedAnnotations: Annotation[] = [];
+export let outOfDateAnnotations: Annotation[] = [];
 export let tabSize: number | string = 4;
 export let view: ViewLoader | undefined = undefined;
 export let user: firebase.User | null = null;
@@ -64,6 +65,10 @@ export const setCopiedAnnotationList = (newCopiedAnnotationList: Annotation[]) :
 
 export const setDeletedAnnotationList = (newDeletedAnnotationList: Annotation[]) : void => {
 	deletedAnnotations = newDeletedAnnotationList;
+}
+
+export const setOutOfDateAnnotationList = (newOutOfDateAnnotationList: Annotation[]) : void => {
+	outOfDateAnnotations = newOutOfDateAnnotationList;
 }
 
 // this method is called when your extension is activated

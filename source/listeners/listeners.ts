@@ -7,11 +7,11 @@ import { v4 as uuidv4 } from 'uuid';
 
 
 export const handleChangeVisibleTextEditors = async (textEditors: vscode.TextEditor[]) => {
-    const textEditorFileNames = textEditors.map(t => {return {fileName: t.document.uri.toString(), lineCount: t.document.lineCount }} );
+    const textEditorFileNames = textEditors.map(t => t.document.uri.toString());
     if(textEditors && textEditors.length && textEditors[0].options?.tabSize) setTabSize(textEditors[0].options.tabSize);
     // nneed to decide if we want to write to DB that often... if(vscode.workspace.workspaceFolders !== undefined) utils.saveAnnotations(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json');
     
-    const annotationsToHighlight = annotationList.filter(a => textEditorFileNames.filter((t) => t.fileName === a.filename.toString())[0].lineCount >= a.endLine); // holy shit this sucks
+    const annotationsToHighlight = annotationList.filter(a => textEditorFileNames.includes(a.filename.toString()));
     if(!annotationsToHighlight.length) return;
     // TODO: see if we can change the behavior of markdown string so it has an onclick event to navigate to the annotation
     anchor.addHighlightsToEditor(annotationsToHighlight);
@@ -23,9 +23,10 @@ export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | und
     if(vscode.workspace.workspaceFolders) {
         if(TextEditor) {
             utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextEditor.document.uri.toString(), TextEditor.document);
-            setAnnotationList(utils.sortAnnotationsByLocation(annotationList, TextEditor.document.uri.toString()).filter(a => a.endLine <= TextEditor.document.lineCount)); // mark these annos as out of date
+            // utils.findOutOfDateAnchors(annotationList.filter(a => a.filename === TextEditor.document.uri.toString()), TextEditor.document);
+            setAnnotationList(utils.sortAnnotationsByLocation(annotationList, TextEditor.document.uri.toString())); // mark these annos as out of date
             if(user && vscode.workspace.workspaceFolders)
-                view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
+                view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList), utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
         }
         else {
             utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', "all");
@@ -57,7 +58,7 @@ export const handleDidChangeTextDocument = async (e: vscode.TextDocumentChangeEv
             let didPaste: boolean = false;
             let didUndo: boolean = false;
             if(copiedAnnotations.length && change.text.length) { // make sure this isn't a cut w/o paste
-                console.log('in copied', change.text, copiedAnnotations);
+                // console.log('in copied', change.text, copiedAnnotations);
                 const copiedAnnos = utils.checkIfChangeIncludesAnchor(copiedAnnotations, change.text);
                 if(copiedAnnos.length && vscode.workspace.workspaceFolders) {
                     rangeAdjustedAnnotations = utils.reconstructAnnotations(copiedAnnos, change.text, change.range, e.document.uri, vscode.workspace.workspaceFolders[0].uri, e.document);
@@ -78,7 +79,7 @@ export const handleDidChangeTextDocument = async (e: vscode.TextDocumentChangeEv
 
 
             const translatedAnnotations : Annotation[] = currentAnnotations.map(a => anchor.translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, 
-                change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), visiblePath, a.id, a.createdTimestamp, a.html, e.document, change.text)).filter(a => !a.deleted);
+                change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), visiblePath, a.id, a.createdTimestamp, a.html, e.document, change.text));
             if(tempAnno) {
                 const newTemp = anchor.translateChanges(tempAnno.startLine, tempAnno.endLine, tempAnno.startOffset, tempAnno.endOffset, startLine, endLine, startOffset, endOffset, 
                     change.text.length, diff, change.rangeLength, tempAnno.anchorText, tempAnno.annotation, tempAnno.filename.toString(), visiblePath, tempAnno.id, tempAnno.createdTimestamp, tempAnno.html, e.document, change.text)
@@ -92,7 +93,7 @@ export const handleDidChangeTextDocument = async (e: vscode.TextDocumentChangeEv
             }
             setAnnotationList(utils.sortAnnotationsByLocation(annotationList, e.document.uri.toString()));
             if(vscode.workspace.workspaceFolders)
-                view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath)); 
+                view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList), utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath)); 
             // if the user is on the process of creating an annotation, update that annotation as well
             
         }

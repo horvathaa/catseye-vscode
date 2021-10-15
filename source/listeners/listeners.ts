@@ -39,8 +39,8 @@ export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
     if(vscode.workspace.workspaceFolders) utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextDocument.uri.toString(), TextDocument);
 }
 
-export const handleDidChangeTextDocument = async (e: vscode.TextDocumentChangeEvent) => {
-    const currentAnnotations = annotationList.filter(a => a.filename === e.document.uri.toString());
+export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) => {
+    const currentAnnotations = annotationList.filter(a => a.filename === e.document.uri.toString() && !a.deleted);
     if(!currentAnnotations.length && !tempAnno) { return } // no annotations are affected by this change
     else {
         for (const change of e.contentChanges) {
@@ -57,11 +57,11 @@ export const handleDidChangeTextDocument = async (e: vscode.TextDocumentChangeEv
             let rangeAdjustedAnnotations: Annotation[] = [];
             let didPaste: boolean = false;
             let didUndo: boolean = false;
-            if(copiedAnnotations.length && change.text.length) { // make sure this isn't a cut w/o paste
-                // console.log('in copied', change.text, copiedAnnotations);
-                const copiedAnnos = utils.checkIfChangeIncludesAnchor(copiedAnnotations, change.text);
-                if(copiedAnnos.length && vscode.workspace.workspaceFolders) {
-                    rangeAdjustedAnnotations = utils.reconstructAnnotations(copiedAnnos, change.text, change.range, e.document.uri, vscode.workspace.workspaceFolders[0].uri, e.document);
+            if(utils.didUserPaste(change.text) && copiedAnnotations.length && change.text.length) { // make sure this isn't a cut w/o paste
+                console.log('in copied', change.text, copiedAnnotations);
+                if(vscode.workspace.workspaceFolders) {
+                    console.log('in copied annos length check');
+                    rangeAdjustedAnnotations = utils.reconstructAnnotations(copiedAnnotations, change.text, change.range, e.document.uri, vscode.workspace.workspaceFolders[0].uri, e.document);
                     didPaste = true;
                 }
             }
@@ -78,6 +78,7 @@ export const handleDidChangeTextDocument = async (e: vscode.TextDocumentChangeEv
             }
 
 
+            console.log('currAnnos', currentAnnotations);
             const translatedAnnotations : Annotation[] = currentAnnotations.map(a => anchor.translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, 
                 change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), visiblePath, a.id, a.createdTimestamp, a.html, e.document, change.text));
             if(tempAnno) {

@@ -24,7 +24,8 @@ function getIndicesOf(searchStr: string, str: string, caseSensitive: boolean) {
 
 
 export const getAnchorsInRange = (selection: vscode.Selection, annotationList: Annotation[]) : {[key: string] : any}[] => {
-	return annotationList.map(a =>{ return { id: a.id, range: createRangeFromAnnotation(a) } }).filter(a => selection.contains(a.range));
+	const anchorsInSelection :  {[key: string] : any}[] = annotationList.map(a =>{ return { id: a.id, range: createRangeFromAnnotation(a) } }).filter(a => selection.contains(a.range));
+	return anchorsInSelection;
 }
 
 const findBoundariesOfAnchor = (tokenizedText: string[], tokenizedSearchString: string[], startText: string, endText: string, broadSearch: boolean = false) : {[key: string] : any} => {
@@ -104,6 +105,7 @@ const findBestMatchInString = (candidateMatches: number[], anchorSlice: string[]
 	if(checkIfWeFoundIt.length === 1) {
 		stringStart = checkIfWeFoundIt[0].index;
 		stringEnd = checkIfWeFoundIt[0].index + len;
+		console.log('in check if we found len 1', checkIfWeFoundIt[0]);
 	}
 	// if not, iterate to find the best match
 	else {
@@ -111,8 +113,14 @@ const findBestMatchInString = (candidateMatches: number[], anchorSlice: string[]
 		// I'm 100000% sure there's a better way to do this LMAO
 		candidateAnchors.forEach((obj: {[key: string] : any}) => {
 			for(let i = 0; i < obj.arr.length; i++) {
+				console.log('in foreach - obj', obj.arr[i], 'anchor', anchorSlice[i]);
 				if(obj.arr[i] !== anchorSlice[i]) {
 					numMatches.push(i);
+					return;
+				}
+				// matched on every token - return
+				else if(i === (obj.arr.length - 1)) {
+					numMatches.push(obj.arr.length);
 					return;
 				}
 			}
@@ -130,25 +138,32 @@ const findBestMatchInString = (candidateMatches: number[], anchorSlice: string[]
 	};
 }
 
-// computes boundary points of each annotation's range given the changed text
-// 
-export const findAnchorInRange = (range: vscode.Range | undefined, anchor: string, doc: vscode.TextDocument, changeText: string, numLinesInAnchor: number, isSingleLine: boolean) : {[key: string] : any} => {
+// computes boundary points of each annotation's range given offsets or the changed text
+export const findAnchorInRange = (range: vscode.Range | undefined, anchor: string, changeText: string, offsetData: {[key: string] : any}, originalRange: vscode.Range) : {[key: string] : any} => {
+	// if this is a regular copy/cut/paste event, 
+	// we should have the offsets from the copied range
+	if(offsetData) {
+		const newAnchor = {
+			startLine: range?.start.line + offsetData.startLine,
+			startOffset: range?.start.character + offsetData.startOffset, 
+			endLine: range?.start.line + offsetData.endLine,
+			endOffset: range?.end.character + offsetData.endOffset,
+		}
+	
+		return newAnchor;
+	}
+	// if not, we use anchor text to try and find the best
+	// candidate
 	const tokenizedRange = changeText.split(/\s+/g);
-
-	console.log('range', range);
-	// console.log('tokenized', tokenizedRange);
 	const tokenizedAnchorWhitespace = anchor.split(/\s+/g); 
-	// console.log('tokenized anchor', tokenizedAnchorWhitespace);
 	const cleanFrontAnchor = anchor.trimStart();
 	const cleanBackAnchor = anchor.trimEnd();
 	const tokenizedAnchor = cleanFrontAnchor.split(/\s+/g);
 	const firstElOfAnchor = tokenizedAnchor[0];
-	// console.log('first el', firstElOfAnchor);
 	const tokenizedBackAnchor = cleanBackAnchor.split(/\s+/g);
 	const lastEl = tokenizedBackAnchor[tokenizedBackAnchor.length - 1];
 
 	// try and find start of our anchor
-
 	let { tokenStart, tokenEnd } = findBoundariesOfAnchor(tokenizedRange, tokenizedAnchorWhitespace, firstElOfAnchor, lastEl, false);
 	let startingToken = tokenStart, endingToken = tokenEnd;
 	if(!startingToken && !endingToken) {
@@ -160,12 +175,15 @@ export const findAnchorInRange = (range: vscode.Range | undefined, anchor: strin
 	let anchorStartIndex: number = 0;
 	let anchorEndIndex: number = 0;
 	const anchorSlice = tokenizedRange.slice(startingToken, endingToken + 1);
+
 	// get string to look for inside the inputted text - if tokenStart === tokenEnd that means we either never found a match
 	// or the token is contained within a single piece of text in which case we just use the first element
 	// of the anchor itself -- if not, we use whatever starting token the prior method found
 	const searchString = startingToken === endingToken ? firstElOfAnchor : tokenizedRange[startingToken];
+	
 	// get list of indices in which the first token in our anchor appears (should at least have 1)
 	const candidateMatches = getIndicesOf(searchString, changeText, true);
+	
 	// if we only have one match, that's our location
 	if(candidateMatches.length === 1) {
 		anchorStartIndex = candidateMatches[0];
@@ -185,16 +203,14 @@ export const findAnchorInRange = (range: vscode.Range | undefined, anchor: strin
 	// get anchor text as it appears in the text
 	const anchorTextInText : string = changeText.substring(anchorStartIndex, anchorEndIndex); // might not even need this ?
 	const lastLineOfAnchor : string = anchorTextInText.includes('\n') ? anchorTextInText.substring(anchorTextInText.lastIndexOf('\n')) : anchorTextInText;
-	const { startOffset, endOffset, precedingLines } = computeOffsets(changeText, anchorStartIndex, lastLineOfAnchor, anchor.length, range? range.start.character : 0, startingToken === endingToken);
+	const { startOffset, endOffset, precedingLines } = computeOffsets(changeText, anchorStartIndex, lastLineOfAnchor, anchor.length, range ? range.start.character : 0, startingToken === endingToken);
 
 	const newAnchor = {
 		startLine: range?.start.line + precedingLines,
 		startOffset,
-		endLine: range?.start.line + precedingLines + numLinesInAnchor,
+		endLine: range?.start.line + precedingLines + (anchor.match(/\n/g) || []).length,
 		endOffset
 	}
-
-	console.log('range we made', newAnchor);
 
 	return newAnchor;
 
@@ -205,7 +221,7 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 	endOffset: number, textLength: number, diff: number, rangeLength: number, 
 	anchorText: string, annotation: string, filename: string, visiblePath: string, id: string, createdTimestamp: number, html: string, doc: vscode.TextDocument, changeText: string): Annotation => {
 		let newRange = { startLine: originalStartLine, endLine: originalEndLine, startOffset: originalStartOffset, endOffset: originalEndOffset };
-		
+		let newAnchorText = anchorText;
 		// annotation anchor is no longer valid - for now, remove (should probably mark as out of date)
 		if(doc.lineCount < originalEndLine || doc.lineCount < originalStartLine) {
 			const newAnno = {
@@ -231,10 +247,6 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 		const startAndEndLineAreSameNewLine = originalStartLine === startLine && originalEndLine === endLine && diff;
 		const originalRange = new vscode.Range(new vscode.Position(originalStartLine, originalStartOffset), new vscode.Position(originalEndLine, originalEndOffset));
 		const changeRange = new vscode.Range(new vscode.Position(startLine, startOffset), new vscode.Position(endLine, endOffset)); 
-		// console.log('original range', originalRange);
-		// console.log('change range', changeRange);
-		// console.log('diff', diff);
-		
 
 		// user deleted the anchor
 		if(!textLength && changeRange.contains(originalRange)) {
@@ -261,7 +273,6 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 
 		// user added lines above start of range
 		if (startLine < originalStartLine && diff) {
-			console.log('above')
 			newRange.startLine = originalStartLine + diff;
 			newRange.endLine = originalEndLine + diff;
 		}
@@ -277,10 +288,12 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 		// user adds/removes text at or before the end offset (no new lines)
 		if(endLine === originalEndLine && endOffset <= originalEndOffset && !diff) {
 			newRange.endOffset = textLength ? originalEndOffset + textLength : originalEndOffset - rangeLength;
+			changeOccurredInRange = true;
 		}
 
-		// user added/removed line in middle of the anchor
-		if(startLine >= originalStartLine && endLine <= originalEndLine && diff) {
+		// user added/removed line in middle of the anchor -- we are not including end offset
+		if(startLine >= originalStartLine && endLine <= originalEndLine && endOffset < originalEndOffset && diff) {
+			changeOccurredInRange = true;
 			newRange.endLine = originalEndLine + diff;
 			if(startLine === originalStartLine) {
 				newRange.startLine = startOffset <= originalStartOffset ? originalStartLine + diff : originalStartLine;
@@ -295,12 +308,15 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 		// need to update anchor text
 		if (originalEndLine === endLine && originalEndOffset >= endOffset && diff) {
 			newRange.endLine = originalEndLine + diff;
-			console.log('new range end');
 			// user removed line -- start of new range should be at the end of our new range
 			if(diff < 0) {
 				newRange.endOffset = startOffset + originalEndOffset;
 			}
 			changeOccurredInRange = true;
+		}
+
+		if(changeOccurredInRange) {
+			newAnchorText = doc.getText(createRangeFromObject(newRange));
 		}
 
 
@@ -309,7 +325,7 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 			id,
 			filename,
 			visiblePath,
-			anchorText,
+			anchorText: newAnchorText,
 			annotation,
 			...newRange,
 			deleted: false,
@@ -319,8 +335,7 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 			programmingLang: filename.split('.')[1]
 		}
 
-		console.log('new anno', newAnno);
-
+		// console.log('new anno', newAnno);
 		return buildAnnotation(newAnno)
 
 	}
@@ -339,12 +354,23 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 	// we have one specific doc we want to highlight
 	if(annotationList.length && text && filenames.includes(text.document.uri.toString())) {
 		let ranges = annotationList
-			.map(a => { return {annotation: a.annotation, filename: a.filename, range: createRangeFromAnnotation(a)}})
+			.map(a => { return { id: a.id, annotation: a.annotation, filename: a.filename, range: createRangeFromAnnotation(a)}})
 			.filter(r => r.filename === text?.document.uri.toString())
-			.map(a => { return {annotation: a.annotation, range: a.range }});
+			.map(a => { return { id: a.id, annotation: a.annotation, range: a.range }});
 		if(ranges.length) {
+			const validRanges: {[key: string]: any}[] = [], invalidRanges: {[key: string]: any}[] = [];
+			ranges.forEach((r: {[key: string ] : any}) => {
+				if(text.document.validateRange(r.range).isEqual(r.range)) {
+					validRanges.push(r);
+				} else {
+					invalidRanges.push(r);
+				}
+			});
+			// do something with invalid ranges - do not highlight,
+			// mark corresponding annos as out-of-date, 
+			// possibly try to reattach given anchortext 
 			try {
-				const decorationOptions: vscode.DecorationOptions[] = ranges.map(r => { return { range: r.range, hoverMessage: r.annotation } });
+				const decorationOptions: vscode.DecorationOptions[] = validRanges.map(r => { return { range: r.range, hoverMessage: r.annotation } });
 				text.setDecorations(annotationDecorations, decorationOptions);
 			}
 			catch (error) {
@@ -365,6 +391,6 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 
 	// nothing
 	else {
-		console.log('nothing to highlight');
+		// console.log('nothing to highlight');
 	}
 }

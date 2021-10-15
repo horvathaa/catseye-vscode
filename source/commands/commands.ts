@@ -1,4 +1,4 @@
-import { annotationList, view, user, setUser, setView, tempAnno, setTempAnno, annotationDecorations, setAnnotationList, setCopiedAnnotationList, copiedAnnotations } from "../extension";
+import { annotationList, view, user, setUser, setView, tempAnno, setTempAnno, annotationDecorations, setAnnotationList, setCopiedAnnotationList, copiedAnnotations, setStoredCopyText } from "../extension";
 import Annotation from '../constants/constants';
 import * as anchor from '../anchorFunctions/anchor';
 import * as vscode from 'vscode';
@@ -222,32 +222,62 @@ export const addNewHighlight = () => {
 export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
     const annotationsInEditor = annotationList.filter((a: Annotation) => a.filename === textEditor.document.uri.toString());
 	const annosInRange = anchor.getAnchorsInRange(textEditor.selection, annotationsInEditor);
-	console.log('annos in range', annosInRange);
+	const copiedText = textEditor.document.getText(textEditor.selection)
     if(annosInRange.length) {
         const annoIds = annosInRange.map(a => a.id);
-		setCopiedAnnotationList(annotationList.filter(a => annoIds.includes(a.id)));
+		const { start, end } = textEditor.selection;
+		const annosWithCopyMetaData = annosInRange.map(a => {
+			return {
+					id: a.id,
+					anno: annotationList.filter(a => annoIds.includes(a.id))[0],
+					offsetInCopy: {
+						startLine: a.range.start.line - start.line < 0 ? a.range.start.line : a.range.start.line - start.line,
+						startOffset: a.range.start.character - start.character < 0 ? a.range.start.character : a.range.start.character - start.character,
+						endLine: a.range.end.line - start.line < 0 ? a.range.end.line : a.range.end.line - start.line,
+						endOffset: a.range.end.character
+					}
+				};
+		});
+		setCopiedAnnotationList(annosWithCopyMetaData);
     }
 	else if(copiedAnnotations.length) {
 		setCopiedAnnotationList([]); // we no longer are copying annotations
 	}
-    vscode.env.clipboard.writeText(textEditor.document.getText(textEditor.selection));
+	
+    vscode.env.clipboard.writeText(copiedText);
+	setStoredCopyText(copiedText);
 }
 
 // probs should merge this with copy - only difference is removing the selection
 export const overriddenClipboardCutAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
     const annotationsInEditor = annotationList.filter((a: Annotation) => a.filename === textEditor.document.uri.toString());
     const annosInRange = anchor.getAnchorsInRange(textEditor.selection, annotationsInEditor);
-    if(annosInRange.length) {
+    const copiedText = textEditor.document.getText(textEditor.selection);
+	if(annosInRange.length) {
         const annoIds = annosInRange.map(a => a.id);
 		const cutAnnos = annotationList.filter(a => annoIds.includes(a.id));
 		anchor.addHighlightsToEditor(cutAnnos, textEditor);
-		setCopiedAnnotationList(cutAnnos);
+		const { start, end } = textEditor.selection;
+		const annosWithCopyMetaData = annosInRange.map(a => {
+			return {
+					id: a.id,
+					anno: annotationList.filter(a => annoIds.includes(a.id))[0],
+					offsetInCopy: {
+						startLine: a.range.start.line - start.line < 0 ? a.range.start.line : a.range.start.line - start.line,
+						startOffset: a.range.start.character - start.character < 0 ? a.range.start.character : a.range.start.character - start.character,
+						endLine: a.range.end.line - start.line < 0 ? a.range.end.line : a.range.end.line - start.line,
+						endOffset: a.range.end.character
+					}
+				};
+		});
+		setCopiedAnnotationList(annosWithCopyMetaData);
     }
 	else if(copiedAnnotations.length) {
 		setCopiedAnnotationList([]); // we no longer are copying annotations
 	}
-    vscode.env.clipboard.writeText(textEditor.document.getText(textEditor.selection));
+    vscode.env.clipboard.writeText(copiedText);
 	edit.delete(textEditor.selection);
+	setStoredCopyText(copiedText);
 }
 
 export const overriddenFindAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {

@@ -8,9 +8,10 @@ import * as commands from './commands/commands';
 import * as eventHandlers from './listeners/listeners';
 
 export let annotationList: Annotation[] = [];
-export let copiedAnnotations: Annotation[] = [];
+export let copiedAnnotations:  {[key: string] : any }[] = [];
 export let deletedAnnotations: Annotation[] = [];
 export let outOfDateAnnotations: Annotation[] = [];
+export let storedCopyText: string = "";
 export let tabSize: number | string = 4;
 export let view: ViewLoader | undefined = undefined;
 export let user: firebase.User | null = null;
@@ -59,8 +60,12 @@ export const setAnnotationList = (newAnnotationList: Annotation[]) : void => {
 	annotationList = newAnnotationList;
 }
 
-export const setCopiedAnnotationList = (newCopiedAnnotationList: Annotation[]) : void => {
+export const setCopiedAnnotationList = (newCopiedAnnotationList: {[key: string] : any }[]) : void => {
 	copiedAnnotations = newCopiedAnnotationList;
+}
+
+export const setStoredCopyText = (newCopyText: string) : void => {
+	storedCopyText = newCopyText;
 }
 
 export const setDeletedAnnotationList = (newDeletedAnnotationList: Annotation[]) : void => {

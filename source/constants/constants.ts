@@ -11,6 +11,7 @@ export default class Annotation {
 	startOffset: number;
 	endOffset: number;
 	deleted: boolean;
+	outOfDate: boolean;
 	html: string;
 	authorId: string;
 	createdTimestamp: number;
@@ -19,7 +20,7 @@ export default class Annotation {
 	constructor(
 			id: string, filename: string | vscode.Uri, visiblePath: string, anchorText: string, annotation: string, 
 			anchorStartLine: number, anchorEndLine: number, anchorStartOffset: number, 
-			anchorEndOffset: number, deleted: boolean, html: string, authorId: string,
+			anchorEndOffset: number, deleted: boolean, outOfDate: boolean, html: string, authorId: string,
 			createdTimestamp: number, programmingLang: string
 		) 
 	{
@@ -33,6 +34,7 @@ export default class Annotation {
 		this.startOffset = anchorStartOffset;
 		this.endOffset = anchorEndOffset;
 		this.deleted = deleted;
+		this.outOfDate = outOfDate;
 		this.html = html;
 		this.authorId = authorId;
 		this.createdTimestamp = createdTimestamp;

@@ -6,6 +6,7 @@ import ViewLoader from './view/ViewLoader';
 import Annotation from './constants/constants';
 import * as commands from './commands/commands';
 import * as eventHandlers from './listeners/listeners';
+import * as utils from './utils/utils';
 
 export let annotationList: Annotation[] = [];
 export let copiedAnnotations:  {[key: string] : any }[] = [];
@@ -70,10 +71,12 @@ export const setStoredCopyText = (newCopyText: string) : void => {
 
 export const setDeletedAnnotationList = (newDeletedAnnotationList: Annotation[]) : void => {
 	deletedAnnotations = newDeletedAnnotationList;
+	setAnnotationList(utils.removeOutOfDateAnnotations(annotationList));
 }
 
 export const setOutOfDateAnnotationList = (newOutOfDateAnnotationList: Annotation[]) : void => {
 	outOfDateAnnotations = newOutOfDateAnnotationList;
+	setAnnotationList(utils.removeOutOfDateAnnotations(annotationList));
 }
 
 // this method is called when your extension is activated
@@ -103,8 +106,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 	let copyDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', commands.overriddenClipboardCopyAction);
 	let cutDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCutAction', commands.overriddenClipboardCutAction);
-	// let findDisposable = vscode.commands.registerTextEditorCommand('actions.find', commands.overriddenFindAction);
-	// let revealDisposable = vscode.commands.registerTextEditorCommand('editor.action.revealDefinition', commands.overridenRevealDefinitionAction);
 
 	/*************************************************************************************/
 	/**************************************** DISPOSABLES ********************************/
@@ -115,8 +116,6 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(highlightDisposable);
 	context.subscriptions.push(copyDisposable);
 	context.subscriptions.push(cutDisposable);
-	// context.subscriptions.push(findDisposable);
-	// context.subscriptions.push(revealDisposable);
 	
 	context.subscriptions.push(didChangeVisibleListenerDisposable);
 	context.subscriptions.push(didChangeactiveEditorListenerDisposable);

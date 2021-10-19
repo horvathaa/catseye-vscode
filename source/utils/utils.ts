@@ -1,7 +1,7 @@
 import firebase from '../firebase/firebase';
 import Annotation from '../constants/constants';
 import { createRangeFromAnnotation, createRangeFromObject, findAnchorInRange } from '../anchorFunctions/anchor';
-import { user, storedCopyText, annotationList, view, setAnnotationList, setOutOfDateAnnotationList } from '../extension';
+import { user, storedCopyText, annotationList, view, setAnnotationList, setOutOfDateAnnotationList, outOfDateAnnotations, deletedAnnotations } from '../extension';
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
 var shiki = require('shiki');
@@ -20,7 +20,7 @@ const arraysEqual = (a1: any[], a2: any[]) : boolean => {
 } 
 
 export const removeOutOfDateAnnotations = (annotationList: Annotation[]) : Annotation[] => {
-	return annotationList.filter(a => !a.deleted);
+	return annotationList.filter(a => !(a.deleted || a.outOfDate));
 }
 
 export function getListFromSnapshots(snapshots: firebase.firestore.QuerySnapshot) : any[] {
@@ -43,6 +43,7 @@ export const reconstructAnnotations = (annotationOffsetList: {[key: string] : an
 			annotation: a.anno.annotation,
 			anchor: findAnchorInRange(changeRange, a.anno.anchorText, text, a.offsetInCopy, createRangeFromAnnotation(a.anno)),
 			deleted: false,
+			outOfDate: false,
 			html: a.anno.html,
 			authorId: a.anno.authorId,
 			createdTimestamp: new Date().getTime(),
@@ -64,32 +65,6 @@ export const checkIfChangeIncludesAnchor = (annotationList : Annotation[], text:
 	return annotationList.filter((a: Annotation) => matches.includes(a.id));
 }
 
-// export const findOutOfDateAnchors = (annotationList: Annotation[], doc: vscode.TextDocument) : void => {
-// 	const cleanAnchorAnnos : Annotation[] = annotationList.map((a: Annotation) => buildAnnotation(a, doc.validateRange(createRangeFromAnnotation(a))));
-// 	console.log('cleaned', cleanAnchorAnnos);
-// 	const anchorTextNotFoundAnnos : Annotation[] = cleanAnchorAnnos.filter((a: Annotation) => doc.getText(createRangeFromAnnotation(a)) !== a.anchorText);
-// 	console.log('anchorTextNotFound', anchorTextNotFoundAnnos);
-// 	// try and find anchor text elsewhere in document
-// 	const searchedAnchorAnnos = anchorTextNotFoundAnnos.map((a) => buildAnnotation(a, createRangeFromObject(findAnchorInRange(undefined, a.anchorText, doc, doc.getText(), (a.anchorText.match(/\n/g) || []).length, (a.anchorText.match(/\n/g) || []).length === 0))));
-// 	const foundAnnos = searchedAnchorAnnos.filter((a) => a.anchorText === doc.getText(createRangeFromAnnotation(a)));
-// 	const didNotFindAnnos = searchedAnchorAnnos.filter((a) => a.anchorText === '' || a.anchorText !== doc.getText(createRangeFromAnnotation(a)));
-// 	console.log('found annos', foundAnnos, 'did not find', didNotFindAnnos);
-// 	setOutOfDateAnnotationList(didNotFindAnnos);
-// 	const outOfDateIds = didNotFindAnnos.map(a => a.id);
-// 	const foundAnchorTextAnnos = foundAnnos.map(a => a.id);
-// 	const updatedList = cleanAnchorAnnos.map((a) => {
-// 		if(foundAnchorTextAnnos.includes(a.id)) {
-// 			return foundAnnos.filter(anno => anno.id === a.id)[0]
-// 		}
-// 		else if(outOfDateIds.includes(a.id)) {
-// 			return buildAnnotation({...searchedAnchorAnnos.filter(anno => anno.id === a.id)[0], deleted: true})
-// 		}
-// 		else {
-// 			return a;
-// 		}
-// 	});
-// 	// setAnnotationList(updatedList);
-// }
 
 export const sortAnnotationsByLocation = (annotationList: Annotation[], filename: string | undefined) : Annotation[] => {
 	annotationList.sort((a: Annotation, b: Annotation) => {
@@ -134,38 +109,41 @@ const updateHtml = async (annos: Annotation[], doc: vscode.TextDocument) : Promi
 
 
 export const handleSaveCloseEvent = async (annotationList: Annotation[], filePath: string = "", currentFile: string = "all", doc : vscode.TextDocument | undefined = undefined) : Promise<void> => {
+	const annosToSave: Annotation[] = annotationList.concat(outOfDateAnnotations, deletedAnnotations);
 	const annotationsInCurrentFile = currentFile !== "all" ? annotationList.filter(a => a.filename === currentFile) : annotationList;
 	if(doc) {
 		let newList = await updateHtml(annotationsInCurrentFile, doc);
 		const ids = newList.map(a => a.id);
 		currentFile === 'all' ? setAnnotationList(newList) : setAnnotationList(annotationList.filter(a => !ids.includes(a.id)).concat(newList))
-		lastSavedAnnotations = annotationList;
-		saveAnnotations(annotationList, filePath);
+		lastSavedAnnotations = annosToSave;
+		saveAnnotations(annosToSave, filePath);
 	}
-	else if(annotationsInCurrentFile.length && vscode.workspace.workspaceFolders && !arraysEqual(annotationList, lastSavedAnnotations)) {
-		lastSavedAnnotations = annotationList;
-		saveAnnotations(annotationList, filePath);
+	else if(annotationsInCurrentFile.length && vscode.workspace.workspaceFolders && !arraysEqual(annosToSave, lastSavedAnnotations)) {
+		lastSavedAnnotations = annosToSave;
+		saveAnnotations(annosToSave, filePath);
 	}
 }
 
 export const saveAnnotations = async (annotationList: Annotation[], filePath: string) : Promise<void> => {
-	const serializedObjects = annotationList.map(a => { return {
-		id: a.id,
-		filename: a.filename,
-		visiblePath: a.visiblePath,
-		anchorText: a.anchorText,
-		annotation: a.annotation,
-		anchor: {
-			startLine: a.startLine,
-			endLine: a.endLine,
-			startOffset: a.startOffset,
-			endOffset: a.endOffset
-		},
-		html: a.html,
-		authorId: a.authorId,
-		createdTimestamp: a.createdTimestamp,
-		programmingLang: a.programmingLang,
-		deleted: a.deleted
+	const serializedObjects = annotationList.map(a => { 
+		return {
+			id: a.id ? a.id : uuidv4(),
+			filename: a.filename ? a.filename : "",
+			visiblePath: a.visiblePath ? a.visiblePath : "",
+			anchorText: a.anchorText ? a.anchorText : "",
+			annotation: a.annotation ? a.annotation : "",
+			anchor: {
+				startLine: a.startLine ? a.startLine : 0,
+				endLine: a.endLine ? a.endLine : 0,
+				startOffset: a.startOffset ? a.startOffset : 0,
+				endOffset: a.endOffset ? a.endOffset : 0
+			},
+			html: a.html ? a.html : "",
+			authorId: a.authorId ? a.authorId : "",
+			createdTimestamp: a.createdTimestamp ? a.createdTimestamp : new Date().getTime(),
+			programmingLang: a.programmingLang ? a.programmingLang : 'ts',
+			deleted: a.deleted !== undefined ? a.deleted : true,
+			outOfDate: a.outOfDate !== undefined ? a.outOfDate : false
 	}});
 
 	if(user) {
@@ -249,93 +227,11 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 		annoObj['startOffset'],
 		annoObj['endOffset'],
 		annoObj['deleted'],
+		annoObj['outOfDate'],
 		annoObj['html'],
 		annoObj['authorId'],
 		annoObj['createdTimestamp'],
 		annoObj['programmingLang']
 	)
 }
-
-// export const writeConsoleLogToFile = async (text: string[]) : Promise<void> => {
-// 	let uri;
-// 	let str = "";
-// 	text.forEach(t => str += t + '\n');
-// 	if(vscode.workspace.workspaceFolders)
-// 	uri = vscode.Uri.file(vscode.workspace.workspaceFolders[0].uri.path + '/list.txt');
-// 	try {
-// 		if(uri && vscode.workspace.workspaceFolders) {
-// 			await vscode.workspace.fs.stat(uri);
-// 			vscode.workspace.openTextDocument(vscode.workspace.workspaceFolders[0].uri.path + '/list.txt').then(doc => { 
-// 				vscode.workspace.fs.writeFile(doc.uri, new TextEncoder().encode(str)).then(() => {
-// 					console.log('done')
-// 				})
-// 			})
-// 		}
-		
-// 	}
-// 	catch {
-// 		// console.log('file does not exist');
-// 		const wsEdit = new vscode.WorkspaceEdit();
-// 		if(uri && vscode.workspace.workspaceFolders) {
-// 			wsEdit.createFile(uri)
-// 			vscode.workspace.applyEdit(wsEdit).then((value: boolean) => {
-// 				if(value && vscode.workspace.workspaceFolders) { // edit applied??
-// 					vscode.workspace.openTextDocument(vscode.workspace.workspaceFolders[0].uri.path + '/list.txt').then(doc => { 
-// 						vscode.workspace.fs.writeFile(doc.uri, new TextEncoder().encode(str)).then(() => {
-// 							console.log('done')
-// 						})
-// 					})
-// 				}
-// 				else {
-// 					vscode.window.showInformationMessage('Could not create file!');
-// 				}
-// 			});
-// 		}
-		
-// 	}
-// }
-
-// export const readAnnotationsFromFile = () : void => {
-// 	let filePath = "";
-// 	if(vscode.workspace.workspaceFolders !== undefined) {
-// 		filePath = vscode.workspace.workspaceFolders[0].uri.path + '/test.json';
-// 		const uri = vscode.Uri.file(filePath);
-// 		try {
-// 			vscode.workspace.fs.stat(uri);
-// 			vscode.workspace.openTextDocument(filePath).then(doc => { 
-// 				let docText = JSON.parse(doc.getText())
-// 				const tempAnnoList: Annotation[] = [];
-// 				docText.forEach((doc: any) => {
-// 					const readAnno = { deleted: false, ...doc };
-// 					tempAnnoList.push(readAnno);
-// 				})
-// 				// if we have an active editor, sort by that file - else, leave the list
-// 				vscode.window.activeTextEditor ? setAnnotationList(sortAnnotationsByLocation(tempAnnoList, vscode.window.activeTextEditor?.document.uri.toString())) : setAnnotationList(tempAnnoList);
-// 				const filenames = [... new Set(tempAnnoList.map(a => a.filename))];
-// 				if(annotationList.length && vscode.window.activeTextEditor !== undefined && filenames.includes(vscode.window.activeTextEditor?.document.uri.toString())) {
-// 					let ranges = annotationList.map(a => { return {filename: a.filename, range: createRangeFromAnnotation(a)}}).filter(r => r.filename === vscode.window.activeTextEditor?.document.uri.toString()).map(a => a.range);
-// 					if(ranges.length) {
-// 						vscode.window.activeTextEditor.setDecorations(annotationDecorations, ranges);
-// 					} 
-// 				}
-// 			})
-// 		}
-// 		// file does not exist - user either deleted it or this is their first time making an annotation
-// 		catch {
-// 			// console.log('file does not exist');
-// 			const wsEdit = new vscode.WorkspaceEdit();
-// 			wsEdit.createFile(uri)
-// 			vscode.workspace.applyEdit(wsEdit);
-// 		}
-
-// 	}
-// }
-
-// export const convertFromJSONtoAnnotationList = (json: string) : Annotation[] => {
-// 	let annotationList: Annotation[] = [];
-// 	JSON.parse(json).forEach((doc: any) => {
-// 		annotationList.push(buildAnnotation({...doc, deleted: false}))
-// 	})
-// 	return annotationList;
-// }
 

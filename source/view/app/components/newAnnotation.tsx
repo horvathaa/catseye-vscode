@@ -11,12 +11,14 @@ interface SynProps {
 interface Props {
     selection: string;
     vscode: any;
+    notifyDone: () => void
 }
 
-const NewAnnotation: React.FC<Props> = ({ selection, vscode }) => {
+const NewAnnotation: React.FC<Props> = ({ selection, vscode, notifyDone = () => {} }) => {
     const [anno, setAnno] = React.useState("");
 
     const cancelAnnotation = () => {
+        notifyDone();
         vscode.postMessage({
             command: 'cancelAnnotation',
             anno: anno
@@ -25,6 +27,7 @@ const NewAnnotation: React.FC<Props> = ({ selection, vscode }) => {
     }
 
     const createAnnotation = () => {
+        notifyDone();
         vscode.postMessage({
               command: 'createAnnotation',
               anno: anno
@@ -40,7 +43,7 @@ const NewAnnotation: React.FC<Props> = ({ selection, vscode }) => {
                                     createAnnotation();
                                 }
                             }} onChange={_ => setAnno((document.getElementById('newAnno') as HTMLInputElement).value)}/>
-                <button onClick={() => createAnnotation()}>Submit</button>
+                <button className={annoStyles['submit']} onClick={() => createAnnotation()}>Submit</button>
                 <button className={annoStyles['cancel']} onClick={() => cancelAnnotation()}>Cancel</button>
             </div>
         </div>

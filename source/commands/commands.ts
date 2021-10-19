@@ -174,6 +174,7 @@ export const createNewAnnotation = () => {
 			anchorText: text,
 			annotation: '',
 			deleted: false,
+			outOfDate: false,
 			html,
 			programmingLang: activeTextEditor.document.uri.toString().split('.')[1],
 			createdTimestamp: new Date().getTime(),
@@ -203,12 +204,12 @@ export const addNewHighlight = () => {
 			anchorText: text,
 			annotation: '',
 			deleted: false,
+			outOfDate: false,
 			html,
 			programmingLang: activeTextEditor.document.uri.toString().split('.')[1],
 			createdTimestamp: new Date().getTime(),
 			authorId: user?.uid
 		};
-		// setTempAnno(utils.buildAnnotation(temp, r));
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));
 		const textEdit = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === temp?.filename)[0];
 		// setTempAnno(null);
@@ -251,17 +252,18 @@ export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edi
 // probs should merge this with copy - only difference is removing the selection
 export const overriddenClipboardCutAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
     const annotationsInEditor = annotationList.filter((a: Annotation) => a.filename === textEditor.document.uri.toString());
-    const annosInRange = anchor.getAnchorsInRange(textEditor.selection, annotationsInEditor);
+	const annosInRange = anchor.getAnchorsInRange(textEditor.selection, annotationsInEditor);
     const copiedText = textEditor.document.getText(textEditor.selection);
 	if(annosInRange.length) {
         const annoIds = annosInRange.map(a => a.id);
+		const remainingAnnos = annotationList.filter(a => !annoIds.includes(a.id));
 		const cutAnnos = annotationList.filter(a => annoIds.includes(a.id));
-		anchor.addHighlightsToEditor(cutAnnos, textEditor);
+		anchor.addHighlightsToEditor(remainingAnnos, textEditor);
 		const { start, end } = textEditor.selection;
 		const annosWithCopyMetaData = annosInRange.map(a => {
 			return {
 					id: a.id,
-					anno: annotationList.filter(a => annoIds.includes(a.id))[0],
+					anno: cutAnnos.filter(a => annoIds.includes(a.id))[0],
 					offsetInCopy: {
 						startLine: a.range.start.line - start.line < 0 ? a.range.start.line : a.range.start.line - start.line,
 						startOffset: a.range.start.character - start.character < 0 ? a.range.start.character : a.range.start.character - start.character,

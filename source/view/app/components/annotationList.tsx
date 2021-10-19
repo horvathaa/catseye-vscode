@@ -30,17 +30,17 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
         'Other Projects': []
         };
         annotations.forEach((a: Annotation) => {
-        let file = a.visiblePath;
-        const slash: string = a.visiblePath.includes('/') ? '/' : '\\';
-        if(file === currentFile) {
-            output['Current File'].push(a);
-        }
-        else if(a.visiblePath.split(slash)[0] === currentFile.split(slash)[0]) {
-            output['Current Project'].push(a)
-        }
-        else {
-            output['Other Projects'].push(a)
-        }
+            let file = a.visiblePath;
+            const slash: string = a.visiblePath.includes('/') ? '/' : '\\';
+            if(file === currentFile) {
+                output['Current File'].push(a);
+            }
+            else if(a.visiblePath.split(slash)[0] === currentFile.split(slash)[0]) {
+                output['Current Project'].push(a)
+            }
+            else {
+                output['Other Projects'].push(a)
+            }
         });
         const jsx : React.ReactElement[] = [];
         for(const key in output) {

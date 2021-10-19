@@ -32,6 +32,7 @@ const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefi
 		annoObj['startOffset'],
 		annoObj['endOffset'],
 		annoObj['deleted'],
+    annoObj['outOfDate'],
 		annoObj['html'],
 		annoObj['authorId'],
 		annoObj['createdTimestamp'],
@@ -79,20 +80,6 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
     }
   });
 
-  // const handleSelect = (e: any) => {
-  //   console.log('e', e);
-  // }
-
-  // const handleKeyUp = (e: React.SyntheticEvent) => {
-  //   console.log('e', e, anno.id);
-  //   // keys[e.key] = true;
-  // }
-
-
-  // const handleKeyDown = (e: any) => {
-  //   console.log('e', e);
-  // }
-  // document.addEventListener('mouseenter', handleCopy);
   // Idea: use onDragOver and onDrop to allow user to drop code into the sidebar - may have to have
   // similar event listener in the editor? but I'm not sure how we can override some of these things
   // I guess the "onDidChangeSelection"? maybe???

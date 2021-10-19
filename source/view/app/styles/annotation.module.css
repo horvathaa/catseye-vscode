@@ -11,6 +11,115 @@
   padding: 8px 0px;
 }
 
+.dropdown a {
+  display: flex;
+  color: white;
+  background: var(--vscode-editor-background);
+  text-decoration: none;
+}
+
+
+
+/* .dropdown button {
+  background: var(--vscode-editor-background);
+  padding-left: 0px;
+  padding-right: 0px;
+} */
+
+.vertical-center {
+  background: var(--vscode-editor-background) !important;
+  padding-left: 0px !important;
+  padding-right: 0px !important;
+  color: var(--vscode-inputOption-activeForeground) !important;
+  border: none !important;
+}
+
+.IconContainer {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.profile {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.AnnotationsOptions .dropdown .dropdown-toggle:focus,.dropdown-toggle:active {
+  outline: none !important;
+  box-shadow: none;
+  outline-color: none;
+}
+
+.AnnotationsOptions .dropdown .btn-primary:not(:disabled):not(.disabled):active, .TitleContainer .container .row .btn-primary:not(:disabled):not(.disabled).active, .TitleContainer .container .row .show > .TitleContainer .container .row .btn-primary.dropdown-toggle {
+  color: transparent;
+  background-color: transparent;
+  border-color: transparent;
+  outline-color: none;
+} 
+/* button:focus {
+  box-shadow: none;
+  outline:0;
+} */
+
+.btn-primary:not(:disabled):not(.disabled):active:focus, .btn-primary:not(:disabled):not(.disabled).active:focus, .show > .btn-primary.dropdown-toggle:focus{
+  box-shadow: none !important;
+}
+
+.AnnotationsOptions .dropdown .btn-primary:not(:disabled):not(.disabled):active, .TitleContainer .container .row .btn-primary:not(:disabled):not(.disabled).active, .TitleContainer .container .row .show > .TitleContainer .container .row .btn-primary.dropdown-toggle {
+  color: transparent;
+  background-color: transparent;
+  border-color: transparent;
+  outline-color: none;
+} 
+
+.AnnotationOptionsTitle{
+  font-size: 13px;
+  font-weight: 300 !important;
+  padding: .2rem .5rem 0rem .5rem !important;
+  text-align: center !important;
+}
+
+.AnnotationOptionsTitle:hover{
+  background: inherit;
+  cursor: default;
+}
+
+.AnnotationOptionsTitle hr {
+  margin: .35rem;
+}
+
+.DropdownIconsWrapper {
+  display: inline;
+  margin-right: 1em;
+  position: relative;
+  cursor: pointer;
+  padding: .35em .35em .35em .35em;
+  background: #69696924;
+  border-radius: 1em;
+}
+
+.DropdownItemOverwrite {
+  text-decoration: none;
+  color: var(--vscode-inputOption-activeForeground);
+  display: flex;
+  background: var(--vscode-editor-background);
+}
+
+.DropdownItemOverwrite:hover { 
+  filter: brightness(1.4);
+  transition: opacity .55s ease-in-out;
+  color: white;
+}
+
+.DropdownIcons{
+  height: 1.25em;
+  width: 1.25em;
+}
+
+
+
 .AnnotationContainer {
     padding: 5px;
     background: var(--vscode-editor-background);
@@ -31,6 +140,7 @@
 
 .AnchorContainer {
   color: white;
+  cursor: pointer;
 }
 
 .ContentContainer {
@@ -41,6 +151,7 @@
 .LocationContainer {
   font-family: var(--vscode-editor-font-family);
   overflow-wrap: anywhere;
+  cursor: pointer;
   padding: 4px 0px;
 }
 
@@ -63,7 +174,7 @@ code {
   font-size: var(--vscode-editor-font-size) !important;
 }
 
-button {
+button.submit {
   border-radius: 8px;
   padding-left: 1em;
   padding-right: 1em;
@@ -75,5 +186,12 @@ button {
 }
 
 button.cancel {
+  border-radius: 8px;
+  padding-left: 1em;
+  padding-right: 1em;
+  margin-right: 10px;
+  cursor: pointer;
+  color: white;
+  border: 1px solid transparent;
   background-color: rgba(158, 158, 158, 0.651);
 }

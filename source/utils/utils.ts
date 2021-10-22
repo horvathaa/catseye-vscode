@@ -4,6 +4,7 @@ import { createRangeFromAnnotation, createRangeFromObject, findAnchorInRange } f
 import { user, storedCopyText, annotationList, view, setAnnotationList, setOutOfDateAnnotationList, outOfDateAnnotations, deletedAnnotations } from '../extension';
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
+import { saveAnnotations as fbSaveAnnotations } from '../firebase/functions/functions';
 var shiki = require('shiki');
 
 let lastSavedAnnotations: Annotation[] = annotationList && annotationList.length ? annotationList : [];
@@ -47,7 +48,10 @@ export const reconstructAnnotations = (annotationOffsetList: {[key: string] : an
 			html: a.anno.html,
 			authorId: a.anno.authorId,
 			createdTimestamp: new Date().getTime(),
-			programmingLang: a.anno.programmingLang
+			programmingLang: a.anno.programmingLang,
+			gitRepo: a.anno.gitRepo,
+			gitBranch: a.anno.gitBranch,
+			gitCommit: a.anno.gitCommit
 		}
 		return buildAnnotation(adjustedAnno);
 	});
@@ -124,8 +128,8 @@ export const handleSaveCloseEvent = async (annotationList: Annotation[], filePat
 	}
 }
 
-export const saveAnnotations = async (annotationList: Annotation[], filePath: string) : Promise<void> => {
-	const serializedObjects = annotationList.map(a => { 
+export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[key: string] : any}[] => {
+	return annotationList.map(a => { 
 		return {
 			id: a.id ? a.id : uuidv4(),
 			filename: a.filename ? a.filename : "",
@@ -143,17 +147,19 @@ export const saveAnnotations = async (annotationList: Annotation[], filePath: st
 			createdTimestamp: a.createdTimestamp ? a.createdTimestamp : new Date().getTime(),
 			programmingLang: a.programmingLang ? a.programmingLang : 'ts',
 			deleted: a.deleted !== undefined ? a.deleted : true,
-			outOfDate: a.outOfDate !== undefined ? a.outOfDate : false
+			outOfDate: a.outOfDate !== undefined ? a.outOfDate : false,
+			gitRepo: a.gitRepo ? a.gitRepo : "",
+			gitBranch: a.gitBranch ? a.gitBranch : "",
+			gitCommit: a.gitCommit ? a.gitCommit : ""
 	}});
+}
 
+export const saveAnnotations = async (annotationList: Annotation[], filePath: string) : Promise<void> => {
 	if(user) {
-		const db = firebase.firestore();
-		const annotationsRef = db.collection('vscode-annotations');
-		serializedObjects.forEach(a => {
-			annotationsRef.doc(a.id).set(a)
-		});
-	} else if (vscode.workspace.workspaceFolders) {
-		writeToFile(serializedObjects, annotationList, filePath);
+		fbSaveAnnotations(annotationList);
+	}
+	else if (vscode.workspace.workspaceFolders) {
+		writeToFile(makeObjectListFromAnnotations(annotationList), annotationList, filePath);
 	}
 }
 
@@ -231,7 +237,10 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 		annoObj['html'],
 		annoObj['authorId'],
 		annoObj['createdTimestamp'],
-		annoObj['programmingLang']
+		annoObj['programmingLang'],
+		annoObj['gitRepo'],
+		annoObj['gitBranch'],
+		annoObj['gitCommit']
 	)
 }
 

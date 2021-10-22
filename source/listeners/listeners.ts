@@ -54,8 +54,6 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
             const linesInserted = change.text.split("\n").length - 1;
             const diff = linesInserted - linesInRange;
             const visiblePath: string = vscode.workspace.workspaceFolders ? utils.getVisiblePath(e.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath) : e.document.uri.fsPath;
-            // console.log('currChange', change);
-            // console.log('all changes', e.contentChanges);
             // check to see if user pasted a copied or previously-deleted annotation... 
 
             let didPaste: boolean = false;

@@ -1,4 +1,4 @@
-import { annotationList, view, user, setUser, setView, tempAnno, setTempAnno, annotationDecorations, setAnnotationList, setCopiedAnnotationList, copiedAnnotations, setStoredCopyText } from "../extension";
+import { gitInfo, annotationList, view, user, setUser, setView, tempAnno, setTempAnno, annotationDecorations, setAnnotationList, setCopiedAnnotationList, copiedAnnotations, setStoredCopyText } from "../extension";
 import Annotation from '../constants/constants';
 import * as anchor from '../anchorFunctions/anchor';
 import * as vscode from 'vscode';
@@ -16,7 +16,7 @@ export const init = (context: vscode.ExtensionContext) => {
 				view._panel?.reveal();
 			}
 			else {
-				const newView = new ViewLoader(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
+				const newView : ViewLoader = new ViewLoader(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
 				setView(newView);
 				if(newView) {
 					newView?.init();
@@ -178,7 +178,10 @@ export const createNewAnnotation = () => {
 			html,
 			programmingLang: activeTextEditor.document.uri.toString().split('.')[1],
 			createdTimestamp: new Date().getTime(),
-			authorId: user?.uid
+			authorId: user?.uid,
+			gitRepo: gitInfo.repo,
+			gitBranch: gitInfo.branch,
+			gitCommit: gitInfo.commit
 		};
 		setTempAnno(utils.buildAnnotation(temp, r));
         view?.createNewAnno(html, annotationList);
@@ -194,7 +197,9 @@ export const addNewHighlight = () => {
         
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
     const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
-    utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then(html => {
+
+	// Get the branch and commit 
+	utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then(html => {
 		const temp = {
 			id: uuidv4(),
 			filename: activeTextEditor.document.uri.toString(),
@@ -208,7 +213,10 @@ export const addNewHighlight = () => {
 			html,
 			programmingLang: activeTextEditor.document.uri.toString().split('.')[1],
 			createdTimestamp: new Date().getTime(),
-			authorId: user?.uid
+			authorId: user?.uid,
+			gitRepo: gitInfo.repo,
+			gitBranch: gitInfo.branch,
+			gitCommit: gitInfo.commit
 		};
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));
 		const textEdit = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === temp?.filename)[0];

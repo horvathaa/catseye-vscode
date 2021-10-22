@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import styles from '../styles/annotation.module.css';
 import Annotation from '../../../constants/constants';
 import { useEffect } from "react";
+import { BiCaretUpSquare, BiCaretDownSquare} from 'react-icons/bi';
 import AnnotationDropDown from './annotationComponents/annotationMenu';
 
 const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefined) : Annotation => {
@@ -39,15 +40,24 @@ const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefi
 		annoObj['programmingLang'],
 		annoObj['gitRepo'],
 		annoObj['gitBranch'],
-		annoObj['gitCommit']
+		annoObj['gitCommit'],
+    annoObj['anchorPreview']
 	)
 }
 interface SynProps {
   html: string;
+  anchorPreview: string;
+  collapsed: boolean;
 }
 
-const Syntax: React.FC<SynProps> = ({ html }) => {
-  return ( <code dangerouslySetInnerHTML={{__html: html}}></code> );
+const Syntax: React.FC<SynProps> = ({ html, anchorPreview, collapsed }) => {
+  if(collapsed) {
+    return ( <code dangerouslySetInnerHTML={{__html: anchorPreview}}></code> );
+  }
+  else {
+    return ( <code dangerouslySetInnerHTML={{__html: html}}></code> );
+  }
+  
 }
 
 
@@ -61,6 +71,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
   const [anno, setAnno] = React.useState(annotation);
   const [edit, setEdit] = React.useState(false);
   const [newContent, setNewContent] = React.useState(anno.annotation);
+  const [collapsed, setCollapsed]= React.useState(false);
   // let keys = {};
 
   useEffect(() => {
@@ -133,7 +144,10 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
                   <AnnotationDropDown id={anno.id} editAnnotation={() => {setEdit(!edit)}} deleteAnnotation={(e) => deleteAnnotation(e)}/>
                 </div>
                 <div className={styles['AnchorContainer']} onClick={() => scrollInEditor()}>
-                  <Syntax html={anno.html} />
+                  <Syntax html={anno.html} anchorPreview={anno.anchorPreview} collapsed={collapsed} />
+                </div>
+                <div className={styles['profile']}>
+                  {collapsed ? <BiCaretDownSquare onClick={() => setCollapsed(!collapsed)} className={styles['IconContainer']} /> : <BiCaretUpSquare onClick={() => setCollapsed(!collapsed)} className={styles['IconContainer']} />}
                 </div>
                 <div className={styles['LocationContainer']} onClick={() => scrollInEditor()}>
                   {anno.visiblePath}: Line {anno.startLine + 1} to Line {anno.endLine + 1}
@@ -141,7 +155,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
                 <div className={styles['ContentContainer']}>
                   {edit ? (
                     <React.Fragment>
-                      <textarea value={newContent} onChange={updateAnnotationContent} id="editContent" />
+                      <textarea className={styles['textbox']} value={newContent} onChange={updateAnnotationContent} id="editContent" />
                       <button className={styles['submit']} onClick={(e) => updateContent(e)}>Submit</button>
                       <button className={styles['cancel']} onClick={(e) => cancelAnnotation(e)}>Cancel</button>
                     </React.Fragment>

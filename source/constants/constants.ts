@@ -19,12 +19,14 @@ export default class Annotation {
 	gitRepo: string;
 	gitBranch: string;
 	gitCommit: string;
+	anchorPreview: string;
 	
 	constructor(
 			id: string, filename: string | vscode.Uri, visiblePath: string, anchorText: string, annotation: string, 
 			anchorStartLine: number, anchorEndLine: number, anchorStartOffset: number, 
 			anchorEndOffset: number, deleted: boolean, outOfDate: boolean, html: string, authorId: string,
-			createdTimestamp: number, programmingLang: string, gitRepo: string, gitBranch: string, gitCommit: string
+			createdTimestamp: number, programmingLang: string, gitRepo: string, gitBranch: string, gitCommit: string,
+			anchorPreview: string
 		) 
 	{
 		this.id = id;
@@ -45,5 +47,6 @@ export default class Annotation {
 		this.gitRepo = gitRepo;
 		this.gitBranch = gitBranch;
 		this.gitCommit = gitCommit;
+		this.anchorPreview = anchorPreview;
 	}
 }

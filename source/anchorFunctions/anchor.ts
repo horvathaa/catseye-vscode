@@ -4,7 +4,7 @@ import { buildAnnotation, sortAnnotationsByLocation, getVisiblePath } from '../u
 import { annotationList, user, gitInfo, deletedAnnotations, setDeletedAnnotationList, annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList } from '../extension';
 
 
-function getIndicesOf(searchStr: string, str: string, caseSensitive: boolean) {
+export function getIndicesOf(searchStr: string, str: string, caseSensitive: boolean) {
     var searchStrLen = searchStr.length;
     if (searchStrLen == 0) {
         return [];
@@ -226,6 +226,10 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 
 		// user deleted the anchor
 		if(!textLength && changeRange.contains(originalRange)) {
+			let firstLine: string = "";
+			const index: number = html.indexOf('<span style');
+			const closingIndex: number = html.indexOf('<span class=\"line\">', index)
+			firstLine = html.substring(0, closingIndex) + '</code></pre>';
 			const newAnno = {
 				id,
 				filename,
@@ -241,7 +245,8 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 				programmingLang: filename.split('.')[1],
 				gitRepo: gitInfo.repo,
 				gitBranch: gitInfo.branch,
-				gitCommit: gitInfo.commit
+				gitCommit: gitInfo.commit,
+				anchorPreview: firstLine
 			}
 			const deletedAnno = buildAnnotation(newAnno);
 			setDeletedAnnotationList(deletedAnnotations.concat([deletedAnno]));
@@ -321,6 +326,10 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 		}
 
 		// console.log('newRange', newRange);
+		let firstLine: string = "";
+		const index: number = html.indexOf('<span style');
+		const closingIndex: number = html.indexOf('<span class=\"line\">', index)
+		firstLine = html.substring(0, closingIndex) + '</code></pre>';
 
 		const newAnno = {
 			id,
@@ -337,7 +346,8 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 			programmingLang: filename.split('.')[1],
 			gitRepo: gitInfo.repo,
 			gitBranch: gitInfo.branch,
-			gitCommit: gitInfo.commit
+			gitCommit: gitInfo.commit,
+			anchorPreview: firstLine
 		}
 
 		// console.log('new anno', newAnno);

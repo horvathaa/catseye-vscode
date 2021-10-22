@@ -51,7 +51,8 @@ export const reconstructAnnotations = (annotationOffsetList: {[key: string] : an
 			programmingLang: a.anno.programmingLang,
 			gitRepo: a.anno.gitRepo,
 			gitBranch: a.anno.gitBranch,
-			gitCommit: a.anno.gitCommit
+			gitCommit: a.anno.gitCommit,
+			anchorPreview: a.anno.anchorPreview
 		}
 		return buildAnnotation(adjustedAnno);
 	});
@@ -99,8 +100,12 @@ const updateHtml = async (annos: Annotation[], doc: vscode.TextDocument) : Promi
 		const newVscodeRange = new vscode.Range(new vscode.Position(annos[x].startLine, annos[x].startOffset), new vscode.Position(annos[x].endLine, annos[x].endOffset));
 		const newAnchorText = doc.getText(newVscodeRange);
 		const newHtml = await getShikiCodeHighlighting(annos[x].filename.toString(), newAnchorText);
+		let firstLine: string = "";
+		const index: number = newHtml.indexOf('<span style');
+		const closingIndex: number = newHtml.indexOf('<span class=\"line\">', index)
+		firstLine = newHtml.substring(0, closingIndex) + '</code></pre>';
 		const newAnno = buildAnnotation({
-			...annos[x], html: newHtml, anchorText: newAnchorText
+			...annos[x], html: newHtml, anchorText: newAnchorText, anchorPreview: firstLine
 		});
 		// probably should do a more conservative check (e.g., strip whitespace?)
 		if(newAnchorText !== annos[x].anchorText) view?.updateHtml(newHtml, newAnchorText, annos[x].id);
@@ -150,7 +155,8 @@ export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[
 			outOfDate: a.outOfDate !== undefined ? a.outOfDate : false,
 			gitRepo: a.gitRepo ? a.gitRepo : "",
 			gitBranch: a.gitBranch ? a.gitBranch : "",
-			gitCommit: a.gitCommit ? a.gitCommit : ""
+			gitCommit: a.gitCommit ? a.gitCommit : "",
+			anchorPreview: a.anchorPreview ? a.anchorPreview : ""
 	}});
 }
 
@@ -159,6 +165,7 @@ export const saveAnnotations = async (annotationList: Annotation[], filePath: st
 		fbSaveAnnotations(annotationList);
 	}
 	else if (vscode.workspace.workspaceFolders) {
+		// console.log('writing to file')
 		writeToFile(makeObjectListFromAnnotations(annotationList), annotationList, filePath);
 	}
 }
@@ -240,7 +247,8 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 		annoObj['programmingLang'],
 		annoObj['gitRepo'],
 		annoObj['gitBranch'],
-		annoObj['gitCommit']
+		annoObj['gitCommit'],
+		annoObj['anchorPreview']
 	)
 }
 

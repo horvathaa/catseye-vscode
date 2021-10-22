@@ -22,9 +22,11 @@ interface CssExports {
   'dropdown': string;
   'dropdown-toggle': string;
   'profile': string;
+  'profileMenu': string;
   'row': string;
   'show': string;
   'submit': string;
+  'textbox': string;
   'vertical-center': string;
   'vscode-dark': string;
   'vscode-high-contrast': string;

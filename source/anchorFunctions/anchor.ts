@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import Annotation from '../constants/constants';
 import { buildAnnotation, sortAnnotationsByLocation, getVisiblePath } from '../utils/utils';
-import { annotationList, user, deletedAnnotations, setDeletedAnnotationList, annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList } from '../extension';
+import { annotationList, user, gitInfo, deletedAnnotations, setDeletedAnnotationList, annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList } from '../extension';
 
 
 function getIndicesOf(searchStr: string, str: string, caseSensitive: boolean) {
@@ -238,7 +238,10 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 				html,
 				authorId : user?.uid,
 				createdTimestamp: new Date().getTime(),
-				programmingLang: filename.split('.')[1]
+				programmingLang: filename.split('.')[1],
+				gitRepo: gitInfo.repo,
+				gitBranch: gitInfo.branch,
+				gitCommit: gitInfo.commit
 			}
 			const deletedAnno = buildAnnotation(newAnno);
 			setDeletedAnnotationList(deletedAnnotations.concat([deletedAnno]));
@@ -331,7 +334,10 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 			html,
 			authorId : user?.uid,
 			createdTimestamp,
-			programmingLang: filename.split('.')[1]
+			programmingLang: filename.split('.')[1],
+			gitRepo: gitInfo.repo,
+			gitBranch: gitInfo.branch,
+			gitCommit: gitInfo.commit
 		}
 
 		// console.log('new anno', newAnno);

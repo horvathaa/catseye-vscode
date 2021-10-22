@@ -16,12 +16,15 @@ export default class Annotation {
 	authorId: string;
 	createdTimestamp: number;
 	programmingLang: string;
+	gitRepo: string;
+	gitBranch: string;
+	gitCommit: string;
 	
 	constructor(
 			id: string, filename: string | vscode.Uri, visiblePath: string, anchorText: string, annotation: string, 
 			anchorStartLine: number, anchorEndLine: number, anchorStartOffset: number, 
 			anchorEndOffset: number, deleted: boolean, outOfDate: boolean, html: string, authorId: string,
-			createdTimestamp: number, programmingLang: string
+			createdTimestamp: number, programmingLang: string, gitRepo: string, gitBranch: string, gitCommit: string
 		) 
 	{
 		this.id = id;
@@ -39,5 +42,8 @@ export default class Annotation {
 		this.authorId = authorId;
 		this.createdTimestamp = createdTimestamp;
 		this.programmingLang = programmingLang;
+		this.gitRepo = gitRepo;
+		this.gitBranch = gitBranch;
+		this.gitCommit = gitCommit;
 	}
 }

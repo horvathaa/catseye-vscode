@@ -8,6 +8,13 @@ import * as commands from './commands/commands';
 import * as eventHandlers from './listeners/listeners';
 import * as utils from './utils/utils';
 
+const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
+export const gitApi = gitExtension.getAPI(1);
+export const gitInfo: {[key: string] : any} = { 
+	repo: gitApi?.repositories[0]?.state?.remotes[0]?.fetchUrl, 
+	branch: gitApi?.repositories[0]?.state?.HEAD?.name,
+	commit: gitApi?.repositories[0]?.state?.HEAD?.commit
+};
 export let annotationList: Annotation[] = [];
 export let copiedAnnotations:  {[key: string] : any }[] = [];
 export let deletedAnnotations: Annotation[] = [];

@@ -32,11 +32,14 @@ const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefi
 		annoObj['startOffset'],
 		annoObj['endOffset'],
 		annoObj['deleted'],
-    annoObj['outOfDate'],
+		annoObj['outOfDate'],
 		annoObj['html'],
 		annoObj['authorId'],
 		annoObj['createdTimestamp'],
-		annoObj['programmingLang']
+		annoObj['programmingLang'],
+		annoObj['gitRepo'],
+		annoObj['gitBranch'],
+		annoObj['gitCommit']
 	)
 }
 interface SynProps {
@@ -73,7 +76,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
         const { html, anchorText, id } = message.payload;
         if(id === anno.id) {
           const newAnno = { ...anno, html: html, anchorText: anchorText};
-          console.log('newAnno', newAnno);
+          // console.log('newAnno', newAnno);
           setAnno(buildAnnotation(newAnno));
         }
         break;

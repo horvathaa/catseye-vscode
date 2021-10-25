@@ -239,6 +239,10 @@ export const addNewHighlight = () => {
     });
 }
 
+export const showAnnoInWebview = (id: string) => {
+	view?.scrollToAnnotation(id);
+}
+
 export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
     const annotationsInEditor = annotationList.filter((a: Annotation) => a.filename === textEditor.document.uri.toString());
 	const annosInRange = anchor.getAnchorsInRange(textEditor.selection, annotationsInEditor);

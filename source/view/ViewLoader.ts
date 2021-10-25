@@ -134,4 +134,15 @@ export default class ViewLoader {
       })
     }
   }
+
+  public scrollToAnnotation(id: string) {
+    if(this._panel && this._panel.webview) {
+      this._panel.webview.postMessage({
+        command: 'scrollToAnno',
+        payload: {
+          id
+        }
+      })
+    }
+  }
 }

@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 import Annotation from '../constants/constants';
-import { buildAnnotation, sortAnnotationsByLocation, getVisiblePath } from '../utils/utils';
+import { buildAnnotation, sortAnnotationsByLocation, getVisiblePath, getFirstLineOfHtml } from '../utils/utils';
 import { annotationList, user, gitInfo, deletedAnnotations, setDeletedAnnotationList, annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList } from '../extension';
 
 
-function getIndicesOf(searchStr: string, str: string, caseSensitive: boolean) {
+export function getIndicesOf(searchStr: string, str: string, caseSensitive: boolean) {
     var searchStrLen = searchStr.length;
     if (searchStrLen == 0) {
         return [];
@@ -241,7 +241,8 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 				programmingLang: filename.split('.')[1],
 				gitRepo: gitInfo.repo,
 				gitBranch: gitInfo.branch,
-				gitCommit: gitInfo.commit
+				gitCommit: gitInfo.commit,
+				anchorPreview: getFirstLineOfHtml(html)
 			}
 			const deletedAnno = buildAnnotation(newAnno);
 			setDeletedAnnotationList(deletedAnnotations.concat([deletedAnno]));
@@ -289,10 +290,13 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 			newRange.endLine = originalEndLine + diff;
 			// console.log('updating endLine', newRange.endLine)
 			if(startLine === originalStartLine) {
+				// console.log('original start line - sl', startLine, 'osl', originalStartLine)
 				newRange.startLine = startOffset <= originalStartOffset ? originalStartLine + diff : originalStartLine;
-				newRange.startOffset = startOffset <= originalStartOffset ? endOffset : originalStartOffset; // ?
+				newRange.startOffset = startOffset < originalStartOffset ? endOffset : originalStartOffset; // ?
 				if(startAndEndLineAreSameNewLine) {
+					// console.log('in start and end are same')
 					newRange.endOffset = anchorText.includes('\n') ? anchorText.substring(anchorText.lastIndexOf('\n')).length : anchorText.substring(startOffset).length; // ???
+					// console.log('end offset', newRange.endOffset)
 				}
 			}
 			if(startLine === originalEndLine && originalEndOffset >= startOffset) {
@@ -321,6 +325,7 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 		}
 
 		// console.log('newRange', newRange);
+		let firstLine: string = getFirstLineOfHtml(html);
 
 		const newAnno = {
 			id,
@@ -337,10 +342,12 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 			programmingLang: filename.split('.')[1],
 			gitRepo: gitInfo.repo,
 			gitBranch: gitInfo.branch,
-			gitCommit: gitInfo.commit
+			gitCommit: gitInfo.commit,
+			anchorPreview: firstLine
 		}
 
-		// console.log('new anno', newAnno);
+		// console.log('newAnno', newAnno);
+
 		return buildAnnotation(newAnno)
 
 	}
@@ -351,6 +358,25 @@ export function createRangeFromAnnotation(annotation: Annotation) : vscode.Range
 
 export function createRangeFromObject(obj: {[key: string] : any}) : vscode.Range {
 	return new vscode.Range(obj.startLine, obj.startOffset, obj.endLine, obj.endOffset);
+}
+
+const createDecorationOptions = (ranges: { [key: string] : any }[]) : vscode.DecorationOptions[] => {
+	return ranges.map(r => {
+		const annoContent: string = r.annotation === '' ? r.annotation : r.annotation + '  '; // add a new line so the show annotation button is below
+		let markdownArr = new Array<vscode.MarkdownString>();
+		markdownArr.push(new vscode.MarkdownString(annoContent));
+		const showAnnoInWebviewCommand = vscode.Uri.parse(
+			`command:adamite.showAnnoInWebview?${encodeURIComponent(JSON.stringify(r.id))}`
+		);
+		let showAnnoInWebviewLink: vscode.MarkdownString = new vscode.MarkdownString();
+		showAnnoInWebviewLink.isTrusted = true;
+		showAnnoInWebviewLink.appendMarkdown(`[Show Annotation](${showAnnoInWebviewCommand})`)
+		markdownArr.push(showAnnoInWebviewLink);
+		return { 
+			range: r.range, 
+			hoverMessage: markdownArr
+		} 
+	});
 }
 
 export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode.TextEditor | undefined = undefined) : void => {
@@ -390,7 +416,7 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 			// console.log('sorted', newAnnotationList);
 			setAnnotationList(newAnnotationList);
 			try {
-				const decorationOptions: vscode.DecorationOptions[] = validRanges.map(r => { return { range: r.range, hoverMessage: r.annotation } });
+				const decorationOptions: vscode.DecorationOptions[] = createDecorationOptions(validRanges);
 				text.setDecorations(annotationDecorations, decorationOptions);
 			}
 			catch (error) {

@@ -38,7 +38,7 @@ const NewAnnotation: React.FC<Props> = ({ selection, vscode, notifyDone = () => 
         <div className={annoStyles['Pad']}>
             <div className={annoStyles['AnnotationContainer']} >
                 <Syntax html={selection} />
-                <textarea id="newAnno" onKeyDown={(e) => {
+                <textarea className={annoStyles['textbox']} id="newAnno" onKeyDown={(e) => {
                                 if(e.key === "Enter") {
                                     createAnnotation();
                                 }

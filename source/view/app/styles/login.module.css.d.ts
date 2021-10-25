@@ -4,6 +4,7 @@ interface CssExports {
   'AuthContainer': string;
   'InputFieldContainer': string;
   'row': string;
+  'welcome': string;
 }
 export const cssExports: CssExports;
 export default cssExports;

@@ -18,6 +18,9 @@ const LogIn: React.FC<Props> = ({ vscode }) => {
 
     return (
         <div className={styles['AuthContainer']}>
+            <div className={`${styles.welcome}`}>
+                Adamite for VS Code
+            </div>
             <div className={`${styles.InputFieldContainer} ${styles.row}`}>
                 <input type="text" value={email} placeholder="email" name="email" 
                 onChange={(e) => setEmail(e.target.value)}/>

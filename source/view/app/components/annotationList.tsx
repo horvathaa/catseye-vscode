@@ -25,9 +25,9 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
 
     const createClusters = () => {
         let output : { [key: string] : any } = {
-        'Current File': [],
-        'Current Project': [],
-        'Other Projects': []
+            'Current File': [],
+            'Current Project': [],
+            'Other Projects': []
         };
         annotations.forEach((a: Annotation) => {
             let file = a.visiblePath;
@@ -44,19 +44,19 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
         });
         const jsx : React.ReactElement[] = [];
         for(const key in output) {
-        const header = output[key].length === 1 ? 'annotation' : 'annotations';
-        jsx.push(
-            <div>
-            <div onClick={showHideCluster} id={key} className={styles['subheading']}>
-                {key} ({output[key].length} {header})
-            </div>
-            <div className={styles['showing']}>
-                {output[key].map((a: Annotation, index: number) => {
-                    return <ReactAnnotation key={index} annotation={a} vscode={vscode} window={window} />
-                })}
-            </div>
-            </div>
-        )
+            const header = output[key].length === 1 ? 'annotation' : 'annotations';
+            jsx.push(
+                <div>
+                    <div onClick={showHideCluster} id={key} className={styles['subheading']}>
+                        {key} ({output[key].length} {header})
+                    </div>
+                    <div className={styles['showing']}>
+                        {output[key].map((a: Annotation) => {
+                            return <ReactAnnotation key={a.id} annotation={a} vscode={vscode} window={window} />
+                        })}
+                    </div>
+                </div>
+            )
         }
 
         return jsx;

@@ -49,8 +49,8 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn }) => {
   const [showNewAnnotation, setShowNewAnnotation] = useState(false);
   const [currentFile, setCurrentFile] = useState("");
 
-  window.addEventListener('message', event => {
-    const message = event.data;
+  const handleIncomingMessages = (e: MessageEvent<any>) => {
+    const message = e.data;
     switch(message.command) {
       case 'login':
         setShowLogin(true);
@@ -66,8 +66,20 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn }) => {
         setSelection(message.payload.selection);
         setShowNewAnnotation(true);
         return;
+      case 'scrollToAnno':
+        const annoDiv: HTMLElement | null = document.getElementById(message.payload.id);
+        annoDiv?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        return;
     }
-  })
+  }
+
+  React.useEffect(() => {
+    window.addEventListener('message', handleIncomingMessages);
+    return () => {
+      window.removeEventListener('message', handleIncomingMessages);
+    }
+  }, [])
+
 
   const notifyDone = () : void => {
     setShowNewAnnotation(false);

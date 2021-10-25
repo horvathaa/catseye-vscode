@@ -148,8 +148,24 @@
 }
 
 .AnchorContainer {
+  border: 0.5px white;
+}
+
+.LocationWrapper {
+  display: flex;
+}
+
+.HTMLContainer {
   color: white;
   cursor: pointer;
+}
+
+.AnchorButtonContainer {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  margin-left: auto;
+  margin-right: 0.5rem;
 }
 
 .ContentContainer {

@@ -126,7 +126,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
 
   return (
       <React.Fragment>
-          <div className={styles['Pad']} >
+          <div className={styles['Pad']} id={annotation.id} >
               <li key={annotation.id} className={styles['AnnotationContainer']}  >
                 <div className={styles['IconContainer']}>
                   <AnnotationDropDown id={anno.id} editAnnotation={() => {setEdit(!edit)}} deleteAnnotation={(e) => deleteAnnotation(e)}/>

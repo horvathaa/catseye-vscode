@@ -360,6 +360,25 @@ export function createRangeFromObject(obj: {[key: string] : any}) : vscode.Range
 	return new vscode.Range(obj.startLine, obj.startOffset, obj.endLine, obj.endOffset);
 }
 
+const createDecorationOptions = (ranges: { [key: string] : any }[]) : vscode.DecorationOptions[] => {
+	return ranges.map(r => {
+		const annoContent: string = r.annotation === '' ? r.annotation : r.annotation + '  '; // add a new line so the show annotation button is below
+		let markdownArr = new Array<vscode.MarkdownString>();
+		markdownArr.push(new vscode.MarkdownString(annoContent));
+		const showAnnoInWebviewCommand = vscode.Uri.parse(
+			`command:adamite.showAnnoInWebview?${encodeURIComponent(JSON.stringify(r.id))}`
+		);
+		let showAnnoInWebviewLink: vscode.MarkdownString = new vscode.MarkdownString();
+		showAnnoInWebviewLink.isTrusted = true;
+		showAnnoInWebviewLink.appendMarkdown(`[Show Annotation](${showAnnoInWebviewCommand})`)
+		markdownArr.push(showAnnoInWebviewLink);
+		return { 
+			range: r.range, 
+			hoverMessage: markdownArr
+		} 
+	});
+}
+
 export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode.TextEditor | undefined = undefined) : void => {
 	const filenames = [... new Set(annotationList.map(a => a.filename))];
 	const visibleEditors = vscode.window.visibleTextEditors.filter((t: vscode.TextEditor) => filenames.includes(t.document.uri.toString()));
@@ -397,7 +416,7 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 			// console.log('sorted', newAnnotationList);
 			setAnnotationList(newAnnotationList);
 			try {
-				const decorationOptions: vscode.DecorationOptions[] = validRanges.map(r => { return { range: r.range, hoverMessage: r.annotation } });
+				const decorationOptions: vscode.DecorationOptions[] = createDecorationOptions(validRanges);
 				text.setDecorations(annotationDecorations, decorationOptions);
 			}
 			catch (error) {

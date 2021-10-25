@@ -51,8 +51,8 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
                         {key} ({output[key].length} {header})
                     </div>
                     <div className={styles['showing']}>
-                        {output[key].map((a: Annotation, index: number) => {
-                            return <ReactAnnotation key={index} annotation={a} vscode={vscode} window={window} />
+                        {output[key].map((a: Annotation) => {
+                            return <ReactAnnotation key={a.id} annotation={a} vscode={vscode} window={window} />
                         })}
                     </div>
                 </div>

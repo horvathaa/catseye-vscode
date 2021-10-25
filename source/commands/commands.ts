@@ -101,10 +101,10 @@ export const init = (context: vscode.ExtensionContext) => {
 								const updatedAnno = utils.buildAnnotation({ ...annotationList.filter(a => a.id === message.annoId)[0], deleted: true });
 								const updatedList = annotationList.filter(a => a.id !== message.annoId).concat([updatedAnno]);
 								utils.saveAnnotations(updatedList, ""); // bad - that should point to JSON but we are also not using that rn so whatever
-								setAnnotationList(updatedList.filter(a => a.id !== message.annoId));
-								if(vscode.workspace.workspaceFolders)
-									view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList), utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
 								const visible : vscode.TextEditor = vscode.window.visibleTextEditors.filter((v: vscode.TextEditor) => v.document.uri.toString() === updatedAnno.filename)[0];
+								setAnnotationList(utils.sortAnnotationsByLocation(utils.removeOutOfDateAnnotations(updatedList), visible?.document.uri.toString()));
+								if(vscode.workspace.workspaceFolders)
+									view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
 								if(visible) {
 									anchor.addHighlightsToEditor(annotationList, visible);
 								}

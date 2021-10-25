@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import Annotation from '../constants/constants';
-import { buildAnnotation, sortAnnotationsByLocation, getVisiblePath } from '../utils/utils';
+import { buildAnnotation, sortAnnotationsByLocation, getVisiblePath, getFirstLineOfHtml } from '../utils/utils';
 import { annotationList, user, gitInfo, deletedAnnotations, setDeletedAnnotationList, annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList } from '../extension';
 
 
@@ -226,10 +226,6 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 
 		// user deleted the anchor
 		if(!textLength && changeRange.contains(originalRange)) {
-			let firstLine: string = "";
-			const index: number = html.indexOf('<span style');
-			const closingIndex: number = html.indexOf('<span class=\"line\">', index)
-			firstLine = html.substring(0, closingIndex) + '</code></pre>';
 			const newAnno = {
 				id,
 				filename,
@@ -246,7 +242,7 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 				gitRepo: gitInfo.repo,
 				gitBranch: gitInfo.branch,
 				gitCommit: gitInfo.commit,
-				anchorPreview: firstLine
+				anchorPreview: getFirstLineOfHtml(html)
 			}
 			const deletedAnno = buildAnnotation(newAnno);
 			setDeletedAnnotationList(deletedAnnotations.concat([deletedAnno]));
@@ -294,10 +290,13 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 			newRange.endLine = originalEndLine + diff;
 			// console.log('updating endLine', newRange.endLine)
 			if(startLine === originalStartLine) {
+				// console.log('original start line - sl', startLine, 'osl', originalStartLine)
 				newRange.startLine = startOffset <= originalStartOffset ? originalStartLine + diff : originalStartLine;
-				newRange.startOffset = startOffset <= originalStartOffset ? endOffset : originalStartOffset; // ?
+				newRange.startOffset = startOffset < originalStartOffset ? endOffset : originalStartOffset; // ?
 				if(startAndEndLineAreSameNewLine) {
+					// console.log('in start and end are same')
 					newRange.endOffset = anchorText.includes('\n') ? anchorText.substring(anchorText.lastIndexOf('\n')).length : anchorText.substring(startOffset).length; // ???
+					// console.log('end offset', newRange.endOffset)
 				}
 			}
 			if(startLine === originalEndLine && originalEndOffset >= startOffset) {
@@ -326,10 +325,7 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 		}
 
 		// console.log('newRange', newRange);
-		let firstLine: string = "";
-		const index: number = html.indexOf('<span style');
-		const closingIndex: number = html.indexOf('<span class=\"line\">', index)
-		firstLine = html.substring(0, closingIndex) + '</code></pre>';
+		let firstLine: string = getFirstLineOfHtml(html);
 
 		const newAnno = {
 			id,
@@ -350,7 +346,8 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 			anchorPreview: firstLine
 		}
 
-		// console.log('new anno', newAnno);
+		// console.log('newAnno', newAnno);
+
 		return buildAnnotation(newAnno)
 
 	}

@@ -3,8 +3,8 @@ import * as vscode from 'vscode';
 import styles from '../styles/annotation.module.css';
 import Annotation from '../../../constants/constants';
 import { useEffect } from "react";
-import { BiCaretUpSquare, BiCaretDownSquare} from 'react-icons/bi';
 import AnnotationDropDown from './annotationComponents/annotationMenu';
+import Anchor from './annotationComponents/anchor';
 
 const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefined) : Annotation => {
 	const annoObj : { [key: string]: any } = range ? 
@@ -44,23 +44,6 @@ const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefi
     annoObj['anchorPreview']
 	)
 }
-interface SynProps {
-  html: string;
-  anchorPreview: string;
-  collapsed: boolean;
-}
-
-const Syntax: React.FC<SynProps> = ({ html, anchorPreview, collapsed }) => {
-  if(collapsed) {
-    return ( <code dangerouslySetInnerHTML={{__html: anchorPreview}}></code> );
-  }
-  else {
-    return ( <code dangerouslySetInnerHTML={{__html: html}}></code> );
-  }
-  
-}
-
-
 interface Props {
   annotation: Annotation;
   vscode: any;
@@ -71,28 +54,33 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
   const [anno, setAnno] = React.useState(annotation);
   const [edit, setEdit] = React.useState(false);
   const [newContent, setNewContent] = React.useState(anno.annotation);
-  const [collapsed, setCollapsed]= React.useState(false);
-  // let keys = {};
+
+  const handleIncomingMessages = (e: MessageEvent<any>) => {
+    const message = e.data;
+    switch(message.command) {
+      case 'newHtml':
+        const { html, anchorText, anchorPreview, id } = message.payload;
+        if(id === anno.id) {
+          const newAnno = { ...anno, html: html, anchorText: anchorText, anchorPreview: anchorPreview};
+          console.log('setting newAnno', newAnno);
+          setAnno(buildAnnotation(newAnno));
+        }
+        break;
+    }
+  }
+
+  useEffect(() => {
+    window.addEventListener('message', handleIncomingMessages);
+    return () => {
+      window.removeEventListener('message', handleIncomingMessages)
+    }
+  }, []);
 
   useEffect(() => {
     if(JSON.stringify(anno) !== JSON.stringify(annotation)) {
       setAnno(annotation);
     }
-  });
-
-  window.addEventListener('message', event => {
-    const message = event.data;
-    switch(message.command) {
-      case 'newHtml':
-        const { html, anchorText, id } = message.payload;
-        if(id === anno.id) {
-          const newAnno = { ...anno, html: html, anchorText: anchorText};
-          // console.log('newAnno', newAnno);
-          setAnno(buildAnnotation(newAnno));
-        }
-        break;
-    }
-  });
+  }, [annotation]);
 
   // Idea: use onDragOver and onDrop to allow user to drop code into the sidebar - may have to have
   // similar event listener in the editor? but I'm not sure how we can override some of these things
@@ -143,15 +131,14 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
                 <div className={styles['IconContainer']}>
                   <AnnotationDropDown id={anno.id} editAnnotation={() => {setEdit(!edit)}} deleteAnnotation={(e) => deleteAnnotation(e)}/>
                 </div>
-                <div className={styles['AnchorContainer']} onClick={() => scrollInEditor()}>
-                  <Syntax html={anno.html} anchorPreview={anno.anchorPreview} collapsed={collapsed} />
-                </div>
-                <div className={styles['profile']}>
-                  {collapsed ? <BiCaretDownSquare onClick={() => setCollapsed(!collapsed)} className={styles['IconContainer']} /> : <BiCaretUpSquare onClick={() => setCollapsed(!collapsed)} className={styles['IconContainer']} />}
-                </div>
-                <div className={styles['LocationContainer']} onClick={() => scrollInEditor()}>
-                  {anno.visiblePath}: Line {anno.startLine + 1} to Line {anno.endLine + 1}
-                </div>
+                <Anchor 
+                  html={anno.html} 
+                  anchorPreview={anno.anchorPreview} 
+                  visiblePath={anno.visiblePath}
+                  startLine={anno.startLine}
+                  endLine={anno.endLine}
+                  scrollInEditor={scrollInEditor}
+                />
                 <div className={styles['ContentContainer']}>
                   {edit ? (
                     <React.Fragment>

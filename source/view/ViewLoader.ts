@@ -81,13 +81,14 @@ export default class ViewLoader {
     }
   }
 
-  public updateHtml(html: string, anchorText: string, id: string) {
+  public updateHtml(html: string, anchorText: string, anchorPreview: string, id: string) {
     if(this._panel && this._panel.webview) {
       this._panel.webview.postMessage({
         command: 'newHtml',
         payload: {
           html,
           anchorText,
+          anchorPreview,
           id
         }
       })

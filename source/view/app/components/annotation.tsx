@@ -62,7 +62,6 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
         const { html, anchorText, anchorPreview, id } = message.payload;
         if(id === anno.id) {
           const newAnno = { ...anno, html: html, anchorText: anchorText, anchorPreview: anchorPreview};
-          console.log('setting newAnno', newAnno);
           setAnno(buildAnnotation(newAnno));
         }
         break;

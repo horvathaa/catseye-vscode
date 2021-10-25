@@ -101,10 +101,10 @@ export const init = (context: vscode.ExtensionContext) => {
 								const updatedAnno = utils.buildAnnotation({ ...annotationList.filter(a => a.id === message.annoId)[0], deleted: true });
 								const updatedList = annotationList.filter(a => a.id !== message.annoId).concat([updatedAnno]);
 								utils.saveAnnotations(updatedList, ""); // bad - that should point to JSON but we are also not using that rn so whatever
-								setAnnotationList(updatedList.filter(a => a.id !== message.annoId));
-								if(vscode.workspace.workspaceFolders)
-									view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList), utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
 								const visible : vscode.TextEditor = vscode.window.visibleTextEditors.filter((v: vscode.TextEditor) => v.document.uri.toString() === updatedAnno.filename)[0];
+								setAnnotationList(utils.sortAnnotationsByLocation(utils.removeOutOfDateAnnotations(updatedList), visible?.document.uri.toString()));
+								if(vscode.workspace.workspaceFolders)
+									view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
 								if(visible) {
 									anchor.addHighlightsToEditor(annotationList, visible);
 								}
@@ -165,6 +165,10 @@ export const createNewAnnotation = () => {
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
     const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
     utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then((html: string) => {
+		let firstLine: string = "";
+		const index: number = html.indexOf('<span style');
+		const closingIndex: number = html.indexOf('<span class=\"line\">', index)
+		firstLine = html.substring(0, closingIndex) + '</code></pre>';
 		const temp = {
 			id: uuidv4(),
 			filename: activeTextEditor.document.uri.toString(),
@@ -181,7 +185,8 @@ export const createNewAnnotation = () => {
 			authorId: user?.uid,
 			gitRepo: gitInfo.repo,
 			gitBranch: gitInfo.branch,
-			gitCommit: gitInfo.commit
+			gitCommit: gitInfo.commit,
+			anchorPreview: firstLine
 		};
 		setTempAnno(utils.buildAnnotation(temp, r));
         view?.createNewAnno(html, annotationList);
@@ -200,6 +205,10 @@ export const addNewHighlight = () => {
 
 	// Get the branch and commit 
 	utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then(html => {
+		let firstLine: string = "";
+		const index: number = html.indexOf('<span style');
+		const closingIndex: number = html.indexOf('<span class=\"line\">', index)
+		firstLine = html.substring(0, closingIndex) + '</code></pre>';
 		const temp = {
 			id: uuidv4(),
 			filename: activeTextEditor.document.uri.toString(),
@@ -216,8 +225,10 @@ export const addNewHighlight = () => {
 			authorId: user?.uid,
 			gitRepo: gitInfo.repo,
 			gitBranch: gitInfo.branch,
-			gitCommit: gitInfo.commit
+			gitCommit: gitInfo.commit,
+			anchorPreview: firstLine
 		};
+
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));
 		const textEdit = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === temp?.filename)[0];
 		// setTempAnno(null);
@@ -226,6 +237,10 @@ export const addNewHighlight = () => {
 			view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList), utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
 		anchor.addHighlightsToEditor(annotationList, textEdit);
     });
+}
+
+export const showAnnoInWebview = (id: string) => {
+	view?.scrollToAnnotation(id);
 }
 
 export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {

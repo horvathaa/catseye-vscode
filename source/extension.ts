@@ -110,6 +110,7 @@ export function activate(context: vscode.ExtensionContext) {
 	let initDisposable = vscode.commands.registerCommand('adamite.launch', () => commands.init(context));
 	let annotateDisposable = vscode.commands.registerCommand('adamite.sel', () => commands.createNewAnnotation());
 	let highlightDisposable = vscode.commands.registerCommand('adamite.addHighlight', () => commands.addNewHighlight());
+	let scrollDisposable = vscode.commands.registerCommand('adamite.showAnnoInWebview', (id) => commands.showAnnoInWebview(id));
 
 	let copyDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', commands.overriddenClipboardCopyAction);
 	let cutDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCutAction', commands.overriddenClipboardCutAction);
@@ -121,6 +122,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(initDisposable);
 	context.subscriptions.push(annotateDisposable);
 	context.subscriptions.push(highlightDisposable);
+	context.subscriptions.push(scrollDisposable);
 	context.subscriptions.push(copyDisposable);
 	context.subscriptions.push(cutDisposable);
 	

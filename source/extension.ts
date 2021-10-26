@@ -9,12 +9,8 @@ import * as eventHandlers from './listeners/listeners';
 import * as utils from './utils/utils';
 
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
-export const gitApi = gitExtension.getAPI(1);
-export const gitInfo: {[key: string] : any} = { 
-	repo: gitApi?.repositories[0]?.state?.remotes[0]?.fetchUrl, 
-	branch: gitApi?.repositories[0]?.state?.HEAD?.name,
-	commit: gitApi?.repositories[0]?.state?.HEAD?.commit
-};
+export const gitApi = gitExtension?.getAPI(1);
+export let gitInfo: {[key: string] : any} = {};
 export let annotationList: Annotation[] = [];
 export let copiedAnnotations:  {[key: string] : any }[] = [];
 export let deletedAnnotations: Annotation[] = [];
@@ -60,6 +56,10 @@ export const setView = (newView: ViewLoader | undefined) : void => {
 	view = newView;
 }
 
+export const setGitInfo = (newGiftInfo: {[key: string] : any}) : void => {
+	gitInfo = newGiftInfo;
+}
+
 export const setTabSize = (newTabSize: number | string) : void => {
 	tabSize = newTabSize;
 }
@@ -95,20 +95,19 @@ export function activate(context: vscode.ExtensionContext) {
 	/*************************************************************************************/
 	
 	let didChangeVisibleListenerDisposable = vscode.window.onDidChangeVisibleTextEditors(eventHandlers.handleChangeVisibleTextEditors);
-	let didChangeactiveEditorListenerDisposable = vscode.window.onDidChangeActiveTextEditor(eventHandlers.handleChangeActiveTextEditor);
+	let didChangeActiveEditorListenerDisposable = vscode.window.onDidChangeActiveTextEditor(eventHandlers.handleChangeActiveTextEditor);
 	let didChangeTextEditorSelection = vscode.window.onDidChangeTextEditorSelection(eventHandlers.handleDidChangeTextEditorSelection);
 	
 	let didSaveListenerDisposable = vscode.workspace.onDidSaveTextDocument(eventHandlers.handleDidSaveDidClose);
 	let didCloseListenerDisposable = vscode.workspace.onDidCloseTextDocument(eventHandlers.handleDidSaveDidClose)
 	let didChangeTextDocumentDisposable = vscode.workspace.onDidChangeTextDocument(eventHandlers.handleDidChangeTextDocument)
 	
-		
 	/*************************************************************************************/
 	/**************************************** COMMANDS ***********************************/
 	/*************************************************************************************/
 
 	let initDisposable = vscode.commands.registerCommand('adamite.launch', () => commands.init(context));
-	let annotateDisposable = vscode.commands.registerCommand('adamite.sel', () => commands.createNewAnnotation());
+	let annotateDisposable = vscode.commands.registerCommand('adamite.addAnnotation', () => commands.createNewAnnotation());
 	let highlightDisposable = vscode.commands.registerCommand('adamite.addHighlight', () => commands.addNewHighlight());
 	let scrollDisposable = vscode.commands.registerCommand('adamite.showAnnoInWebview', (id) => commands.showAnnoInWebview(id));
 
@@ -127,7 +126,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(cutDisposable);
 	
 	context.subscriptions.push(didChangeVisibleListenerDisposable);
-	context.subscriptions.push(didChangeactiveEditorListenerDisposable);
+	context.subscriptions.push(didChangeActiveEditorListenerDisposable);
 	context.subscriptions.push(didChangeTextEditorSelection);
 	context.subscriptions.push(didSaveListenerDisposable);
 	context.subscriptions.push(didCloseListenerDisposable);

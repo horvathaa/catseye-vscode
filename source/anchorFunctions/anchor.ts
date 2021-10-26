@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import Annotation from '../constants/constants';
-import { buildAnnotation, sortAnnotationsByLocation, getVisiblePath, getFirstLineOfHtml } from '../utils/utils';
+import { buildAnnotation, sortAnnotationsByLocation, getVisiblePath, getFirstLineOfHtml, getProjectName } from '../utils/utils';
 import { annotationList, user, gitInfo, deletedAnnotations, setDeletedAnnotationList, annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList } from '../extension';
 
 
@@ -223,7 +223,6 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 		const startAndEndLineAreSameNewLine = originalStartLine === startLine && originalEndLine === endLine && diff;
 		const originalRange = new vscode.Range(new vscode.Position(originalStartLine, originalStartOffset), new vscode.Position(originalEndLine, originalEndOffset));
 		const changeRange = new vscode.Range(new vscode.Position(startLine, startOffset), new vscode.Position(endLine, endOffset)); 
-
 		// user deleted the anchor
 		if(!textLength && changeRange.contains(originalRange)) {
 			const newAnno = {
@@ -242,7 +241,8 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 				gitRepo: gitInfo.repo,
 				gitBranch: gitInfo.branch,
 				gitCommit: gitInfo.commit,
-				anchorPreview: getFirstLineOfHtml(html)
+				anchorPreview: getFirstLineOfHtml(html),
+				projectName: annotationList.filter((a: Annotation) => a.id === id)[0].projectName
 			}
 			const deletedAnno = buildAnnotation(newAnno);
 			setDeletedAnnotationList(deletedAnnotations.concat([deletedAnno]));
@@ -343,10 +343,9 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 			gitRepo: gitInfo.repo,
 			gitBranch: gitInfo.branch,
 			gitCommit: gitInfo.commit,
-			anchorPreview: firstLine
+			anchorPreview: firstLine,
+			projectName: annotationList.filter((a: Annotation) => a.id === id).length ? annotationList.filter((a: Annotation) => a.id === id)[0].projectName : getProjectName(doc.uri.fsPath)
 		}
-
-		// console.log('newAnno', newAnno);
 
 		return buildAnnotation(newAnno)
 
@@ -429,7 +428,7 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 				setOutOfDateAnnotationList(ood);
 			}
 			if(vscode.workspace.workspaceFolders) {
-				view?.updateDisplay(newAnnotationList, getVisiblePath(text?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
+				view?.updateDisplay(newAnnotationList);
 			}
 			
 		} 

@@ -58,7 +58,8 @@ export const reconstructAnnotations = (annotationOffsetList: {[key: string] : an
 			gitRepo: a.anno.gitRepo,
 			gitBranch: a.anno.gitBranch,
 			gitCommit: a.anno.gitCommit,
-			anchorPreview: a.anno.anchorPreview
+			anchorPreview: a.anno.anchorPreview,
+			projectName: a.anno.projectName
 		}
 		return buildAnnotation(adjustedAnno);
 	});
@@ -126,7 +127,7 @@ export const handleSaveCloseEvent = async (annotationList: Annotation[], filePat
 		const ids: string[] = newList.map(a => a.id);
 		const visibleAnnotations: Annotation[] = currentFile === 'all' ? newList : annotationList.filter(a => !ids.includes(a.id)).concat(newList);
 		setAnnotationList(visibleAnnotations);
-		view?.updateDisplay(visibleAnnotations, getVisiblePath(doc.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
+		view?.updateDisplay(visibleAnnotations);
 		lastSavedAnnotations = annosToSave;
 		saveAnnotations(annosToSave, filePath);
 	}
@@ -153,13 +154,14 @@ export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[
 			html: a.html ? a.html : "",
 			authorId: a.authorId ? a.authorId : "",
 			createdTimestamp: a.createdTimestamp ? a.createdTimestamp : new Date().getTime(),
-			programmingLang: a.programmingLang ? a.programmingLang : 'ts',
+			programmingLang: a.programmingLang ? a.programmingLang : "",
 			deleted: a.deleted !== undefined ? a.deleted : true,
 			outOfDate: a.outOfDate !== undefined ? a.outOfDate : false,
 			gitRepo: a.gitRepo ? a.gitRepo : "",
 			gitBranch: a.gitBranch ? a.gitBranch : "",
 			gitCommit: a.gitCommit ? a.gitCommit : "",
-			anchorPreview: a.anchorPreview ? a.anchorPreview : ""
+			anchorPreview: a.anchorPreview ? a.anchorPreview : "",
+			projectName: a.projectName ? a.projectName : ""
 	}});
 }
 
@@ -213,7 +215,33 @@ export const getVisiblePath = (filePath: string | undefined, workspacePath: stri
 		return filePath;
 	}
 	return "unknown";
+}
 
+export const generateGitMetaData = (gitApi: any) : {[key: string] : any} => {
+	let gitInfo: {[key: string] : any} = {};
+	console.log('gitApi', gitApi);
+	gitApi.repositories?.forEach((r: any) => {
+		gitInfo[getProjectName(r?.rootUri?.path)] = {
+			repo: r?.state?.remotes[0]?.fetchUrl,
+			branch: r?.state?.HEAD?.name,
+			commit: r?.state?.HEAD?.commit
+		}
+	});
+	return gitInfo;
+}
+
+
+export const getProjectName = (filename: string | undefined) : string => {
+	if(vscode.workspace.workspaceFolders && filename) {
+		if(vscode.workspace.workspaceFolders.length > 1) {
+			const candidateProjects: string[] = vscode.workspace.workspaceFolders.map((f: vscode.WorkspaceFolder) => f.name);
+			return candidateProjects.filter((name: string) => filename.includes(name))[0]
+		}
+		else if(vscode.workspace.workspaceFolders.length === 1) {
+			return vscode.workspace.workspaceFolders[0].name;
+		}
+	}
+	return "";
 }
 
 export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefined) : Annotation => {
@@ -251,7 +279,8 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 		annoObj['gitRepo'],
 		annoObj['gitBranch'],
 		annoObj['gitCommit'],
-		annoObj['anchorPreview']
+		annoObj['anchorPreview'],
+		annoObj['projectName']
 	)
 }
 

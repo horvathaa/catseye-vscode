@@ -1,4 +1,4 @@
-import { gitInfo, annotationList, view, user, setUser, setView, tempAnno, setTempAnno, annotationDecorations, setAnnotationList, setCopiedAnnotationList, copiedAnnotations, setStoredCopyText } from "../extension";
+import { gitInfo, annotationList, view, user, setUser, setView, tempAnno, setTempAnno, annotationDecorations, setAnnotationList, setCopiedAnnotationList, copiedAnnotations, setStoredCopyText, setGitInfo, gitApi } from "../extension";
 import Annotation from '../constants/constants';
 import * as anchor from '../anchorFunctions/anchor';
 import * as vscode from 'vscode';
@@ -12,6 +12,8 @@ export const init = (context: vscode.ExtensionContext) => {
 	/**************************************** VIEW LISTENERS ******************************/
 	/*************************************************************************************/
 		if(vscode.workspace.workspaceFolders) {
+			setGitInfo(utils.generateGitMetaData(gitApi));
+			console.log('made this', gitInfo);
 			if(view) {
 				view._panel?.reveal();
 			}
@@ -52,9 +54,11 @@ export const init = (context: vscode.ExtensionContext) => {
 										const annotations: Annotation[] = annoDocs && annoDocs.length ? annoDocs.map((a: any) => {
 											return utils.buildAnnotation(a);
 										}) : [];
-										setAnnotationList(utils.sortAnnotationsByLocation(annotations, vscode.window.activeTextEditor?.document.uri.path.toString()));
+										const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
+										setAnnotationList(utils.sortAnnotationsByLocation(annotations, currFilename));
+										console.log('hi', vscode.window.visibleTextEditors);
 										if(vscode.workspace.workspaceFolders)
-											view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
+											view?.updateDisplay(annotationList, currFilename, utils.getProjectName(vscode.window.activeTextEditor?.document.uri.fsPath));
 										const annoFiles: string[] = annotations.map(a => a.filename.toString());
 										vscode.window.visibleTextEditors.forEach((v: vscode.TextEditor) => {
 											if(annoFiles.includes(v.document.uri.toString())) {
@@ -80,8 +84,7 @@ export const init = (context: vscode.ExtensionContext) => {
 										const text = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === tempAnno?.filename)[0];
 										setTempAnno(null);
 										setAnnotationList(utils.sortAnnotationsByLocation(annotationList, text.document.uri.toString()));
-										if(vscode.workspace.workspaceFolders)
-											view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
+										view?.updateDisplay(annotationList);
 										anchor.addHighlightsToEditor(annotationList, text);
 									}
 
@@ -93,8 +96,7 @@ export const init = (context: vscode.ExtensionContext) => {
 								const updatedList = annotationList.filter(a => a.id !== message.annoId).concat([updatedAnno]);
 								const text = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === updatedAnno?.filename)[0];
 								setAnnotationList(utils.sortAnnotationsByLocation(updatedList, text.document.uri.toString()));
-								if(vscode.workspace.workspaceFolders)
-									view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList), utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
+								view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList));
 								break;
 							}
 							case 'deleteAnnotation': {
@@ -103,8 +105,7 @@ export const init = (context: vscode.ExtensionContext) => {
 								utils.saveAnnotations(updatedList, ""); // bad - that should point to JSON but we are also not using that rn so whatever
 								const visible : vscode.TextEditor = vscode.window.visibleTextEditors.filter((v: vscode.TextEditor) => v.document.uri.toString() === updatedAnno.filename)[0];
 								setAnnotationList(utils.sortAnnotationsByLocation(utils.removeOutOfDateAnnotations(updatedList), visible?.document.uri.toString()));
-								if(vscode.workspace.workspaceFolders)
-									view?.updateDisplay(annotationList, utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
+								view?.updateDisplay(annotationList);
 								if(visible) {
 									anchor.addHighlightsToEditor(annotationList, visible);
 								}
@@ -113,7 +114,7 @@ export const init = (context: vscode.ExtensionContext) => {
 							case 'cancelAnnotation': {
 								// reset temp object and re-render
 								setTempAnno(null);
-								view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList), vscode.window.activeTextEditor?.document.fileName.toString());
+								view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList));
 								break;
 							}
 							default: {
@@ -139,8 +140,9 @@ export const init = (context: vscode.ExtensionContext) => {
 							// known bug : will default to 0 annotations until a new window is made active again when the panel is dragged sigh
 							// for now will do but should find a better solution (may consider switching to having vs code handle the state when 
 							// panel is not active)
-							if(vscode.workspace.workspaceFolders && !e.webviewPanel.active)
-								view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList), utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
+							// console.log('e', e);
+							// if(vscode.workspace.workspaceFolders && !e.webviewPanel.active)
+							// 	view?.updateDisplay(utils.sortAnnotationsByLocation(utils.removeOutOfDateAnnotations(annotationList)));
 						} else {
 							view?.init();
 						}
@@ -165,10 +167,7 @@ export const createNewAnnotation = () => {
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
     const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
     utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then((html: string) => {
-		let firstLine: string = "";
-		const index: number = html.indexOf('<span style');
-		const closingIndex: number = html.indexOf('<span class=\"line\">', index)
-		firstLine = html.substring(0, closingIndex) + '</code></pre>';
+		const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);
 		const temp = {
 			id: uuidv4(),
 			filename: activeTextEditor.document.uri.toString(),
@@ -183,11 +182,13 @@ export const createNewAnnotation = () => {
 			programmingLang: activeTextEditor.document.uri.toString().split('.')[1],
 			createdTimestamp: new Date().getTime(),
 			authorId: user?.uid,
-			gitRepo: gitInfo.repo,
-			gitBranch: gitInfo.branch,
-			gitCommit: gitInfo.commit,
-			anchorPreview: firstLine
+			gitRepo: gitInfo[projectName].repo,
+			gitBranch: gitInfo[projectName].branch,
+			gitCommit: gitInfo[projectName].commit,
+			anchorPreview: utils.getFirstLineOfHtml(html),
+			projectName: projectName 
 		};
+		console.log('making this', temp);
 		setTempAnno(utils.buildAnnotation(temp, r));
         view?.createNewAnno(html, annotationList);
     });
@@ -205,10 +206,6 @@ export const addNewHighlight = () => {
 
 	// Get the branch and commit 
 	utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then(html => {
-		let firstLine: string = "";
-		const index: number = html.indexOf('<span style');
-		const closingIndex: number = html.indexOf('<span class=\"line\">', index)
-		firstLine = html.substring(0, closingIndex) + '</code></pre>';
 		const temp = {
 			id: uuidv4(),
 			filename: activeTextEditor.document.uri.toString(),
@@ -226,15 +223,15 @@ export const addNewHighlight = () => {
 			gitRepo: gitInfo.repo,
 			gitBranch: gitInfo.branch,
 			gitCommit: gitInfo.commit,
-			anchorPreview: firstLine
+			anchorPreview: utils.getFirstLineOfHtml(html),
+			projectName: utils.getProjectName(activeTextEditor.document.uri.fsPath)
 		};
 
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));
 		const textEdit = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === temp?.filename)[0];
 		// setTempAnno(null);
 		setAnnotationList(utils.sortAnnotationsByLocation(annotationList, textEdit.document.uri.toString()));
-		if(vscode.workspace.workspaceFolders)
-			view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList), utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
+		view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList));
 		anchor.addHighlightsToEditor(annotationList, textEdit);
     });
 }

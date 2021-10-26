@@ -41,7 +41,8 @@ const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefi
 		annoObj['gitRepo'],
 		annoObj['gitBranch'],
 		annoObj['gitCommit'],
-    annoObj['anchorPreview']
+    annoObj['anchorPreview'],
+    annoObj['projectName']
 	)
 }
 interface Props {

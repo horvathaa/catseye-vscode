@@ -24,10 +24,13 @@ export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | und
             utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextEditor.document.uri.toString(), TextEditor.document);
             // utils.findOutOfDateAnchors(annotationList.filter(a => a.filename === TextEditor.document.uri.toString()), TextEditor.document);
             setAnnotationList(utils.sortAnnotationsByLocation(annotationList, TextEditor.document.uri.toString())); // mark these annos as out of date
+            const currentProject: string = utils.getProjectName(TextEditor.document.uri.fsPath);
+            console.log('textEditor', TextEditor);
             if(user && vscode.workspace.workspaceFolders)
-                view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList), utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
+                view?.updateDisplay(undefined, TextEditor.document.uri.toString(), currentProject);
         }
         else {
+            console.log('in else');
             utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', "all");
         }
     }

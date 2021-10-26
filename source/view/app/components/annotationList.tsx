@@ -8,9 +8,10 @@ interface AnnoListProps {
     vscode: any;
     window: Window;
     currentFile: string;
+    currentProject: string;
   }
   
-const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, currentFile }) => {
+const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, currentFile, currentProject }) => {
     const showHideCluster = (e: any) => {
         const div = e.target.nextElementSibling;
         if(div.classList.contains(styles['showing'])) {
@@ -29,13 +30,12 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
             'Current Project': [],
             'Other Projects': []
         };
+        console.log('currentProject', currentProject, 'currentFile', currentFile);
         annotations.forEach((a: Annotation) => {
-            let file = a.visiblePath;
-            const slash: string = a.visiblePath.includes('/') ? '/' : '\\';
-            if(file === currentFile) {
+            if(a.filename === currentFile) {
                 output['Current File'].push(a);
             }
-            else if(a.visiblePath.split(slash)[0] === currentFile.split(slash)[0]) {
+            else if(a.projectName === currentProject) {
                 output['Current Project'].push(a)
             }
             else {

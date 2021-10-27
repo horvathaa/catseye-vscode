@@ -25,12 +25,10 @@ export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | und
             // utils.findOutOfDateAnchors(annotationList.filter(a => a.filename === TextEditor.document.uri.toString()), TextEditor.document);
             setAnnotationList(utils.sortAnnotationsByLocation(annotationList, TextEditor.document.uri.toString())); // mark these annos as out of date
             const currentProject: string = utils.getProjectName(TextEditor.document.uri.fsPath);
-            console.log('textEditor', TextEditor);
             if(user && vscode.workspace.workspaceFolders)
                 view?.updateDisplay(undefined, TextEditor.document.uri.toString(), currentProject);
         }
         else {
-            console.log('in else');
             utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', "all");
         }
     }
@@ -56,7 +54,7 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
             const linesInRange = endLine - startLine;
             const linesInserted = change.text.split("\n").length - 1;
             const diff = linesInserted - linesInRange;
-            const visiblePath: string = vscode.workspace.workspaceFolders ? utils.getVisiblePath(e.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath) : e.document.uri.fsPath;
+            const visiblePath: string = vscode.workspace.workspaceFolders ? utils.getVisiblePath(utils.getProjectName(e.document.uri.fsPath), e.document.uri.fsPath) : e.document.uri.fsPath;
             // check to see if user pasted a copied or previously-deleted annotation... 
 
             let didPaste: boolean = false;

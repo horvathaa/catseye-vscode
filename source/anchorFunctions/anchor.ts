@@ -437,11 +437,14 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 	// we want to highlight anything relevant -- probably should do validity check here too
 	// maybe extract validity check into a separate function
 	else if(!text && visibleEditors.length && annotationList.length) {
-		const visFiles = visibleEditors.map((t: vscode.TextEditor) => t.document.uri.toString());
-		const relevantAnnos = annotationList.filter((a: Annotation) => visFiles.includes(a.filename.toString()));
-		const annoDecorationOptions: vscode.DecorationOptions[] = relevantAnnos.map((a: Annotation) => { return { hoverMessage: a.annotation, range: createRangeFromAnnotation(a) } });
+		const filesToHighlight: {[key: string]: any} = {};
+		const visFileNames: string[] = visibleEditors.map((t: vscode.TextEditor) => t.document.uri.toString());
+		visFileNames.forEach((key: string) => {
+			const annoRangeObjs: {[key: string]: any}[] = annotationList.filter((a: Annotation) => a.filename === key).map((a: Annotation) => { return { id: a.id, annotation: a.annotation, range: createRangeFromAnnotation(a) } })
+			filesToHighlight[key] = createDecorationOptions(annoRangeObjs);
+		});
 		visibleEditors.forEach((v: vscode.TextEditor) => {
-			v.setDecorations(annotationDecorations, annoDecorationOptions);
+			v.setDecorations(annotationDecorations, filesToHighlight[v.document.uri.toString()]);
 		});
 	}
 

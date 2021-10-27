@@ -13,7 +13,6 @@ export const init = (context: vscode.ExtensionContext) => {
 	/*************************************************************************************/
 		if(vscode.workspace.workspaceFolders) {
 			setGitInfo(utils.generateGitMetaData(gitApi));
-			console.log('made this', gitInfo);
 			if(view) {
 				view._panel?.reveal();
 			}
@@ -56,7 +55,6 @@ export const init = (context: vscode.ExtensionContext) => {
 										}) : [];
 										const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
 										setAnnotationList(utils.sortAnnotationsByLocation(annotations, currFilename));
-										console.log('hi', vscode.window.visibleTextEditors);
 										if(vscode.workspace.workspaceFolders)
 											view?.updateDisplay(annotationList, currFilename, utils.getProjectName(vscode.window.activeTextEditor?.document.uri.fsPath));
 										const annoFiles: string[] = annotations.map(a => a.filename.toString());
@@ -172,8 +170,7 @@ export const createNewAnnotation = () => {
 			id: uuidv4(),
 			filename: activeTextEditor.document.uri.toString(),
 			visiblePath: vscode.workspace.workspaceFolders ? 
-				utils.getVisiblePath(activeTextEditor.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath) :
-				activeTextEditor.document.uri.fsPath,
+				utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) : activeTextEditor.document.uri.fsPath,
 			anchorText: text,
 			annotation: '',
 			deleted: false,
@@ -188,7 +185,6 @@ export const createNewAnnotation = () => {
 			anchorPreview: utils.getFirstLineOfHtml(html),
 			projectName: projectName 
 		};
-		console.log('making this', temp);
 		setTempAnno(utils.buildAnnotation(temp, r));
         view?.createNewAnno(html, annotationList);
     });
@@ -203,14 +199,14 @@ export const addNewHighlight = () => {
         
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
     const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
-
+	const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);
 	// Get the branch and commit 
 	utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then(html => {
 		const temp = {
 			id: uuidv4(),
 			filename: activeTextEditor.document.uri.toString(),
 			visiblePath: vscode.workspace.workspaceFolders ? 
-				utils.getVisiblePath(activeTextEditor.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath) :
+				utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) :
 				activeTextEditor.document.uri.fsPath,
 			anchorText: text,
 			annotation: '',
@@ -224,7 +220,7 @@ export const addNewHighlight = () => {
 			gitBranch: gitInfo.branch,
 			gitCommit: gitInfo.commit,
 			anchorPreview: utils.getFirstLineOfHtml(html),
-			projectName: utils.getProjectName(activeTextEditor.document.uri.fsPath)
+			projectName: projectName
 		};
 
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));
@@ -237,7 +233,14 @@ export const addNewHighlight = () => {
 }
 
 export const showAnnoInWebview = (id: string) => {
-	view?.scrollToAnnotation(id);
+	if(view?._panel?.visible) {
+		view?.scrollToAnnotation(id);
+	}
+	else {
+		view?._panel?.reveal();
+		view?.scrollToAnnotation(id);
+	}
+
 }
 
 export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {

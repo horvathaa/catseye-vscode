@@ -45,7 +45,7 @@ export const reconstructAnnotations = (annotationOffsetList: {[key: string] : an
 		const adjustedAnno = {
 			id: uuidv4(),
 			filename: filePath.toString(),
-			visiblePath: getVisiblePath(filePath.fsPath, workspace.fsPath),
+			visiblePath: getVisiblePath(a.anno.projectName, workspace.fsPath),
 			anchorText: a.anno.anchorText,
 			annotation: a.anno.annotation,
 			anchor: findAnchorInRange(changeRange, a.anno.anchorText, text, a.offsetInCopy, createRangeFromAnnotation(a.anno)),
@@ -117,7 +117,6 @@ const updateHtml = async (annos: Annotation[], doc: vscode.TextDocument) : Promi
 	return updatedList;
 
 }
-
 
 export const handleSaveCloseEvent = async (annotationList: Annotation[], filePath: string = "", currentFile: string = "all", doc : vscode.TextDocument | undefined = undefined) : Promise<void> => {
 	const annosToSave: Annotation[] = annotationList.concat(outOfDateAnnotations, deletedAnnotations);
@@ -204,17 +203,15 @@ const writeToFile = async (serializedObjects: { [key: string] : any }[], annotat
 	}
 }
 
-export const getVisiblePath = (filePath: string | undefined, workspacePath: string | undefined) : string => {
-	if(filePath && workspacePath) {
-		const slash = workspacePath.includes('/') ? '/' : '\\';
-		const workspaceHead = workspacePath.split(slash).pop() ? workspacePath.split(slash).pop() : slash;
-		const path = workspaceHead ? workspaceHead + filePath.split(workspaceHead).pop() : filePath;
+export const getVisiblePath = (projectName: string, workspacePath: string | undefined) : string => {
+	if(projectName && workspacePath) {
+		const path: string = workspacePath.substring(workspacePath.indexOf(projectName));
 		if(path) return path;
 	}
-	else if(filePath) {
-		return filePath;
+	else if(workspacePath) {
+		return workspacePath;
 	}
-	return "unknown";
+	return projectName;
 }
 
 export const generateGitMetaData = (gitApi: any) : {[key: string] : any} => {

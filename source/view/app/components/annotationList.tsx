@@ -30,7 +30,6 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
             'Current Project': [],
             'Other Projects': []
         };
-        console.log('currentProject', currentProject, 'currentFile', currentFile);
         annotations.forEach((a: Annotation) => {
             if(a.filename === currentFile) {
                 output['Current File'].push(a);

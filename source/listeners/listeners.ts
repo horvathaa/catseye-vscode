@@ -24,8 +24,9 @@ export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | und
             utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextEditor.document.uri.toString(), TextEditor.document);
             // utils.findOutOfDateAnchors(annotationList.filter(a => a.filename === TextEditor.document.uri.toString()), TextEditor.document);
             setAnnotationList(utils.sortAnnotationsByLocation(annotationList, TextEditor.document.uri.toString())); // mark these annos as out of date
+            const currentProject: string = utils.getProjectName(TextEditor.document.uri.fsPath);
             if(user && vscode.workspace.workspaceFolders)
-                view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList), utils.getVisiblePath(vscode.window.activeTextEditor?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
+                view?.updateDisplay(undefined, TextEditor.document.uri.toString(), currentProject);
         }
         else {
             utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', "all");
@@ -53,7 +54,7 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
             const linesInRange = endLine - startLine;
             const linesInserted = change.text.split("\n").length - 1;
             const diff = linesInserted - linesInRange;
-            const visiblePath: string = vscode.workspace.workspaceFolders ? utils.getVisiblePath(e.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath) : e.document.uri.fsPath;
+            const visiblePath: string = vscode.workspace.workspaceFolders ? utils.getVisiblePath(utils.getProjectName(e.document.uri.fsPath), e.document.uri.fsPath) : e.document.uri.fsPath;
             // check to see if user pasted a copied or previously-deleted annotation... 
 
             let didPaste: boolean = false;
@@ -81,8 +82,11 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
                 }
             }
 
-            translatedAnnotations = utils.removeOutOfDateAnnotations(translatedAnnotations.map(a => anchor.translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, 
-                change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), visiblePath, a.id, a.createdTimestamp, a.html, e.document, change.text)));
+            translatedAnnotations = utils.removeOutOfDateAnnotations(
+                translatedAnnotations.map(a => anchor.translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, 
+                change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), visiblePath, a.id, a.createdTimestamp, a.html, e.document, change.text))
+            );
+
             if(tempAnno) {
                 const newTemp = anchor.translateChanges(tempAnno.startLine, tempAnno.endLine, tempAnno.startOffset, tempAnno.endOffset, startLine, endLine, startOffset, endOffset, 
                     change.text.length, diff, change.rangeLength, tempAnno.anchorText, tempAnno.annotation, tempAnno.filename.toString(), visiblePath, tempAnno.id, tempAnno.createdTimestamp, tempAnno.html, e.document, change.text)

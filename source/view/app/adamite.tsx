@@ -47,6 +47,7 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn }) => {
   const [showLogin, setShowLogin] = useState(showLogIn);
   const [selection, setSelection] = useState("");
   const [showNewAnnotation, setShowNewAnnotation] = useState(false);
+  const [currentProject, setCurrentProject] = useState("");
   const [currentFile, setCurrentFile] = useState("");
 
   const handleIncomingMessages = (e: MessageEvent<any>) => {
@@ -59,8 +60,9 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn }) => {
         setShowLogin(false);
         return;
       case 'update':
-        setAnnotations(message.payload.annotationList);
-        setCurrentFile(message.payload.currentFile)
+        if(message.payload.annotationList) setAnnotations(message.payload.annotationList);
+        if(message.payload.currentFile) setCurrentFile(message.payload.currentFile)
+        if(message.payload.currentProject) setCurrentProject(message.payload.currentProject)
         return;
       case 'newAnno':
         setSelection(message.payload.selection);
@@ -90,7 +92,7 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn }) => {
       {showNewAnnotation ? (
         <NewAnnotation selection={selection} vscode={vscode} notifyDone={notifyDone} />
       ) : (null)}
-      {!showLogin && <AnnotationList currentFile={currentFile} annotations={annotations} vscode={vscode} window={window} />}
+      {!showLogin && <AnnotationList currentFile={currentFile} currentProject={currentProject} annotations={annotations} vscode={vscode} window={window} />}
       {showLogin && <LogIn vscode={vscode} />}
     </React.Fragment>
   )

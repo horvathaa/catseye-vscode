@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import Annotation from '../constants/constants';
-import { buildAnnotation, sortAnnotationsByLocation, getVisiblePath, getFirstLineOfHtml } from '../utils/utils';
+import { buildAnnotation, sortAnnotationsByLocation, getVisiblePath, getFirstLineOfHtml, getProjectName } from '../utils/utils';
 import { annotationList, user, gitInfo, deletedAnnotations, setDeletedAnnotationList, annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList } from '../extension';
 
 
@@ -223,9 +223,11 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 		const startAndEndLineAreSameNewLine = originalStartLine === startLine && originalEndLine === endLine && diff;
 		const originalRange = new vscode.Range(new vscode.Position(originalStartLine, originalStartOffset), new vscode.Position(originalEndLine, originalEndOffset));
 		const changeRange = new vscode.Range(new vscode.Position(startLine, startOffset), new vscode.Position(endLine, endOffset)); 
-
 		// user deleted the anchor
+		const projectName: string = annotationList.filter((a: Annotation) => a.id === id).length ? annotationList.filter((a: Annotation) => a.id === id)[0].projectName : ""
+		const programmingLang: string = filename.split('.')[filename.split('.').length - 1];
 		if(!textLength && changeRange.contains(originalRange)) {
+			const firstLine: string = getFirstLineOfHtml(html, !newAnchorText.includes('\n'));
 			const newAnno = {
 				id,
 				filename,
@@ -238,11 +240,12 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 				html,
 				authorId : user?.uid,
 				createdTimestamp: new Date().getTime(),
-				programmingLang: filename.split('.')[1],
-				gitRepo: gitInfo.repo,
-				gitBranch: gitInfo.branch,
-				gitCommit: gitInfo.commit,
-				anchorPreview: getFirstLineOfHtml(html)
+				programmingLang: programmingLang,
+				gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : "",
+			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
+			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "",
+			anchorPreview: firstLine ? firstLine : "",
+			projectName: projectName && projectName !== "" ? projectName : getProjectName(doc.uri.fsPath)
 			}
 			const deletedAnno = buildAnnotation(newAnno);
 			setDeletedAnnotationList(deletedAnnotations.concat([deletedAnno]));
@@ -257,7 +260,7 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 		// console.log('diff', diff);
 		// console.log('changeText', changeText);
 		// user adds/removes text at or before start of anchor on same line (no new lines)
-		if(startOffset <= originalStartOffset && startLine === originalStartLine && !diff) {
+		if(startOffset < originalStartOffset && startLine === originalStartLine && !diff) {
 			newRange.startOffset = textLength ? originalStartOffset + textLength : originalStartOffset - rangeLength;
 			// console.log('user added text at beginning line - OSO', originalStartOffset, 'so', startOffset, 'tl', textLength,'rl', rangeLength);
 			if(startAndEndLineAreSameNoNewLine) {
@@ -290,22 +293,21 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 			newRange.endLine = originalEndLine + diff;
 			// console.log('updating endLine', newRange.endLine)
 			if(startLine === originalStartLine) {
-				// console.log('original start line - sl', startLine, 'osl', originalStartLine)
 				newRange.startLine = startOffset <= originalStartOffset ? originalStartLine + diff : originalStartLine;
-				newRange.startOffset = startOffset < originalStartOffset ? endOffset : originalStartOffset; // ?
+				// newRange.startOffset = startOffset < originalStartOffset ?  originalStartOffset : endOffset; // I feel like these should be swapped lol
 				if(startAndEndLineAreSameNewLine) {
-					// console.log('in start and end are same')
 					newRange.endOffset = anchorText.includes('\n') ? anchorText.substring(anchorText.lastIndexOf('\n')).length : anchorText.substring(startOffset).length; // ???
-					// console.log('end offset', newRange.endOffset)
 				}
 			}
 			if(startLine === originalEndLine && originalEndOffset >= startOffset) {
 				if(diff > 0) {
 					const relevantTextLength = changeText.includes('\n') ? changeText.substring(changeText.lastIndexOf('\n')).length : textLength;
 					// console.log('relevantTextLength', relevantTextLength, 'original text length', textLength);
+					const pointAtWhichAnchorIsSplit: number = originalEndOffset - startOffset;
 					newRange.endOffset = anchorText.includes('\n') ? 
 											anchorText.substring(anchorText.lastIndexOf('\n')).length - anchorText.substring(anchorText.lastIndexOf('\n'), anchorText.lastIndexOf('\n') + startOffset).length - 1 + relevantTextLength - 1: 
-											anchorText.length - startOffset + relevantTextLength - 1;
+											pointAtWhichAnchorIsSplit + relevantTextLength - 1;
+					// console.log('newRange.endOffset', newRange.endOffset);
 				} 
 			}
 			if(endLine === originalEndLine && originalEndOffset >= endOffset) {
@@ -325,8 +327,7 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 		}
 
 		// console.log('newRange', newRange);
-		let firstLine: string = getFirstLineOfHtml(html);
-
+		let firstLine: string = getFirstLineOfHtml(html, !newAnchorText.includes('\n'));
 		const newAnno = {
 			id,
 			filename,
@@ -339,15 +340,14 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 			html,
 			authorId : user?.uid,
 			createdTimestamp,
-			programmingLang: filename.split('.')[1],
-			gitRepo: gitInfo.repo,
-			gitBranch: gitInfo.branch,
-			gitCommit: gitInfo.commit,
-			anchorPreview: firstLine
+			programmingLang: programmingLang,
+			gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : "",
+			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
+			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "",
+			anchorPreview: firstLine ? firstLine : "",
+			projectName: projectName && projectName !== "" ? projectName : getProjectName(doc.uri.fsPath)
 		}
-
-		// console.log('newAnno', newAnno);
-
+		// console.log('new Anno', newAnno);
 		return buildAnnotation(newAnno)
 
 	}
@@ -429,7 +429,7 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 				setOutOfDateAnnotationList(ood);
 			}
 			if(vscode.workspace.workspaceFolders) {
-				view?.updateDisplay(newAnnotationList, getVisiblePath(text?.document.uri.fsPath, vscode.workspace.workspaceFolders[0].uri.fsPath));
+				view?.updateDisplay(newAnnotationList);
 			}
 			
 		} 
@@ -438,11 +438,14 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 	// we want to highlight anything relevant -- probably should do validity check here too
 	// maybe extract validity check into a separate function
 	else if(!text && visibleEditors.length && annotationList.length) {
-		const visFiles = visibleEditors.map((t: vscode.TextEditor) => t.document.uri.toString());
-		const relevantAnnos = annotationList.filter((a: Annotation) => visFiles.includes(a.filename.toString()));
-		const annoDecorationOptions: vscode.DecorationOptions[] = relevantAnnos.map((a: Annotation) => { return { hoverMessage: a.annotation, range: createRangeFromAnnotation(a) } });
+		const filesToHighlight: {[key: string]: any} = {};
+		const visFileNames: string[] = visibleEditors.map((t: vscode.TextEditor) => t.document.uri.toString());
+		visFileNames.forEach((key: string) => {
+			const annoRangeObjs: {[key: string]: any}[] = annotationList.filter((a: Annotation) => a.filename === key).map((a: Annotation) => { return { id: a.id, annotation: a.annotation, range: createRangeFromAnnotation(a) } })
+			filesToHighlight[key] = createDecorationOptions(annoRangeObjs);
+		});
 		visibleEditors.forEach((v: vscode.TextEditor) => {
-			v.setDecorations(annotationDecorations, annoDecorationOptions);
+			v.setDecorations(annotationDecorations, filesToHighlight[v.document.uri.toString()]);
 		});
 	}
 

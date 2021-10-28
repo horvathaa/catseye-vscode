@@ -28,6 +28,13 @@ interface Props {
 
 const Anchor: React.FC<Props> = ({ html, anchorPreview, visiblePath, startLine, endLine, scrollInEditor }) => {
     const [collapsed, setCollapsed] = React.useState(false);
+    const isSingleLineAnchor: boolean = (endLine - startLine) === 0;
+    
+    const collapseExpandToggle = () :  React.ReactElement<any> => {
+        return collapsed ? <BiCaretDownSquare onClick={() => setCollapsed(!collapsed)} className={styles['IconContainer']} /> : 
+        <BiCaretUpSquare onClick={() => setCollapsed(!collapsed)} className={styles['IconContainer']} />
+    }
+
 
     return (
         <div className={styles['AnchorContainer']}>
@@ -39,9 +46,7 @@ const Anchor: React.FC<Props> = ({ html, anchorPreview, visiblePath, startLine, 
                     {visiblePath}: Line {startLine + 1} to Line {endLine + 1}
                 </div>
                 <div className={styles['AnchorButtonContainer']}>
-                    {collapsed ? <BiCaretDownSquare onClick={() => setCollapsed(!collapsed)} className={styles['IconContainer']} /> : 
-                                <BiCaretUpSquare onClick={() => setCollapsed(!collapsed)} className={styles['IconContainer']} />
-                    }
+                    {!isSingleLineAnchor && collapseExpandToggle()}
                 </div>
             </div>
         </div>

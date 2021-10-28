@@ -20,10 +20,10 @@ const arraysEqual = (a1: any[], a2: any[]) : boolean => {
 	return a1.length === a2.length && a1.every((o, idx) => objectsEqual(o, a2[idx]));
 } 
 
-export const getFirstLineOfHtml = (html: string) : string => {
+export const getFirstLineOfHtml = (html: string, isOneLineAnchor: boolean) : string => {
 	const index: number = html.indexOf('<span style');
 	const closingIndex: number = html.indexOf('<span class=\"line\">', index)
-	return html.substring(0, closingIndex) + '</code></pre>';
+	return isOneLineAnchor ? html : html.substring(0, closingIndex) + '</code></pre>';
 }
 
 export const removeOutOfDateAnnotations = (annotationList: Annotation[]) : Annotation[] => {
@@ -107,7 +107,7 @@ const updateHtml = async (annos: Annotation[], doc: vscode.TextDocument) : Promi
 		const newVscodeRange: vscode.Range = new vscode.Range(new vscode.Position(annos[x].startLine, annos[x].startOffset), new vscode.Position(annos[x].endLine, annos[x].endOffset));
 		const newAnchorText: string = doc.getText(newVscodeRange);
 		const newHtml: string = await getShikiCodeHighlighting(annos[x].filename.toString(), newAnchorText);
-		const firstLine: string = getFirstLineOfHtml(newHtml);
+		const firstLine: string = getFirstLineOfHtml(newHtml, !newAnchorText.includes('\n'));
 		const newAnno = buildAnnotation({
 			...annos[x], html: newHtml, anchorText: newAnchorText, anchorPreview: firstLine
 		});
@@ -216,12 +216,11 @@ export const getVisiblePath = (projectName: string, workspacePath: string | unde
 
 export const generateGitMetaData = (gitApi: any) : {[key: string] : any} => {
 	let gitInfo: {[key: string] : any} = {};
-	console.log('gitApi', gitApi);
 	gitApi.repositories?.forEach((r: any) => {
 		gitInfo[getProjectName(r?.rootUri?.path)] = {
-			repo: r?.state?.remotes[0]?.fetchUrl,
-			branch: r?.state?.HEAD?.name,
-			commit: r?.state?.HEAD?.commit
+			repo: r?.state?.remotes[0]?.fetchUrl ? r?.state?.remotes[0]?.fetchUrl : "",
+			branch: r?.state?.HEAD?.name ? r?.state?.HEAD?.name : "",
+			commit: r?.state?.HEAD?.commit ? r?.state?.HEAD?.commit : ""
 		}
 	});
 	return gitInfo;
@@ -230,9 +229,13 @@ export const generateGitMetaData = (gitApi: any) : {[key: string] : any} => {
 
 export const getProjectName = (filename: string | undefined) : string => {
 	if(vscode.workspace.workspaceFolders && filename) {
+		const slash: string = filename.includes('\\') ? '\\' : '\/';
 		if(vscode.workspace.workspaceFolders.length > 1) {
 			const candidateProjects: string[] = vscode.workspace.workspaceFolders.map((f: vscode.WorkspaceFolder) => f.name);
-			return candidateProjects.filter((name: string) => filename.includes(name))[0]
+			return candidateProjects.filter((name: string) => filename.includes(name))[0] ? 
+			candidateProjects.filter((name: string) => filename.includes(name))[0] : 
+			filename.split(slash)[filename.split(slash).length - 1] ? filename.split(slash)[filename.split(slash).length - 1] :
+			filename;
 		}
 		else if(vscode.workspace.workspaceFolders.length === 1) {
 			return vscode.workspace.workspaceFolders[0].name;

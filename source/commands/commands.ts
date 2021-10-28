@@ -48,7 +48,7 @@ export const init = (context: vscode.ExtensionContext) => {
 									const annotationsRef = db.collection('vscode-annotations');
 									setUser(result.user);
 									view?.setLoggedIn();
-									annotationsRef.where('authorId', '==', result.user.uid).where('deleted', '==', false).get().then((snapshot: firebase.firestore.QuerySnapshot) => {
+									annotationsRef.where('authorId', '==', result.user.uid).where('deleted', '==', false).where('outOfDate', '==', false).get().then((snapshot: firebase.firestore.QuerySnapshot) => {
 										const annoDocs = utils.getListFromSnapshots(snapshot);
 										const annotations: Annotation[] = annoDocs && annoDocs.length ? annoDocs.map((a: any) => {
 											return utils.buildAnnotation(a);
@@ -166,6 +166,7 @@ export const createNewAnnotation = () => {
     const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
     utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then((html: string) => {
 		const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);
+		const programmingLang: string = activeTextEditor.document.uri.toString().split('.')[activeTextEditor.document.uri.toString().split('.').length - 1];
 		const temp = {
 			id: uuidv4(),
 			filename: activeTextEditor.document.uri.toString(),
@@ -176,13 +177,13 @@ export const createNewAnnotation = () => {
 			deleted: false,
 			outOfDate: false,
 			html,
-			programmingLang: activeTextEditor.document.uri.toString().split('.')[1],
+			programmingLang: programmingLang,
 			createdTimestamp: new Date().getTime(),
 			authorId: user?.uid,
-			gitRepo: gitInfo[projectName].repo,
-			gitBranch: gitInfo[projectName].branch,
-			gitCommit: gitInfo[projectName].commit,
-			anchorPreview: utils.getFirstLineOfHtml(html),
+			gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : "",
+			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
+			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "",
+			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
 			projectName: projectName 
 		};
 		setTempAnno(utils.buildAnnotation(temp, r));
@@ -201,6 +202,7 @@ export const addNewHighlight = () => {
     const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
 	const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);
 	// Get the branch and commit 
+	const programmingLang: string = activeTextEditor.document.uri.toString().split('.')[activeTextEditor.document.uri.toString().split('.').length - 1];
 	utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then(html => {
 		const temp = {
 			id: uuidv4(),
@@ -213,13 +215,13 @@ export const addNewHighlight = () => {
 			deleted: false,
 			outOfDate: false,
 			html,
-			programmingLang: activeTextEditor.document.uri.toString().split('.')[1],
+			programmingLang: programmingLang,
 			createdTimestamp: new Date().getTime(),
 			authorId: user?.uid,
-			gitRepo: gitInfo.repo,
-			gitBranch: gitInfo.branch,
-			gitCommit: gitInfo.commit,
-			anchorPreview: utils.getFirstLineOfHtml(html),
+			gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : "",
+			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
+			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "",
+			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
 			projectName: projectName
 		};
 

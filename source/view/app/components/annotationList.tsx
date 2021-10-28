@@ -24,7 +24,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
         }
     }
 
-    const createClusters = () => {
+    const createClusters = () : React.ReactElement<any>[] => {
         let output : { [key: string] : any } = {
             'Current File': [],
             'Current Project': [],

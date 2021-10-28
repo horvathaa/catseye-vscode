@@ -19,7 +19,7 @@ export default class ViewLoader {
         vscode.ViewColumn.One,
         {
           enableScripts: true,
-
+          retainContextWhenHidden: true,
           localResourceRoots: [
             vscode.Uri.file(path.join(extensionPath, "dist"))
           ]
@@ -95,13 +95,14 @@ export default class ViewLoader {
     }
   }
 
-  public updateDisplay(annotationList: Annotation[], currentFile: string | undefined = undefined) {
+  public updateDisplay(annotationList: Annotation[] | undefined, currentFile: string | undefined = undefined, currentProject: string | undefined = undefined) {
       if(this._panel && this._panel.webview) {
         this._panel.webview.postMessage({
           command: 'update',
           payload: {
             annotationList,
-            currentFile: currentFile
+            currentFile,
+            currentProject
           }
         })
       }

@@ -10,6 +10,12 @@ import * as utils from './utils/utils';
 
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
 export const gitApi = gitExtension?.getAPI(1);
+gitApi.onDidPublish((e: any) => {
+	console.log('hi');
+});
+gitApi.onDidChangeState((e: any) => {
+	console.log('hello', e);
+});
 export let gitInfo: {[key: string] : any} = {};
 export let annotationList: Annotation[] = [];
 export let copiedAnnotations:  {[key: string] : any }[] = [];

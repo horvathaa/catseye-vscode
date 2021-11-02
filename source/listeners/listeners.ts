@@ -84,12 +84,14 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
 
             translatedAnnotations = utils.removeOutOfDateAnnotations(
                 translatedAnnotations.map(a => anchor.translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, 
-                change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), visiblePath, a.id, a.createdTimestamp, a.html, e.document, change.text))
+                change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), visiblePath, a.id, a.createdTimestamp, a.html, e.document, change.text,
+                { repo: a.gitRepo, branch: a.gitBranch, commit: a.gitCommit }))
             );
 
             if(tempAnno) {
                 const newTemp = anchor.translateChanges(tempAnno.startLine, tempAnno.endLine, tempAnno.startOffset, tempAnno.endOffset, startLine, endLine, startOffset, endOffset, 
-                    change.text.length, diff, change.rangeLength, tempAnno.anchorText, tempAnno.annotation, tempAnno.filename.toString(), visiblePath, tempAnno.id, tempAnno.createdTimestamp, tempAnno.html, e.document, change.text)
+                    change.text.length, diff, change.rangeLength, tempAnno.anchorText, tempAnno.annotation, tempAnno.filename.toString(), visiblePath, tempAnno.id, tempAnno.createdTimestamp, tempAnno.html, e.document, change.text,
+                    { repo: tempAnno.gitRepo, branch: tempAnno.gitBranch, commit: tempAnno.gitCommit })
                 setTempAnno(newTemp);
             }
             

@@ -14,8 +14,7 @@ export const handleChangeVisibleTextEditors = async (textEditors: vscode.TextEdi
     if(!annotationsToHighlight.length) return;
     // TODO: see if we can change the behavior of markdown string so it has an onclick event to navigate to the annotation
     anchor.addHighlightsToEditor(annotationsToHighlight);
-
-		
+	
 }
 
 export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | undefined) => {

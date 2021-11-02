@@ -182,7 +182,7 @@ export const createNewAnnotation = () => {
 			authorId: user?.uid,
 			gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : "",
 			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
-			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "",
+			gitCommit: "localChange",
 			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
 			projectName: projectName 
 		};
@@ -220,7 +220,7 @@ export const addNewHighlight = () => {
 			authorId: user?.uid,
 			gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : "",
 			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
-			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "",
+			gitCommit: "localChange",
 			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
 			projectName: projectName
 		};

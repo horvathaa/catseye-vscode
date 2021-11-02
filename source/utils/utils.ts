@@ -225,9 +225,9 @@ export const generateGitMetaData = (gitApi: any) : {[key: string] : any} => {
 		console.log('hello', e);
 	});
 	gitApi.repositories?.forEach((r: any) => {
-		// r.onDidChangeState(() => {
-		// 	console.log('did change state');
-		// });
+		r?.state?.onDidChange((e: any) => {
+			console.log('did change state', e);
+		});
 		gitInfo[getProjectName(r?.rootUri?.path)] = {
 			repo: r?.state?.remotes[0]?.fetchUrl ? r?.state?.remotes[0]?.fetchUrl : "",
 			branch: r?.state?.HEAD?.name ? r?.state?.HEAD?.name : "",

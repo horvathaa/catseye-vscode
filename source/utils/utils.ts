@@ -220,7 +220,10 @@ export const generateGitMetaData = (gitApi: any) : {[key: string] : any} => {
 	console.log('gitApi', gitApi);
 	gitApi.onDidPublish((e: any) => {
 		console.log('hi');
-	})
+	});
+	gitApi.onDidChangeState((e: any) => {
+		console.log('hello', e);
+	});
 	gitApi.repositories?.forEach((r: any) => {
 		// r.onDidChangeState(() => {
 		// 	console.log('did change state');

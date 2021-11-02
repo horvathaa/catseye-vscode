@@ -344,7 +344,7 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 			programmingLang: programmingLang,
 			gitRepo: annoGitData?.repo ? annoGitData?.repo : "",
 			gitBranch: annoGitData?.branch ? annoGitData?.branch : "",
-			gitCommit: annoGitData?.commit ? annoGitData?.commit : "",
+			gitCommit: annoGitData?.commit && !changeOccurredInRange ? annoGitData?.commit : "localChange",
 			anchorPreview: firstLine ? firstLine : "",
 			projectName: projectName && projectName !== "" ? projectName : getProjectName(doc.uri.fsPath)
 		}

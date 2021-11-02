@@ -214,19 +214,25 @@ export const getVisiblePath = (projectName: string, workspacePath: string | unde
 	return projectName;
 }
 
+export const updateAnnotationCommit = (commit: string, repo: string) : void => {
+	annotationList.forEach((a: Annotation) => {
+		if(a.gitRepo === repo && a.gitCommit === 'localChange') {
+			a.gitCommit = commit;
+		}
+	});
+}
+
+
+
 
 export const generateGitMetaData = (gitApi: any) : {[key: string] : any} => {
 	let gitInfo: {[key: string] : any} = {};
-	console.log('gitApi', gitApi);
-	gitApi.onDidPublish((e: any) => {
-		console.log('hi');
-	});
-	gitApi.onDidChangeState((e: any) => {
-		console.log('hello', e);
-	});
 	gitApi.repositories?.forEach((r: any) => {
-		r?.state?.onDidChange((e: any) => {
-			console.log('did change state', e);
+		r?.state?.onDidChange(() => {
+			if(gitInfo[getProjectName(r?.rootUri?.path)].commit !== r.state.HEAD.commit) {
+				gitInfo[getProjectName(r?.rootUri?.path)].commit = r.state.HEAD.commit;
+				updateAnnotationCommit(r.state.HEAD.commit, r?.state?.remotes[0]?.fetchUrl);
+			}
 		});
 		gitInfo[getProjectName(r?.rootUri?.path)] = {
 			repo: r?.state?.remotes[0]?.fetchUrl ? r?.state?.remotes[0]?.fetchUrl : "",

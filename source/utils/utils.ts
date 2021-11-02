@@ -218,7 +218,13 @@ export const getVisiblePath = (projectName: string, workspacePath: string | unde
 export const generateGitMetaData = (gitApi: any) : {[key: string] : any} => {
 	let gitInfo: {[key: string] : any} = {};
 	console.log('gitApi', gitApi);
+	gitApi.onDidPublish((e: any) => {
+		console.log('hi');
+	})
 	gitApi.repositories?.forEach((r: any) => {
+		// r.onDidChangeState(() => {
+		// 	console.log('did change state');
+		// });
 		gitInfo[getProjectName(r?.rootUri?.path)] = {
 			repo: r?.state?.remotes[0]?.fetchUrl ? r?.state?.remotes[0]?.fetchUrl : "",
 			branch: r?.state?.HEAD?.name ? r?.state?.HEAD?.name : "",

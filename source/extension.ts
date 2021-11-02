@@ -129,7 +129,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(scrollDisposable);
 	context.subscriptions.push(copyDisposable);
 	context.subscriptions.push(cutDisposable);
-	context.subscriptions.push(gitApi.onDidPublish((e: any) => {
+	context.subscriptions.push(gitApi.git.onDidPublish((e: any) => {
 		console.log('hi');
 	}))
 	

@@ -215,7 +215,8 @@ export const findAnchorInRange = (range: vscode.Range | undefined, anchor: strin
 export const translateChanges = (originalStartLine: number, originalEndLine: number, originalStartOffset: number, 
 	originalEndOffset: number, startLine: number, endLine: number, startOffset: number, 
 	endOffset: number, textLength: number, diff: number, rangeLength: number, 
-	anchorText: string, annotation: string, filename: string, visiblePath: string, id: string, createdTimestamp: number, html: string, doc: vscode.TextDocument, changeText: string): Annotation => {
+	anchorText: string, annotation: string, filename: string, visiblePath: string, id: string, createdTimestamp: number, html: string, doc: vscode.TextDocument, changeText: string,
+	annoGitData: {[key: string]: any}): Annotation => {
 		let newRange = { startLine: originalStartLine, endLine: originalEndLine, startOffset: originalStartOffset, endOffset: originalEndOffset };
 		let newAnchorText = anchorText;
 
@@ -241,11 +242,11 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 				authorId : user?.uid,
 				createdTimestamp: new Date().getTime(),
 				programmingLang: programmingLang,
-				gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : "",
-			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
-			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "",
-			anchorPreview: firstLine ? firstLine : "",
-			projectName: projectName && projectName !== "" ? projectName : getProjectName(doc.uri.fsPath)
+				gitRepo: annoGitData?.repo ? annoGitData?.repo : "",
+				gitBranch: annoGitData?.branch ? annoGitData?.branch : "",
+				gitCommit: annoGitData?.commit ? annoGitData?.commit : "",
+				anchorPreview: firstLine ? firstLine : "",
+				projectName: projectName && projectName !== "" ? projectName : getProjectName(doc.uri.fsPath)
 			}
 			const deletedAnno = buildAnnotation(newAnno);
 			setDeletedAnnotationList(deletedAnnotations.concat([deletedAnno]));
@@ -341,9 +342,9 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 			authorId : user?.uid,
 			createdTimestamp,
 			programmingLang: programmingLang,
-			gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : "",
-			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
-			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "",
+			gitRepo: annoGitData?.repo ? annoGitData?.repo : "",
+			gitBranch: annoGitData?.branch ? annoGitData?.branch : "",
+			gitCommit: annoGitData?.commit ? annoGitData?.commit : "",
 			anchorPreview: firstLine ? firstLine : "",
 			projectName: projectName && projectName !== "" ? projectName : getProjectName(doc.uri.fsPath)
 		}

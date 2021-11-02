@@ -214,8 +214,10 @@ export const getVisiblePath = (projectName: string, workspacePath: string | unde
 	return projectName;
 }
 
+
 export const generateGitMetaData = (gitApi: any) : {[key: string] : any} => {
 	let gitInfo: {[key: string] : any} = {};
+	console.log('gitApi', gitApi);
 	gitApi.repositories?.forEach((r: any) => {
 		gitInfo[getProjectName(r?.rootUri?.path)] = {
 			repo: r?.state?.remotes[0]?.fetchUrl ? r?.state?.remotes[0]?.fetchUrl : "",

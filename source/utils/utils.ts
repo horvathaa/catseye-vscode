@@ -228,9 +228,6 @@ export const updateAnnotationCommit = (commit: string, repo: string) : void => {
 	});
 }
 
-
-
-
 export const generateGitMetaData = (gitApi: any) : {[key: string] : any} => {
 	let gitInfo: {[key: string] : any} = {};
 	gitApi.repositories?.forEach((r: any) => {

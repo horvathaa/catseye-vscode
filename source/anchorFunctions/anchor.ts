@@ -173,7 +173,6 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 			anchorPreview: firstLine ? firstLine : "",
 			projectName: projectName && projectName !== "" ? projectName : getProjectName(doc.uri.fsPath)
 		}
-		// console.log('new Anno', newAnno);
 		return buildAnnotation(newAnno)
 
 	}

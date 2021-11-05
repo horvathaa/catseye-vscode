@@ -1,4 +1,16 @@
-import { gitInfo, annotationList, view, user, setUser, setView, tempAnno, setTempAnno, annotationDecorations, setAnnotationList, setCopiedAnnotationList, copiedAnnotations, setStoredCopyText, setGitInfo, gitApi } from "../extension";
+import { gitInfo, 
+		annotationList, 
+		view, 
+		user, 
+		setView, 
+		setTempAnno, 
+		setAnnotationList, 
+		setCopiedAnnotationList, 
+		copiedAnnotations, 
+		setStoredCopyText, 
+		setGitInfo, 
+		gitApi } 
+from "../extension";
 import Annotation from '../constants/constants';
 import * as anchor from '../anchorFunctions/anchor';
 import * as vscode from 'vscode';
@@ -95,7 +107,7 @@ export const createNewAnnotation = () => {
 			authorId: user?.uid,
 			gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : "",
 			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
-			gitCommit: "localChange",
+			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "localChange",
 			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
 			projectName: projectName 
 		};
@@ -133,14 +145,13 @@ export const addNewHighlight = () => {
 			authorId: user?.uid,
 			gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : "",
 			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
-			gitCommit: "localChange",
+			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "localChange",
 			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
 			projectName: projectName
 		};
 
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));
 		const textEdit = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === temp?.filename)[0];
-		// setTempAnno(null);
 		setAnnotationList(utils.sortAnnotationsByLocation(annotationList, textEdit.document.uri.toString()));
 		view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList));
 		anchor.addHighlightsToEditor(annotationList, textEdit);

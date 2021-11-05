@@ -19,7 +19,7 @@ const objectsEqual = (o1: { [key: string ] : any }, o2: { [key: string ] : any }
 
 const arraysEqual = (a1: any[], a2: any[]) : boolean => {
 	return a1.length === a2.length && a1.every((o, idx) => objectsEqual(o, a2[idx]));
-} 
+}
 
 export const initializeAnnotations = async (user: firebase.User) : Promise<void> => {
     const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();

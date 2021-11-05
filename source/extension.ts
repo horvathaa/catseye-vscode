@@ -9,12 +9,7 @@ import * as eventHandlers from './listeners/listeners';
 import * as utils from './utils/utils';
 
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
-console.log('gitExtension', gitExtension);
 export const gitApi = gitExtension?.getAPI(1);
-
-// gitApi.onDidChangeState((e: Event<PublishEvent>) => {
-// 	console.log('hello', e);
-// });
 export let gitInfo: {[key: string] : any} = {};
 export let annotationList: Annotation[] = [];
 export let copiedAnnotations:  {[key: string] : any }[] = [];
@@ -94,7 +89,8 @@ export const setOutOfDateAnnotationList = (newOutOfDateAnnotationList: Annotatio
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-
+	console.log('running activate');
+	commands.init();
 	/*************************************************************************************/
 	/******************************** EXTENSION LISTENERS  *******************************/
 	/*************************************************************************************/
@@ -111,7 +107,7 @@ export function activate(context: vscode.ExtensionContext) {
 	/**************************************** COMMANDS ***********************************/
 	/*************************************************************************************/
 
-	let initDisposable = vscode.commands.registerCommand('adamite.launch', () => commands.init(context));
+	let initDisposable = vscode.commands.registerCommand('adamite.launch', () => commands.createView(context));
 	let annotateDisposable = vscode.commands.registerCommand('adamite.addAnnotation', () => commands.createNewAnnotation());
 	let highlightDisposable = vscode.commands.registerCommand('adamite.addHighlight', () => commands.addNewHighlight());
 	let scrollDisposable = vscode.commands.registerCommand('adamite.showAnnoInWebview', (id) => commands.showAnnoInWebview(id));
@@ -129,9 +125,6 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(scrollDisposable);
 	context.subscriptions.push(copyDisposable);
 	context.subscriptions.push(cutDisposable);
-	// context.subscriptions.push(gitApi.git.onDidPublish((e: any) => {
-	// 	console.log('hi');
-	// }))
 	
 	context.subscriptions.push(didChangeVisibleListenerDisposable);
 	context.subscriptions.push(didChangeActiveEditorListenerDisposable);

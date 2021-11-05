@@ -2,7 +2,6 @@ import firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/auth';
 const path = require('path');
-
 require('dotenv').config({ path: path.resolve(__dirname, '..\\..\\.env.local')});
 
 const config = {
@@ -16,6 +15,5 @@ const config = {
 }
 
 firebase.initializeApp(config);
-// firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 export default firebase;

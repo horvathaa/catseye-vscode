@@ -1,10 +1,9 @@
 import * as vscode from 'vscode';
 import { setAnnotationList, setUser } from '../extension';
-import { fbSignInWithEmailAndPassword, getUserGithubData, fbSignOut, signInWithGithubCredential, getAnnotationsOnSignIn } from '../firebase/functions/functions';
 import { initializeAnnotations } from '../utils/utils';
-
+import { fbSignInWithEmailAndPassword, getUserGithubData, fbSignOut, signInWithGithubCredential } from '../firebase/functions/functions';
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '..\\..\\.env.local')});
+require('dotenv').config({ path: path.resolve(__dirname).includes('\\') ? path.resolve(__dirname, '..\\..\\.env.local') : path.resolve(__dirname, '..\/..\/.env.local') });
 
 const SCOPES = ['read:user', 'user:email', 'repo'];
 

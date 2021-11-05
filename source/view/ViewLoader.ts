@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import Annotation from '../constants/constants';
-import { activeEditor, annotationList } from '../extension';
+import { annotationList } from '../extension';
 
 
 export default class ViewLoader {
@@ -11,7 +11,6 @@ export default class ViewLoader {
   constructor(fileUri: vscode.Uri, extensionPath: string) {
     this._extensionPath = extensionPath;
 
-    // let annotationList = this.getFileContent(fileUri);
     if (annotationList) {
       this._panel = vscode.window.createWebviewPanel(
         "adamite",

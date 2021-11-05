@@ -13,7 +13,7 @@ export const handleChangeVisibleTextEditors = async (textEditors: vscode.TextEdi
     const annotationsToHighlight = annotationList.filter(a => textEditorFileNames.includes(a.filename.toString()));
     if(!annotationsToHighlight.length) return;
     // TODO: see if we can change the behavior of markdown string so it has an onclick event to navigate to the annotation
-    anchor.addHighlightsToEditor(annotationsToHighlight);
+    if(view) anchor.addHighlightsToEditor(annotationsToHighlight);
 	
 }
 
@@ -100,7 +100,7 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
         // console.log('translated', translatedAnnotations, 'annotationList', annotationList, 'rangeAdjusted', rangeAdjustedAnnotations);
         const newAnnotationList: Annotation[] = translatedAnnotations.concat(annotationList.filter(a => a.filename !== e.document.uri.toString()), rangeAdjustedAnnotations);
         // console.log('new list', newAnnotationList);
-        if(vscode.window.activeTextEditor)  {
+        if(vscode.window.activeTextEditor && view)  {
             anchor.addHighlightsToEditor(newAnnotationList, vscode.window.activeTextEditor);
         }
         else {

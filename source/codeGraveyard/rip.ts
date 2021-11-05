@@ -94,3 +94,34 @@
 	// // console.log('built this range', newAnchor)
 
 	// return newAnchor;
+
+	// const findBoundariesOfAnchor = (tokenizedText: string[], tokenizedSearchString: string[], startText: string, endText: string, broadSearch: boolean = false) : {[key: string] : any} => {
+	// 	let tokenStart: number = 0;
+	// 	let tokenEnd: number = 0;
+	// 	let startCondition: boolean = false;
+	// 	tokenizedText.forEach((t: string, index: number) => {
+	// 		startCondition = broadSearch ? t.includes(startText) : t === startText;
+	// 		if(startCondition) {
+	// 			let i = index;
+	// 			let j = 0;
+	// 			let endCondition: boolean = false;
+	// 			// ensure anchor text matches in its entirety
+	// 			while(tokenizedText[i] && tokenizedSearchString[j] && broadSearch ? tokenizedText[i].includes(tokenizedSearchString[j]) : tokenizedText[i] === tokenizedSearchString[j]) {
+	// 				endCondition = broadSearch ? tokenizedText[i].includes(endText) : tokenizedText[i] === endText;
+	// 				if(endCondition) {
+	// 					tokenStart = index;
+	// 					tokenEnd = i;
+	// 					break;
+	// 				}
+	// 				i++;
+	// 				j++;
+	// 			}
+	// 		}
+	// 	});
+	
+	// 	return {
+	// 		tokenStart,
+	// 		tokenEnd
+	// 	};
+	
+	// }

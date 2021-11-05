@@ -2,7 +2,8 @@ import firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/auth';
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '..\\..\\.env.local')});
+const envPath: string = path.resolve(__dirname).includes('\\') ? path.resolve(__dirname, '..\\..\\.env.local') : path.resolve(__dirname, '..\/..\/.env.local')
+require('dotenv').config({ path: envPath });
 
 const config = {
     apiKey: process.env.FB_API_KEY,

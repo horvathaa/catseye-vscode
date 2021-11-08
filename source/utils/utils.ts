@@ -1,9 +1,10 @@
 import firebase from '../firebase/firebase';
 import Annotation from '../constants/constants';
-import { createRangeFromAnnotation, createRangeFromObject, findAnchorInRange } from '../anchorFunctions/anchor';
+import { computeRangeFromOffset, createRangeFromAnnotation } from '../anchorFunctions/anchor';
 import { user, storedCopyText, annotationList, view, setAnnotationList, setOutOfDateAnnotationList, outOfDateAnnotations, deletedAnnotations } from '../extension';
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
+import { getAnnotationsOnSignIn } from '../firebase/functions/functions';
 import { saveAnnotations as fbSaveAnnotations } from '../firebase/functions/functions';
 var shiki = require('shiki');
 
@@ -18,7 +19,12 @@ const objectsEqual = (o1: { [key: string ] : any }, o2: { [key: string ] : any }
 
 const arraysEqual = (a1: any[], a2: any[]) : boolean => {
 	return a1.length === a2.length && a1.every((o, idx) => objectsEqual(o, a2[idx]));
-} 
+}
+
+export const initializeAnnotations = async (user: firebase.User) : Promise<void> => {
+    const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
+    setAnnotationList(sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename));
+}
 
 export const getFirstLineOfHtml = (html: string, isOneLineAnchor: boolean) : string => {
 	const index: number = html.indexOf('<span style');
@@ -48,7 +54,7 @@ export const reconstructAnnotations = (annotationOffsetList: {[key: string] : an
 			visiblePath: getVisiblePath(a.anno.projectName, workspace.fsPath),
 			anchorText: a.anno.anchorText,
 			annotation: a.anno.annotation,
-			anchor: findAnchorInRange(changeRange, a.anno.anchorText, text, a.offsetInCopy, createRangeFromAnnotation(a.anno)),
+			anchor: computeRangeFromOffset(changeRange, a.offsetInCopy),
 			deleted: false,
 			outOfDate: false,
 			html: a.anno.html,
@@ -214,9 +220,23 @@ export const getVisiblePath = (projectName: string, workspacePath: string | unde
 	return projectName;
 }
 
+export const updateAnnotationCommit = (commit: string, repo: string) : void => {
+	annotationList.forEach((a: Annotation) => {
+		if(a.gitRepo === repo && a.gitCommit === 'localChange') {
+			a.gitCommit = commit;
+		}
+	});
+}
+
 export const generateGitMetaData = (gitApi: any) : {[key: string] : any} => {
 	let gitInfo: {[key: string] : any} = {};
 	gitApi.repositories?.forEach((r: any) => {
+		r?.state?.onDidChange(() => {
+			if(gitInfo[getProjectName(r?.rootUri?.path)].commit !== r.state.HEAD.commit) {
+				gitInfo[getProjectName(r?.rootUri?.path)].commit = r.state.HEAD.commit;
+				updateAnnotationCommit(r.state.HEAD.commit, r?.state?.remotes[0]?.fetchUrl);
+			}
+		});
 		gitInfo[getProjectName(r?.rootUri?.path)] = {
 			repo: r?.state?.remotes[0]?.fetchUrl ? r?.state?.remotes[0]?.fetchUrl : "",
 			branch: r?.state?.HEAD?.name ? r?.state?.HEAD?.name : "",
@@ -245,20 +265,23 @@ export const getProjectName = (filename: string | undefined) : string => {
 }
 
 export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefined) : Annotation => {
-	const annoObj : { [key: string]: any } = range ? 
-	{
-		startLine: range.start.line,
-		endLine: range.end.line,
-		startOffset: range.start.character,
-		endOffset: range.end.character,
-		...annoInfo
-	} : annoInfo.anchor ? {
-		startLine: annoInfo.anchor.startLine,
-		endLine: annoInfo.anchor.endLine,
-		startOffset: annoInfo.anchor.startOffset,
-		endOffset: annoInfo.anchor.endOffset,
-		...annoInfo
-	} : annoInfo;
+	const annoObj: { [key: string]: any } = range ?
+		{
+			...annoInfo,
+			startLine: range.start.line,
+			endLine: range.end.line,
+			startOffset: range.start.character,
+			endOffset: range.end.character,
+		}
+	: annoInfo.anchor ?
+		{
+			...annoInfo,
+			startLine: annoInfo.anchor.startLine,
+			endLine: annoInfo.anchor.endLine,
+			startOffset: annoInfo.anchor.startOffset,
+			endOffset: annoInfo.anchor.endOffset,
+		} : annoInfo;
+
 
 	return new Annotation(
 		annoObj['id'], 

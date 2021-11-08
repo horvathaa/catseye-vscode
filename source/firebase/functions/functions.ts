@@ -1,7 +1,6 @@
 import Annotation from '../../constants/constants';
-import { v4 as uuidv4 } from 'uuid';
 import { user } from '../../extension';
-import { makeObjectListFromAnnotations } from '../../utils/utils';
+import { getListFromSnapshots, makeObjectListFromAnnotations, buildAnnotation } from '../../utils/utils';
 import firebase from '../firebase';
 import { DB_COLLECTIONS } from '..';
 
@@ -14,4 +13,35 @@ export const saveAnnotations = (annotationList: Annotation[]) : void => {
 			annotationsRef.doc(a.id).set(a)
 		});
     }
+}
+
+export const getAnnotationsOnSignIn = async (user: firebase.User) : Promise<Annotation[]> => {
+	const db: firebase.firestore.Firestore = firebase.firestore();
+	const annotationsRef: firebase.firestore.CollectionReference = db.collection(DB_COLLECTIONS.VSCODE_ANNOTATIONS);
+	const docs: firebase.firestore.QuerySnapshot = await annotationsRef.where('authorId', '==', user.uid)
+							.where('deleted', '==', false)
+							.where('outOfDate', '==', false).get();
+	const annoDocs = getListFromSnapshots(docs);
+	const annotations: Annotation[] = annoDocs && annoDocs.length ? annoDocs.map((a: any) => {
+		return buildAnnotation(a);
+	}) : [];
+	return annotations;
+}
+
+export const fbSignInWithEmailAndPassword = async (email: string, password: string) : Promise<firebase.auth.UserCredential> => {
+	return await firebase.auth().signInWithEmailAndPassword(email, password);
+}
+
+export const getUserGithubData = async (githubData: {[key: string] : any} ) : Promise<firebase.functions.HttpsCallableResult> => {
+	return await firebase.functions().httpsCallable('getUserGithubData')(githubData);
+}
+
+export const fbSignOut = async () : Promise<void> => {
+	await firebase.auth().signOut();
+}
+
+export const signInWithGithubCredential = async (oauth: string) : Promise<firebase.User | null> => {
+	const credential = firebase.auth.GithubAuthProvider.credential(oauth);
+    const { user } = await firebase.auth().signInWithCredential(credential);
+	return user;
 }

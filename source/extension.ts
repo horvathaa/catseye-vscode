@@ -89,7 +89,7 @@ export const setOutOfDateAnnotationList = (newOutOfDateAnnotationList: Annotatio
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-
+	commands.init();
 	/*************************************************************************************/
 	/******************************** EXTENSION LISTENERS  *******************************/
 	/*************************************************************************************/
@@ -106,7 +106,7 @@ export function activate(context: vscode.ExtensionContext) {
 	/**************************************** COMMANDS ***********************************/
 	/*************************************************************************************/
 
-	let initDisposable = vscode.commands.registerCommand('adamite.launch', () => commands.init(context));
+	let createViewDisposable = vscode.commands.registerCommand('adamite.launch', () => commands.createView(context));
 	let annotateDisposable = vscode.commands.registerCommand('adamite.addAnnotation', () => commands.createNewAnnotation());
 	let highlightDisposable = vscode.commands.registerCommand('adamite.addHighlight', () => commands.addNewHighlight());
 	let scrollDisposable = vscode.commands.registerCommand('adamite.showAnnoInWebview', (id) => commands.showAnnoInWebview(id));
@@ -118,7 +118,7 @@ export function activate(context: vscode.ExtensionContext) {
 	/**************************************** DISPOSABLES ********************************/
 	/*************************************************************************************/
 
-	context.subscriptions.push(initDisposable);
+	context.subscriptions.push(createViewDisposable);
 	context.subscriptions.push(annotateDisposable);
 	context.subscriptions.push(highlightDisposable);
 	context.subscriptions.push(scrollDisposable);

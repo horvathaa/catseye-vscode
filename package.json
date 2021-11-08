@@ -1,7 +1,12 @@
 {
   "name": "adamite",
   "displayName": "Adamite",
-  "description": "Annotations",
+  "description": "Annotate your code for lightweight commenting, sharing notes with collaborators, and integrating with your web-based annotations!",
+  "author": {
+    "name": "Amber Horvath",
+    "email": "ahorvath@andrew.cmu.edu"
+  },
+  "publisher": "ahorvath",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.57.0"
@@ -10,7 +15,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:adamite.launch"
+    "onCommand:adamite.launch",
+    "onStartupFinished"
   ],
   "main": "./dist/extension.js",
   "contributes": {

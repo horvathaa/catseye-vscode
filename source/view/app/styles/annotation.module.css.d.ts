@@ -30,6 +30,7 @@ interface CssExports {
   'show': string;
   'submit': string;
   'textbox': string;
+  'textboxContainer': string;
   'vertical-center': string;
   'vscode-dark': string;
   'vscode-high-contrast': string;

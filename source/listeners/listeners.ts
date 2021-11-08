@@ -13,9 +13,8 @@ export const handleChangeVisibleTextEditors = async (textEditors: vscode.TextEdi
     const annotationsToHighlight = annotationList.filter(a => textEditorFileNames.includes(a.filename.toString()));
     if(!annotationsToHighlight.length) return;
     // TODO: see if we can change the behavior of markdown string so it has an onclick event to navigate to the annotation
-    anchor.addHighlightsToEditor(annotationsToHighlight);
-
-		
+    if(view) anchor.addHighlightsToEditor(annotationsToHighlight);
+	
 }
 
 export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | undefined) => {
@@ -84,12 +83,14 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
 
             translatedAnnotations = utils.removeOutOfDateAnnotations(
                 translatedAnnotations.map(a => anchor.translateChanges(a.startLine, a.endLine, a.startOffset, a.endOffset, startLine, endLine, startOffset, endOffset, 
-                change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), visiblePath, a.id, a.createdTimestamp, a.html, e.document, change.text))
+                change.text.length, diff, change.rangeLength, a.anchorText, a.annotation, a.filename.toString(), visiblePath, a.id, a.createdTimestamp, a.html, e.document, change.text,
+                { repo: a.gitRepo, branch: a.gitBranch, commit: a.gitCommit }))
             );
 
             if(tempAnno) {
                 const newTemp = anchor.translateChanges(tempAnno.startLine, tempAnno.endLine, tempAnno.startOffset, tempAnno.endOffset, startLine, endLine, startOffset, endOffset, 
-                    change.text.length, diff, change.rangeLength, tempAnno.anchorText, tempAnno.annotation, tempAnno.filename.toString(), visiblePath, tempAnno.id, tempAnno.createdTimestamp, tempAnno.html, e.document, change.text)
+                    change.text.length, diff, change.rangeLength, tempAnno.anchorText, tempAnno.annotation, tempAnno.filename.toString(), visiblePath, tempAnno.id, tempAnno.createdTimestamp, tempAnno.html, e.document, change.text,
+                    { repo: tempAnno.gitRepo, branch: tempAnno.gitBranch, commit: tempAnno.gitCommit })
                 setTempAnno(newTemp);
             }
             
@@ -99,7 +100,7 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
         // console.log('translated', translatedAnnotations, 'annotationList', annotationList, 'rangeAdjusted', rangeAdjustedAnnotations);
         const newAnnotationList: Annotation[] = translatedAnnotations.concat(annotationList.filter(a => a.filename !== e.document.uri.toString()), rangeAdjustedAnnotations);
         // console.log('new list', newAnnotationList);
-        if(vscode.window.activeTextEditor)  {
+        if(vscode.window.activeTextEditor && view)  {
             anchor.addHighlightsToEditor(newAnnotationList, vscode.window.activeTextEditor);
         }
         else {

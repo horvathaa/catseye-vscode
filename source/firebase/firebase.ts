@@ -1,9 +1,9 @@
 import firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/auth';
-const path = require('path');
 
-require('dotenv').config({ path: path.resolve(__dirname, '..\\..\\.env.local')});
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname).includes('\\') ? path.resolve(__dirname, '..\\..\\.env.local') : path.resolve(__dirname, '..\/..\/.env.local') });
 
 const config = {
     apiKey: process.env.FB_API_KEY,
@@ -16,6 +16,5 @@ const config = {
 }
 
 firebase.initializeApp(config);
-// firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 export default firebase;

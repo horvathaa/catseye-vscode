@@ -39,7 +39,8 @@ export const createView = (context: vscode.ExtensionContext) => {
 			newView._panel?.webview.onDidReceiveMessage((message) => {
 				switch(message.command) {
 					case 'scrollInEditor': {
-						viewHelper.scrollInEditor(message.id);
+						const { id } = message;
+						viewHelper.scrollInEditor(id);
 						break;
 					}
 					case 'emailAndPassReceived': {
@@ -48,15 +49,18 @@ export const createView = (context: vscode.ExtensionContext) => {
 						break;
 					}
 					case 'createAnnotation': {
-						viewHelper.createAnnotation(message.anno);
+						const { anno } = message;
+						viewHelper.createAnnotation(anno);
 						break;
 					}
 					case 'updateAnnotation': {
-						viewHelper.updateAnnotation(message.annoId, message.newAnnoContent);
+						const { annoId, newAnnoContent } = message;
+						viewHelper.updateAnnotation(annoId, newAnnoContent);
 						break;
 					}
 					case 'deleteAnnotation': {
-						viewHelper.deleteAnnotation(message.annoId);
+						const { annoId } = message;
+						viewHelper.deleteAnnotation(annoId);
 						break;
 					}
 					case 'cancelAnnotation': {

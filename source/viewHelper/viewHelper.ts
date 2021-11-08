@@ -48,7 +48,6 @@ export const createAnnotation = (annotationContent: string) : void => {
             view?.updateDisplay(annotationList);
             addHighlightsToEditor(annotationList, text);
         }
-
     });
 }
 
@@ -56,7 +55,7 @@ export const updateAnnotation = (id: string, annotationContent: string) : void =
     const updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], annotation: annotationContent });
     const updatedList = annotationList.filter(a => a.id !== id).concat([updatedAnno]);
     const text = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === updatedAnno?.filename)[0];
-    setAnnotationList(sortAnnotationsByLocation(updatedList, text.document.uri.toString()));
+    text ? setAnnotationList(sortAnnotationsByLocation(updatedList, text.document.uri.toString())) : setAnnotationList(updatedList);
     view?.updateDisplay(removeOutOfDateAnnotations(annotationList));
 }
 
@@ -65,7 +64,7 @@ export const deleteAnnotation = (id: string) : void => {
     const updatedList = annotationList.filter(a => a.id !== id).concat([updatedAnno]);
     saveAnnotations(updatedList, ""); // bad - that should point to JSON but we are also not using that rn so whatever
     const visible : vscode.TextEditor = vscode.window.visibleTextEditors.filter((v: vscode.TextEditor) => v.document.uri.toString() === updatedAnno.filename)[0];
-    setAnnotationList(sortAnnotationsByLocation(removeOutOfDateAnnotations(updatedList), visible?.document.uri.toString()));
+    visible ? setAnnotationList(sortAnnotationsByLocation(removeOutOfDateAnnotations(updatedList), visible?.document.uri.toString())) : setAnnotationList(updatedList);
     view?.updateDisplay(annotationList);
     if(visible) {
         addHighlightsToEditor(annotationList, visible);
@@ -81,7 +80,7 @@ export const cancelAnnotation = () : void => {
 export const handleSignInWithEmailAndPassword = async (email: string, password: string) : Promise<void> => {
     try {
         const { user } = await firebase.auth().signInWithEmailAndPassword(email, password);
-        user ? initializeAnnotations(user) : setAnnotationList([]);
+        user ? await initializeAnnotations(user) : setAnnotationList([]);
         handleAdamiteWebviewLaunch();
     } catch(e) {
         console.error(e);

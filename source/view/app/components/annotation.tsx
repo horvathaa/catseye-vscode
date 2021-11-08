@@ -5,6 +5,7 @@ import Annotation from '../../../constants/constants';
 import { useEffect } from "react";
 import AnnotationDropDown from './annotationComponents/annotationMenu';
 import Anchor from './annotationComponents/anchor';
+import TextEditor from "./annotationComponents/textEditor";
 
 const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefined) : Annotation => {
 	const annoObj : { [key: string]: any } = range ? 
@@ -42,7 +43,8 @@ const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefi
 		annoObj['gitBranch'],
 		annoObj['gitCommit'],
     annoObj['anchorPreview'],
-    annoObj['projectName']
+    annoObj['projectName'],
+    annoObj['githubUsername']
 	)
 }
 interface Props {
@@ -54,7 +56,6 @@ interface Props {
 const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
   const [anno, setAnno] = React.useState(annotation);
   const [edit, setEdit] = React.useState(false);
-  const [newContent, setNewContent] = React.useState(anno.annotation);
 
   const handleIncomingMessages = (e: MessageEvent<any>) => {
     const message = e.data;
@@ -82,10 +83,6 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
     }
   }, [annotation]);
 
-  // Idea: use onDragOver and onDrop to allow user to drop code into the sidebar - may have to have
-  // similar event listener in the editor? but I'm not sure how we can override some of these things
-  // I guess the "onDidChangeSelection"? maybe???
-
   const scrollInEditor = () => {
     vscode.postMessage({
       command: 'scrollInEditor',
@@ -93,25 +90,17 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
     });
   }
 
-  const updateAnnotationContent = () => {
-    setNewContent((document.getElementById('editContent') as HTMLInputElement).value);
-  }
-
-  const updateContent = (e: React.SyntheticEvent) => {
-    e.stopPropagation();
-    anno.annotation = newContent;
+  const updateContent = (newAnnoContent: string) => {
+    anno.annotation = newAnnoContent;
     vscode.postMessage({
       command: 'updateAnnotation',
       annoId: anno.id,
       newAnnoContent: anno.annotation
     });
-    setNewContent("");
     setEdit(false);
   }
 
-  const cancelAnnotation = (e: React.SyntheticEvent) => {
-    e.stopPropagation();
-    setNewContent("");
+  const cancelAnnotation = () => {
     setEdit(false);
   }
 
@@ -122,14 +111,20 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
       annoId: anno.id,
     });
   }
-    
 
   return (
       <React.Fragment>
-          <div className={styles['Pad']} id={annotation.id} >
+          <div key={annotation.id} className={styles['Pad']} id={annotation.id} >
               <li key={annotation.id} className={styles['AnnotationContainer']}  >
                 <div className={styles['IconContainer']}>
-                  <AnnotationDropDown id={anno.id} editAnnotation={() => {setEdit(!edit)}} deleteAnnotation={(e) => deleteAnnotation(e)}/>
+                  <AnnotationDropDown 
+                    id={anno.id}
+                    editAnnotation={() => { setEdit(!edit) }} 
+                    deleteAnnotation={(e) => deleteAnnotation(e)}
+                  />
+                </div>
+                <div>
+
                 </div>
                 <Anchor 
                   html={anno.html} 
@@ -141,11 +136,11 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
                 />
                 <div className={styles['ContentContainer']}>
                   {edit ? (
-                    <React.Fragment>
-                      <textarea className={styles['textbox']} value={newContent} onChange={updateAnnotationContent} id="editContent" />
-                      <button className={styles['submit']} onClick={(e) => updateContent(e)}>Submit</button>
-                      <button className={styles['cancel']} onClick={(e) => cancelAnnotation(e)}>Cancel</button>
-                    </React.Fragment>
+                    <TextEditor 
+                      annoContent={anno.annotation} 
+                      submissionHandler={updateContent} 
+                      cancelHandler={cancelAnnotation}
+                    />
                   ) : (`${anno.annotation}`)}
                 </div>
               </li>

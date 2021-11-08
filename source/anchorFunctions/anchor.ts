@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import Annotation from '../constants/constants';
-import { buildAnnotation, sortAnnotationsByLocation, getVisiblePath, getFirstLineOfHtml, getProjectName } from '../utils/utils';
-import { annotationList, user, gitInfo, deletedAnnotations, setDeletedAnnotationList, annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList } from '../extension';
+import { buildAnnotation, sortAnnotationsByLocation, getFirstLineOfHtml, getProjectName } from '../utils/utils';
+import { annotationList, user, deletedAnnotations, setDeletedAnnotationList, annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList } from '../extension';
 
 
 export function getIndicesOf(searchStr: string, str: string, caseSensitive: boolean) {
@@ -37,41 +37,33 @@ export const getAnchorsInRange = (selection: vscode.Selection, annotationList: A
 	return anchorsInSelection;
 }
 
-export const translateChanges = (originalStartLine: number, originalEndLine: number, originalStartOffset: number, 
-	originalEndOffset: number, startLine: number, endLine: number, startOffset: number, 
-	endOffset: number, textLength: number, diff: number, rangeLength: number, 
-	anchorText: string, annotation: string, filename: string, visiblePath: string, id: string, createdTimestamp: number, html: string, doc: vscode.TextDocument, changeText: string,
-	annoGitData: {[key: string]: any}): Annotation => {
+export const translateChanges = (
+		originalAnnotation: Annotation,
+		startLine: number, 
+		endLine: number, 
+		startOffset: number, 
+		endOffset: number, 
+		textLength: number, 
+		diff: number, 
+		rangeLength: number, 
+		doc: vscode.TextDocument, 
+		changeText: string,
+		)
+	: Annotation => {
+		const originalStartLine = originalAnnotation.startLine, originalEndLine = originalAnnotation.endLine, originalStartOffset = originalAnnotation.startLine, originalEndOffset = originalAnnotation.endOffset;
 		let newRange = { startLine: originalStartLine, endLine: originalEndLine, startOffset: originalStartOffset, endOffset: originalEndOffset };
-		let newAnchorText = anchorText;
 
+
+		const { anchorText } = originalAnnotation;
+		let newAnchorText = anchorText;
 		const startAndEndLineAreSameNoNewLine = originalStartLine === startLine && originalEndLine === endLine && !diff;
 		const startAndEndLineAreSameNewLine = originalStartLine === startLine && originalEndLine === endLine && diff;
 		const originalRange = new vscode.Range(new vscode.Position(originalStartLine, originalStartOffset), new vscode.Position(originalEndLine, originalEndOffset));
 		const changeRange = new vscode.Range(new vscode.Position(startLine, startOffset), new vscode.Position(endLine, endOffset)); 
 		// user deleted the anchor
-		const projectName: string = annotationList.filter((a: Annotation) => a.id === id).length ? annotationList.filter((a: Annotation) => a.id === id)[0].projectName : ""
-		const programmingLang: string = filename.split('.')[filename.split('.').length - 1];
 		if(!textLength && changeRange.contains(originalRange)) {
-			const firstLine: string = getFirstLineOfHtml(html, !newAnchorText.includes('\n'));
 			const newAnno = {
-				id,
-				filename,
-				visiblePath,
-				anchorText,
-				annotation,
-				...newRange,
-				deleted: true,
-				outOfDate: false,
-				html,
-				authorId : user?.uid,
-				createdTimestamp: new Date().getTime(),
-				programmingLang: programmingLang,
-				gitRepo: annoGitData?.repo ? annoGitData?.repo : "",
-				gitBranch: annoGitData?.branch ? annoGitData?.branch : "",
-				gitCommit: annoGitData?.commit ? annoGitData?.commit : "",
-				anchorPreview: firstLine ? firstLine : "",
-				projectName: projectName && projectName !== "" ? projectName : getProjectName(doc.uri.fsPath)
+				...originalAnnotation, deleted: true
 			}
 			const deletedAnno = buildAnnotation(newAnno);
 			setDeletedAnnotationList(deletedAnnotations.concat([deletedAnno]));
@@ -152,27 +144,10 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 			newAnchorText = doc.getText(createRangeFromObject(newRange));
 		}
 
-		// console.log('newRange', newRange);
-		let firstLine: string = getFirstLineOfHtml(html, !newAnchorText.includes('\n'));
 		const newAnno = {
-			id,
-			filename,
-			visiblePath,
-			anchorText: newAnchorText,
-			annotation,
-			...newRange,
-			deleted: false,
-			outOfDate: false,
-			html,
-			authorId : user?.uid,
-			createdTimestamp,
-			programmingLang: programmingLang,
-			gitRepo: annoGitData?.repo ? annoGitData?.repo : "",
-			gitBranch: annoGitData?.branch ? annoGitData?.branch : "",
-			gitCommit: annoGitData?.commit && !changeOccurredInRange ? annoGitData?.commit : "localChange",
-			anchorPreview: firstLine ? firstLine : "",
-			projectName: projectName && projectName !== "" ? projectName : getProjectName(doc.uri.fsPath)
+			...originalAnnotation, anchorText: newAnchorText, ...newRange
 		}
+		
 		return buildAnnotation(newAnno)
 
 	}

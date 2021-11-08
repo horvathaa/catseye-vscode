@@ -20,9 +20,9 @@ import * as viewHelper from '../viewHelper/viewHelper';
 import { v4 as uuidv4 } from 'uuid';
 import { initializeAuth } from '../authHelper/authHelper';
 
-export const init = () => {
+export const init = async () => {
+	await initializeAuth();
 	setGitInfo(utils.generateGitMetaData(gitApi));
-	initializeAuth();
 	if(view) {
 		view._panel?.reveal();
 	}
@@ -113,7 +113,8 @@ export const createNewAnnotation = () => {
 			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
 			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "localChange",
 			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
-			projectName: projectName 
+			projectName: projectName,
+			githubUsername: gitInfo.author
 		};
 		setTempAnno(utils.buildAnnotation(temp, r));
         view?.createNewAnno(html, annotationList);
@@ -151,7 +152,8 @@ export const addNewHighlight = () => {
 			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
 			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "localChange",
 			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
-			projectName: projectName
+			projectName: projectName,
+			githubUsername: gitInfo.author
 		};
 
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));
@@ -170,7 +172,6 @@ export const showAnnoInWebview = (id: string) => {
 		view?._panel?.reveal();
 		view?.scrollToAnnotation(id);
 	}
-
 }
 
 export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {

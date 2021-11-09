@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import Annotation from '../constants/constants';
-import { buildAnnotation, sortAnnotationsByLocation, getFirstLineOfHtml, getProjectName } from '../utils/utils';
-import { annotationList, user, deletedAnnotations, setDeletedAnnotationList, annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList } from '../extension';
+import { buildAnnotation, sortAnnotationsByLocation } from '../utils/utils';
+import { annotationList, deletedAnnotations, setDeletedAnnotationList, annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList } from '../extension';
 
 
 export function getIndicesOf(searchStr: string, str: string, caseSensitive: boolean) {
@@ -50,7 +50,7 @@ export const translateChanges = (
 		changeText: string,
 		)
 	: Annotation => {
-		const originalStartLine = originalAnnotation.startLine, originalEndLine = originalAnnotation.endLine, originalStartOffset = originalAnnotation.startLine, originalEndOffset = originalAnnotation.endOffset;
+		const originalStartLine = originalAnnotation.startLine, originalEndLine = originalAnnotation.endLine, originalStartOffset = originalAnnotation.startOffset, originalEndOffset = originalAnnotation.endOffset;
 		let newRange = { startLine: originalStartLine, endLine: originalEndLine, startOffset: originalStartOffset, endOffset: originalEndOffset };
 
 
@@ -147,7 +147,7 @@ export const translateChanges = (
 		const newAnno = {
 			...originalAnnotation, anchorText: newAnchorText, ...newRange
 		}
-		
+		// console.log('what', newAnno);
 		return buildAnnotation(newAnno)
 
 	}

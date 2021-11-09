@@ -2,23 +2,28 @@ import * as React from "react";
 import styles from '../../styles/annotation.module.css';
 
 interface Props {
-    annoContent: string,
-    submissionHandler: (newAnnoContent: string) => void,
+    content: any,
+    submissionHandler: (newContent: any) => void,
     cancelHandler: () => void
 }
 
-const TextEditor: React.FC<Props> = ({ annoContent, submissionHandler, cancelHandler }) => {
-    const [text, setText] = React.useState(annoContent);
+const TextEditor: React.FC<Props> = ({ content, submissionHandler, cancelHandler }) => {
+    const [text, setText] = React.useState(content);
 
     const updateAnnotationContent = (e: React.SyntheticEvent) => {
-        setText((e.target as HTMLTextAreaElement).value);
+        if(typeof text === 'string') {
+            setText((e.target as HTMLTextAreaElement).value);
+        }
+        else {
+            setText({...text, replyContent: (e.target as HTMLTextAreaElement).value })
+        }
     }
 
     return (
         <div className={styles['textboxContainer']}>
             <textarea 
                 className={styles['textbox']} 
-                value={text} 
+                value={typeof text === 'string' ? text : text.replyContent} 
                 onChange={updateAnnotationContent}
             />
             <button className={styles['submit']} onClick={() => submissionHandler(text)}>Submit</button>

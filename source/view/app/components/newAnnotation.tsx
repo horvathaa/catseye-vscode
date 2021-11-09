@@ -36,7 +36,7 @@ const NewAnnotation: React.FC<Props> = ({ selection, vscode, notifyDone = () => 
             <div className={annoStyles['AnnotationContainer']} >
                 <Syntax html={selection} />
                 <TextEditor 
-                    annoContent={""} 
+                    content={""} 
                     submissionHandler={createAnnotation} 
                     cancelHandler={cancelAnnotation} />
             </div>

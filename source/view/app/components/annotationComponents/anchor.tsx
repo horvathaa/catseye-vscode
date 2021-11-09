@@ -1,7 +1,7 @@
 import * as React from "react";
 import styles from '../../styles/annotation.module.css';
 import { BiCaretUpSquare, BiCaretDownSquare} from 'react-icons/bi';
-
+import UserProfile from './userProfile'
 interface SynProps {
     html: string;
     anchorPreview: string;

@@ -38,6 +38,7 @@
   width: 24px;
   height: 24px;
   cursor: pointer;
+  margin-left: auto;
 }
 
 .profile {
@@ -124,6 +125,64 @@
   width: 1.25em;
 }
 
+
+.profileContainer{
+  padding: 5px;
+  margin: auto;
+  max-width: 99% !important;
+  border-radius: 50%;
+  background-color: #EBECF0;
+  text-align: center;
+  cursor: default;
+}
+
+.userProfile {
+  width: 30px;
+  height: 30px;
+  display: block;
+  text-align: center;
+  margin: auto;
+  color: #1d1e24c4;
+  cursor: pointer;
+}
+
+.userProfilePhoto {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: block;
+  text-align: center;
+  /* margin: auto; */
+  padding: .1em;
+  border: 1px solid #49a86773;
+  color: #1d1e24c4;
+  cursor: pointer;
+}
+
+.profilePhoto {
+  width: 30px !important;
+  height: 30px !important;
+}
+
+.usernameAndTimeContainer {
+  display: flex;
+  flex-direction: column;
+  padding-left: 4px;
+}
+
+.username {
+  font-weight: 600;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+
+}
+
+.userContainer {
+  display: flex;
+  padding-bottom: 6px;
+}
+
 .textboxContainer {
   display: block;
 }
@@ -131,6 +190,10 @@
 .textbox {
   width: 95%;
   resize: none;
+}
+
+.topRow {
+  display: flex;
 }
 
 .AnnotationContainer {
@@ -152,7 +215,9 @@
 }
 
 .AnchorContainer {
-  border: 0.5px white;
+  border: 0.25px solid rgb(239 255 201 / 20%);
+  padding: 5px;
+  border-radius: 4px;
 }
 
 .LocationWrapper {

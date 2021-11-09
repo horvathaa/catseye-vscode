@@ -162,9 +162,8 @@ export function createRangeFromObject(obj: {[key: string] : any}) : vscode.Range
 
 const createDecorationOptions = (ranges: { [key: string] : any }[]) : vscode.DecorationOptions[] => {
 	return ranges.map(r => {
-		const annoContent: string = r.annotation === '' ? r.annotation : r.annotation + '  '; // add a new line so the show annotation button is below
 		let markdownArr = new Array<vscode.MarkdownString>();
-		markdownArr.push(new vscode.MarkdownString(annoContent));
+		markdownArr.push(new vscode.MarkdownString(r.annotation));
 		const showAnnoInWebviewCommand = vscode.Uri.parse(
 			`command:adamite.showAnnoInWebview?${encodeURIComponent(JSON.stringify(r.id))}`
 		);

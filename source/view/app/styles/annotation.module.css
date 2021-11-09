@@ -159,6 +159,11 @@
   cursor: pointer;
 }
 
+.replyContainer {
+  display: block;
+  padding: 6px;
+}
+
 .profilePhoto {
   width: 30px !important;
   height: 30px !important;
@@ -175,7 +180,6 @@
   text-decoration: none;
   color: inherit;
   cursor: pointer;
-
 }
 
 .userContainer {

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, setCopiedAnnotationList, deletedAnnotations, setDeletedAnnotationList } from '../extension';
+import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, deletedAnnotations, setDeletedAnnotationList } from '../extension';
 import * as anchor from '../anchorFunctions/anchor';
 import * as utils from '../utils/utils';
 import Annotation from '../constants/constants';
@@ -53,15 +53,11 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
             const linesInRange = endLine - startLine;
             const linesInserted = change.text.split("\n").length - 1;
             const diff = linesInserted - linesInRange;
-            const visiblePath: string = vscode.workspace.workspaceFolders ? utils.getVisiblePath(utils.getProjectName(e.document.uri.fsPath), e.document.uri.fsPath) : e.document.uri.fsPath;
             // check to see if user pasted a copied or previously-deleted annotation... 
 
-            let didPaste: boolean = false;
-            let didUndo: boolean = false;
             if(utils.didUserPaste(change.text) && copiedAnnotations.length && change.text.length) { // make sure this isn't a cut w/o paste
                 if(vscode.workspace.workspaceFolders) {
                     rangeAdjustedAnnotations = utils.reconstructAnnotations(copiedAnnotations, change.text, change.range, e.document.uri, vscode.workspace.workspaceFolders[0].uri, e.document);
-                    didPaste = true;
                 }
             }
 
@@ -71,7 +67,6 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
                 if(deletedAnnos.length && vscode.workspace.workspaceFolders) {
                     deletedAnnos.forEach((a: Annotation) => { a.deleted = false; a.outOfDate = false });
                     rangeAdjustedAnnotations = deletedAnnos;
-                    didUndo = true;
                     const deletedIds = deletedAnnos.map(a => a.id);
                     setDeletedAnnotationList(deletedAnnotations.filter((a: Annotation) => !deletedIds?.includes(a.id))); // undo stack has been popped
                 }

@@ -25,7 +25,7 @@ window.addEventListener('message', event => {
   }
   else if (message.command === 'reload') {
     ReactDOM.render(
-      <AdamitePanel vscode={vscode} window={window} showLogIn={false} />,
+      <AdamitePanel vscode={vscode} window={window} showLogIn={false} username={message.payload.username} userId={message.payload.userId} />,
       document.getElementById("root")
     );
   }

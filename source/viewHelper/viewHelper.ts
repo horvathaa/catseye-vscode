@@ -1,12 +1,14 @@
 import * as vscode from 'vscode';
 import firebase from 'firebase';
-import { user, annotationList, setAnnotationList, view, setView, tempAnno, setTempAnno, annotationDecorations } from '../extension';
+import { user, gitInfo, annotationList, setAnnotationList, view, setView, tempAnno, setTempAnno, annotationDecorations } from '../extension';
 import { initializeAnnotations, handleSaveCloseEvent, saveAnnotations, removeOutOfDateAnnotations, buildAnnotation, sortAnnotationsByLocation, getProjectName, getShikiCodeHighlighting } from '../utils/utils';
 import { addHighlightsToEditor, createRangeFromAnnotation } from '../anchorFunctions/anchor';
+import { v4 as uuidv4 } from 'uuid';
 
 export const handleAdamiteWebviewLaunch = () : void => {
     const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
     view?._panel?.reveal();
+    if(user) view?.reload(gitInfo.author, user.uid);
     if(vscode.workspace.workspaceFolders)
         view?.updateDisplay(annotationList, currFilename, getProjectName(vscode.window.activeTextEditor?.document.uri.fsPath));
     const annoFiles: string[] = annotationList.map(a => a.filename.toString());
@@ -54,9 +56,7 @@ export const createAnnotation = (annotationContent: string) : void => {
 export const updateAnnotation = (id: string, annotationContent: string) : void => {
     const updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], annotation: annotationContent });
     const updatedList = annotationList.filter(a => a.id !== id).concat([updatedAnno]);
-    const text = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === updatedAnno?.filename)[0];
-    text ? setAnnotationList(sortAnnotationsByLocation(updatedList, text.document.uri.toString())) : setAnnotationList(updatedList);
-    view?.updateDisplay(removeOutOfDateAnnotations(annotationList));
+    setAnnotationList(updatedList);
 }
 
 export const deleteAnnotation = (id: string) : void => {
@@ -64,11 +64,22 @@ export const deleteAnnotation = (id: string) : void => {
     const updatedList = annotationList.filter(a => a.id !== id).concat([updatedAnno]);
     saveAnnotations(updatedList, ""); // bad - that should point to JSON but we are also not using that rn so whatever
     const visible : vscode.TextEditor = vscode.window.visibleTextEditors.filter((v: vscode.TextEditor) => v.document.uri.toString() === updatedAnno.filename)[0];
-    visible ? setAnnotationList(sortAnnotationsByLocation(removeOutOfDateAnnotations(updatedList), visible?.document.uri.toString())) : setAnnotationList(updatedList);
+    visible ? setAnnotationList(sortAnnotationsByLocation(removeOutOfDateAnnotations(updatedList), visible?.document.uri.toString())) : setAnnotationList(removeOutOfDateAnnotations(updatedList));
     view?.updateDisplay(annotationList);
     if(visible) {
         addHighlightsToEditor(annotationList, visible);
     }
+}
+
+export const updateReplies = (id: string, replies: {[key: string] : any}[]) : void => {
+    replies.forEach((r: {[key: string]: any}) => {
+        if(r.id === "") {
+            r.id = uuidv4();
+        }
+    });
+    const updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], replies: replies });
+    const updatedList = annotationList.filter(a => a.id !== id).concat([updatedAnno]);
+    setAnnotationList(updatedList);
 }
 
 export const cancelAnnotation = () : void => {
@@ -100,5 +111,5 @@ export const handleOnDidChangeViewState = () : void => {
         // known bug : will default to 0 annotations until a new window is made active again when the panel is dragged sigh
         // for now will do but should find a better solution (may consider switching to having vs code handle the state when 
         // panel is not active)
-    user ? view?.reload() : view?.init();
+    user ? view?.reload(gitInfo.author, user.uid) : view?.init();
 }

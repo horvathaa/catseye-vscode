@@ -72,10 +72,14 @@ export default class ViewLoader {
     }
   }
 
-  public reload() {
+  public reload(username: string, userId: string) {
     if(this._panel && this._panel.webview) {
       this._panel.webview.postMessage({
         command: 'reload',
+        payload: {
+          username,
+          userId
+        }
       })
     }
   }
@@ -123,14 +127,6 @@ export default class ViewLoader {
     if(this._panel && this._panel.webview) {
       this._panel.webview.postMessage({
         command: 'login',
-      })
-    }
-  }
-
-  public setLoggedIn() {
-    if(this._panel && this._panel.webview) {
-      this._panel.webview.postMessage({
-        command: 'loggedIn',
       })
     }
   }

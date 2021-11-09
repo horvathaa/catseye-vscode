@@ -2,7 +2,7 @@ import Annotation from '../../constants/constants';
 import { user } from '../../extension';
 import { getListFromSnapshots, makeObjectListFromAnnotations, buildAnnotation } from '../../utils/utils';
 import firebase from '../firebase';
-import { db, DB_COLLECTIONS } from '..';
+import { DB_COLLECTIONS } from '..';
 
 export const saveAnnotations = (annotationList: Annotation[]) : void => {
     const serializedObjects: {[key: string] : any}[] = makeObjectListFromAnnotations(annotationList);
@@ -24,8 +24,12 @@ export const getAnnotationsOnSignIn = async (user: firebase.User) : Promise<Anno
 														.where('outOfDate', '==', false)
 														.get();
 	if(!docs || docs.empty) return []
-	const { data } = await getGithubUsernameForAnnotations(getListFromSnapshots(docs));
-	const annotations: Annotation[] = data.annotations && data.annotations.length ? data.annotations.map((a: any) => {
+	// const { data } = await getGithubUsernameForAnnotations(getListFromSnapshots(docs));
+	const dataAnnotations = getListFromSnapshots(docs);
+	// const annotations: Annotation[] = data.annotations && data.annotations.length ? data.annotations.map((a: any) => {
+	// 	return buildAnnotation(a);
+	// }) : [];
+	const annotations: Annotation[] = dataAnnotations && dataAnnotations.length ? dataAnnotations.map((a: any) => {
 		return buildAnnotation(a);
 	}) : [];
 	return annotations;

@@ -1,7 +1,7 @@
 import firebase from '../firebase/firebase';
 import Annotation from '../constants/constants';
-import { computeRangeFromOffset, createRangeFromAnnotation } from '../anchorFunctions/anchor';
-import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, setOutOfDateAnnotationList, outOfDateAnnotations, deletedAnnotations } from '../extension';
+import { computeRangeFromOffset } from '../anchorFunctions/anchor';
+import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations } from '../extension';
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
 import { getAnnotationsOnSignIn } from '../firebase/functions/functions';
@@ -24,6 +24,7 @@ const arraysEqual = (a1: any[], a2: any[]) : boolean => {
 export const initializeAnnotations = async (user: firebase.User) : Promise<void> => {
     const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
     setAnnotationList(sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename));
+	console.log('annotations', annotationList);
 }
 
 export const getFirstLineOfHtml = (html: string, isOneLineAnchor: boolean) : string => {
@@ -66,7 +67,8 @@ export const reconstructAnnotations = (annotationOffsetList: {[key: string] : an
 			gitCommit: a.anno.gitCommit,
 			anchorPreview: a.anno.anchorPreview,
 			projectName: a.anno.projectName,
-			githubUsername: a.anno.githubUsername
+			githubUsername: a.anno.githubUsername,
+			replies: a.anno.replies
 		}
 		return buildAnnotation(adjustedAnno);
 	});
@@ -168,7 +170,8 @@ export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[
 			gitCommit: a.gitCommit ? a.gitCommit : "",
 			anchorPreview: a.anchorPreview ? a.anchorPreview : "",
 			projectName: a.projectName ? a.projectName : "",
-			githubUsername: a.githubUsername ? a.githubUsername : ""
+			githubUsername: a.githubUsername ? a.githubUsername : "",
+			replies: a.replies ? a.replies : []
 	}});
 }
 
@@ -310,7 +313,8 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 		annoObj['gitCommit'],
 		annoObj['anchorPreview'],
 		annoObj['projectName'],
-		annoObj['githubUsername']
+		annoObj['githubUsername'],
+		annoObj['replies']
 	)
 }
 

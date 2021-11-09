@@ -9,7 +9,7 @@ interface Props {
 
 const UserProfile: React.FC<Props> = ({ githubUsername, createdTimestamp }) => {
     const userHasImage: boolean = githubUsername !== undefined && githubUsername !== "";
-
+    const time: string = formatTimestamp(createdTimestamp); 
     return (
         <div className={styles['userContainer']}>
             {userHasImage && <img src={'https://github.com/' + githubUsername + '.png?size=40'} className={`${styles['userProfilePhoto']} ${styles['profilePhoto']}`} alt='github user profile image' />}
@@ -17,7 +17,7 @@ const UserProfile: React.FC<Props> = ({ githubUsername, createdTimestamp }) => {
                 <a href={'https://github.com/' + githubUsername} className={styles['username']}>
                     {githubUsername}
                 </a>
-                {formatTimestamp(createdTimestamp)}
+                {time}
             </div>
         </div>
     )

@@ -58,6 +58,11 @@ export const createView = (context: vscode.ExtensionContext) => {
 						viewHelper.updateAnnotation(annoId, newAnnoContent);
 						break;
 					}
+					case 'updateReplies': {
+						const { annoId, replies } = message;
+						viewHelper.updateReplies(annoId, replies);
+						break;
+					}
 					case 'deleteAnnotation': {
 						const { annoId } = message;
 						viewHelper.deleteAnnotation(annoId);
@@ -114,7 +119,8 @@ export const createNewAnnotation = () => {
 			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "localChange",
 			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
 			projectName: projectName,
-			githubUsername: gitInfo.author
+			githubUsername: gitInfo.author,
+			replies: []
 		};
 		setTempAnno(utils.buildAnnotation(temp, r));
         view?.createNewAnno(html, annotationList);
@@ -153,7 +159,8 @@ export const addNewHighlight = () => {
 			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "localChange",
 			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
 			projectName: projectName,
-			githubUsername: gitInfo.author
+			githubUsername: gitInfo.author,
+			replies: []
 		};
 
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));
@@ -180,7 +187,7 @@ export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edi
 	const copiedText = textEditor.document.getText(textEditor.selection)
     if(annosInRange.length) {
         const annoIds = annosInRange.map(a => a.id);
-		const { start, end } = textEditor.selection;
+		const { start } = textEditor.selection;
 		const annosWithCopyMetaData = annosInRange.map(a => {
 			return {
 					id: a.id,
@@ -213,7 +220,7 @@ export const overriddenClipboardCutAction = (textEditor: vscode.TextEditor, edit
 		const remainingAnnos = annotationList.filter(a => !annoIds.includes(a.id));
 		const cutAnnos = annotationList.filter(a => annoIds.includes(a.id));
 		if(view) anchor.addHighlightsToEditor(remainingAnnos, textEditor);
-		const { start, end } = textEditor.selection;
+		const { start } = textEditor.selection;
 		const annosWithCopyMetaData = annosInRange.map(a => {
 			return {
 					id: a.id,

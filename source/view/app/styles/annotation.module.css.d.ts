@@ -28,6 +28,7 @@ interface CssExports {
   'profileContainer': string;
   'profileMenu': string;
   'profilePhoto': string;
+  'replyContainer': string;
   'row': string;
   'show': string;
   'submit': string;

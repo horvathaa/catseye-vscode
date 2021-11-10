@@ -219,7 +219,7 @@ export const overriddenClipboardCutAction = (textEditor: vscode.TextEditor, edit
         const annoIds = annosInRange.map(a => a.id);
 		const remainingAnnos = annotationList.filter(a => !annoIds.includes(a.id));
 		const cutAnnos = annotationList.filter(a => annoIds.includes(a.id));
-		if(view) anchor.addHighlightsToEditor(remainingAnnos, textEditor);
+		if(view) anchor.addHighlightsToEditor(remainingAnnos, textEditor); // why only when view???
 		const { start } = textEditor.selection;
 		const annosWithCopyMetaData = annosInRange.map(a => {
 			return {

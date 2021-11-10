@@ -2,11 +2,11 @@ import * as React from "react";
 import { buildAnnotation } from '../viewUtils';
 import styles from '../styles/annotation.module.css';
 import Annotation from '../../../constants/constants';
-import AnnotationDropDown from './annotationComponents/annotationMenu';
+import AnnotationOperationButtons from './annotationComponents/annotationOperationButtons';
 import Anchor from './annotationComponents/anchor';
 import TextEditor from "./annotationComponents/textEditor";
 import UserProfile from "./annotationComponents/userProfile";
-import Reply from './annotationComponents/reply';
+import ReplyContainer from './annotationComponents/replyContainer';
 interface Props {
   annotation: Annotation;
   vscode: any;
@@ -56,7 +56,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
   const submitReply = (reply: {[key: string] : any}) : void => {
     const replyIds: string[] = anno.replies?.map(r => r.id);
     const updatedReplies: {[key: string]: any}[] = replyIds.includes(reply.id) ? anno.replies.filter(r => r.id !== reply.id).concat([reply]) : anno.replies.concat([reply])
-    setAnno({...anno, replies: updatedReplies })
+    setAnno({ ...anno, replies: updatedReplies })
     vscode.postMessage({
       command: 'updateReplies',
       annoId: anno.id,
@@ -96,14 +96,13 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
                     githubUsername={anno.githubUsername} 
                     createdTimestamp={anno.createdTimestamp} 
                   />
-                  <div className={styles['IconContainer']}>
-                    <AnnotationDropDown 
-                      id={anno.id}
-                      replyToAnnotation={() => { setReplying(!replying) }}
-                      editAnnotation={() => { setEdit(!edit) }} 
-                      deleteAnnotation={(e) => deleteAnnotation(e)}
-                    />
-                  </div>
+                  <AnnotationOperationButtons
+                    userId={userId}
+                    authorId={anno.authorId}
+                    replyToAnnotation={() => { setReplying(!replying) }}
+                    editAnnotation={() => { setEdit(!edit) }} 
+                    deleteAnnotation={(e) => deleteAnnotation(e)}
+                  />
                 </div>
                 <Anchor 
                   html={anno.html} 
@@ -122,34 +121,14 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
                     />
                   ) : (`${anno.annotation}`)}
                 </div>
-                <div>
-                  {replying && 
-                    <Reply
-                      githubUsername={username}
-                      authorId={userId}
-                      replying={replying}
-                      createdTimestamp={new Date().getTime()}
-                      submissionHandler={submitReply}
-                      cancelHandler={ () => setReplying(false) }
-                    />
-                  }
-                  {anno.replies?.map((r: {[key: string] : any }) => {
-                    return (
-                      <li key={r.id}>
-                        <Reply 
-                          id={r.id}
-                          replyContent={r.replyContent}
-                          authorId={r.authorId}
-                          githubUsername={r.githubUsername}
-                          createdTimestamp={r.createdTimestamp}
-                          replying={false}
-                          submissionHandler={submitReply}
-                          cancelHandler={ () => setReplying(false) }
-                        />
-                      </li>
-                    )
-                  })}
-                </div>
+                  <ReplyContainer 
+                    replying={replying}
+                    replies={anno.replies}
+                    username={username}
+                    userId={userId}
+                    submitReply={submitReply}
+                    cancelReply={() => setReplying(false)}
+                  />
               </li>
             </div>
       </React.Fragment>

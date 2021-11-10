@@ -5,7 +5,6 @@ interface CssExports {
   'AnchorContainer': string;
   'AnnotationContainer': string;
   'AnnotationItem': string;
-  'AnnotationOptionsTitle': string;
   'AnnotationsOptions': string;
   'ContentContainer': string;
   'DropdownIcons': string;
@@ -19,6 +18,7 @@ interface CssExports {
   'TitleContainer': string;
   'active': string;
   'btn-primary': string;
+  'buttonRow': string;
   'cancel': string;
   'container': string;
   'disabled': string;
@@ -29,6 +29,7 @@ interface CssExports {
   'profileMenu': string;
   'profilePhoto': string;
   'replyContainer': string;
+  'replyShowHide': string;
   'row': string;
   'show': string;
   'submit': string;

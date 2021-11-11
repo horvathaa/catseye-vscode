@@ -75,24 +75,30 @@ export const translateChanges = (
 		let changeOccurredInRange : boolean = false;
 		const computedTabsize: number = typeof tabSize === 'number' ? tabSize : parseInt(tabSize);
 		// USER DOES NOT ADD NEWLINES
-
+		// checks for tab
 		if(!insertSpaces && (changeText.match(/\t/g) || []).length === textLength) {
+			// console.log('in not insertspaces if')
 			textLength = textLength - rangeLength;
 		}
-		if(insertSpaces && (((changeText.match(/\s/g) || []).length / computedTabsize ) * computedTabsize) === textLength) {
+		else if(insertSpaces && (((changeText.match(/\s/g) || []).length / computedTabsize ) * computedTabsize) === textLength) {
+			// console.log('in insertspaces if')
 			textLength = textLength - rangeLength;
 		}
 		
-		// console.log('changeRange', changeRange, 'originalRange', originalRange);
-		// console.log('diff', diff);
-		// console.log('changeText', changeText);
+		// checks for autocomplete - tbh may be able to just do this check instead of the above 2
+		else if(textLength && rangeLength) {
+			textLength = textLength - rangeLength;
+		}
+		// 	console.log('hasduiahsdiuh')
+
 		// user adds/removes text at or before start of anchor on same line (no new lines)
 		if(startOffset <= originalStartOffset && startLine === originalStartLine && !diff) {
+				// console.log('textLength', textLength, 'osl', originalStartOffset, 'rl', rangeLength);
 				newRange.startOffset = textLength ? originalStartOffset + textLength : originalStartOffset - rangeLength;
+				// console.log('new value', newRange.startOffset);
 				if(startAndEndLineAreSameNoNewLine) {
 					newRange.endOffset = textLength ? originalEndOffset + textLength : originalEndOffset - rangeLength;
 			}
-			// console.log('new range start offset update', newRange.startOffset);
 		}
 
 		// user adds/removes text at or before the end offset (no new lines)

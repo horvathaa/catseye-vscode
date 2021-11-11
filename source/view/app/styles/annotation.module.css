@@ -53,6 +53,12 @@
   cursor: pointer;
 }
 
+.profileMenu:hover {
+  filter: brightness(1.4);
+  transition: opacity .55s ease-in-out;
+  color: white;
+}
+
 .AnnotationsOptions .dropdown .dropdown-toggle:focus,.dropdown-toggle:active {
   outline: none !important;
   box-shadow: none;
@@ -79,29 +85,6 @@
   margin-left: auto;
 }
 
-/* .AnnotationsOptions .dropdown .btn-primary:not(:disabled):not(.disabled):active, .TitleContainer .container .row .btn-primary:not(:disabled):not(.disabled).active, .TitleContainer .container .row .show > .TitleContainer .container .row .btn-primary.dropdown-toggle {
-  color: transparent;
-  background-color: transparent;
-  border-color: transparent;
-  outline-color: none;
-} 
-
-.AnnotationOptionsTitle{
-  font-size: 13px;
-  font-weight: 300 !important;
-  padding: .2rem .5rem 0rem .5rem !important;
-  text-align: center !important;
-}
-
-.AnnotationOptionsTitle:hover{
-  background: inherit;
-  cursor: default;
-}
-
-.AnnotationOptionsTitle hr {
-  margin: .35rem;
-} */
-
 .DropdownIconsWrapper {
   display: flex;
   margin-right: 1em;
@@ -123,10 +106,9 @@
   background: var(--vscode-editor-background);
 }
 
-.DropdownItemOverwrite:hover { 
+.DropdownIconsWrapper:hover { 
   filter: brightness(1.4);
-  transition: opacity .55s ease-in-out;
-  color: white;
+  transition: cubic-bezier(1, 0, 0, 1);
 }
 
 .DropdownIcons{

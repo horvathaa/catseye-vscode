@@ -54,8 +54,10 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
   }
 
   const submitReply = (reply: {[key: string] : any}) : void => {
+    console.log('reply', reply)
     const replyIds: string[] = anno.replies?.map(r => r.id);
     const updatedReplies: {[key: string]: any}[] = replyIds.includes(reply.id) ? anno.replies.filter(r => r.id !== reply.id).concat([reply]) : anno.replies.concat([reply])
+    console.log('what', updatedReplies);
     setAnno({ ...anno, replies: updatedReplies })
     vscode.postMessage({
       command: 'updateReplies',
@@ -65,6 +67,17 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
     setReplying(false); 
   }
 
+  const deleteReply = (id: string) : void => {
+    const updatedReply = { ...anno.replies.filter(r => r.id === id)[0], deleted: true}
+    const updatedReplies = anno.replies.filter(r => r.id !== id).concat([updatedReply])
+    setAnno({ ...anno, replies: updatedReplies });
+    vscode.postMessage({
+      command: 'updateReplies',
+      annoId: anno.id,
+      replies: updatedReplies
+    });
+  }
+  
   const updateContent = (newAnnoContent: string) : void => {
     setAnno({ ...anno, annotation: newAnnoContent });
     vscode.postMessage({
@@ -128,6 +141,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
                     userId={userId}
                     submitReply={submitReply}
                     cancelReply={() => setReplying(false)}
+                    deleteReply={deleteReply}
                   />
               </li>
             </div>

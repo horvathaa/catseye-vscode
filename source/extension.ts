@@ -17,6 +17,7 @@ export let deletedAnnotations: Annotation[] = [];
 export let outOfDateAnnotations: Annotation[] = [];
 export let storedCopyText: string = "";
 export let tabSize: number | string = 4;
+export let insertSpaces: boolean | string = true; // not sure what to have as default here... VS Code API doesn't say what the default is lol 
 export let view: ViewLoader | undefined = undefined;
 export let user: firebase.User | null = null;
 export let tempAnno: Annotation | null = null;
@@ -62,6 +63,10 @@ export const setGitInfo = (newGiftInfo: {[key: string] : any}) : void => {
 
 export const setTabSize = (newTabSize: number | string) : void => {
 	tabSize = newTabSize;
+}
+
+export const setInsertSpaces = (newInsertSpaces: boolean | string) : void => {
+	insertSpaces = newInsertSpaces;
 }
 
 export const setAnnotationList = (newAnnotationList: Annotation[]) : void => {

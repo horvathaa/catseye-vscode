@@ -1,13 +1,12 @@
 import * as vscode from 'vscode';
-import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, deletedAnnotations, setDeletedAnnotationList } from '../extension';
+import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, deletedAnnotations, setDeletedAnnotationList, setInsertSpaces } from '../extension';
 import * as anchor from '../anchorFunctions/anchor';
 import * as utils from '../utils/utils';
 import Annotation from '../constants/constants';
 
 
-export const handleChangeVisibleTextEditors = async (textEditors: vscode.TextEditor[]) => {
+export const handleChangeVisibleTextEditors = (textEditors: vscode.TextEditor[]) => {
     const textEditorFileNames = textEditors.map(t => t.document.uri.toString());
-    if(textEditors && textEditors.length && textEditors[0].options?.tabSize) setTabSize(textEditors[0].options.tabSize);
     // nneed to decide if we want to write to DB that often... if(vscode.workspace.workspaceFolders !== undefined) utils.saveAnnotations(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json');
     
     const annotationsToHighlight = annotationList.filter(a => textEditorFileNames.includes(a.filename.toString()));
@@ -19,14 +18,16 @@ export const handleChangeVisibleTextEditors = async (textEditors: vscode.TextEdi
 
 export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | undefined) => {
     if(vscode.workspace.workspaceFolders) {
-        if(TextEditor) {
-            utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextEditor.document.uri.toString(), TextEditor.document);
-            // utils.findOutOfDateAnchors(annotationList.filter(a => a.filename === TextEditor.document.uri.toString()), TextEditor.document);
-            setAnnotationList(utils.sortAnnotationsByLocation(annotationList, TextEditor.document.uri.toString())); // mark these annos as out of date
-            const currentProject: string = utils.getProjectName(TextEditor.document.uri.fsPath);
-            if(user && vscode.workspace.workspaceFolders)
+            if(TextEditor) {
+                if(TextEditor.options?.tabSize) setTabSize(TextEditor.options.tabSize);
+                if(TextEditor.options?.insertSpaces) setInsertSpaces(TextEditor.options.insertSpaces);
+                utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextEditor.document.uri.toString(), TextEditor.document);
+                // utils.findOutOfDateAnchors(annotationList.filter(a => a.filename === TextEditor.document.uri.toString()), TextEditor.document);
+                setAnnotationList(utils.sortAnnotationsByLocation(annotationList, TextEditor.document.uri.toString())); // mark these annos as out of date
+                const currentProject: string = utils.getProjectName(TextEditor.document.uri.fsPath);
+                if(user && vscode.workspace.workspaceFolders)
                 view?.updateDisplay(undefined, TextEditor.document.uri.toString(), currentProject);
-        }
+            }
         else {
             utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', "all");
         }

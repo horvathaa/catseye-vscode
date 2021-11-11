@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import Annotation from '../constants/constants';
 import { buildAnnotation, sortAnnotationsByLocation } from '../utils/utils';
-import { annotationList, deletedAnnotations, setDeletedAnnotationList, annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList } from '../extension';
+import { tabSize, annotationList, deletedAnnotations, setDeletedAnnotationList, annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList, insertSpaces } from '../extension';
 
 
 export function getIndicesOf(searchStr: string, str: string, caseSensitive: boolean) {
@@ -51,8 +51,7 @@ export const translateChanges = (
 		)
 	: Annotation => {
 		const originalStartLine = originalAnnotation.startLine, originalEndLine = originalAnnotation.endLine, originalStartOffset = originalAnnotation.startOffset, originalEndOffset = originalAnnotation.endOffset;
-		let newRange = { startLine: originalStartLine, endLine: originalEndLine, startOffset: originalStartOffset, endOffset: originalEndOffset };
-
+		let newRange = { startLine: originalStartLine, endLine: originalEndLine, startOffset: originalStartOffset, endOffset: originalEndOffset };	
 
 		const { anchorText } = originalAnnotation;
 		let newAnchorText = anchorText;
@@ -61,6 +60,8 @@ export const translateChanges = (
 		const originalRange = new vscode.Range(new vscode.Position(originalStartLine, originalStartOffset), new vscode.Position(originalEndLine, originalEndOffset));
 		const changeRange = new vscode.Range(new vscode.Position(startLine, startOffset), new vscode.Position(endLine, endOffset)); 
 		// user deleted the anchor
+		// console.log('changeRange', changeRange, 'changeText', changeText, 'changetext len', changeText.length)
+
 		if(!textLength && changeRange.contains(originalRange)) {
 			const newAnno = {
 				...originalAnnotation, deleted: true
@@ -72,17 +73,24 @@ export const translateChanges = (
 		}
 
 		let changeOccurredInRange : boolean = false;
+		const computedTabsize: number = typeof tabSize === 'number' ? tabSize : parseInt(tabSize);
 		// USER DOES NOT ADD NEWLINES
 
+		if(!insertSpaces && (changeText.match(/\t/g) || []).length === textLength) {
+			textLength = textLength - rangeLength;
+		}
+		if(insertSpaces && (((changeText.match(/\s/g) || []).length / computedTabsize ) * computedTabsize) === textLength) {
+			textLength = textLength - rangeLength;
+		}
+		
 		// console.log('changeRange', changeRange, 'originalRange', originalRange);
 		// console.log('diff', diff);
 		// console.log('changeText', changeText);
 		// user adds/removes text at or before start of anchor on same line (no new lines)
-		if(startOffset < originalStartOffset && startLine === originalStartLine && !diff) {
-			newRange.startOffset = textLength ? originalStartOffset + textLength : originalStartOffset - rangeLength;
-			// console.log('user added text at beginning line - OSO', originalStartOffset, 'so', startOffset, 'tl', textLength,'rl', rangeLength);
-			if(startAndEndLineAreSameNoNewLine) {
-				newRange.endOffset = textLength ? originalEndOffset + textLength : originalEndOffset - rangeLength;
+		if(startOffset <= originalStartOffset && startLine === originalStartLine && !diff) {
+				newRange.startOffset = textLength ? originalStartOffset + textLength : originalStartOffset - rangeLength;
+				if(startAndEndLineAreSameNoNewLine) {
+					newRange.endOffset = textLength ? originalEndOffset + textLength : originalEndOffset - rangeLength;
 			}
 			// console.log('new range start offset update', newRange.startOffset);
 		}

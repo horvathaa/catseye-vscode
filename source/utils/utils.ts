@@ -24,7 +24,6 @@ const arraysEqual = (a1: any[], a2: any[]) : boolean => {
 export const initializeAnnotations = async (user: firebase.User) : Promise<void> => {
     const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
     setAnnotationList(sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename));
-	console.log('annotations', annotationList);
 }
 
 export const getFirstLineOfHtml = (html: string, isOneLineAnchor: boolean) : string => {

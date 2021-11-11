@@ -54,10 +54,8 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
   }
 
   const submitReply = (reply: {[key: string] : any}) : void => {
-    console.log('reply', reply)
     const replyIds: string[] = anno.replies?.map(r => r.id);
     const updatedReplies: {[key: string]: any}[] = replyIds.includes(reply.id) ? anno.replies.filter(r => r.id !== reply.id).concat([reply]) : anno.replies.concat([reply])
-    console.log('what', updatedReplies);
     setAnno({ ...anno, replies: updatedReplies })
     vscode.postMessage({
       command: 'updateReplies',

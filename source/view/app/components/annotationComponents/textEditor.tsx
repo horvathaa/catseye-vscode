@@ -16,7 +16,6 @@ const TextEditor: React.FC<Props> = ({ content, submissionHandler, cancelHandler
         }
         else {
             setText({ ...text, replyContent: (e.target as HTMLTextAreaElement).value });
-            console.log('updating text', text);
         }
     }
 

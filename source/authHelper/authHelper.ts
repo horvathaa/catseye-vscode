@@ -45,7 +45,7 @@ export const initializeAuth = async () => {
             if(user)
             try {
                 operationMessage = await setUserGithubAccount({ uid: user.uid, username: account.label});
-                console.log(operationMessage?.data);
+                // console.log(operationMessage?.data);
             }
             catch(e) {
                 console.error(e);

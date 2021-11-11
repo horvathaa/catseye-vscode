@@ -94,7 +94,9 @@ export const setOutOfDateAnnotationList = (newOutOfDateAnnotationList: Annotatio
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+	// initialize authentication and listeners for annotations
 	commands.init();
+
 	/*************************************************************************************/
 	/******************************** EXTENSION LISTENERS  *******************************/
 	/*************************************************************************************/

@@ -47,6 +47,7 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
         let translatedAnnotations: Annotation[] = currentAnnotations;
         let rangeAdjustedAnnotations: Annotation[] = [];
         for (const change of e.contentChanges) {
+            console.log('change', change);
             const startLine = change.range.start.line;
             const endLine = change.range.end.line;
             const startOffset = change.range.start.character;

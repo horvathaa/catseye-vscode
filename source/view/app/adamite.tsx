@@ -4,47 +4,22 @@ import { useState } from "react";
 import NewAnnotation from "./components/newAnnotation";
 import AnnotationList from "./components/annotationList";
 import LogIn from './components/login';
+// import { areListsTheSame } from './viewUtils';
 // import { annotationList } from '../../extension';
-
-
-const areListsTheSame = (obj1: any, obj2: any) => {
-	for (var p in obj1) {
-		  //Check property exists on both objects
-		  if (obj1.hasOwnProperty(p) !== obj2.hasOwnProperty(p)) return false;
-   
-		  switch (typeof (obj1[p])) {
-			  //Deep compare objects
-			  case 'object':
-				  if (areListsTheSame(obj1[p], obj2[p])) return false;
-				  break;
-			  //Compare function code
-			  case 'function':
-				  if (typeof (obj2[p]) == 'undefined' || (p != 'compare' && obj1[p].toString() != obj2[p].toString())) return false;
-				  break;
-			  //Compare values
-			  default:
-				  if (obj1[p] != obj2[p]) return false;
-		  }
-	  }
-   
-	  //Check object 2 for any extra properties
-	  for (var p in obj2) {
-		  if (typeof (obj1[p]) == 'undefined') return false;
-	  }
-	  return true;
-}
-
-
 
 interface Props {
   vscode: any;
   window: Window;
-  showLogIn: boolean
+  showLogIn: boolean;
+  username?: string;
+  userId?: string;
 }
 
-const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn }) => {
+const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, userId }) => {
   const [annotations, setAnnotations] = useState([]);
   const [showLogin, setShowLogin] = useState(showLogIn);
+  const [userName, setUsername] = useState(username ? username : "");
+  const [uid, setUserId] = useState(userId ? userId : "");
   const [selection, setSelection] = useState("");
   const [showNewAnnotation, setShowNewAnnotation] = useState(false);
   const [currentProject, setCurrentProject] = useState("");
@@ -55,9 +30,6 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn }) => {
     switch(message.command) {
       case 'login':
         setShowLogin(true);
-        return;
-      case 'loggedIn':
-        setShowLogin(false);
         return;
       case 'update':
         if(message.payload.annotationList) setAnnotations(message.payload.annotationList);
@@ -75,13 +47,32 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn }) => {
     }
   }
 
+  const handleCopyText = (e: Event) : void => {
+    const keyboardEvent = (e as KeyboardEvent);
+    if(window && (keyboardEvent.code === 'KeyC' || keyboardEvent.code === 'KeyX') && keyboardEvent.ctrlKey) {
+      const copiedText: string = window.getSelection().toString();
+      vscode.postMessage({
+        command: 'copyTextFromWebview',
+        text: copiedText
+      });
+    }
+  }
+
   React.useEffect(() => {
     window.addEventListener('message', handleIncomingMessages);
+    window.document.addEventListener('keydown', handleCopyText);
     return () => {
       window.removeEventListener('message', handleIncomingMessages);
+      window.document.removeEventListener('keydown', handleCopyText);
     }
-  }, [])
+  }, []);
 
+  React.useEffect(() => {
+    if(!showLogIn && (!userName || !uid) && username && userId) {
+      setUsername(username);
+      setUserId(userId);
+    }
+  }, []);
 
   const notifyDone = () : void => {
     setShowNewAnnotation(false);
@@ -90,9 +81,23 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn }) => {
   return (
     <React.Fragment>
       {showNewAnnotation ? (
-        <NewAnnotation selection={selection} vscode={vscode} notifyDone={notifyDone} />
+        <NewAnnotation 
+          selection={selection} 
+          vscode={vscode} 
+          notifyDone={notifyDone} 
+        />
       ) : (null)}
-      {!showLogin && <AnnotationList currentFile={currentFile} currentProject={currentProject} annotations={annotations} vscode={vscode} window={window} />}
+      {!showLogin && 
+        <AnnotationList 
+          currentFile={currentFile} 
+          currentProject={currentProject} 
+          annotations={annotations} 
+          vscode={vscode} 
+          window={window}
+          username={userName}
+          userId={uid}
+        />
+      }
       {showLogin && <LogIn vscode={vscode} />}
     </React.Fragment>
   )

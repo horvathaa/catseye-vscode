@@ -38,6 +38,11 @@
   width: 24px;
   height: 24px;
   cursor: pointer;
+  margin-left: auto;
+}
+
+.overflowHidden {
+  overflow: hidden;
 }
 
 .profile {
@@ -50,6 +55,12 @@
   width: 14px;
   height: 14px;
   cursor: pointer;
+}
+
+.profileMenu:hover {
+  filter: brightness(1.4);
+  transition: opacity .55s ease-in-out;
+  color: white;
 }
 
 .AnnotationsOptions .dropdown .dropdown-toggle:focus,.dropdown-toggle:active {
@@ -73,37 +84,23 @@
   box-shadow: none !important;
 }
 
-.AnnotationsOptions .dropdown .btn-primary:not(:disabled):not(.disabled):active, .TitleContainer .container .row .btn-primary:not(:disabled):not(.disabled).active, .TitleContainer .container .row .show > .TitleContainer .container .row .btn-primary.dropdown-toggle {
-  color: transparent;
-  background-color: transparent;
-  border-color: transparent;
-  outline-color: none;
-} 
-
-.AnnotationOptionsTitle{
-  font-size: 13px;
-  font-weight: 300 !important;
-  padding: .2rem .5rem 0rem .5rem !important;
-  text-align: center !important;
-}
-
-.AnnotationOptionsTitle:hover{
-  background: inherit;
-  cursor: default;
-}
-
-.AnnotationOptionsTitle hr {
-  margin: .35rem;
+.buttonRow {
+  display: flex;
+  margin-left: auto;
 }
 
 .DropdownIconsWrapper {
-  display: inline;
+  display: flex;
   margin-right: 1em;
   position: relative;
   cursor: pointer;
   padding: .35em .35em .35em .35em;
   background: #69696924;
   border-radius: 1em;
+  justify-content: center;
+  align-items: center;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
 
 .DropdownItemOverwrite {
@@ -113,10 +110,9 @@
   background: var(--vscode-editor-background);
 }
 
-.DropdownItemOverwrite:hover { 
+.DropdownIconsWrapper:hover { 
   filter: brightness(1.4);
-  transition: opacity .55s ease-in-out;
-  color: white;
+  transition: cubic-bezier(1, 0, 0, 1);
 }
 
 .DropdownIcons{
@@ -124,9 +120,96 @@
   width: 1.25em;
 }
 
+
+.profileContainer{
+  padding: 5px;
+  margin: auto;
+  max-width: 99% !important;
+  border-radius: 50%;
+  background-color: #EBECF0;
+  text-align: center;
+  cursor: default;
+}
+
+.userProfile {
+  width: 30px;
+  height: 30px;
+  display: block;
+  text-align: center;
+  margin: auto;
+  color: #1d1e24c4;
+  cursor: pointer;
+}
+
+.userProfilePhoto {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: block;
+  text-align: center;
+  /* margin: auto; */
+  padding: .1em;
+  border: 1px solid #49a86773;
+  color: #1d1e24c4;
+  cursor: pointer;
+}
+
+.replyShowHide {
+  margin-left: auto;
+  display: flex;
+  align-content: center;
+  justify-content: flex-start;
+  flex-direction: row;
+  align-items: stretch;
+  padding-left: 6px;
+  font-family: var(--vscode-font-family);;
+}
+
+.replyShowHide .IconContainer {
+  margin-left: 0.5em;
+}
+
+.replyContainer {
+  display: block;
+  padding: 6px;
+  list-style-type: none;
+  border-top: 0.05em solid #ffffff6e;
+}
+
+.profilePhoto {
+  width: 30px !important;
+  height: 30px !important;
+}
+
+.usernameAndTimeContainer {
+  display: flex;
+  flex-direction: column;
+  padding-left: 4px;
+}
+
+.username {
+  font-weight: 600;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.userContainer {
+  display: flex;
+  padding-bottom: 6px;
+}
+
+.textboxContainer {
+  display: block;
+}
+
 .textbox {
   width: 95%;
   resize: none;
+}
+
+.topRow {
+  display: flex;
 }
 
 .AnnotationContainer {
@@ -137,18 +220,31 @@
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
     flex: 1;
-    min-width: 0;
+    /* min-width: 0; */
     transition: all 0.1s ease-in;
     position: relative;
     list-style-type: none;
     border-style: solid;
     border-width: 0.15em;
-    min-width: fit-content;
+    overflow-x: auto;
+    /* min-width: fit-content; */
     border-color: #d4d4d44f;
 }
 
+.AnchorBox {
+  display: flex;
+}
+
+.overflowButtonContainer {
+  display: flex;
+  justify-content: center;
+}
+
 .AnchorContainer {
-  border: 0.5px white;
+  border: 0.25px solid rgb(239 255 201 / 20%);
+  padding: 5px;
+  border-radius: 4px;
+  overflow: inherit;
 }
 
 .LocationWrapper {
@@ -169,10 +265,10 @@
 }
 
 .ContentContainer {
-  font-family: var(--vscode-editor-font-family);
+  font-family: var(--vscode-font-family);
   overflow-wrap: anywhere;
-  font-size: medium;
-  padding: 4px;
+  font-size: 1.125em;
+  padding: 4px 6px;
 }
 
 .LocationContainer {

@@ -20,9 +20,9 @@ import * as viewHelper from '../viewHelper/viewHelper';
 import { v4 as uuidv4 } from 'uuid';
 import { initializeAuth } from '../authHelper/authHelper';
 
-export const init = () => {
+export const init = async () => {
+	await initializeAuth();
 	setGitInfo(utils.generateGitMetaData(gitApi));
-	initializeAuth();
 	if(view) {
 		view._panel?.reveal();
 	}
@@ -48,6 +48,10 @@ export const createView = (context: vscode.ExtensionContext) => {
 						viewHelper.handleSignInWithEmailAndPassword(email, pass);
 						break;
 					}
+					case 'copyTextFromWebview': {
+						const { text } = message;
+						viewHelper.handleCopyText(text);
+					}
 					case 'createAnnotation': {
 						const { anno } = message;
 						viewHelper.createAnnotation(anno);
@@ -56,6 +60,11 @@ export const createView = (context: vscode.ExtensionContext) => {
 					case 'updateAnnotation': {
 						const { annoId, newAnnoContent } = message;
 						viewHelper.updateAnnotation(annoId, newAnnoContent);
+						break;
+					}
+					case 'updateReplies': {
+						const { annoId, replies } = message;
+						viewHelper.updateReplies(annoId, replies);
 						break;
 					}
 					case 'deleteAnnotation': {
@@ -92,12 +101,13 @@ export const createNewAnnotation = () => {
     }
         
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
+	const newAnnoId: string = uuidv4();
     const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
     utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then((html: string) => {
 		const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);
 		const programmingLang: string = activeTextEditor.document.uri.toString().split('.')[activeTextEditor.document.uri.toString().split('.').length - 1];
 		const temp = {
-			id: uuidv4(),
+			id: newAnnoId,
 			filename: activeTextEditor.document.uri.toString(),
 			visiblePath: vscode.workspace.workspaceFolders ? 
 				utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) : activeTextEditor.document.uri.fsPath,
@@ -113,7 +123,9 @@ export const createNewAnnotation = () => {
 			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
 			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "localChange",
 			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
-			projectName: projectName 
+			projectName: projectName,
+			githubUsername: gitInfo.author,
+			replies: []
 		};
 		setTempAnno(utils.buildAnnotation(temp, r));
         view?.createNewAnno(html, annotationList);
@@ -131,10 +143,11 @@ export const addNewHighlight = () => {
     const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
 	const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);
 	// Get the branch and commit 
+	const newAnnoId: string = uuidv4();
 	const programmingLang: string = activeTextEditor.document.uri.toString().split('.')[activeTextEditor.document.uri.toString().split('.').length - 1];
 	utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then(html => {
 		const temp = {
-			id: uuidv4(),
+			id: newAnnoId,
 			filename: activeTextEditor.document.uri.toString(),
 			visiblePath: vscode.workspace.workspaceFolders ? 
 				utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) :
@@ -151,7 +164,9 @@ export const addNewHighlight = () => {
 			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
 			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "localChange",
 			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
-			projectName: projectName
+			projectName: projectName,
+			githubUsername: gitInfo.author,
+			replies: []
 		};
 
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));
@@ -170,7 +185,6 @@ export const showAnnoInWebview = (id: string) => {
 		view?._panel?.reveal();
 		view?.scrollToAnnotation(id);
 	}
-
 }
 
 export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
@@ -179,7 +193,7 @@ export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edi
 	const copiedText = textEditor.document.getText(textEditor.selection)
     if(annosInRange.length) {
         const annoIds = annosInRange.map(a => a.id);
-		const { start, end } = textEditor.selection;
+		const { start } = textEditor.selection;
 		const annosWithCopyMetaData = annosInRange.map(a => {
 			return {
 					id: a.id,
@@ -211,8 +225,8 @@ export const overriddenClipboardCutAction = (textEditor: vscode.TextEditor, edit
         const annoIds = annosInRange.map(a => a.id);
 		const remainingAnnos = annotationList.filter(a => !annoIds.includes(a.id));
 		const cutAnnos = annotationList.filter(a => annoIds.includes(a.id));
-		if(view) anchor.addHighlightsToEditor(remainingAnnos, textEditor);
-		const { start, end } = textEditor.selection;
+		if(view) anchor.addHighlightsToEditor(remainingAnnos, textEditor); // why only when view???
+		const { start } = textEditor.selection;
 		const annosWithCopyMetaData = annosInRange.map(a => {
 			return {
 					id: a.id,

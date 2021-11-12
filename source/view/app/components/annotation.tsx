@@ -1,60 +1,24 @@
 import * as React from "react";
-import * as vscode from 'vscode';
+import { buildAnnotation } from '../viewUtils';
 import styles from '../styles/annotation.module.css';
 import Annotation from '../../../constants/constants';
-import { useEffect } from "react";
-import AnnotationDropDown from './annotationComponents/annotationMenu';
+import AnnotationOperationButtons from './annotationComponents/annotationOperationButtons';
 import Anchor from './annotationComponents/anchor';
-
-const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefined) : Annotation => {
-	const annoObj : { [key: string]: any } = range ? 
-	{
-		startLine: range.start.line,
-		endLine: range.end.line,
-		startOffset: range.start.character,
-		endOffset: range.end.character,
-		...annoInfo
-	} : annoInfo.anchor ? {
-		startLine: annoInfo.anchor.startLine,
-		endLine: annoInfo.anchor.endLine,
-		startOffset: annoInfo.anchor.startOffset,
-		endOffset: annoInfo.anchor.endOffset,
-		...annoInfo
-	} : annoInfo;
-
-	return new Annotation(
-		annoObj['id'], 
-		annoObj['filename'], 
-		annoObj['visiblePath'], 
-		annoObj['anchorText'],
-		annoObj['annotation'],
-		annoObj['startLine'],
-		annoObj['endLine'],
-		annoObj['startOffset'],
-		annoObj['endOffset'],
-		annoObj['deleted'],
-		annoObj['outOfDate'],
-		annoObj['html'],
-		annoObj['authorId'],
-		annoObj['createdTimestamp'],
-		annoObj['programmingLang'],
-		annoObj['gitRepo'],
-		annoObj['gitBranch'],
-		annoObj['gitCommit'],
-    annoObj['anchorPreview'],
-    annoObj['projectName']
-	)
-}
+import TextEditor from "./annotationComponents/textEditor";
+import UserProfile from "./annotationComponents/userProfile";
+import ReplyContainer from './annotationComponents/replyContainer';
 interface Props {
   annotation: Annotation;
   vscode: any;
   window: Window;
+  username: string;
+  userId: string;
 }
 
-const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
+const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username, userId }) => {
   const [anno, setAnno] = React.useState(annotation);
   const [edit, setEdit] = React.useState(false);
-  const [newContent, setNewContent] = React.useState(anno.annotation);
+  const [replying, setReplying] = React.useState(false);
 
   const handleIncomingMessages = (e: MessageEvent<any>) => {
     const message = e.data;
@@ -69,49 +33,60 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
     }
   }
 
-  useEffect(() => {
+  React.useEffect(() => {
     window.addEventListener('message', handleIncomingMessages);
     return () => {
-      window.removeEventListener('message', handleIncomingMessages)
+      window.removeEventListener('message', handleIncomingMessages);
     }
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if(JSON.stringify(anno) !== JSON.stringify(annotation)) {
-      setAnno(annotation);
+      setAnno(buildAnnotation(annotation));
     }
   }, [annotation]);
 
-  // Idea: use onDragOver and onDrop to allow user to drop code into the sidebar - may have to have
-  // similar event listener in the editor? but I'm not sure how we can override some of these things
-  // I guess the "onDidChangeSelection"? maybe???
-
-  const scrollInEditor = () => {
+  const scrollInEditor = () : void => {
     vscode.postMessage({
       command: 'scrollInEditor',
       id: anno.id
     });
   }
 
-  const updateAnnotationContent = () => {
-    setNewContent((document.getElementById('editContent') as HTMLInputElement).value);
+  const submitReply = (reply: {[key: string] : any}) : void => {
+    const replyIds: string[] = anno.replies?.map(r => r.id);
+    const updatedReplies: {[key: string]: any}[] = replyIds.includes(reply.id) ? anno.replies.filter(r => r.id !== reply.id).concat([reply]) : anno.replies.concat([reply])
+    setAnno({ ...anno, replies: updatedReplies })
+    vscode.postMessage({
+      command: 'updateReplies',
+      annoId: anno.id,
+      replies: updatedReplies
+    });
+    setReplying(false); 
   }
 
-  const updateContent = (e: React.SyntheticEvent) => {
-    e.stopPropagation();
-    anno.annotation = newContent;
+  const deleteReply = (id: string) : void => {
+    const updatedReply = { ...anno.replies.filter(r => r.id === id)[0], deleted: true}
+    const updatedReplies = anno.replies.filter(r => r.id !== id).concat([updatedReply])
+    setAnno({ ...anno, replies: updatedReplies });
+    vscode.postMessage({
+      command: 'updateReplies',
+      annoId: anno.id,
+      replies: updatedReplies
+    });
+  }
+  
+  const updateContent = (newAnnoContent: string) : void => {
+    setAnno({ ...anno, annotation: newAnnoContent });
     vscode.postMessage({
       command: 'updateAnnotation',
       annoId: anno.id,
-      newAnnoContent: anno.annotation
+      newAnnoContent: newAnnoContent
     });
-    setNewContent("");
     setEdit(false);
   }
 
-  const cancelAnnotation = (e: React.SyntheticEvent) => {
-    e.stopPropagation();
-    setNewContent("");
+  const cancelAnnotation = () : void => {
     setEdit(false);
   }
 
@@ -122,14 +97,23 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
       annoId: anno.id,
     });
   }
-    
 
   return (
       <React.Fragment>
-          <div className={styles['Pad']} id={annotation.id} >
+          <div key={annotation.id} className={styles['Pad']} id={annotation.id} >
               <li key={annotation.id} className={styles['AnnotationContainer']}  >
-                <div className={styles['IconContainer']}>
-                  <AnnotationDropDown id={anno.id} editAnnotation={() => {setEdit(!edit)}} deleteAnnotation={(e) => deleteAnnotation(e)}/>
+                <div className={styles['topRow']}>
+                  <UserProfile 
+                    githubUsername={anno.githubUsername} 
+                    createdTimestamp={anno.createdTimestamp} 
+                  />
+                  <AnnotationOperationButtons
+                    userId={userId}
+                    authorId={anno.authorId}
+                    replyToAnnotation={() => { setReplying(!replying) }}
+                    editAnnotation={() => { setEdit(!edit) }} 
+                    deleteAnnotation={(e) => deleteAnnotation(e)}
+                  />
                 </div>
                 <Anchor 
                   html={anno.html} 
@@ -141,13 +125,22 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window }) => {
                 />
                 <div className={styles['ContentContainer']}>
                   {edit ? (
-                    <React.Fragment>
-                      <textarea className={styles['textbox']} value={newContent} onChange={updateAnnotationContent} id="editContent" />
-                      <button className={styles['submit']} onClick={(e) => updateContent(e)}>Submit</button>
-                      <button className={styles['cancel']} onClick={(e) => cancelAnnotation(e)}>Cancel</button>
-                    </React.Fragment>
+                    <TextEditor 
+                      content={anno.annotation} 
+                      submissionHandler={updateContent} 
+                      cancelHandler={cancelAnnotation}
+                    />
                   ) : (`${anno.annotation}`)}
                 </div>
+                  <ReplyContainer 
+                    replying={replying}
+                    replies={anno.replies}
+                    username={username}
+                    userId={userId}
+                    submitReply={submitReply}
+                    cancelReply={() => setReplying(false)}
+                    deleteReply={deleteReply}
+                  />
               </li>
             </div>
       </React.Fragment>

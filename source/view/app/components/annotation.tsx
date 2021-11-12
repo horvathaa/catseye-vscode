@@ -36,7 +36,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
   React.useEffect(() => {
     window.addEventListener('message', handleIncomingMessages);
     return () => {
-      window.removeEventListener('message', handleIncomingMessages)
+      window.removeEventListener('message', handleIncomingMessages);
     }
   }, []);
 

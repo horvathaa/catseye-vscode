@@ -48,6 +48,10 @@ export const createView = (context: vscode.ExtensionContext) => {
 						viewHelper.handleSignInWithEmailAndPassword(email, pass);
 						break;
 					}
+					case 'copyTextFromWebview': {
+						const { text } = message;
+						viewHelper.handleCopyText(text);
+					}
 					case 'createAnnotation': {
 						const { anno } = message;
 						viewHelper.createAnnotation(anno);

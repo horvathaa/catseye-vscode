@@ -47,10 +47,23 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
     }
   }
 
+  const handleCopyText = (e: Event) : void => {
+    const keyboardEvent = (e as KeyboardEvent);
+    if(window && (keyboardEvent.code === 'KeyC' || keyboardEvent.code === 'KeyX') && keyboardEvent.ctrlKey) {
+      const copiedText: string = window.getSelection().toString();
+      vscode.postMessage({
+        command: 'copyTextFromWebview',
+        text: copiedText
+      });
+    }
+  }
+
   React.useEffect(() => {
     window.addEventListener('message', handleIncomingMessages);
+    window.document.addEventListener('keydown', handleCopyText);
     return () => {
       window.removeEventListener('message', handleIncomingMessages);
+      window.document.removeEventListener('keydown', handleCopyText);
     }
   }, []);
 

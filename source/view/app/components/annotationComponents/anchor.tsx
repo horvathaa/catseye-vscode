@@ -29,7 +29,6 @@ interface Props {
 const Anchor: React.FC<Props> = ({ html, anchorPreview, visiblePath, startLine, endLine, scrollInEditor }) => {
     const [collapsed, setCollapsed] = React.useState(false);
     const isSingleLineAnchor: boolean = (endLine - startLine) === 0;
-    // const isWideAnchor: boolean = 
     
     const collapseExpandToggle = () :  React.ReactElement<any> => {
         return collapsed ? <VscChevronDown onClick={() => setCollapsed(!collapsed)} className={styles['IconContainer']} /> : 

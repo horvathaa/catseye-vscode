@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import firebase from 'firebase';
-import { user, gitInfo, annotationList, setAnnotationList, view, setView, tempAnno, setTempAnno, annotationDecorations } from '../extension';
+import { user, gitInfo, setStoredCopyText, annotationList, setAnnotationList, view, setView, tempAnno, setTempAnno, annotationDecorations } from '../extension';
 import { initializeAnnotations, handleSaveCloseEvent, saveAnnotations, removeOutOfDateAnnotations, buildAnnotation, sortAnnotationsByLocation, getProjectName, getShikiCodeHighlighting } from '../utils/utils';
 import { addHighlightsToEditor, createRangeFromAnnotation } from '../anchorFunctions/anchor';
 import { v4 as uuidv4 } from 'uuid';
@@ -17,6 +17,11 @@ export const handleAdamiteWebviewLaunch = () : void => {
             addHighlightsToEditor(annotationList, v); 
         }
     });
+}
+
+export const handleCopyText = (text: string) : void => {
+    vscode.env.clipboard.writeText(text);
+	setStoredCopyText(text);
 }
 
 export const scrollInEditor = (id: string) : void => {

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Reply from './reply';
-import { BiCaretUpSquare, BiCaretDownSquare } from 'react-icons/bi';
+import { VscChevronDown, VscChevronRight } from 'react-icons/vsc';
 import styles from '../../styles/annotation.module.css';
 
 interface Props {
@@ -22,8 +22,8 @@ const ReplyContainer: React.FC<Props> = ({ replying, replies, username, userId, 
         const replyString: string = showingReplies ? `Hide ${numberActiveReplies} ${numberActiveReplies === 1 ? 'reply' : 'replies'}` :
             `Show ${numberActiveReplies} ${numberActiveReplies === 1 ? 'reply' : 'replies'}`
         const icon: React.ReactElement<any> = !showingReplies ? 
-            ( <BiCaretDownSquare onClick={() => setShowingReplies(true)} className={styles['IconContainer']} /> ) : 
-            (<BiCaretUpSquare onClick={() => setShowingReplies(false)} className={styles['IconContainer']} /> )
+            ( <VscChevronRight onClick={() => setShowingReplies(true)} className={styles['IconContainer']} /> ) : 
+            (<VscChevronDown onClick={() => setShowingReplies(false)} className={styles['IconContainer']} /> )
         return (
             <div className={styles['replyShowHide']}>
                 {replyString} {icon}

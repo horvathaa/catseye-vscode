@@ -41,6 +41,10 @@
   margin-left: auto;
 }
 
+.overflowHidden {
+  overflow: hidden;
+}
+
 .profile {
   width: 18px;
   height: 18px;
@@ -216,20 +220,31 @@
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
     flex: 1;
-    min-width: 0;
+    /* min-width: 0; */
     transition: all 0.1s ease-in;
     position: relative;
     list-style-type: none;
     border-style: solid;
     border-width: 0.15em;
-    min-width: fit-content;
+    overflow-x: auto;
+    /* min-width: fit-content; */
     border-color: #d4d4d44f;
+}
+
+.AnchorBox {
+  display: flex;
+}
+
+.overflowButtonContainer {
+  display: flex;
+  justify-content: center;
 }
 
 .AnchorContainer {
   border: 0.25px solid rgb(239 255 201 / 20%);
   padding: 5px;
   border-radius: 4px;
+  overflow: inherit;
 }
 
 .LocationWrapper {

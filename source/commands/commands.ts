@@ -97,12 +97,13 @@ export const createNewAnnotation = () => {
     }
         
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
+	const newAnnoId: string = uuidv4();
     const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
     utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then((html: string) => {
 		const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);
 		const programmingLang: string = activeTextEditor.document.uri.toString().split('.')[activeTextEditor.document.uri.toString().split('.').length - 1];
 		const temp = {
-			id: uuidv4(),
+			id: newAnnoId,
 			filename: activeTextEditor.document.uri.toString(),
 			visiblePath: vscode.workspace.workspaceFolders ? 
 				utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) : activeTextEditor.document.uri.fsPath,
@@ -138,10 +139,11 @@ export const addNewHighlight = () => {
     const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
 	const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);
 	// Get the branch and commit 
+	const newAnnoId: string = uuidv4();
 	const programmingLang: string = activeTextEditor.document.uri.toString().split('.')[activeTextEditor.document.uri.toString().split('.').length - 1];
 	utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then(html => {
 		const temp = {
-			id: uuidv4(),
+			id: newAnnoId,
 			filename: activeTextEditor.document.uri.toString(),
 			visiblePath: vscode.workspace.workspaceFolders ? 
 				utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) :

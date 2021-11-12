@@ -77,6 +77,7 @@ export const updateReplies = (id: string, replies: {[key: string] : any}[]) : vo
             r.id = uuidv4();
         }
     });
+    
     const updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], replies: replies });
     const updatedList = annotationList.filter(a => a.id !== id).concat([updatedAnno]);
     setAnnotationList(updatedList);

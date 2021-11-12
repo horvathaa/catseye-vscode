@@ -101,10 +101,10 @@ export const sortAnnotationsByLocation = (annotationList: Annotation[], filename
 }
 
 export const getShikiCodeHighlighting = async (filename: string, anchorText: string): Promise<string> => {
-	const highlighter = await shiki.getHighlighter({ theme: 'dark-plus' });
-	const regexMatch = filename.match(/\.[0-9a-z]+$/i);
-	const pl = regexMatch ? regexMatch[0].replace(".", "") : "js";
-	const html = highlighter.codeToHtml(anchorText, pl);
+	const highlighter: any = await shiki.getHighlighter({ theme: 'dark-plus' });
+	const regexMatch: RegExpMatchArray | null = filename.match(/\.[0-9a-z]+$/i);
+	const pl: string = regexMatch ? regexMatch[0].replace(".", "") : "js";
+	const html: string = highlighter.codeToHtml(anchorText, pl);
 	// either return the marked-up HTML or just return the basic anchor text
 	return html ? html : anchorText;
 }
@@ -125,6 +125,7 @@ const updateHtml = async (annos: Annotation[], doc: vscode.TextDocument) : Promi
 	return updatedList;
 
 }
+
 
 export const handleSaveCloseEvent = async (annotationList: Annotation[], filePath: string = "", currentFile: string = "all", doc : vscode.TextDocument | undefined = undefined) : Promise<void> => {
 	const annosToSave: Annotation[] = annotationList.concat(outOfDateAnnotations, deletedAnnotations);

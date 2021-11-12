@@ -9,9 +9,20 @@ interface AnnoListProps {
     window: Window;
     currentFile: string;
     currentProject: string;
+    username: string;
+    userId: string;
   }
   
-const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, currentFile, currentProject }) => {
+const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, currentFile, currentProject, username, userId }) => {
+    // console.log('user', username, userId)
+    // const [clusters, setClusters] = React.useState([]);
+
+    React.useEffect(() => {
+        if(annotations.length) {
+            createClusters();
+        }
+    }, []);
+
     const showHideCluster = (e: any) => {
         const div = e.target.nextElementSibling;
         if(div.classList.contains(styles['showing'])) {
@@ -25,6 +36,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
     }
 
     const createClusters = () : React.ReactElement<any>[] => {
+        // console.log('calling this')
         let output : { [key: string] : any } = {
             'Current File': [],
             'Current Project': [],
@@ -51,14 +63,21 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
                     </div>
                     <div className={styles['showing']}>
                         {output[key].map((a: Annotation) => {
-                            return <ReactAnnotation key={a.id} annotation={a} vscode={vscode} window={window} />
+                            return <ReactAnnotation 
+                                      key={a.id} 
+                                      annotation={a} 
+                                      vscode={vscode} 
+                                      window={window} 
+                                      username={username}
+                                      userId={userId}
+                                    />
                         })}
                     </div>
                 </div>
             )
         }
-
         return jsx;
+        // setClusters(jsx);
     }
 
     return (

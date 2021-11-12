@@ -18,11 +18,18 @@ export const saveAnnotations = (annotationList: Annotation[]) : void => {
 export const getAnnotationsOnSignIn = async (user: firebase.User) : Promise<Annotation[]> => {
 	const db: firebase.firestore.Firestore = firebase.firestore();
 	const annotationsRef: firebase.firestore.CollectionReference = db.collection(DB_COLLECTIONS.VSCODE_ANNOTATIONS);
-	const docs: firebase.firestore.QuerySnapshot = await annotationsRef.where('authorId', '==', user.uid)
-							.where('deleted', '==', false)
-							.where('outOfDate', '==', false).get();
-	const annoDocs = getListFromSnapshots(docs);
-	const annotations: Annotation[] = annoDocs && annoDocs.length ? annoDocs.map((a: any) => {
+	const docs: firebase.firestore.QuerySnapshot = await annotationsRef
+														.where('authorId', '==', user.uid)
+														.where('deleted', '==', false)
+														.where('outOfDate', '==', false)
+														.get();
+	if(!docs || docs.empty) return []
+	// const { data } = await getGithubUsernameForAnnotations(getListFromSnapshots(docs));
+	const dataAnnotations = getListFromSnapshots(docs);
+	// const annotations: Annotation[] = data.annotations && data.annotations.length ? data.annotations.map((a: any) => {
+	// 	return buildAnnotation(a);
+	// }) : [];
+	const annotations: Annotation[] = dataAnnotations && dataAnnotations.length ? dataAnnotations.map((a: any) => {
 		return buildAnnotation(a);
 	}) : [];
 	return annotations;
@@ -32,8 +39,16 @@ export const fbSignInWithEmailAndPassword = async (email: string, password: stri
 	return await firebase.auth().signInWithEmailAndPassword(email, password);
 }
 
-export const getUserGithubData = async (githubData: {[key: string] : any} ) : Promise<firebase.functions.HttpsCallableResult> => {
+export const getUserGithubData = async ( githubData: {[key: string] : any} ) : Promise<firebase.functions.HttpsCallableResult> => {
 	return await firebase.functions().httpsCallable('getUserGithubData')(githubData);
+}
+
+export const setUserGithubAccount = async (githubUserData: {[key: string] : any}) : Promise<firebase.functions.HttpsCallableResult> => {
+	return await firebase.functions().httpsCallable('setUserGithubUsername')(githubUserData);
+}
+
+export const getGithubUsernameForAnnotations = async ( annotations: {[key: string] : any}[] ) : Promise<firebase.functions.HttpsCallableResult> => {
+	return await firebase.functions().httpsCallable('getGithubUsernamesForAnnotations')({ annotations: annotations });
 }
 
 export const fbSignOut = async () : Promise<void> => {

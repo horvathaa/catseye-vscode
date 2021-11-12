@@ -1,7 +1,7 @@
 import firebase from '../firebase/firebase';
 import Annotation from '../constants/constants';
-import { computeRangeFromOffset, createRangeFromAnnotation } from '../anchorFunctions/anchor';
-import { user, storedCopyText, annotationList, view, setAnnotationList, setOutOfDateAnnotationList, outOfDateAnnotations, deletedAnnotations } from '../extension';
+import { computeRangeFromOffset } from '../anchorFunctions/anchor';
+import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations } from '../extension';
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
 import { getAnnotationsOnSignIn } from '../firebase/functions/functions';
@@ -65,7 +65,9 @@ export const reconstructAnnotations = (annotationOffsetList: {[key: string] : an
 			gitBranch: a.anno.gitBranch,
 			gitCommit: a.anno.gitCommit,
 			anchorPreview: a.anno.anchorPreview,
-			projectName: a.anno.projectName
+			projectName: a.anno.projectName,
+			githubUsername: a.anno.githubUsername,
+			replies: a.anno.replies
 		}
 		return buildAnnotation(adjustedAnno);
 	});
@@ -99,10 +101,10 @@ export const sortAnnotationsByLocation = (annotationList: Annotation[], filename
 }
 
 export const getShikiCodeHighlighting = async (filename: string, anchorText: string): Promise<string> => {
-	const highlighter = await shiki.getHighlighter({ theme: 'dark-plus' });
-	const regexMatch = filename.match(/\.[0-9a-z]+$/i);
-	const pl = regexMatch ? regexMatch[0].replace(".", "") : "js";
-	const html = highlighter.codeToHtml(anchorText, pl);
+	const highlighter: any = await shiki.getHighlighter({ theme: 'dark-plus' });
+	const regexMatch: RegExpMatchArray | null = filename.match(/\.[0-9a-z]+$/i);
+	const pl: string = regexMatch ? regexMatch[0].replace(".", "") : "js";
+	const html: string = highlighter.codeToHtml(anchorText, pl);
 	// either return the marked-up HTML or just return the basic anchor text
 	return html ? html : anchorText;
 }
@@ -123,6 +125,7 @@ const updateHtml = async (annos: Annotation[], doc: vscode.TextDocument) : Promi
 	return updatedList;
 
 }
+
 
 export const handleSaveCloseEvent = async (annotationList: Annotation[], filePath: string = "", currentFile: string = "all", doc : vscode.TextDocument | undefined = undefined) : Promise<void> => {
 	const annosToSave: Annotation[] = annotationList.concat(outOfDateAnnotations, deletedAnnotations);
@@ -166,7 +169,9 @@ export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[
 			gitBranch: a.gitBranch ? a.gitBranch : "",
 			gitCommit: a.gitCommit ? a.gitCommit : "",
 			anchorPreview: a.anchorPreview ? a.anchorPreview : "",
-			projectName: a.projectName ? a.projectName : ""
+			projectName: a.projectName ? a.projectName : "",
+			githubUsername: a.githubUsername ? a.githubUsername : "",
+			replies: a.replies ? a.replies : []
 	}});
 }
 
@@ -220,25 +225,27 @@ export const getVisiblePath = (projectName: string, workspacePath: string | unde
 	return projectName;
 }
 
-export const updateAnnotationCommit = (commit: string, repo: string) : void => {
+export const updateAnnotationCommit = (commit: string, branch: string, repo: string) : void => {
 	annotationList.forEach((a: Annotation) => {
 		if(a.gitRepo === repo && a.gitCommit === 'localChange') {
 			a.gitCommit = commit;
+			a.gitBranch = branch;
 		}
 	});
 }
 
 export const generateGitMetaData = (gitApi: any) : {[key: string] : any} => {
-	let gitInfo: {[key: string] : any} = {};
 	gitApi.repositories?.forEach((r: any) => {
+		const currentProjectName: string = getProjectName(r?.rootUri?.path);
 		r?.state?.onDidChange(() => {
-			if(gitInfo[getProjectName(r?.rootUri?.path)].commit !== r.state.HEAD.commit) {
-				gitInfo[getProjectName(r?.rootUri?.path)].commit = r.state.HEAD.commit;
-				updateAnnotationCommit(r.state.HEAD.commit, r?.state?.remotes[0]?.fetchUrl);
+			if(gitInfo[currentProjectName].commit !== r.state.HEAD.commit || gitInfo[currentProjectName].branch !== r.state.HEAD.name) {
+				gitInfo[currentProjectName].commit = r.state.HEAD.commit;
+				gitInfo[currentProjectName].branch = r.state.HEAD.name;
+				updateAnnotationCommit(r.state.HEAD.commit, r.state.HEAD.name, r?.state?.remotes[0]?.fetchUrl);
 			}
 		});
-		gitInfo[getProjectName(r?.rootUri?.path)] = {
-			repo: r?.state?.remotes[0]?.fetchUrl ? r?.state?.remotes[0]?.fetchUrl : "",
+		gitInfo[currentProjectName] = {
+			repo: r?.state?.remotes[0]?.fetchUrl ? r?.state?.remotes[0]?.fetchUrl : r?.state?.remotes[0]?.pushUrl ? r?.state?.remotes[0]?.pushUrl : "",
 			branch: r?.state?.HEAD?.name ? r?.state?.HEAD?.name : "",
 			commit: r?.state?.HEAD?.commit ? r?.state?.HEAD?.commit : ""
 		}
@@ -265,22 +272,24 @@ export const getProjectName = (filename: string | undefined) : string => {
 }
 
 export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefined) : Annotation => {
-	const annoObj: { [key: string]: any } = range ?
-		{
-			...annoInfo,
-			startLine: range.start.line,
-			endLine: range.end.line,
-			startOffset: range.start.character,
-			endOffset: range.end.character,
-		}
-	: annoInfo.anchor ?
-		{
-			...annoInfo,
-			startLine: annoInfo.anchor.startLine,
-			endLine: annoInfo.anchor.endLine,
-			startOffset: annoInfo.anchor.startOffset,
-			endOffset: annoInfo.anchor.endOffset,
-		} : annoInfo;
+	const annoObj: { [key: string]: any } = 
+		range ?
+			{
+				...annoInfo,
+				startLine: range.start.line,
+				endLine: range.end.line,
+				startOffset: range.start.character,
+				endOffset: range.end.character,
+			}
+		: annoInfo.anchor ?
+			{
+				...annoInfo,
+				startLine: annoInfo.anchor.startLine,
+				endLine: annoInfo.anchor.endLine,
+				startOffset: annoInfo.anchor.startOffset,
+				endOffset: annoInfo.anchor.endOffset,
+			} 
+		: annoInfo;
 
 
 	return new Annotation(
@@ -303,7 +312,9 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 		annoObj['gitBranch'],
 		annoObj['gitCommit'],
 		annoObj['anchorPreview'],
-		annoObj['projectName']
+		annoObj['projectName'],
+		annoObj['githubUsername'],
+		annoObj['replies']
 	)
 }
 

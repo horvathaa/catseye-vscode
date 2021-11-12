@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import Annotation from '../constants/constants';
-import { buildAnnotation, sortAnnotationsByLocation, getVisiblePath, getFirstLineOfHtml, getProjectName } from '../utils/utils';
-import { annotationList, user, gitInfo, deletedAnnotations, setDeletedAnnotationList, annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList } from '../extension';
+import { buildAnnotation, sortAnnotationsByLocation } from '../utils/utils';
+import { tabSize, annotationList, deletedAnnotations, setDeletedAnnotationList, annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList, insertSpaces } from '../extension';
 
 
 export function getIndicesOf(searchStr: string, str: string, caseSensitive: boolean) {
@@ -37,41 +37,34 @@ export const getAnchorsInRange = (selection: vscode.Selection, annotationList: A
 	return anchorsInSelection;
 }
 
-export const translateChanges = (originalStartLine: number, originalEndLine: number, originalStartOffset: number, 
-	originalEndOffset: number, startLine: number, endLine: number, startOffset: number, 
-	endOffset: number, textLength: number, diff: number, rangeLength: number, 
-	anchorText: string, annotation: string, filename: string, visiblePath: string, id: string, createdTimestamp: number, html: string, doc: vscode.TextDocument, changeText: string,
-	annoGitData: {[key: string]: any}): Annotation => {
-		let newRange = { startLine: originalStartLine, endLine: originalEndLine, startOffset: originalStartOffset, endOffset: originalEndOffset };
-		let newAnchorText = anchorText;
+export const translateChanges = (
+		originalAnnotation: Annotation,
+		startLine: number, 
+		endLine: number, 
+		startOffset: number, 
+		endOffset: number, 
+		textLength: number, 
+		diff: number, 
+		rangeLength: number, 
+		doc: vscode.TextDocument, 
+		changeText: string,
+		)
+	: Annotation => {
+		const originalStartLine = originalAnnotation.startLine, originalEndLine = originalAnnotation.endLine, originalStartOffset = originalAnnotation.startOffset, originalEndOffset = originalAnnotation.endOffset;
+		let newRange = { startLine: originalStartLine, endLine: originalEndLine, startOffset: originalStartOffset, endOffset: originalEndOffset };	
 
+		const { anchorText } = originalAnnotation;
+		let newAnchorText = anchorText;
 		const startAndEndLineAreSameNoNewLine = originalStartLine === startLine && originalEndLine === endLine && !diff;
 		const startAndEndLineAreSameNewLine = originalStartLine === startLine && originalEndLine === endLine && diff;
 		const originalRange = new vscode.Range(new vscode.Position(originalStartLine, originalStartOffset), new vscode.Position(originalEndLine, originalEndOffset));
 		const changeRange = new vscode.Range(new vscode.Position(startLine, startOffset), new vscode.Position(endLine, endOffset)); 
 		// user deleted the anchor
-		const projectName: string = annotationList.filter((a: Annotation) => a.id === id).length ? annotationList.filter((a: Annotation) => a.id === id)[0].projectName : ""
-		const programmingLang: string = filename.split('.')[filename.split('.').length - 1];
+		// console.log('changeRange', changeRange, 'changeText', changeText, 'changetext len', changeText.length)
+
 		if(!textLength && changeRange.contains(originalRange)) {
-			const firstLine: string = getFirstLineOfHtml(html, !newAnchorText.includes('\n'));
 			const newAnno = {
-				id,
-				filename,
-				visiblePath,
-				anchorText,
-				annotation,
-				...newRange,
-				deleted: true,
-				outOfDate: false,
-				html,
-				authorId : user?.uid,
-				createdTimestamp: new Date().getTime(),
-				programmingLang: programmingLang,
-				gitRepo: annoGitData?.repo ? annoGitData?.repo : "",
-				gitBranch: annoGitData?.branch ? annoGitData?.branch : "",
-				gitCommit: annoGitData?.commit ? annoGitData?.commit : "",
-				anchorPreview: firstLine ? firstLine : "",
-				projectName: projectName && projectName !== "" ? projectName : getProjectName(doc.uri.fsPath)
+				...originalAnnotation, deleted: true
 			}
 			const deletedAnno = buildAnnotation(newAnno);
 			setDeletedAnnotationList(deletedAnnotations.concat([deletedAnno]));
@@ -80,19 +73,32 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 		}
 
 		let changeOccurredInRange : boolean = false;
+		const computedTabsize: number = typeof tabSize === 'number' ? tabSize : parseInt(tabSize);
 		// USER DOES NOT ADD NEWLINES
+		// checks for tab
+		if(!insertSpaces && (changeText.match(/\t/g) || []).length === textLength) {
+			// console.log('in not insertspaces if')
+			textLength = textLength - rangeLength;
+		}
+		else if(insertSpaces && (((changeText.match(/\s/g) || []).length / computedTabsize ) * computedTabsize) === textLength) {
+			// console.log('in insertspaces if')
+			textLength = textLength - rangeLength;
+		}
+		
+		// checks for autocomplete - tbh may be able to just do this check instead of the above 2
+		else if(textLength && rangeLength) {
+			textLength = textLength - rangeLength;
+		}
+		// 	console.log('hasduiahsdiuh')
 
-		// console.log('changeRange', changeRange, 'originalRange', originalRange);
-		// console.log('diff', diff);
-		// console.log('changeText', changeText);
 		// user adds/removes text at or before start of anchor on same line (no new lines)
-		if(startOffset < originalStartOffset && startLine === originalStartLine && !diff) {
-			newRange.startOffset = textLength ? originalStartOffset + textLength : originalStartOffset - rangeLength;
-			// console.log('user added text at beginning line - OSO', originalStartOffset, 'so', startOffset, 'tl', textLength,'rl', rangeLength);
-			if(startAndEndLineAreSameNoNewLine) {
-				newRange.endOffset = textLength ? originalEndOffset + textLength : originalEndOffset - rangeLength;
+		if(startOffset <= originalStartOffset && startLine === originalStartLine && !diff) {
+				// console.log('textLength', textLength, 'osl', originalStartOffset, 'rl', rangeLength);
+				newRange.startOffset = textLength ? originalStartOffset + textLength : originalStartOffset - rangeLength;
+				// console.log('new value', newRange.startOffset);
+				if(startAndEndLineAreSameNoNewLine) {
+					newRange.endOffset = textLength ? originalEndOffset + textLength : originalEndOffset - rangeLength;
 			}
-			// console.log('new range start offset update', newRange.startOffset);
 		}
 
 		// user adds/removes text at or before the end offset (no new lines)
@@ -152,27 +158,10 @@ export const translateChanges = (originalStartLine: number, originalEndLine: num
 			newAnchorText = doc.getText(createRangeFromObject(newRange));
 		}
 
-		// console.log('newRange', newRange);
-		let firstLine: string = getFirstLineOfHtml(html, !newAnchorText.includes('\n'));
 		const newAnno = {
-			id,
-			filename,
-			visiblePath,
-			anchorText: newAnchorText,
-			annotation,
-			...newRange,
-			deleted: false,
-			outOfDate: false,
-			html,
-			authorId : user?.uid,
-			createdTimestamp,
-			programmingLang: programmingLang,
-			gitRepo: annoGitData?.repo ? annoGitData?.repo : "",
-			gitBranch: annoGitData?.branch ? annoGitData?.branch : "",
-			gitCommit: annoGitData?.commit && !changeOccurredInRange ? annoGitData?.commit : "localChange",
-			anchorPreview: firstLine ? firstLine : "",
-			projectName: projectName && projectName !== "" ? projectName : getProjectName(doc.uri.fsPath)
+			...originalAnnotation, anchorText: newAnchorText, ...newRange
 		}
+		// console.log('what', newAnno);
 		return buildAnnotation(newAnno)
 
 	}
@@ -187,9 +176,8 @@ export function createRangeFromObject(obj: {[key: string] : any}) : vscode.Range
 
 const createDecorationOptions = (ranges: { [key: string] : any }[]) : vscode.DecorationOptions[] => {
 	return ranges.map(r => {
-		const annoContent: string = r.annotation === '' ? r.annotation : r.annotation + '  '; // add a new line so the show annotation button is below
 		let markdownArr = new Array<vscode.MarkdownString>();
-		markdownArr.push(new vscode.MarkdownString(annoContent));
+		markdownArr.push(new vscode.MarkdownString(r.annotation));
 		const showAnnoInWebviewCommand = vscode.Uri.parse(
 			`command:adamite.showAnnoInWebview?${encodeURIComponent(JSON.stringify(r.id))}`
 		);

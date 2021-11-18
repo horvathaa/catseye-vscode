@@ -1,9 +1,11 @@
 import * as vscode from 'vscode';
 import firebase from 'firebase';
+import Annotation from '../constants/constants';
 import { user, gitInfo, setStoredCopyText, annotationList, setAnnotationList, view, setView, tempAnno, setTempAnno, annotationDecorations } from '../extension';
 import { initializeAnnotations, handleSaveCloseEvent, saveAnnotations, removeOutOfDateAnnotations, buildAnnotation, sortAnnotationsByLocation, getProjectName, getShikiCodeHighlighting } from '../utils/utils';
 import { addHighlightsToEditor, createRangeFromAnnotation } from '../anchorFunctions/anchor';
 import { v4 as uuidv4 } from 'uuid';
+// import Anchor from '../view/app/components/annotationComponents/anchor';
 
 export const handleAdamiteWebviewLaunch = () : void => {
     const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
@@ -24,7 +26,7 @@ export const handleCopyText = (text: string) : void => {
 	setStoredCopyText(text);
 }
 
-export const scrollInEditor = (id: string) : void => {
+export const handleScrollInEditor = (id: string) : void => {
     const anno = annotationList.filter(anno => anno.id === id)[0];
     if(anno) {
         const range = createRangeFromAnnotation(anno);
@@ -41,7 +43,33 @@ export const scrollInEditor = (id: string) : void => {
     }
 }
 
-export const createAnnotation = (annotationContent: string) : void => {
+export const handleExportAnnotationAsComment = async (annoId: string) : Promise<void> => {
+    const anno: Annotation = annotationList.filter(a => a.id === annoId)[0];
+    if(!anno) return;
+    const startingRange: vscode.Range = createRangeFromAnnotation(anno);
+    const insertionPoint: vscode.Position = new vscode.Position(startingRange.start.line, 0);
+    const endingPoint: vscode.Position = new vscode.Position(startingRange.start.line, 1); 
+    const TextDocument: vscode.TextDocument = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === anno?.filename)[0].document
+    const TextEditor: vscode.TextEditor = await vscode.window.showTextDocument(TextDocument, { preserveFocus: false, selection: new vscode.Range(insertionPoint, endingPoint) });
+    await vscode.commands.executeCommand('editor.action.insertLineBefore');
+    const didInsert: boolean = await TextEditor.edit((editBuilder: vscode.TextEditorEdit) => {
+        const startingRange: vscode.Range = createRangeFromAnnotation(anno);
+        const insertionPoint: vscode.Position = new vscode.Position(startingRange.start.line,  0); 
+        editBuilder.insert(insertionPoint, anno.annotation);
+    });
+    // const thisIsStupid: vscode.Selection = new vscode.Selection(insertionPoint, endingPoint);
+    if(didInsert)
+    vscode.commands.executeCommand('editor.action.commentLine').then((value) => {
+        const updatedAnno: Annotation = buildAnnotation({ ...anno, startLine: anno.startLine + 1, endLine: anno.endLine + 1 });
+        console.log('updatedAnno', updatedAnno);
+        setAnnotationList(annotationList.filter(a => a.id !== annoId).concat([updatedAnno]));
+        console.log(annotationList);
+        addHighlightsToEditor(annotationList, TextEditor);
+        view?.updateDisplay(annotationList);
+    })
+}
+
+export const handleCreateAnnotation = (annotationContent: string) : void => {
     if(!tempAnno) return
     getShikiCodeHighlighting(tempAnno.filename.toString(), tempAnno.anchorText).then(html => {
         if(tempAnno) {
@@ -58,13 +86,20 @@ export const createAnnotation = (annotationContent: string) : void => {
     });
 }
 
-export const updateAnnotation = (id: string, annotationContent: string) : void => {
-    const updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], annotation: annotationContent });
+export const handleUpdateAnnotation = (id: string, key: string, value: any) : void => {
+    if(key === 'replies') {
+        value.forEach((r: {[key: string]: any}) => {
+            if(r.id === "") {
+                r.id = uuidv4();
+            }
+        });
+    }
+    const updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], [key]: value });
     const updatedList = annotationList.filter(a => a.id !== id).concat([updatedAnno]);
     setAnnotationList(updatedList);
 }
 
-export const deleteAnnotation = (id: string) : void => {
+export const handleDeleteAnnotation = (id: string) : void => {
     const updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], deleted: true });
     const updatedList = annotationList.filter(a => a.id !== id).concat([updatedAnno]);
     saveAnnotations(updatedList, ""); // bad - that should point to JSON but we are also not using that rn so whatever
@@ -76,19 +111,15 @@ export const deleteAnnotation = (id: string) : void => {
     }
 }
 
-export const updateReplies = (id: string, replies: {[key: string] : any}[]) : void => {
-    replies.forEach((r: {[key: string]: any}) => {
-        if(r.id === "") {
-            r.id = uuidv4();
-        }
-    });
-    
-    const updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], replies: replies });
-    const updatedList = annotationList.filter(a => a.id !== id).concat([updatedAnno]);
-    setAnnotationList(updatedList);
-}
+// export const handleUpdateReplies = (id: string, replies: {[key: string] : any}[]) : void => {
 
-export const cancelAnnotation = () : void => {
+    
+//     const updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], replies: replies });
+//     const updatedList = annotationList.filter(a => a.id !== id).concat([updatedAnno]);
+//     setAnnotationList(updatedList);
+// }
+
+export const handleCancelAnnotation = () : void => {
     // reset temp object and re-render
     setTempAnno(null);
     view?.updateDisplay(removeOutOfDateAnnotations(annotationList));

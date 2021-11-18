@@ -7,6 +7,7 @@ import Annotation from './constants/constants';
 import * as commands from './commands/commands';
 import * as eventHandlers from './listeners/listeners';
 import * as utils from './utils/utils';
+import { AdamiteTerminalLinkProvider } from './adamiteTerminalLinkProvider/adamiteTerminalLinkProvider';
 
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
 export const gitApi = gitExtension?.getAPI(1);
@@ -109,6 +110,8 @@ export function activate(context: vscode.ExtensionContext) {
 	let didCloseListenerDisposable = vscode.workspace.onDidCloseTextDocument(eventHandlers.handleDidSaveDidClose)
 	let didChangeTextDocumentDisposable = vscode.workspace.onDidChangeTextDocument(eventHandlers.handleDidChangeTextDocument)
 	
+	// let didStartDebugSessionDisposable = vscode.debug.onDidStartDebugSession(eventHandlers.handleDidStartDebugSession);
+
 	/*************************************************************************************/
 	/**************************************** COMMANDS ***********************************/
 	/*************************************************************************************/
@@ -121,9 +124,23 @@ export function activate(context: vscode.ExtensionContext) {
 	let copyDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', commands.overriddenClipboardCopyAction);
 	let cutDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCutAction', commands.overriddenClipboardCutAction);
 
+
+	/*************************************************************************************/
+	/**************************************** PROVIDERS *********************************/
+	/*************************************************************************************/
+
+	let terminalLinkProviderDisposable = vscode.window.registerTerminalLinkProvider(new AdamiteTerminalLinkProvider());
+
 	/*************************************************************************************/
 	/**************************************** DISPOSABLES ********************************/
 	/*************************************************************************************/
+
+	context.subscriptions.push(didChangeVisibleListenerDisposable);
+	context.subscriptions.push(didChangeActiveEditorListenerDisposable);
+	context.subscriptions.push(didChangeTextEditorSelection);
+	context.subscriptions.push(didSaveListenerDisposable);
+	context.subscriptions.push(didCloseListenerDisposable);
+	context.subscriptions.push(didChangeTextDocumentDisposable);
 
 	context.subscriptions.push(createViewDisposable);
 	context.subscriptions.push(annotateDisposable);
@@ -132,12 +149,8 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(copyDisposable);
 	context.subscriptions.push(cutDisposable);
 	
-	context.subscriptions.push(didChangeVisibleListenerDisposable);
-	context.subscriptions.push(didChangeActiveEditorListenerDisposable);
-	context.subscriptions.push(didChangeTextEditorSelection);
-	context.subscriptions.push(didSaveListenerDisposable);
-	context.subscriptions.push(didCloseListenerDisposable);
-	context.subscriptions.push(didChangeTextDocumentDisposable);
+	context.subscriptions.push(terminalLinkProviderDisposable);
+	
 }
 
 // // this method is called when your extension is deactivated

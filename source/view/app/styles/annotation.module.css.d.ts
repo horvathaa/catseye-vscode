@@ -15,6 +15,10 @@ interface CssExports {
   'IconContainer': string;
   'LocationContainer': string;
   'LocationWrapper': string;
+  'Output': string;
+  'OutputContainer': string;
+  'OutputHTMLContainer': string;
+  'OutputsContainer': string;
   'Pad': string;
   'TitleContainer': string;
   'active': string;
@@ -34,6 +38,7 @@ interface CssExports {
   'replyContainer': string;
   'replyShowHide': string;
   'row': string;
+  'selected': string;
   'show': string;
   'submit': string;
   'textbox': string;

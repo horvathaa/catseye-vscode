@@ -50,7 +50,8 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
   const handleCopyText = (e: Event) : void => {
     const keyboardEvent = (e as KeyboardEvent);
     if(window && (keyboardEvent.code === 'KeyC' || keyboardEvent.code === 'KeyX') && keyboardEvent.ctrlKey) {
-      const copiedText: string = window.getSelection().toString();
+      const copiedText: string | undefined = window.getSelection()?.toString();
+      if(copiedText)
       vscode.postMessage({
         command: 'copyTextFromWebview',
         text: copiedText

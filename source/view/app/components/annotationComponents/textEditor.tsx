@@ -8,7 +8,7 @@ interface Props {
 }
 
 const TextEditor: React.FC<Props> = ({ content, submissionHandler, cancelHandler }) => {
-    const [text, setText] = React.useState(content);
+    const [text, setText] = React.useState<any>(content);
 
     const updateAnnotationContent = (e: React.SyntheticEvent) => {
         if(typeof text === 'string') {

@@ -11,12 +11,12 @@ interface Props {
 const AuthorOperationButtons: React.FC<Props> = ({ editAnnotation = () => {}, deleteAnnotation = () => {} }) => {
     return (
         <React.Fragment>
-            <div onClick={editAnnotation} className={styles['DropdownItemOverwrite']}>
+            <div onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); editAnnotation(); }} className={styles['DropdownItemOverwrite']}>
                  <div className={styles['DropdownIconsWrapper']}>
                      <AiOutlineEdit className={styles['profileMenu']} />
                  </div>
              </div>
-             <div onClick={deleteAnnotation} className={styles['DropdownItemOverwrite']}>
+             <div onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); deleteAnnotation(e); }} className={styles['DropdownItemOverwrite']}>
                  <div className={styles['DropdownIconsWrapper']}>
                      <BsTrash className={styles['profileMenu']} />
                  </div>

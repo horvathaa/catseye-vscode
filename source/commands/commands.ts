@@ -40,7 +40,7 @@ export const createView = (context: vscode.ExtensionContext) => {
 				switch(message.command) {
 					case 'scrollInEditor': {
 						const { id } = message;
-						viewHelper.scrollInEditor(id);
+						viewHelper.handleScrollInEditor(id);
 						break;
 					}
 					case 'emailAndPassReceived': {
@@ -52,28 +52,28 @@ export const createView = (context: vscode.ExtensionContext) => {
 						const { text } = message;
 						viewHelper.handleCopyText(text);
 					}
+					case 'exportAnnotationAsComment': {
+						const { annoId } = message;
+						viewHelper.handleExportAnnotationAsComment(annoId);
+						break;
+					}
 					case 'createAnnotation': {
 						const { anno } = message;
-						viewHelper.createAnnotation(anno);
+						viewHelper.handleCreateAnnotation(anno);
 						break;
 					}
 					case 'updateAnnotation': {
-						const { annoId, newAnnoContent } = message;
-						viewHelper.updateAnnotation(annoId, newAnnoContent);
-						break;
-					}
-					case 'updateReplies': {
-						const { annoId, replies } = message;
-						viewHelper.updateReplies(annoId, replies);
+						const { annoId, key, value } = message;
+						viewHelper.handleUpdateAnnotation(annoId, key, value);
 						break;
 					}
 					case 'deleteAnnotation': {
 						const { annoId } = message;
-						viewHelper.deleteAnnotation(annoId);
+						viewHelper.handleDeleteAnnotation(annoId);
 						break;
 					}
 					case 'cancelAnnotation': {
-						viewHelper.cancelAnnotation();
+						viewHelper.handleCancelAnnotation();
 						break;
 					}
 					default: {
@@ -125,7 +125,8 @@ export const createNewAnnotation = () => {
 			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
 			projectName: projectName,
 			githubUsername: gitInfo.author,
-			replies: []
+			replies: [],
+			outputs: []
 		};
 		setTempAnno(utils.buildAnnotation(temp, r));
         view?.createNewAnno(html, annotationList);
@@ -166,7 +167,8 @@ export const addNewHighlight = () => {
 			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
 			projectName: projectName,
 			githubUsername: gitInfo.author,
-			replies: []
+			replies: [],
+			outputs: []
 		};
 
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));

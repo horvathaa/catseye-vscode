@@ -141,4 +141,15 @@ export default class ViewLoader {
       })
     }
   }
+
+  public addTerminalMessage(content: string) {
+    if(this._panel && this._panel.webview) {
+      this._panel.webview.postMessage({
+        command: 'addTerminalMessage',
+        payload: {
+          content
+        }
+      })
+    }
+  }
 }

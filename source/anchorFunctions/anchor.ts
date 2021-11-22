@@ -3,6 +3,7 @@ import Annotation from '../constants/constants';
 import { buildAnnotation, sortAnnotationsByLocation } from '../utils/utils';
 import { annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList } from '../extension';
 import { userDeletedAnchor, userAutocompletedOrCommented, userChangedTextBeforeStart, userChangedTextBeforeEnd, userChangedLinesBeforeStart, userChangedLinesInMiddle, shrinkOrExpandBackOfRange, shrinkOrExpandFrontOfRange } from './translateChangesHelpers';
+import { AnchorHTMLAttributes } from 'react';
 
 export function getIndicesOf(searchStr: string, str: string, caseSensitive: boolean) {
     var searchStrLen = searchStr.length;
@@ -39,10 +40,7 @@ export const getAnchorsInRange = (selection: vscode.Selection, annotationList: A
 
 export const translateChanges = (
 		originalAnnotation: Annotation,
-		startLine: number, 
-		endLine: number, 
-		startOffset: number, 
-		endOffset: number, 
+		changeRange: vscode.Range, 
 		textLength: number, 
 		diff: number, 
 		rangeLength: number, 
@@ -55,12 +53,12 @@ export const translateChanges = (
 		let originalAnchor = newRange;
 		const { anchorText } = originalAnnotation;
 		let newAnchorText = anchorText;
-		const startAndEndLineAreSameNoNewLine = originalStartLine === startLine && originalEndLine === endLine && !diff;
-		const startAndEndLineAreSameNewLine = originalStartLine === startLine && originalEndLine === endLine && (diff > 0 || diff < 0);
+		const startAndEndLineAreSameNoNewLine = originalStartLine === changeRange.start.line && originalEndLine === changeRange.end.line && !diff;
+		const startAndEndLineAreSameNewLine = originalStartLine === changeRange.start.line && originalEndLine === changeRange.end.line && (diff > 0 || diff < 0);
 		const originalRange = new vscode.Range(new vscode.Position(originalStartLine, originalStartOffset), new vscode.Position(originalEndLine, originalEndOffset));
-		const changeRange = new vscode.Range(new vscode.Position(startLine, startOffset), new vscode.Position(endLine, endOffset)); 
+		// const changeRange = new vscode.Range(new vscode.Position(startLine, startOffset), new vscode.Position(endLine, endOffset)); 
 		// user deleted the anchor
-		console.log('originalRange', newRange);
+
 		// console.log('changeRange', changeRange, 'changeText', changeText, 'changetext len', changeText.length)
 		const isDeleteOperation: boolean = !textLength;
 		if(isDeleteOperation && changeRange.contains(originalRange)) {
@@ -71,45 +69,51 @@ export const translateChanges = (
 
 		let changeOccurredInRange : boolean = false;
 		textLength = userAutocompletedOrCommented(changeText, textLength, rangeLength);
-		console.log('computed text length', textLength);
 		// user adds/removes text at or before start of anchor on same line (no new lines)
-		if(startOffset <= originalStartOffset && startLine === originalStartLine && !diff) {
+		if(changeRange.start.character <= originalStartOffset && changeRange.start.line === originalStartLine && !diff) {
 			console.log('userChangedTextBeforeStart');
-			newRange = userChangedTextBeforeStart(newRange, originalAnchor, isDeleteOperation, textLength, rangeLength, startAndEndLineAreSameNoNewLine);
+			newRange = userChangedTextBeforeStart(newRange, originalAnchor, isDeleteOperation, textLength, rangeLength, startAndEndLineAreSameNoNewLine, originalAnchor.startOffset === changeRange.start.character);
+			if(originalAnchor.startOffset === changeRange.start.character) changeOccurredInRange = true;
 		}
 
 		// user adds/removes text at or before the end offset (no new lines)
-		else if(endLine === originalEndLine && (endOffset <= originalEndOffset || startOffset <= originalEndOffset) && !diff) {
+		else if(changeRange.end.line === originalEndLine && (changeRange.end.character <= originalEndOffset || changeRange.start.character <= originalEndOffset) && !diff) {
 			console.log('userChangedTextBeforeEnd');
-			newRange = userChangedTextBeforeEnd(newRange, originalAnchor, isDeleteOperation, textLength, rangeLength);
+			newRange = userChangedTextBeforeEnd(newRange, originalAnchor, isDeleteOperation, textLength, rangeLength, changeRange);
 			changeOccurredInRange = true;
 		}
 
 		// USER ADDED OR REMOVED LINE
 
 		// user added lines above start of range
-		if (startLine < originalStartLine && diff) {
+		if (changeRange.start.line < originalStartLine && diff) {
 			console.log('userChangedLinesBeforeStart');
 			newRange = userChangedLinesBeforeStart(newRange, originalAnchor, diff);
 		}
 
 		// user added/removed line in middle of the anchor -- we are not including end offset
-		if(startLine >= originalStartLine && endLine <= originalEndLine && diff) {
+		if(changeRange.start.line >= originalStartLine && changeRange.end.line <= originalEndLine && diff) {
 			changeOccurredInRange = true;
 			console.log('userChangedLinesInMiddle');
 			newRange = userChangedLinesInMiddle(newRange, originalAnchor, changeRange, diff, startAndEndLineAreSameNewLine, anchorText, changeText, textLength);
 		}
-		else if(startLine >= originalStartLine && startLine <= originalEndLine && endLine >= originalEndLine) {
+		else if(changeRange.start.line >= originalStartLine && changeRange.start.line <= originalEndLine && changeRange.end.line >= originalEndLine && diff) {
 			console.log('shrinkOrExpandBackOfRange');
 			newRange = shrinkOrExpandBackOfRange(newRange, changeRange, diff, changeText, anchorText, rangeLength, originalAnchor);
 		}
-		else if(endLine >= originalStartLine && endLine <= originalEndLine && startLine <= originalEndLine) {
+		else if(changeRange.end.line >= originalStartLine && changeRange.end.line <= originalEndLine && changeRange.start.line <=  originalEndLine && diff) {
 			console.log('shrinkOrExpandFrontOfRange');
 			newRange = shrinkOrExpandFrontOfRange(newRange, changeRange, diff, changeText, anchorText, rangeLength, originalAnchor);
 		}
 
+		if(newRange.endOffset === 0 || doc.getText(new vscode.Range(newRange.endLine, 0, newRange.endLine, newRange.endOffset)).replace(/\s/g, '').length === 0) {
+			// may want to do this until we hit a line with text (e.g., while loop instead of just doing this check once)
+			newRange.endLine = newRange.endLine - 1;
+			newRange.endOffset = doc.getText(doc.validateRange(new vscode.Range(newRange.endLine, 0, newRange.endLine, 500))).length;
+		}
+
 		// user changed text somewhere inside the range - need to update text
-		if(startLine >= originalStartLine && endLine <= originalEndLine && !diff) {
+		if(changeRange.start.line >= originalStartLine && changeRange.end.line <= originalEndLine && !diff) {
 			changeOccurredInRange = true;
 		}
 
@@ -117,10 +121,12 @@ export const translateChanges = (
 			newAnchorText = doc.getText(createRangeFromObject(newRange));
 		}
 
+		console.log('final range', newRange);
+
 		const newAnno = {
 			...originalAnnotation, anchorText: newAnchorText, ...newRange
 		}
-		// console.log('what', newAnno);
+
 		return buildAnnotation(newAnno)
 
 	}

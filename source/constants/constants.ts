@@ -59,3 +59,10 @@ export default class Annotation {
 		this.outputs = outputs;
 	}
 }
+
+export interface Anchor {
+    startLine: number,
+    endLine: number,
+    startOffset: number,
+    endOffset: number
+}

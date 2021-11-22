@@ -15,14 +15,15 @@ interface Props {
   window: Window;
   username: string;
   userId: string;
+  initialSelected: boolean;
   transmitSelected: (id: string) => void;
 }
 
-const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username, userId, transmitSelected }) => {
+const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username, userId, initialSelected, transmitSelected }) => {
   const [anno, setAnno] = React.useState<Annotation>(annotation);
   const [edit, setEdit] = React.useState<boolean>(false);
   const [replying, setReplying] = React.useState<boolean>(false);
-  const [selected, setSelected] = React.useState<boolean>(false);
+  const [selected, setSelected] = React.useState<boolean>(initialSelected);
 
   const selectedRef: React.MutableRefObject<boolean> = React.useRef(selected);
   const annoRef: React.MutableRefObject<Annotation> = React.useRef(anno);

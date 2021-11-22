@@ -1,6 +1,6 @@
 import * as React from 'react';
 import styles from '../../styles/annotation.module.css';
-import { formatTimestamp } from '../../viewUtils';
+import { formatTimestamp } from '../../utils/viewUtils';
 
 interface Props {
     githubUsername: string,

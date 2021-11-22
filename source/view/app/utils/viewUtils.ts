@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import Annotation from '../../constants/constants';
+import Annotation from '../../../constants/constants';
+
 
 export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefined) : Annotation => {
 	const annoObj : { [key: string]: any } = range ? 
@@ -39,7 +40,8 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 		annoObj['anchorPreview'],
 		annoObj['projectName'],
 		annoObj['githubUsername'],
-		annoObj['replies']
+		annoObj['replies'],
+		annoObj['outputs']
 	)
 }
 

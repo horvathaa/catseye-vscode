@@ -19,7 +19,7 @@ interface Props {
 }
 
 const Reply : React.FC<Props> = ({ id = undefined, replyContent = undefined, createdTimestamp, githubUsername, userId, authorId, replying, deleted, submissionHandler, cancelHandler, deleteHandler }) => {
-    const [editing, setEditing] = React.useState(false);
+    const [editing, setEditing] = React.useState<boolean>(false);
     const [reply, setReply] = React.useState({
         id: id ? id : "",
         replyContent: replyContent ? replyContent : "",
@@ -30,7 +30,7 @@ const Reply : React.FC<Props> = ({ id = undefined, replyContent = undefined, cre
     });
 
     React.useEffect(() => {
-        if(replyContent !== reply.replyContent) {
+        if(replyContent && replyContent !== reply.replyContent) {
             setReply({ ...reply, replyContent: replyContent });
             setEditing(false);
         }

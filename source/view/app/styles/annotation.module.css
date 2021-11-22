@@ -181,7 +181,7 @@
 }
 
 .replyShowHide {
-  margin-left: auto;
+  /* margin-left: auto; */
   display: flex;
   align-content: center;
   justify-content: flex-start;
@@ -238,6 +238,14 @@
   display: flex;
 }
 
+.snapshotContainer {
+  display: flex;
+}
+
+.outerSnapshotContainer {
+  display: block;
+}
+
 .AnnotationContainer {
     padding: 5px;
     background: var(--vscode-editor-background);
@@ -281,6 +289,19 @@
   color: white;
   cursor: pointer;
   overflow: inherit;
+  display: flex;
+}
+
+.arrowBox {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.arrowBox-leftAlign {
+  display: flex;
+  align-items: center;
+  margin-right: auto;
 }
 
 .OutputHTMLContainer {

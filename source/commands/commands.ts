@@ -57,6 +57,11 @@ export const createView = (context: vscode.ExtensionContext) => {
 						viewHelper.handleExportAnnotationAsComment(annoId);
 						break;
 					}
+					case 'snapshotCode': {
+						const { annoId } = message;
+						viewHelper.handleSnapshotCode(annoId);
+						break;
+					}
 					case 'createAnnotation': {
 						const { anno } = message;
 						viewHelper.handleCreateAnnotation(anno);
@@ -126,7 +131,9 @@ export const createNewAnnotation = () => {
 			projectName: projectName,
 			githubUsername: gitInfo.author,
 			replies: [],
-			outputs: []
+			outputs: [],
+			originalCode: html,
+			codeSnapshots: []
 		};
 		setTempAnno(utils.buildAnnotation(temp, r));
         view?.createNewAnno(html, annotationList);
@@ -168,7 +175,9 @@ export const addNewHighlight = () => {
 			projectName: projectName,
 			githubUsername: gitInfo.author,
 			replies: [],
-			outputs: []
+			outputs: [],
+			originalCode: html,
+			codeSnapshots: []
 		};
 
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));

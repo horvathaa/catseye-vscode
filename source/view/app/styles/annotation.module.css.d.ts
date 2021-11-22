@@ -22,6 +22,8 @@ interface CssExports {
   'Pad': string;
   'TitleContainer': string;
   'active': string;
+  'arrowBox': string;
+  'arrowBox-leftAlign': string;
   'btn-primary': string;
   'buttonRow': string;
   'cancel': string;
@@ -29,6 +31,7 @@ interface CssExports {
   'disabled': string;
   'dropdown': string;
   'dropdown-toggle': string;
+  'outerSnapshotContainer': string;
   'overflowButtonContainer': string;
   'overflowHidden': string;
   'profile': string;
@@ -40,6 +43,7 @@ interface CssExports {
   'row': string;
   'selected': string;
   'show': string;
+  'snapshotContainer': string;
   'submit': string;
   'textbox': string;
   'textboxContainer': string;

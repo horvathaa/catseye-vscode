@@ -68,7 +68,9 @@ export const reconstructAnnotations = (annotationOffsetList: {[key: string] : an
 			projectName: a.anno.projectName,
 			githubUsername: a.anno.githubUsername,
 			replies: a.anno.replies,
-			outputs: a.anno.outputs
+			outputs: a.anno.outputs,
+			originalCode: a.anno.originalCode,
+			codeSnapshots: a.anno.codeSnapshots
 		}
 		return buildAnnotation(adjustedAnno);
 	});
@@ -173,7 +175,9 @@ export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[
 			projectName: a.projectName ? a.projectName : "",
 			githubUsername: a.githubUsername ? a.githubUsername : "",
 			replies: a.replies ? a.replies : [],
-			outputs: a.outputs ? a.outputs : []
+			outputs: a.outputs ? a.outputs : [],
+			originalCode: a.originalCode ? a.originalCode : "",
+			codeSnapshots: a.codeSnapshots ? a.codeSnapshots : []
 	}});
 }
 
@@ -317,7 +321,9 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 		annoObj['projectName'],
 		annoObj['githubUsername'],
 		annoObj['replies'],
-		annoObj['outputs']
+		annoObj['outputs'],
+		annoObj['originalCode'],
+		annoObj['codeSnapshots']
 	)
 }
 

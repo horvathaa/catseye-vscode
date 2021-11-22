@@ -14,14 +14,17 @@ interface AnnoListProps {
   }
   
 const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, currentFile, currentProject, username, userId }) => {
-    // console.log('user', username, userId)
-    // const [clusters, setClusters] = React.useState([]);
+    const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
 
     React.useEffect(() => {
         if(annotations.length) {
             createClusters();
         }
     }, []);
+
+    const transmitSelected = (id: string) : void => {
+        selectedIds.includes(id) ? setSelectedIds((selectedIds) => selectedIds.filter(annoId => annoId !== id)) : setSelectedIds((selectedIds) => selectedIds.concat([id]));
+    }
 
     const showHideCluster = (e: any) => {
         const div = e.target.nextElementSibling;
@@ -36,21 +39,24 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
     }
 
     const createClusters = () : React.ReactElement<any>[] => {
-        // console.log('calling this')
         let output : { [key: string] : any } = {
+            'Selected': [],
             'Current File': [],
             'Current Project': [],
             'Other Projects': []
         };
         annotations.forEach((a: Annotation) => {
-            if(a.filename === currentFile) {
+            if(selectedIds.includes(a.id)) {
+                output['Selected'].push(a);
+            }
+            else if(a.filename === currentFile) {
                 output['Current File'].push(a);
             }
             else if(a.projectName === currentProject) {
-                output['Current Project'].push(a)
+                output['Current Project'].push(a);
             }
             else {
-                output['Other Projects'].push(a)
+                output['Other Projects'].push(a);
             }
         });
         const jsx : React.ReactElement[] = [];
@@ -63,13 +69,15 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
                     </div>
                     <div className={styles['showing']}>
                         {output[key].map((a: Annotation) => {
-                            return <ReactAnnotation 
-                                      key={a.id} 
+                            return <ReactAnnotation
+                                      key={'annotation'+a.id} 
                                       annotation={a} 
                                       vscode={vscode} 
                                       window={window} 
                                       username={username}
                                       userId={userId}
+                                      initialSelected={selectedIds.includes(a.id)}
+                                      transmitSelected={transmitSelected}
                                     />
                         })}
                     </div>
@@ -77,7 +85,6 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
             )
         }
         return jsx;
-        // setClusters(jsx);
     }
 
     return (

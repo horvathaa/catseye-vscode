@@ -131,6 +131,10 @@
   cursor: default;
 }
 
+.selected {
+  box-shadow: 2.5px 2.5px grey;
+}
+
 .userProfile {
   width: 30px;
   height: 30px;
@@ -139,6 +143,28 @@
   margin: auto;
   color: #1d1e24c4;
   cursor: pointer;
+}
+
+.OutputContainer {
+  display: block;
+  padding: 4px;
+  list-style-type: none;
+  border-top: 0.05em solid #ffffff6e;
+  overflow: auto;
+}
+
+.Output {
+  font-family: 'Courier New', Courier, monospace;
+  color: white;
+  font-size: small;
+  padding: 4px;
+}
+
+.OutputsContainer {
+  /* padding: 2px; */
+  margin: auto;
+  /* text-align: center; */
+  cursor: default;
 }
 
 .userProfilePhoto {
@@ -254,6 +280,13 @@
 .HTMLContainer {
   color: white;
   cursor: pointer;
+  overflow: inherit;
+}
+
+.OutputHTMLContainer {
+  border: 0.25px solid rgb(239 255 201 / 20%);
+  padding: 5px;
+  border-radius: 4px;
 }
 
 .AnchorButtonContainer {

@@ -1,7 +1,6 @@
 import * as React from 'react';
 import Reply from './reply';
-import { VscChevronDown, VscChevronRight } from 'react-icons/vsc';
-import styles from '../../styles/annotation.module.css';
+import { collapseExpandToggle } from '../../utils/viewUtilsTsx';
 
 interface Props {
     replying: boolean;
@@ -14,22 +13,9 @@ interface Props {
 }
 
 const ReplyContainer: React.FC<Props> = ({ replying, replies, username, userId, submitReply, cancelReply, deleteReply }) => {
-    const [showingReplies, setShowingReplies] = React.useState(false);
-    const numberActiveReplies = replies.filter(r => !r.deleted).length
-    const hasReplies = replies && numberActiveReplies;
-    
-    const collapseExpandToggle = () :  React.ReactElement<any> => {
-        const replyString: string = showingReplies ? `Hide ${numberActiveReplies} ${numberActiveReplies === 1 ? 'reply' : 'replies'}` :
-            `Show ${numberActiveReplies} ${numberActiveReplies === 1 ? 'reply' : 'replies'}`
-        const icon: React.ReactElement<any> = !showingReplies ? 
-            ( <VscChevronRight onClick={() => setShowingReplies(true)} className={styles['IconContainer']} /> ) : 
-            (<VscChevronDown onClick={() => setShowingReplies(false)} className={styles['IconContainer']} /> )
-        return (
-            <div className={styles['replyShowHide']}>
-                {replyString} {icon}
-            </div>
-        )
-    }
+    const [showingReplies, setShowingReplies] = React.useState<boolean>(false);
+    const activeReplies = replies.filter(r => !r.deleted);
+    const hasReplies = replies && activeReplies.length;
 
     return (
         <div>
@@ -44,11 +30,12 @@ const ReplyContainer: React.FC<Props> = ({ replying, replies, username, userId, 
                     cancelHandler={cancelReply}
                 />
             }
-            {hasReplies ? collapseExpandToggle() : (null)}
+            {hasReplies ? collapseExpandToggle(showingReplies, activeReplies, setShowingReplies, 'reply') : (null)}
             {showingReplies && hasReplies && replies?.map((r: {[key: string] : any }) => {
                 return (
                     !r.deleted ?
-                    <Reply 
+                    <Reply
+                        key={'reply-' + r.id}
                         id={r.id}
                         replyContent={r.replyContent}
                         userId={userId}

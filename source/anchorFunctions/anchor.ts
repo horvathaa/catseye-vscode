@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 import Annotation from '../constants/constants';
 import { buildAnnotation, sortAnnotationsByLocation } from '../utils/utils';
-import { tabSize, annotationList, deletedAnnotations, setDeletedAnnotationList, annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList, insertSpaces } from '../extension';
-
+import { annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList } from '../extension';
+import { userDeletedAnchor, userAutocompletedOrCommented, userChangedTextBeforeStart, userChangedTextBeforeEnd, userChangedLinesBeforeStart, userChangedLinesInMiddle, shrinkOrExpandBackOfRange, shrinkOrExpandFrontOfRange } from './translateChangesHelpers';
+import { AnchorHTMLAttributes } from 'react';
 
 export function getIndicesOf(searchStr: string, str: string, caseSensitive: boolean) {
     var searchStrLen = searchStr.length;
@@ -39,10 +40,7 @@ export const getAnchorsInRange = (selection: vscode.Selection, annotationList: A
 
 export const translateChanges = (
 		originalAnnotation: Annotation,
-		startLine: number, 
-		endLine: number, 
-		startOffset: number, 
-		endOffset: number, 
+		changeRange: vscode.Range, 
 		textLength: number, 
 		diff: number, 
 		rangeLength: number, 
@@ -52,105 +50,70 @@ export const translateChanges = (
 	: Annotation => {
 		const originalStartLine = originalAnnotation.startLine, originalEndLine = originalAnnotation.endLine, originalStartOffset = originalAnnotation.startOffset, originalEndOffset = originalAnnotation.endOffset;
 		let newRange = { startLine: originalStartLine, endLine: originalEndLine, startOffset: originalStartOffset, endOffset: originalEndOffset };	
-
+		let originalAnchor = newRange;
 		const { anchorText } = originalAnnotation;
 		let newAnchorText = anchorText;
-		const startAndEndLineAreSameNoNewLine = originalStartLine === startLine && originalEndLine === endLine && !diff;
-		const startAndEndLineAreSameNewLine = originalStartLine === startLine && originalEndLine === endLine && diff;
+		const startAndEndLineAreSameNoNewLine = originalStartLine === changeRange.start.line && originalEndLine === changeRange.end.line && !diff;
+		const startAndEndLineAreSameNewLine = originalStartLine === changeRange.start.line && originalEndLine === changeRange.end.line && (diff > 0 || diff < 0);
 		const originalRange = new vscode.Range(new vscode.Position(originalStartLine, originalStartOffset), new vscode.Position(originalEndLine, originalEndOffset));
-		const changeRange = new vscode.Range(new vscode.Position(startLine, startOffset), new vscode.Position(endLine, endOffset)); 
+		// const changeRange = new vscode.Range(new vscode.Position(startLine, startOffset), new vscode.Position(endLine, endOffset)); 
 		// user deleted the anchor
-		// console.log('changeRange', changeRange, 'changeText', changeText, 'changetext len', changeText.length)
 
-		if(!textLength && changeRange.contains(originalRange)) {
-			const newAnno = {
-				...originalAnnotation, deleted: true
-			}
-			const deletedAnno = buildAnnotation(newAnno);
-			setDeletedAnnotationList(deletedAnnotations.concat([deletedAnno]));
-			if(view) addHighlightsToEditor(annotationList.filter(a => a.id !== deletedAnno.id));
-			return deletedAnno;
+		// console.log('changeRange', changeRange, 'changeText', changeText, 'changetext len', changeText.length)
+		const isDeleteOperation: boolean = !textLength;
+		if(isDeleteOperation && changeRange.contains(originalRange)) {
+			console.log('userDeletedAnchor');
+			return userDeletedAnchor(originalAnnotation);
 		}
+
 
 		let changeOccurredInRange : boolean = false;
-		const computedTabsize: number = typeof tabSize === 'number' ? tabSize : parseInt(tabSize);
-		// USER DOES NOT ADD NEWLINES
-		// checks for tab
-		if(!insertSpaces && (changeText.match(/\t/g) || []).length === textLength) {
-			// console.log('in not insertspaces if')
-			textLength = textLength - rangeLength;
-		}
-		else if(insertSpaces && (((changeText.match(/\s/g) || []).length / computedTabsize ) * computedTabsize) === textLength) {
-			// console.log('in insertspaces if')
-			textLength = textLength - rangeLength;
-		}
-		
-		// checks for autocomplete - tbh may be able to just do this check instead of the above 2
-		else if(textLength && rangeLength) {
-			textLength = textLength - rangeLength;
-		}
-		// 	console.log('hasduiahsdiuh')
-
+		textLength = userAutocompletedOrCommented(changeText, textLength, rangeLength);
 		// user adds/removes text at or before start of anchor on same line (no new lines)
-		if(startOffset <= originalStartOffset && startLine === originalStartLine && !diff) {
-				// console.log('textLength', textLength, 'osl', originalStartOffset, 'rl', rangeLength);
-				newRange.startOffset = textLength ? originalStartOffset + textLength : originalStartOffset - rangeLength;
-				// console.log('new value', newRange.startOffset);
-				if(startAndEndLineAreSameNoNewLine) {
-					newRange.endOffset = textLength ? originalEndOffset + textLength : originalEndOffset - rangeLength;
-			}
+		if(changeRange.start.character <= originalStartOffset && changeRange.start.line === originalStartLine && !diff) {
+			console.log('userChangedTextBeforeStart');
+			newRange = userChangedTextBeforeStart(newRange, originalAnchor, isDeleteOperation, textLength, rangeLength, startAndEndLineAreSameNoNewLine, originalAnchor.startOffset === changeRange.start.character);
+			if(originalAnchor.startOffset === changeRange.start.character) changeOccurredInRange = true;
 		}
 
 		// user adds/removes text at or before the end offset (no new lines)
-		if(endLine === originalEndLine && (endOffset <= originalEndOffset || startOffset <= originalEndOffset) && !diff) {
-			// console.log('user added text at end line - OEO', originalEndOffset, 'eo', endOffset, 'tl', textLength,'rl', rangeLength);
-			newRange.endOffset = textLength ? originalEndOffset + textLength : originalEndOffset - rangeLength;
-			// console.log('newRange end Offset update', newRange.endOffset);
+		else if(changeRange.end.line === originalEndLine && (changeRange.end.character <= originalEndOffset || changeRange.start.character <= originalEndOffset) && !diff) {
+			console.log('userChangedTextBeforeEnd');
+			newRange = userChangedTextBeforeEnd(newRange, originalAnchor, isDeleteOperation, textLength, rangeLength, changeRange);
 			changeOccurredInRange = true;
 		}
 
 		// USER ADDED OR REMOVED LINE
 
 		// user added lines above start of range
-		if (startLine < originalStartLine && diff) {
-			// console.log('in start line < originalStart line');
-			newRange.startLine = originalStartLine + diff;
-			newRange.endLine = originalEndLine + diff;
+		if (changeRange.start.line < originalStartLine && diff) {
+			console.log('userChangedLinesBeforeStart');
+			newRange = userChangedLinesBeforeStart(newRange, originalAnchor, diff);
 		}
 
 		// user added/removed line in middle of the anchor -- we are not including end offset
-		if(startLine >= originalStartLine && endLine <= originalEndLine && diff) {
+		if(changeRange.start.line >= originalStartLine && changeRange.end.line <= originalEndLine && diff) {
 			changeOccurredInRange = true;
-			// console.log('updating in middle of range - sl', startLine, 'osl', originalStartLine, 'el', endLine, 'oel', originalEndLine, 'diff', diff);
-			newRange.endLine = originalEndLine + diff;
-			// console.log('updating endLine', newRange.endLine)
-			if(startLine === originalStartLine) {
-				newRange.startLine = startOffset <= originalStartOffset ? originalStartLine + diff : originalStartLine;
-				// newRange.startOffset = startOffset < originalStartOffset ?  originalStartOffset : endOffset; // I feel like these should be swapped lol
-				if(startAndEndLineAreSameNewLine) {
-					newRange.endOffset = anchorText.includes('\n') ? anchorText.substring(anchorText.lastIndexOf('\n')).length : anchorText.substring(startOffset).length; // ???
-				}
-			}
-			if(startLine === originalEndLine && originalEndOffset >= startOffset) {
-				if(diff > 0) {
-					const relevantTextLength = changeText.includes('\n') ? changeText.substring(changeText.lastIndexOf('\n')).length : textLength;
-					// console.log('relevantTextLength', relevantTextLength, 'original text length', textLength);
-					const pointAtWhichAnchorIsSplit: number = originalEndOffset - startOffset;
-					newRange.endOffset = anchorText.includes('\n') ? 
-											anchorText.substring(anchorText.lastIndexOf('\n')).length - anchorText.substring(anchorText.lastIndexOf('\n'), anchorText.lastIndexOf('\n') + startOffset).length - 1 + relevantTextLength - 1: 
-											pointAtWhichAnchorIsSplit + relevantTextLength - 1;
-					// console.log('newRange.endOffset', newRange.endOffset);
-				} 
-			}
-			if(endLine === originalEndLine && originalEndOffset >= endOffset) {
-				if(diff < 0) {
-					newRange.endOffset = startOffset + (anchorText.includes('\n') ? anchorText.substring(anchorText.lastIndexOf('\n')).length - 1 : anchorText.substring(startOffset).length - 1);;
-				}
-			}
+			console.log('userChangedLinesInMiddle');
+			newRange = userChangedLinesInMiddle(newRange, originalAnchor, changeRange, diff, startAndEndLineAreSameNewLine, anchorText, changeText, textLength);
+		}
+		else if(changeRange.start.line >= originalStartLine && changeRange.start.line <= originalEndLine && changeRange.end.line >= originalEndLine && diff) {
+			console.log('shrinkOrExpandBackOfRange');
+			newRange = shrinkOrExpandBackOfRange(newRange, changeRange, diff, changeText, anchorText, rangeLength, originalAnchor);
+		}
+		else if(changeRange.end.line >= originalStartLine && changeRange.end.line <= originalEndLine && changeRange.start.line <=  originalEndLine && diff) {
+			console.log('shrinkOrExpandFrontOfRange');
+			newRange = shrinkOrExpandFrontOfRange(newRange, changeRange, diff, changeText, anchorText, rangeLength, originalAnchor);
+		}
+
+		if(newRange.endOffset === 0 || doc.getText(new vscode.Range(newRange.endLine, 0, newRange.endLine, newRange.endOffset)).replace(/\s/g, '').length === 0) {
+			// may want to do this until we hit a line with text (e.g., while loop instead of just doing this check once)
+			newRange.endLine = newRange.endLine - 1;
+			newRange.endOffset = doc.getText(doc.validateRange(new vscode.Range(newRange.endLine, 0, newRange.endLine, 500))).length;
 		}
 
 		// user changed text somewhere inside the range - need to update text
-		if(startLine >= originalStartLine && endLine <= originalEndLine && !diff) {
+		if(changeRange.start.line >= originalStartLine && changeRange.end.line <= originalEndLine && !diff) {
 			changeOccurredInRange = true;
 		}
 
@@ -158,10 +121,12 @@ export const translateChanges = (
 			newAnchorText = doc.getText(createRangeFromObject(newRange));
 		}
 
+		console.log('final range', newRange);
+
 		const newAnno = {
 			...originalAnnotation, anchorText: newAnchorText, ...newRange
 		}
-		// console.log('what', newAnno);
+
 		return buildAnnotation(newAnno)
 
 	}
@@ -242,6 +207,7 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 				setOutOfDateAnnotationList(ood);
 			}
 			if(vscode.workspace.workspaceFolders) {
+				// console.log('hi', newAnnotationList);
 				view?.updateDisplay(newAnnotationList);
 			}
 			
@@ -265,6 +231,11 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 	// nothing
 	else {
 		// console.log('nothing to highlight');
+		view?.updateDisplay(annotationList); // update that list is empty ? 
 		text?.setDecorations(annotationDecorations, []);
 	}
+}
+
+const test = (annotation: Annotation) : void => {
+	console.log('hi'); 
 }

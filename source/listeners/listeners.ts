@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, deletedAnnotations, setDeletedAnnotationList, setInsertSpaces } from '../extension';
 import * as anchor from '../anchorFunctions/anchor';
 import * as utils from '../utils/utils';
-import Annotation from '../constants/constants';
+import Annotation, { Anchor } from '../constants/constants';
 
 
 export const handleChangeVisibleTextEditors = (textEditors: vscode.TextEditor[]) => {
@@ -47,7 +47,7 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
         let translatedAnnotations: Annotation[] = currentAnnotations;
         let rangeAdjustedAnnotations: Annotation[] = [];
         for (const change of e.contentChanges) {
-            // console.log('change', change);
+            console.log('change', change);
             const startLine = change.range.start.line;
             const endLine = change.range.end.line;
             const startOffset = change.range.start.character;
@@ -79,12 +79,12 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
             }
 
             translatedAnnotations = utils.removeOutOfDateAnnotations(
-                translatedAnnotations.map(a => anchor.translateChanges(a, startLine, endLine, startOffset, endOffset, 
+                translatedAnnotations.map(a => anchor.translateChanges(a, change.range, 
                 change.text.length, diff, change.rangeLength, e.document, change.text))
             );
 
             if(tempAnno) {
-                const newTemp = anchor.translateChanges(tempAnno, startLine, endLine, startOffset, endOffset, 
+                const newTemp = anchor.translateChanges(tempAnno, change.range, 
                     change.text.length, diff, change.rangeLength, e.document, change.text)
                 setTempAnno(newTemp);
             }
@@ -106,4 +106,8 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
 
 export const handleDidChangeTextEditorSelection = (e: vscode.TextEditorSelectionChangeEvent) => {
     // console.log('e', e);
+}
+
+export const handleDidStartDebugSession = (e: vscode.DebugSession) : void => {
+    console.log('got it', e);
 }

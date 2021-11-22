@@ -45,7 +45,16 @@
         "key": "ctrl+alt+h",
         "mac": "cmd+alt+h"
       }
-    ]
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorHasSelection",
+          "command": "adamite.addAnnotation",
+          "group": "2_adamite"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -85,6 +94,7 @@
   },
   "dependencies": {
     "@types/react-icons": "^3.0.0",
+    "classnames": "^2.3.1",
     "create-react-app": "^4.0.3",
     "css-loader": "^6.2.0",
     "css-modules-typescript-loader": "^4.0.1",
@@ -101,5 +111,7 @@
     "uuid": "^8.3.2",
     "vscode": "^1.1.37"
   },
-  "extensionDependencies": ["vscode.git"]
+  "extensionDependencies": [
+    "vscode.git"
+  ]
 }

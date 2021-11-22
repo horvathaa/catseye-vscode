@@ -25,6 +25,7 @@ const TextEditor: React.FC<Props> = ({ content, submissionHandler, cancelHandler
                 className={styles['textbox']} 
                 value={typeof text === 'string' ? text : text.replyContent} 
                 onChange={updateAnnotationContent}
+                onClick={(e: React.SyntheticEvent) => e.stopPropagation()}
             />
             <button className={styles['submit']} onClick={() => submissionHandler(text)}>Submit</button>
             <button className={styles['cancel']} onClick={() => cancelHandler()}>Cancel</button>

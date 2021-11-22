@@ -53,10 +53,10 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
                 output['Current File'].push(a);
             }
             else if(a.projectName === currentProject) {
-                output['Current Project'].push(a)
+                output['Current Project'].push(a);
             }
             else {
-                output['Other Projects'].push(a)
+                output['Other Projects'].push(a);
             }
         });
         const jsx : React.ReactElement[] = [];
@@ -76,6 +76,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
                                       window={window} 
                                       username={username}
                                       userId={userId}
+                                      initialSelected={selectedIds.includes(a.id)}
                                       transmitSelected={transmitSelected}
                                     />
                         })}

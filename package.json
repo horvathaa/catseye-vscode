@@ -45,7 +45,16 @@
         "key": "ctrl+alt+h",
         "mac": "cmd+alt+h"
       }
-    ]
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorHasSelection",
+          "command": "adamite.addAnnotation",
+          "group": "2_adamite"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

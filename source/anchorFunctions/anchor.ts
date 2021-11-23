@@ -66,6 +66,11 @@ export const translateChanges = (
 			return userDeletedAnchor(originalAnnotation);
 		}
 
+		if(textLength && changeRange.contains(originalRange)) {
+			console.log('git Operation most likely...');
+			
+		}
+
 
 		let changeOccurredInRange : boolean = false;
 		textLength = userAutocompletedOrCommented(changeText, textLength, rangeLength);

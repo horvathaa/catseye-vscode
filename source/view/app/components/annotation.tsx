@@ -9,6 +9,7 @@ import TextEditor from "./annotationComponents/textEditor";
 import UserProfile from "./annotationComponents/userProfile";
 import ReplyContainer from './annotationComponents/replyContainer';
 import Outputs from './annotationComponents/outputs';
+import Snapshots from './annotationComponents/snapshots';
 interface Props {
   annotation: Annotation;
   vscode: any;
@@ -142,12 +143,23 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
     setEdit(false);
   }
 
-  const deleteAnnotation = (e: React.SyntheticEvent) => {
+  const deleteAnnotation = (e: React.SyntheticEvent) : void => {
     e.stopPropagation();
     vscode.postMessage({
       command: 'deleteAnnotation',
       annoId: anno.id,
     });
+  }
+
+  const snapshotCode = (e: React.SyntheticEvent) : void => {
+    e.stopPropagation();
+    vscode.postMessage({
+      command: 'snapshotCode',
+      annoId: anno.id
+    });
+    const newAnno: Annotation = buildAnnotation({ ...anno, codeSnapshots: anno.codeSnapshots ? anno.codeSnapshots.concat([{ createdTimestamp: new Date().getTime(), snapshot: anno.html }]) : [{ createdTimestamp: new Date().getTime(), snapshot: anno.html }] });
+    setAnno(newAnno);
+    annoRef.current = newAnno;
   }
 
   return (
@@ -166,6 +178,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
                     exportAnnotationAsComment={exportAnnotationAsComment}
                     editAnnotation={() => { setEdit(!edit) }} 
                     deleteAnnotation={(e) => deleteAnnotation(e)}
+                    snapshotCode={snapshotCode}
                   />
                 </div>
                 <Anchor 
@@ -175,6 +188,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
                   startLine={anno.startLine}
                   endLine={anno.endLine}
                   scrollInEditor={scrollInEditor}
+                  originalCode={anno.originalCode}
                 />
                 <div className={styles['ContentContainer']}>
                   {edit ? (
@@ -185,6 +199,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
                     />
                   ) : (`${anno.annotation}`)}
                 </div>
+                <Snapshots snapshots={anno.codeSnapshots} />
                 <Outputs 
                   outputs={anno.outputs} 
                   id={anno.id} 

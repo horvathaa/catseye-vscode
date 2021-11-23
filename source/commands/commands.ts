@@ -23,6 +23,7 @@ import { initializeAuth } from '../authHelper/authHelper';
 export const init = async () => {
 	await initializeAuth();
 	setGitInfo(utils.generateGitMetaData(gitApi));
+	console.log('gitInfo', gitInfo, 'api', gitApi);
 	if(view) {
 		view._panel?.reveal();
 	}
@@ -55,6 +56,11 @@ export const createView = (context: vscode.ExtensionContext) => {
 					case 'exportAnnotationAsComment': {
 						const { annoId } = message;
 						viewHelper.handleExportAnnotationAsComment(annoId);
+						break;
+					}
+					case 'snapshotCode': {
+						const { annoId } = message;
+						viewHelper.handleSnapshotCode(annoId);
 						break;
 					}
 					case 'createAnnotation': {
@@ -126,7 +132,9 @@ export const createNewAnnotation = () => {
 			projectName: projectName,
 			githubUsername: gitInfo.author,
 			replies: [],
-			outputs: []
+			outputs: [],
+			originalCode: html,
+			codeSnapshots: []
 		};
 		setTempAnno(utils.buildAnnotation(temp, r));
         view?.createNewAnno(html, annotationList);
@@ -168,7 +176,9 @@ export const addNewHighlight = () => {
 			projectName: projectName,
 			githubUsername: gitInfo.author,
 			replies: [],
-			outputs: []
+			outputs: [],
+			originalCode: html,
+			codeSnapshots: []
 		};
 
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));

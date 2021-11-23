@@ -93,6 +93,7 @@
     "webpack-cli": "^4.7.2"
   },
   "dependencies": {
+    "@material-ui/core": "^4.12.3",
     "@types/react-icons": "^3.0.0",
     "classnames": "^2.3.1",
     "create-react-app": "^4.0.3",

@@ -26,6 +26,14 @@ export const handleCopyText = (text: string) : void => {
 	setStoredCopyText(text);
 }
 
+export const handleSnapshotCode = (id: string) : void => {
+    const anno: Annotation | null = annotationList.filter(anno => anno.id === id)[0];
+    if(anno) {
+        const updatedAnnotation: Annotation = buildAnnotation({...anno, codeSnapshots: anno.codeSnapshots.concat({ createdTimestamp: new Date().getTime(), snapshot: anno.html })});
+        setAnnotationList(annotationList.filter(anno => anno.id !== id).concat([updatedAnnotation]));
+    }
+}
+
 export const handleScrollInEditor = (id: string) : void => {
     const anno = annotationList.filter(anno => anno.id === id)[0];
     if(anno) {
@@ -110,14 +118,6 @@ export const handleDeleteAnnotation = (id: string) : void => {
         addHighlightsToEditor(annotationList, visible);
     }
 }
-
-// export const handleUpdateReplies = (id: string, replies: {[key: string] : any}[]) : void => {
-
-    
-//     const updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], replies: replies });
-//     const updatedList = annotationList.filter(a => a.id !== id).concat([updatedAnno]);
-//     setAnnotationList(updatedList);
-// }
 
 export const handleCancelAnnotation = () : void => {
     // reset temp object and re-render

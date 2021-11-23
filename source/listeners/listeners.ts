@@ -50,8 +50,6 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
             console.log('change', change);
             const startLine = change.range.start.line;
             const endLine = change.range.end.line;
-            const startOffset = change.range.start.character;
-            const endOffset = change.range.end.character + change.text.length;
             const linesInRange = endLine - startLine;
             const linesInserted = change.text.split("\n").length - 1;
             const diff = linesInserted - linesInRange;

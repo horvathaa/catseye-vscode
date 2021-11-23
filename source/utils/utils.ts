@@ -12,18 +12,18 @@ let lastSavedAnnotations: Annotation[] = annotationList && annotationList.length
 
 // https://stackoverflow.com/questions/27030/comparing-arrays-of-objects-in-javascript
 const objectsEqual = (o1: { [key: string ] : any }, o2: { [key: string ] : any }) : boolean => 
-    typeof o1 === 'object' && Object.keys(o1).length > 0 
-        ? Object.keys(o1).length === Object.keys(o2).length 
-            && Object.keys(o1).every(p => objectsEqual(o1[p], o2[p]))
-        : o1 === o2;
+	typeof o1 === 'object' && Object.keys(o1).length > 0 
+		? Object.keys(o1).length === Object.keys(o2).length 
+			&& Object.keys(o1).every(p => objectsEqual(o1[p], o2[p]))
+		: o1 === o2;
 
 const arraysEqual = (a1: any[], a2: any[]) : boolean => {
 	return a1.length === a2.length && a1.every((o, idx) => objectsEqual(o, a2[idx]));
 }
 
 export const initializeAnnotations = async (user: firebase.User) : Promise<void> => {
-    const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
-    setAnnotationList(sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename));
+	const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
+	setAnnotationList(sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename));
 }
 
 export const getFirstLineOfHtml = (html: string, isOneLineAnchor: boolean) : string => {
@@ -240,15 +240,19 @@ export const updateAnnotationCommit = (commit: string, branch: string, repo: str
 	});
 }
 
-export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] : any}> => {
-	gitApi.repositories?.forEach(async (r: any) => {
+export const generateGitMetaData = (gitApi: any) : {[key: string] : any} => {
+	gitApi.repositories?.forEach((r: any) => {
 		const currentProjectName: string = getProjectName(r?.rootUri?.path);
-		const branch = await r?.diff()
-		console.log(branch);
+		// const branch = await r?.diff()
+		// console.log(branch);
 		r?.state?.onDidChange(async () => {
 			console.log('calling on did change', r.state);
-			const branch = await r?.diff();
-			console.log('diff', branch);
+			let diff;
+
+			diff = await r?.diffBetween('origin/main', 'git-stuff');
+			let diffWithMain = await r?.diffBetween('origin/main', 'git-stuff', '-- adamite-vscode/source/anchorFunctions/anchor.ts')
+			console.log('diff', diff)
+			console.log( 'dwm', diffWithMain);
 			if(gitInfo[currentProjectName].commit !== r.state.HEAD.commit || gitInfo[currentProjectName].branch !== r.state.HEAD.name) {
 				gitInfo[currentProjectName].commit = r.state.HEAD.commit;
 				gitInfo[currentProjectName].branch = r.state.HEAD.name;

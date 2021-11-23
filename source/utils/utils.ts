@@ -245,8 +245,9 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 		const currentProjectName: string = getProjectName(r?.rootUri?.path);
 		const branch = await r?.diff()
 		console.log(branch);
-		r?.state?.onDidChange(() => {
+		r?.state?.onDidChange(async () => {
 			console.log('calling on did change', r.state);
+			const branch = await r?.diff()
 			if(gitInfo[currentProjectName].commit !== r.state.HEAD.commit || gitInfo[currentProjectName].branch !== r.state.HEAD.name) {
 				gitInfo[currentProjectName].commit = r.state.HEAD.commit;
 				gitInfo[currentProjectName].branch = r.state.HEAD.name;

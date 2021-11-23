@@ -68,6 +68,7 @@ export const translateChanges = (
 
 		if(textLength && changeRange.contains(originalRange)) {
 			console.log('git Operation most likely...');
+
 			
 		}
 

@@ -241,16 +241,16 @@ export const updateAnnotationCommit = (commit: string, branch: string, repo: str
 }
 
 export const generateGitMetaData = (gitApi: any) : {[key: string] : any} => {
-	gitApi.repositories?.forEach((r: any) => {
+	gitApi.repositories?.forEach(async (r: any) => {
 		const currentProjectName: string = getProjectName(r?.rootUri?.path);
 		// const branch = await r?.diff()
 		// console.log(branch);
 		r?.state?.onDidChange(async () => {
-			console.log('calling on did change', r.state);
+			console.log('calling on did change', r.state, 'gitInfo', gitInfo);
 			let diff;
 
 			diff = await r?.diffBetween('origin/main', 'git-stuff');
-			let diffWithMain = await r?.diffBetween('origin/main', 'git-stuff', '-- adamite-vscode/source/anchorFunctions/anchor.ts')
+			let diffWithMain = await r?.diffBetween('origin/main', 'git-stuff', './source/anchorFunctions/anchor.ts')
 			console.log('diff', diff)
 			console.log( 'dwm', diffWithMain);
 			if(gitInfo[currentProjectName].commit !== r.state.HEAD.commit || gitInfo[currentProjectName].branch !== r.state.HEAD.name) {
@@ -262,7 +262,8 @@ export const generateGitMetaData = (gitApi: any) : {[key: string] : any} => {
 		gitInfo[currentProjectName] = {
 			repo: r?.state?.remotes[0]?.fetchUrl ? r?.state?.remotes[0]?.fetchUrl : r?.state?.remotes[0]?.pushUrl ? r?.state?.remotes[0]?.pushUrl : "",
 			branch: r?.state?.HEAD?.name ? r?.state?.HEAD?.name : "",
-			commit: r?.state?.HEAD?.commit ? r?.state?.HEAD?.commit : ""
+			commit: r?.state?.HEAD?.commit ? r?.state?.HEAD?.commit : "",
+			changes: await r?.diffBetween('origin/HEAD', r?.state?.HEAD?.name)
 		}
 	});
 	return gitInfo;

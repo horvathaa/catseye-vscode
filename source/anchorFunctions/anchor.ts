@@ -70,8 +70,9 @@ export const translateChanges = (
 			console.log('git Operation most likely...');
 
 		}
+		
 
-
+		
 		let changeOccurredInRange : boolean = false;
 		textLength = userAutocompletedOrCommented(changeText, textLength, rangeLength);
 		// user adds/removes text at or before start of anchor on same line (no new lines)

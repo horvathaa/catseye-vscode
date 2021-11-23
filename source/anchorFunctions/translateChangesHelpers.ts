@@ -149,6 +149,7 @@ const userChangedLinesInMiddleUpdateEndUsingStart = (newRange: Anchor, originalA
     return newRange;
 }
 
+
 const userChangedLinesInMiddleUpdateEndUsingEnd = (newRange: Anchor, changeRange: vscode.Range, numLines: number, anchorText: string, originalAnchor: Anchor, changeText: string) : Anchor => {
     // console.log('bool - numLines', numLines > 0, 'chanmgeRange', changeRange.start.line === originalAnchor.endLine, 'start end equal', changeRange.start.character === changeRange.end.character, changeRange.start.character, changeRange.end.character, changeRange)
     if(numLines < 0) {

@@ -240,10 +240,13 @@ export const updateAnnotationCommit = (commit: string, branch: string, repo: str
 	});
 }
 
-export const generateGitMetaData = (gitApi: any) : {[key: string] : any} => {
-	gitApi.repositories?.forEach((r: any) => {
+export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] : any}> => {
+	gitApi.repositories?.forEach(async (r: any) => {
 		const currentProjectName: string = getProjectName(r?.rootUri?.path);
+		const branch = await r?.diff()
+		console.log(branch);
 		r?.state?.onDidChange(() => {
+			console.log('calling on did change', r.state);
 			if(gitInfo[currentProjectName].commit !== r.state.HEAD.commit || gitInfo[currentProjectName].branch !== r.state.HEAD.name) {
 				gitInfo[currentProjectName].commit = r.state.HEAD.commit;
 				gitInfo[currentProjectName].branch = r.state.HEAD.name;

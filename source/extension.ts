@@ -11,6 +11,8 @@ import { AdamiteTerminalLinkProvider } from './adamiteTerminalLinkProvider/adami
 
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
 export const gitApi = gitExtension?.getAPI(1);
+const openDiff = vscode.workspace.getConfiguration('git').get('openDiffClick', true);
+console.log('openDiff', openDiff, 'git', vscode.workspace.getConfiguration('git'));
 export let gitInfo: {[key: string] : any} = {};
 export let annotationList: Annotation[] = [];
 export let copiedAnnotations:  {[key: string] : any }[] = [];

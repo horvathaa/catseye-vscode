@@ -23,6 +23,7 @@ import { initializeAuth } from '../authHelper/authHelper';
 export const init = async () => {
 	await initializeAuth();
 	setGitInfo(utils.generateGitMetaData(gitApi));
+	console.log('gitInfo', gitInfo, 'api', gitApi);
 	if(view) {
 		view._panel?.reveal();
 	}

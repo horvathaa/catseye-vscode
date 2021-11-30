@@ -243,6 +243,7 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 
 // - is old, + is new - our old is origin/HEAD, our new is the user's local branch
 export const updateAnchorsUsingDiffData = (diffData: {[key: string]: any}, annotations: Annotation[]) : void => {
+	console.log('diffData', diffData);
 	diffData.hunks.forEach((h: {[key: string]: any}) => {
 		const hunkRange: vscode.Range = new vscode.Range(new vscode.Position(h.newStartLine, 0), new vscode.Position(h.newStartLine + h.newLineCount + 1, 0));
 		const annosAffectedByChange: Annotation[] = annotations.filter(a => createRangeFromAnnotation(a).contains(hunkRange))

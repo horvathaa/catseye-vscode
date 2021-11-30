@@ -254,16 +254,20 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 			console.log('calling on did change', r.state, 'gitInfo', gitInfo);
 			const currentProjectName: string = getProjectName(r?.rootUri?.path);
 			const diffs = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch);
-			if(diffs.length > 0 && diffs.length !== gitInfo[currentProjectName].changes.length) {
+			// if(diffs.length > 0 && diffs.length !== gitInfo[currentProjectName].changes.length) {
 				gitInfo[currentProjectName] = { ...gitInfo[currentProjectName], changes: diffs };
 				diffs.forEach(async (diff: {[key: string]: any}) => {
-					const path: string = '.' + diff.uri.path.split(currentProjectName);
+					console.log('diff', diff);
+					const path: string = '.' + diff.uri.path.split(currentProjectName)[1];
 					let diffWithMain = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch, path);
+					// console.log('diffWithMain', diffWithMain);
 					const diffData = parse(diffWithMain);
-					console.log('diffData', diffData);
-					updateAnchorsUsingDiffData(diffData, annotationList.filter(a => a.filename === diff.uri.path));
+					// console.log('diffData', diffData);
+					const annotationsInFile: Annotation[] = annotationList.filter(a => '.' + a.filename.toString().split(currentProjectName)[1] === path)
+					if(diffData.length && annotationsInFile.length)
+					updateAnchorsUsingDiffData(diffData, annotationsInFile);
 				}) 
-			}
+			// }
 			// let diffWithMain = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch, './source/anchorFunctions/anchor.ts')
 			console.log('diff', diffs)
 			// console.log( 'dwm', diffWithMain);

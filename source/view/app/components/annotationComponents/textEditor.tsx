@@ -38,10 +38,10 @@ const TextEditor: React.FC<Props> = ({ content, submissionHandler, cancelHandler
                 <SplitButton
                     submissionHandler={handleSubmission} 
                 /> : 
-                <button className={styles['submit']} onClick={() => submissionHandler(text)}>Submit</button>
+                <button className={styles['submit']} onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); submissionHandler(text) }}>Submit</button>
             }
             
-            <button className={styles['cancel']} onClick={() => cancelHandler()}>Cancel</button>
+            <button className={styles['cancel']} onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); cancelHandler()}}>Cancel</button>
         </div>
     )
 }

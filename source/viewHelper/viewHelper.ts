@@ -94,7 +94,7 @@ export const handleCreateAnnotation = (annotationContent: string) : void => {
     });
 }
 
-export const handleUpdateAnnotation = (id: string, key: string, value: any) : void => {
+export const handleUpdateAnnotation = (id: string, key: string | string[], value: any) : void => {
     if(key === 'replies') {
         value.forEach((r: {[key: string]: any}) => {
             if(r.id === "") {
@@ -102,7 +102,15 @@ export const handleUpdateAnnotation = (id: string, key: string, value: any) : vo
             }
         });
     }
-    const updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], [key]: value });
+    let updatedAnno: Annotation;
+    console.log('key', key, 'value', value);
+    if(typeof key === 'string') {
+        updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], [key]: value });
+    }
+    else {
+        updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], [key[0]]: value[key[0]], [key[1]]: value[key[1]] });
+    }
+    console.log('updated', updatedAnno);
     const updatedList = annotationList.filter(a => a.id !== id).concat([updatedAnno]);
     setAnnotationList(updatedList);
 }

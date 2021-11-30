@@ -129,7 +129,7 @@ export function activate(context: vscode.ExtensionContext) {
 	/**************************************** PROVIDERS *********************************/
 	/*************************************************************************************/
 
-	let terminalLinkProviderDisposable = vscode.window.registerTerminalLinkProvider(new AdamiteTerminalLinkProvider());
+	// let terminalLinkProviderDisposable = vscode.window.registerTerminalLinkProvider(new AdamiteTerminalLinkProvider());
 
 	/*************************************************************************************/
 	/**************************************** DISPOSABLES ********************************/
@@ -149,7 +149,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(copyDisposable);
 	context.subscriptions.push(cutDisposable);
 	
-	context.subscriptions.push(terminalLinkProviderDisposable);
+	// context.subscriptions.push(terminalLinkProviderDisposable);
 	
 }
 

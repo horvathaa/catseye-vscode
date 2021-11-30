@@ -1,7 +1,6 @@
 import * as React from "react";
 import styles from '../../styles/annotation.module.css';
 import { VscChevronUp, VscChevronDown, VscChevronLeft, VscChevronRight } from 'react-icons/vsc';
-import { Tooltip } from '@material-ui/core';
 interface SynProps {
     html: string;
     anchorPreview?: string;
@@ -44,16 +43,12 @@ const Anchor: React.FC<Props> = ({ html, anchorPreview, visiblePath, startLine, 
         return showingOriginalCode ? 
         (
             <div className={styles['arrowBox']}>
-                <Tooltip title="Show Current Code">
-                    <VscChevronLeft onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); setShowingOriginalCode(!showingOriginalCode) }} className={styles['IconContainer']} /> 
-                </Tooltip>
+                <VscChevronLeft onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); setShowingOriginalCode(!showingOriginalCode) }} className={styles['IconContainer']} /> 
             </div>
         ) : 
         ( 
             <div className={styles['arrowBox']}>
-                <Tooltip title="Show Original Code">
-                    <VscChevronRight onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); setShowingOriginalCode(!showingOriginalCode) }} className={styles['IconContainer']} /> 
-                </Tooltip>
+                <VscChevronRight onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); setShowingOriginalCode(!showingOriginalCode) }} className={styles['IconContainer']} /> 
             </div>
         )
     }

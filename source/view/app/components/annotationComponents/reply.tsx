@@ -59,11 +59,13 @@ const Reply : React.FC<Props> = ({ id = undefined, replyContent = undefined, cre
             content={reply}
             submissionHandler={submissionHandler} 
             cancelHandler={cancelHandler}
+            showSplitButton={false}
         /> ) : (
         <TextEditor
             content={reply}
             submissionHandler={submissionHandler}
             cancelHandler={() => setEditing(false)}
+            showSplitButton={false}
         /> )
     )
     

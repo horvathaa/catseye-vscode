@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { gitInfo, setAnnotationList, setGitInfo, setUser } from '../extension';
-import { initializeAnnotations } from '../utils/utils';
+import { gitInfo, gitApi, setAnnotationList, setGitInfo, setUser } from '../extension';
+import { initializeAnnotations, generateGitMetaData } from '../utils/utils';
 import { fbSignInWithEmailAndPassword, getUserGithubData, fbSignOut, signInWithGithubCredential, setUserGithubAccount } from '../firebase/functions/functions';
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname).includes('\\') ? path.resolve(__dirname, '..\\..\\.env.local') : path.resolve(__dirname, '..\/..\/.env.local') });
@@ -41,6 +41,9 @@ export const initializeAuth = async () => {
         try {
             const user = await signInWithGithubCredential(result?.data);
             setUser(user);
+
+            setGitInfo(await generateGitMetaData(gitApi));
+            console.log('gitInfo', gitInfo, 'api', gitApi, 'git');
             user ? await initializeAnnotations(user) : setAnnotationList([]);
             if(user)
             try {

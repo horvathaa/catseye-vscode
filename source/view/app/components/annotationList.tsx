@@ -63,7 +63,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
         for(const key in output) {
             const header = output[key].length === 1 ? 'annotation' : 'annotations';
             jsx.push(
-                <div>
+                <div key={key}>
                     <div onClick={showHideCluster} id={key} className={styles['subheading']}>
                         {key} ({output[key].length} {header})
                     </div>

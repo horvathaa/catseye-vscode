@@ -3,7 +3,6 @@ import * as path from "path";
 import Annotation from '../constants/constants';
 import { annotationList } from '../extension';
 
-
 export default class ViewLoader {
   public _panel: vscode.WebviewPanel | undefined;
   private readonly _extensionPath: string;

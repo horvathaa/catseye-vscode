@@ -38,7 +38,9 @@ const NewAnnotation: React.FC<Props> = ({ selection, vscode, notifyDone = () => 
                 <TextEditor 
                     content={""} 
                     submissionHandler={createAnnotation} 
-                    cancelHandler={cancelAnnotation} />
+                    cancelHandler={cancelAnnotation} 
+                    showSplitButton={true}
+                />
             </div>
         </div>
     )

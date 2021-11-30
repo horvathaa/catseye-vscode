@@ -22,8 +22,7 @@ import { initializeAuth } from '../authHelper/authHelper';
 
 export const init = async () => {
 	await initializeAuth();
-	setGitInfo(utils.generateGitMetaData(gitApi));
-	console.log('gitInfo', gitInfo, 'api', gitApi);
+
 	if(view) {
 		view._panel?.reveal();
 	}
@@ -134,7 +133,8 @@ export const createNewAnnotation = () => {
 			replies: [],
 			outputs: [],
 			originalCode: html,
-			codeSnapshots: []
+			codeSnapshots: [],
+			sharedWith: "private"
 		};
 		setTempAnno(utils.buildAnnotation(temp, r));
         view?.createNewAnno(html, annotationList);
@@ -178,7 +178,8 @@ export const addNewHighlight = () => {
 			replies: [],
 			outputs: [],
 			originalCode: html,
-			codeSnapshots: []
+			codeSnapshots: [],
+			sharedWith: "private"
 		};
 
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));

@@ -1,11 +1,12 @@
 import firebase from '../firebase/firebase';
 import Annotation from '../constants/constants';
-import { computeRangeFromOffset } from '../anchorFunctions/anchor';
+import { computeRangeFromOffset, updateAnchorsUsingDiffData } from '../anchorFunctions/anchor';
 import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations } from '../extension';
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
 import { getAnnotationsOnSignIn } from '../firebase/functions/functions';
 import { saveAnnotations as fbSaveAnnotations } from '../firebase/functions/functions';
+let { parse } = require('what-the-diff');
 var shiki = require('shiki');
 
 let lastSavedAnnotations: Annotation[] = annotationList && annotationList.length ? annotationList : [];
@@ -22,6 +23,8 @@ const arraysEqual = (a1: any[], a2: any[]) : boolean => {
 }
 
 export const initializeAnnotations = async (user: firebase.User) : Promise<void> => {
+	console.log('gitInfo in initalize', gitInfo);
+	console.log('project', getProjectName());
 	const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
 	setAnnotationList(sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename));
 }
@@ -70,7 +73,8 @@ export const reconstructAnnotations = (annotationOffsetList: {[key: string] : an
 			replies: a.anno.replies,
 			outputs: a.anno.outputs,
 			originalCode: a.anno.originalCode,
-			codeSnapshots: a.anno.codeSnapshots
+			codeSnapshots: a.anno.codeSnapshots,
+			sharedWith: a.anno.sharedWith
 		}
 		return buildAnnotation(adjustedAnno);
 	});
@@ -177,7 +181,8 @@ export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[
 			replies: a.replies ? a.replies : [],
 			outputs: a.outputs ? a.outputs : [],
 			originalCode: a.originalCode ? a.originalCode : "",
-			codeSnapshots: a.codeSnapshots ? a.codeSnapshots : []
+			codeSnapshots: a.codeSnapshots ? a.codeSnapshots : [],
+			sharedWith: a.sharedWith ? a.sharedWith : "private"
 	}});
 }
 
@@ -240,19 +245,28 @@ export const updateAnnotationCommit = (commit: string, branch: string, repo: str
 	});
 }
 
-export const generateGitMetaData = (gitApi: any) : {[key: string] : any} => {
-	gitApi.repositories?.forEach(async (r: any) => {
+export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] : any}> => {
+	await gitApi.repositories?.forEach(async (r: any) => {
 		const currentProjectName: string = getProjectName(r?.rootUri?.path);
 		// const branch = await r?.diff()
 		// console.log(branch);
 		r?.state?.onDidChange(async () => {
 			console.log('calling on did change', r.state, 'gitInfo', gitInfo);
-			let diff;
-
-			diff = await r?.diffBetween('origin/main', 'git-stuff');
-			let diffWithMain = await r?.diffBetween('origin/main', 'git-stuff', './source/anchorFunctions/anchor.ts')
-			console.log('diff', diff)
-			console.log( 'dwm', diffWithMain);
+			const currentProjectName: string = getProjectName(r?.rootUri?.path);
+			const diffs = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch);
+			if(diffs.length > 0 && diffs.length !== gitInfo[currentProjectName].changes.length) {
+				gitInfo[currentProjectName] = { ...gitInfo[currentProjectName], changes: diffs };
+				diffs.forEach(async (diff: {[key: string]: any}) => {
+					const path: string = '.' + diff.uri.path.split(currentProjectName);
+					let diffWithMain = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch, path);
+					const diffData = parse(diffWithMain);
+					console.log('diffData', diffData);
+					updateAnchorsUsingDiffData(diffData, annotationList.filter(a => a.filename === diff.uri.path));
+				}) 
+			}
+			// let diffWithMain = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch, './source/anchorFunctions/anchor.ts')
+			console.log('diff', diffs)
+			// console.log( 'dwm', diffWithMain);
 			if(gitInfo[currentProjectName].commit !== r.state.HEAD.commit || gitInfo[currentProjectName].branch !== r.state.HEAD.name) {
 				gitInfo[currentProjectName].commit = r.state.HEAD.commit;
 				gitInfo[currentProjectName].branch = r.state.HEAD.name;
@@ -263,14 +277,15 @@ export const generateGitMetaData = (gitApi: any) : {[key: string] : any} => {
 			repo: r?.state?.remotes[0]?.fetchUrl ? r?.state?.remotes[0]?.fetchUrl : r?.state?.remotes[0]?.pushUrl ? r?.state?.remotes[0]?.pushUrl : "",
 			branch: r?.state?.HEAD?.name ? r?.state?.HEAD?.name : "",
 			commit: r?.state?.HEAD?.commit ? r?.state?.HEAD?.commit : "",
-			changes: await r?.diffBetween('origin/HEAD', r?.state?.HEAD?.name)
+			changes: await r?.diffBetween('origin/HEAD', r?.state?.HEAD?.name),
+			modifiedAnnotations: []
 		}
 	});
 	return gitInfo;
 }
 
 
-export const getProjectName = (filename: string | undefined) : string => {
+export const getProjectName = (filename?: string | undefined) : string => {
 	if(vscode.workspace.workspaceFolders && filename) {
 		const slash: string = filename.includes('\\') ? '\\' : '\/';
 		if(vscode.workspace.workspaceFolders.length > 1) {
@@ -333,7 +348,8 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 		annoObj['replies'],
 		annoObj['outputs'],
 		annoObj['originalCode'],
-		annoObj['codeSnapshots']
+		annoObj['codeSnapshots'],
+		annoObj['sharedWith']
 	)
 }
 

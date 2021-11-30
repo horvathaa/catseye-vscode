@@ -112,15 +112,15 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
     });
   }
   
-  const updateContent = (newAnnoContent: string) : void => {
-    const newAnno: Annotation = buildAnnotation({ ...anno, annotation: newAnnoContent });
+  const updateContent = (newAnnoContent: string, shareWith: string | undefined) : void => {
+    const newAnno: Annotation = buildAnnotation({ ...anno, annotation: newAnnoContent, shareWith });
     setAnno(newAnno);
     annoRef.current = newAnno;
     vscode.postMessage({
       command: 'updateAnnotation',
       annoId: anno.id,
-      key: 'annotation',
-      value: newAnnoContent
+      key: ['annotation', 'sharedWith'],
+      value: { annotation: newAnnoContent, sharedWith: shareWith }
     });
     setEdit(false);
   }
@@ -196,6 +196,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
                       content={anno.annotation} 
                       submissionHandler={updateContent} 
                       cancelHandler={cancelAnnotation}
+                      showSplitButton={true}
                     />
                   ) : (`${anno.annotation}`)}
                 </div>

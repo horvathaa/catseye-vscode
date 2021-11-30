@@ -3,7 +3,6 @@ import Annotation from '../constants/constants';
 import { buildAnnotation, sortAnnotationsByLocation } from '../utils/utils';
 import { annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList } from '../extension';
 import { userDeletedAnchor, userAutocompletedOrCommented, userChangedTextBeforeStart, userChangedTextBeforeEnd, userChangedLinesBeforeStart, userChangedLinesInMiddle, shrinkOrExpandBackOfRange, shrinkOrExpandFrontOfRange } from './translateChangesHelpers';
-import { AnchorHTMLAttributes } from 'react';
 
 export function getIndicesOf(searchStr: string, str: string, caseSensitive: boolean) {
     var searchStrLen = searchStr.length;
@@ -127,7 +126,7 @@ export const translateChanges = (
 			newAnchorText = doc.getText(createRangeFromObject(newRange));
 		}
 
-		console.log('final range', newRange);
+		// console.log('final range', newRange);
 
 		const newAnno = {
 			...originalAnnotation, anchorText: newAnchorText, ...newRange
@@ -242,6 +241,56 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 	}
 }
 
-const test = (annotation: Annotation) : void => {
-	console.log('hi'); 
+// - is old, + is new - our old is origin/HEAD, our new is the user's local branch
+export const updateAnchorsUsingDiffData = (diffData: {[key: string]: any}, annotations: Annotation[]) : void => {
+	diffData.hunks.forEach((h: {[key: string]: any}) => {
+		const hunkRange: vscode.Range = new vscode.Range(new vscode.Position(h.newStartLine, 0), new vscode.Position(h.newStartLine + h.newLineCount + 1, 0));
+		const annosAffectedByChange: Annotation[] = annotations.filter(a => createRangeFromAnnotation(a).contains(hunkRange))
+		// need to also add/subtract diff for annos that have changes that were made above the start of their anchor
+		annosAffectedByChange.forEach((a: Annotation) => {
+			// user replaced original line
+			console.log('a before change', a);
+			if(h.oldStartLine === h.newStartLine && h.oldLineCount === h.newLineCount) {
+				// if the 
+				// changed line is the start or end line, in which case we may need to change the offsets
+				const relevantLines: {[key: string]: any}[] = h.lines.filter((l: string, index: number) => { if(l[0] === '-') return { line: l, offsetInArray: index } })
+				const startOrEndLines: {[key: string]: any}[] = relevantLines.filter((l: {[key: string]: any}) => {
+					if(l.offsetInArray + h.oldStartLine === a.startLine || l.offsetInArray + h.oldStartLine === a.endLine) {
+						return { ...l, updateStart: l.offsetInArray + h.oldStartLine === a.startLine };
+					}
+				});
+				if(startOrEndLines.length) {
+					let offsetDiff = startOrEndLines[0].line.length - h.lines[startOrEndLines[0].offsetInArray + 1].length;
+					if(startOrEndLines[0].updateStart) {
+						const computedOffset: number = a.startOffset + offsetDiff >= 0 ? a.startOffset + offsetDiff : 0;
+						a.startOffset = computedOffset
+					} else {
+						const computedOffset: number = a.endOffset + offsetDiff >= 0 ? a.endOffset + offsetDiff : 0;
+						a.endOffset = computedOffset;
+					}
+				}
+			}
+			// user added lines
+			else if(h.newLineCount > h.oldLineCount) {
+				const relevantLinesAdded: {[key: string]: any}[] = h.lines.filter((l: string, index: number) => { if(l[0] === '+') return { line: l, offsetInArray: index } })
+				let linesAddedHunk: number = relevantLinesAdded.length;
+				let linesRemovedHunk: number =  h.lines.filter((l: string, index: number) => { if(l[0] === '-') return { line: l, offsetInArray: index } }).length;
+				const diff = (h.newStartLine - h.oldStartLine) + (linesAddedHunk - linesRemovedHunk);
+				a.startLine = a.startLine + diff;
+				a.endLine = a.endLine + diff; 
+			}
+			else if(h.oldLineCount > h.newLineCount) {
+				const relevantLinesAdded: {[key: string]: any}[] = h.lines.filter((l: string, index: number) => { if(l[0] === '+') return { line: l, offsetInArray: index } })
+				let linesAddedHunk: number = relevantLinesAdded.length;
+				let linesRemovedHunk: number =  h.lines.filter((l: string, index: number) => { if(l[0] === '-') return { line: l, offsetInArray: index } }).length;
+				const diff = (h.newStartLine - h.oldStartLine) + (linesAddedHunk - linesRemovedHunk);
+				a.startLine = a.startLine - diff;
+				a.endLine = a.endLine - diff; 
+			}
+			else {
+				console.log('uh oh', h);
+			}
+			console.log('a', a);
+		})
+	});
 }

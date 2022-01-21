@@ -7,7 +7,7 @@ import Annotation from './constants/constants';
 import * as commands from './commands/commands';
 import * as eventHandlers from './listeners/listeners';
 import * as utils from './utils/utils';
-import { AdamiteTerminalLinkProvider } from './adamiteTerminalLinkProvider/adamiteTerminalLinkProvider';
+// import { AdamiteTerminalLinkProvider } from './adamiteTerminalLinkProvider/adamiteTerminalLinkProvider';
 
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
 export const gitApi = gitExtension?.getAPI(1);

@@ -255,21 +255,34 @@ const generateLineMetadata = (h: {[key: string]: any}) : {[key: string]: any}[] 
 		const char = l[0] === '+' ? '-' : '+';
 		const originalLineNumber: number = startLine + index - h.lines.slice(0, index)
 				.filter((s: string) => s[0] === char).length;
-		if(index - 1 >= 0 && h.lines[index - 1][0] === '+' && l[0] !== '+') {
-			let range = addRanges.filter((r: {[key: string]: any}) => !r.complete)[0];
-			range = { ...range, end: originalLineNumber, complete: true };
-			addRanges.filter((r: {[key: string]: any}) => r.complete).concat([range]);
+		if(index - 1 >= 0 && h.lines[index - 1][0] === '+' && l[0] !== '+' && l[0] !== '-') {
+			const localizedEndLine = h.newStartLine + (index - 1) - h.lines.slice(0, index - 1)
+				.filter((s: string) => s[0] === '-').length
+			console.log('addRanges', addRanges);
+			let range = addRanges.filter((r: {[key: string]: any}) => !r.complete)[0] ? addRanges.filter((r: {[key: string]: any}) => !r.complete)[0] : { start: localizedEndLine, end: localizedEndLine, complete: true, hasCorrespondingRange: false };
+			console.log('range???', range);
+			range = { ...range, end: localizedEndLine, complete: true };
+			addRanges = addRanges.filter((r: {[key: string]: any}) => r.complete).concat([range]);
+		}
+		else if(index - 1 >= 0 && h.lines[index - 1][0] === '-' && l[0] !== '+' && l[0] !== '-') {
+			const localizedEndLine = h.oldStartLine + (index - 1) - h.lines.slice(0, index - 1)
+			.filter((s: string) => s[0] === '+').length
+			let range = removeRanges.filter((r: {[key: string]: any}) => !r.complete)[0] ? removeRanges.filter((r: {[key: string]: any}) => !r.complete)[0] : { start: localizedEndLine, end: localizedEndLine, complete: true, hasCorrespondingRange: false };
+			console.log('range???', range);
+			range = { ...range, end: localizedEndLine, complete: true };
+			removeRanges = removeRanges.filter((r: {[key: string]: any}) => r.complete).concat([range]);
 		}
 		else if(l[0] === '+') {
-			if(index - 1 >= 0 && h.lines[index - 1][0] !== '+') addRanges.push({ start: originalLineNumber, end: -1, complete: false, hasCorrespondingRange: false });
+			if(index - 1 >= 0 && h.lines[index - 1][0] !== '-' && h.lines[index - 1][0] !== '+') addRanges.push({ start: originalLineNumber, end: -1, complete: false, hasCorrespondingRange: false });
 			if(index - 1 >= 0 && h.lines[index - 1][0] === '-') {
+				console.log('in here');
 				let range = removeRanges.filter((r: {[key: string]: any}) => !r.complete)[0];
-				range = { ...range, end: originalLineNumber, complete: true, hasCorrespondingRange: true };
-				removeRanges.filter((r: {[key: string]: any}) => r.complete).concat([range]);
-
-				let rangeA = addRanges.filter((r: {[key: string]: any}) => !r.complete)[0];
-				rangeA = { ...range, hasCorrespondingRange: true };
-				addRanges.filter((r: {[key: string]: any}) => r.complete).concat([range]);
+				const localizedEndLine = h.oldStartLine + (index - 1) - h.lines.slice(0, index - 1)
+					.filter((s: string) => s[0] === '+').length
+				range = { ...range, end: localizedEndLine, complete: true, hasCorrespondingRange: true };
+				removeRanges = removeRanges.filter((r: {[key: string]: any}) => r.complete).concat([range]);
+				console.log('remove range', range);
+				addRanges.push({ start: originalLineNumber, end: -1, complete: false, hasCorrespondingRange: true });
 			}
 			
 			linesAdded.push(
@@ -285,13 +298,13 @@ const generateLineMetadata = (h: {[key: string]: any}) : {[key: string]: any}[] 
 
 		}
 
-		if(l[0] === '-') {
+		else if(l[0] === '-') {
 			if(index - 1 >= 0 && h.lines[index - 1][0] !== '-') removeRanges.push({ start: originalLineNumber, end: -1, complete: false, hasCorrespondingRange: false });
-			if(index - 1 >= 0 && h.lines[index - 1][0] === '-') {
-				let range = removeRanges.filter((r: {[key: string]: any}) => !r.complete)[0];
-				range = { ...range, end: originalLineNumber, complete: true, hasCorrespondingRange: true };
-				removeRanges.filter((r: {[key: string]: any}) => r.complete).concat([range]);
-			}
+			// if(index - 1 >= 0 && h.lines[index - 1][0] === '+') {
+			// 	let range = addRanges.filter((r: {[key: string]: any}) => !r.complete)[0];
+			// 	range = { ...range, end: originalLineNumber, complete: true, hasCorrespondingRange: true };
+			// 	addRanges = addRanges.filter((r: {[key: string]: any}) => r.complete).concat([range]);
+			// }
 			
 			linesRemoved.push(
 				{ 

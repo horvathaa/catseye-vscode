@@ -7,9 +7,11 @@ import Annotation, { Anchor } from '../constants/constants';
 
 export const handleChangeVisibleTextEditors = (textEditors: vscode.TextEditor[]) => {
     const textEditorFileNames = textEditors.map(t => t.document.uri.toString());
+    const textEditorProjectFileNames =  vscode.window.activeTextEditor ? textEditors.map(t => utils.getVisiblePath(utils.getProjectName(t.document.uri.toString()), vscode.window.activeTextEditor?.document.uri.fsPath)) : []
     // nneed to decide if we want to write to DB that often... if(vscode.workspace.workspaceFolders !== undefined) utils.saveAnnotations(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json');
-    
-    const annotationsToHighlight = annotationList.filter(a => textEditorFileNames.includes(a.filename.toString()));
+    console.log('handleChangeVisibleText', textEditorProjectFileNames)
+    const annotationsToHighlight = annotationList.filter(a => textEditorProjectFileNames.includes(a.visiblePath) || textEditorFileNames.includes(a.filename.toString()));
+    console.log('annotationsToHighlight', annotationsToHighlight);
     if(!annotationsToHighlight.length) return;
     // TODO: see if we can change the behavior of markdown string so it has an onclick event to navigate to the annotation
     if(view) anchor.addHighlightsToEditor(annotationsToHighlight);
@@ -17,6 +19,7 @@ export const handleChangeVisibleTextEditors = (textEditors: vscode.TextEditor[])
 }
 
 export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | undefined) => {
+    console.log('handleChangeActive');
     if(vscode.workspace.workspaceFolders) {
             if(TextEditor) {
                 if(TextEditor.options?.tabSize) setTabSize(TextEditor.options.tabSize);

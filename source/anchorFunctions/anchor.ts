@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import Annotation from '../constants/constants';
-import { buildAnnotation, sortAnnotationsByLocation } from '../utils/utils';
+import { buildAnnotation, sortAnnotationsByLocation, getProjectName, getVisiblePath } from '../utils/utils';
 import { annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList } from '../extension';
 import { userDeletedAnchor, userAutocompletedOrCommented, userChangedTextBeforeStart, userChangedTextBeforeEnd, userChangedLinesBeforeStart, userChangedLinesInMiddle, shrinkOrExpandBackOfRange, shrinkOrExpandFrontOfRange } from './translateChangesHelpers';
 
@@ -164,9 +164,15 @@ const createDecorationOptions = (ranges: { [key: string] : any }[]) : vscode.Dec
 
 export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode.TextEditor | undefined = undefined) : void => {
 	const filenames = [... new Set(annotationList.map(a => a.filename))];
-	const visibleEditors = vscode.window.visibleTextEditors.filter((t: vscode.TextEditor) => filenames.includes(t.document.uri.toString()));
+	const projectFilenames = [... new Set(annotationList.map(a => a.visiblePath))]
+	const projectName = getProjectName(text?.document.uri.toString());
+	console.log('rproj', projectName);
+	const textVisiblePath = getVisiblePath(projectName, text?.document.uri.fsPath)
+	const visibleEditors = vscode.window.visibleTextEditors.filter((t: vscode.TextEditor) => filenames.includes(t.document.uri.toString()) || projectFilenames.includes(textVisiblePath));
 	// we have one specific doc we want to highlight
-	if(annotationList.length && text && filenames.includes(text.document.uri.toString())) {
+
+	console.log('bool', 'path', textVisiblePath, !visibleEditors.length, text, vscode.window.visibleTextEditors.length)
+	if(annotationList.length && text && (filenames.includes(text.document.uri.toString()) || projectFilenames.includes(textVisiblePath))) {
 		let ranges = annotationList
 			.map(a => { return { id: a.id, anchorText: a.anchorText, annotation: a.annotation, filename: a.filename, range: createRangeFromAnnotation(a)}})
 			.filter(r => r.filename === text?.document.uri.toString())
@@ -224,13 +230,47 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 	else if(!text && visibleEditors.length && annotationList.length) {
 		const filesToHighlight: {[key: string]: any} = {};
 		const visFileNames: string[] = visibleEditors.map((t: vscode.TextEditor) => t.document.uri.toString());
+		const highlighted: string[] = [];
 		visFileNames.forEach((key: string) => {
-			const annoRangeObjs: {[key: string]: any}[] = annotationList.filter((a: Annotation) => a.filename === key).map((a: Annotation) => { return { id: a.id, annotation: a.annotation, range: createRangeFromAnnotation(a) } })
+			const annoRangeObjs: {[key: string]: any}[] = annotationList.filter((a: Annotation) => a.filename === key)
+				.map((a: Annotation) => { 
+					highlighted.push(a.id);
+					return { id: a.id, annotation: a.annotation, range: createRangeFromAnnotation(a) } 
+				})
+			
 			filesToHighlight[key] = createDecorationOptions(annoRangeObjs);
 		});
 		visibleEditors.forEach((v: vscode.TextEditor) => {
 			v.setDecorations(annotationDecorations, filesToHighlight[v.document.uri.toString()]);
 		});
+	// }
+
+	// else if(!visibleEditors.length && text && vscode.window.visibleTextEditors.length) {
+		// may have a weird filename change on hand?
+		if(highlighted.length !== annotationList.length) {
+			console.log('in if')
+			const annotationsToHighlight = annotationList.filter(a => !highlighted.includes(a.id))
+			const filesToHighlight2: {[key: string]: any} = {};
+			const projectLevelAnnotationFiles: string[] = annotationsToHighlight.map(a => a.visiblePath);
+			const projectLevelFileNames : string[] = vscode.window.visibleTextEditors.map((te: vscode.TextEditor) => {
+				console.log('doc', te.document.uri.fsPath, 'proj', getProjectName(te.document.uri.toString()))
+				
+				return getVisiblePath(getProjectName(te.document.uri.toString()), te.document.uri.fsPath);
+			});
+
+			console.log('projectLevelAnnotationFiles', projectLevelAnnotationFiles)
+			console.log('projectLevelFile', projectLevelFileNames);
+			projectLevelFileNames.forEach((filename: string) => {
+				if(projectLevelAnnotationFiles.includes(filename)) {
+					const annoRangeObjs: {[key: string]: any}[] = annotationsToHighlight.filter((a: Annotation) => a.visiblePath === filename)
+						.map((a: Annotation) => { return { id: a.id, annotation: a.annotation, range: createRangeFromAnnotation(a) } });
+						filesToHighlight2[filename] = createDecorationOptions(annoRangeObjs); 
+				}
+			});
+			vscode.window.visibleTextEditors.forEach((te: vscode.TextEditor) => {
+				te.setDecorations(annotationDecorations, filesToHighlight2[getVisiblePath(getProjectName(te.document.uri.toString()), te.document.uri.fsPath)])
+			});
+		}
 	}
 
 	// nothing

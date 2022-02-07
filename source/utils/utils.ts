@@ -23,8 +23,8 @@ const arraysEqual = (a1: any[], a2: any[]) : boolean => {
 }
 
 export const initializeAnnotations = async (user: firebase.User) : Promise<void> => {
-	console.log('gitInfo in initalize', gitInfo);
-	console.log('project', getProjectName());
+	// console.log('gitInfo in initalize', gitInfo);
+	// console.log('project', getProjectName());
 	const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
 	setAnnotationList(sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename));
 }
@@ -225,6 +225,14 @@ const writeToFile = async (serializedObjects: { [key: string] : any }[], annotat
 	}
 }
 
+export const getGithubUrl = (visiblePath: string, projectName: string) : string => {
+	if(!gitInfo[projectName].repo) return "";
+	const baseUrl: string = gitInfo[projectName].repo.split('.git')[0];
+	const endUrl: string = visiblePath.includes('\\') ? visiblePath.split(projectName)[1].replace(/\\/g, '/') : visiblePath.split(projectName)[1]; // '\\' : '\/';
+	console.log('wheehoo', baseUrl + "/tree/" + gitInfo[projectName].commit + endUrl)
+	return gitInfo[projectName].commit === 'localChange' ? baseUrl + "/tree/main/" + endUrl :  baseUrl + "/tree/" + gitInfo[projectName].commit + endUrl;
+}
+
 export const getVisiblePath = (projectName: string, workspacePath: string | undefined) : string => {
 	if(projectName && workspacePath) {
 		const path: string = workspacePath.substring(workspacePath.indexOf(projectName));
@@ -253,23 +261,23 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 		r?.state?.onDidChange(async () => {
 			console.log('calling on did change', r.state, 'gitInfo', gitInfo);
 			const currentProjectName: string = getProjectName(r?.rootUri?.path);
-			const diffs = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch);
-			// if(diffs.length > 0 && diffs.length !== gitInfo[currentProjectName].changes.length) {
-				gitInfo[currentProjectName] = { ...gitInfo[currentProjectName], changes: diffs };
-				diffs.forEach(async (diff: {[key: string]: any}) => {
-					console.log('diff', diff);
-					const path: string = '.' + diff.uri.path.split(currentProjectName)[1];
-					let diffWithMain = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch, path);
-					// console.log('diffWithMain', diffWithMain);
-					const diffData = parse(diffWithMain);
-					// console.log('diffData', diffData);
-					const annotationsInFile: Annotation[] = annotationList.filter(a => '.' + a.filename.toString().split(currentProjectName)[1] === path)
-					if(diffData.length && annotationsInFile.length)
-					updateAnchorsUsingDiffData(diffData, annotationsInFile);
-				}) 
+			// const diffs = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch);
+			// // if(diffs.length > 0 && diffs.length !== gitInfo[currentProjectName].changes.length) {
+			// 	gitInfo[currentProjectName] = { ...gitInfo[currentProjectName], changes: diffs };
+				// diffs.forEach(async (diff: {[key: string]: any}) => {
+				// 	console.log('diff', diff);
+				// 	const path: string = '.' + diff.uri.path.split(currentProjectName)[1];
+				// 	let diffWithMain = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch, path);
+				// 	// console.log('diffWithMain', diffWithMain);
+				// 	const diffData = parse(diffWithMain);
+				// 	// console.log('diffData', diffData);
+				// 	const annotationsInFile: Annotation[] = annotationList.filter(a => '.' + a.filename.toString().split(currentProjectName)[1] === path)
+				// 	if(diffData.length && annotationsInFile.length)
+				// 	// updateAnchorsUsingDiffData(diffData, annotationsInFile);
+				// }) 
 			// }
 			// let diffWithMain = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch, './source/anchorFunctions/anchor.ts')
-			console.log('diff', diffs)
+			// console.log('diff', diffs)
 			// console.log( 'dwm', diffWithMain);
 			if(gitInfo[currentProjectName].commit !== r.state.HEAD.commit || gitInfo[currentProjectName].branch !== r.state.HEAD.name) {
 				gitInfo[currentProjectName].commit = r.state.HEAD.commit;

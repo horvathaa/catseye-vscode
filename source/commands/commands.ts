@@ -111,11 +111,13 @@ export const createNewAnnotation = () => {
     utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then((html: string) => {
 		const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);
 		const programmingLang: string = activeTextEditor.document.uri.toString().split('.')[activeTextEditor.document.uri.toString().split('.').length - 1];
+		const visiblePath: string = vscode.workspace.workspaceFolders ? 
+		utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) : activeTextEditor.document.uri.fsPath;
+		console.log(utils.getGithubUrl(visiblePath, projectName))
 		const temp = {
 			id: newAnnoId,
 			filename: activeTextEditor.document.uri.toString(),
-			visiblePath: vscode.workspace.workspaceFolders ? 
-				utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) : activeTextEditor.document.uri.fsPath,
+			visiblePath,
 			anchorText: text,
 			annotation: '',
 			deleted: false,

@@ -21,7 +21,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { initializeAuth } from '../authHelper/authHelper';
 
 export const init = async () => {
+	vscode.window.showInformationMessage("INIT AUTH");
 	await initializeAuth();
+	vscode.window.showInformationMessage("FINISHED INIT AUTH");
 
 	if(view) {
 		view._panel?.reveal();
@@ -112,8 +114,7 @@ export const createNewAnnotation = () => {
 		const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);
 		const programmingLang: string = activeTextEditor.document.uri.toString().split('.')[activeTextEditor.document.uri.toString().split('.').length - 1];
 		const visiblePath: string = vscode.workspace.workspaceFolders ? 
-		utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) : activeTextEditor.document.uri.fsPath;
-		console.log(utils.getGithubUrl(visiblePath, projectName))
+			utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) : activeTextEditor.document.uri.fsPath;
 		const temp = {
 			id: newAnnoId,
 			filename: activeTextEditor.document.uri.toString(),
@@ -129,6 +130,8 @@ export const createNewAnnotation = () => {
 			gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : "",
 			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
 			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "localChange",
+			gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
+			stableGitUrl: utils.getGithubUrl(visiblePath, projectName, true),
 			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
 			projectName: projectName,
 			githubUsername: gitInfo.author,
@@ -156,6 +159,8 @@ export const addNewHighlight = () => {
 	// Get the branch and commit 
 	const newAnnoId: string = uuidv4();
 	const programmingLang: string = activeTextEditor.document.uri.toString().split('.')[activeTextEditor.document.uri.toString().split('.').length - 1];
+	const visiblePath: string = vscode.workspace.workspaceFolders ? 
+		utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) : activeTextEditor.document.uri.fsPath;
 	utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then(html => {
 		const temp = {
 			id: newAnnoId,
@@ -174,6 +179,8 @@ export const addNewHighlight = () => {
 			gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : "",
 			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
 			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "localChange",
+			gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
+			stableGitUrl: utils.getGithubUrl(visiblePath, projectName, true),
 			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
 			projectName: projectName,
 			githubUsername: gitInfo.author,
@@ -183,7 +190,7 @@ export const addNewHighlight = () => {
 			codeSnapshots: [],
 			sharedWith: "private"
 		};
-
+		console.log('new anno range', r);
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));
 		const textEdit = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === temp?.filename)[0];
 		setAnnotationList(utils.sortAnnotationsByLocation(annotationList, textEdit.document.uri.toString()));
@@ -191,7 +198,7 @@ export const addNewHighlight = () => {
 		anchor.addHighlightsToEditor(annotationList, textEdit);
     });
 }
-
+// anchor.addHighlightsToEditor(annotationList, textEdit);
 export const showAnnoInWebview = (id: string) => {
 	if(view?._panel?.visible) {
 		view?.scrollToAnnotation(id);
@@ -221,6 +228,7 @@ export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edi
 					}
 				};
 		});
+		console.log('annosWithCopyMeta', annosWithCopyMetaData)
 		setCopiedAnnotationList(annosWithCopyMetaData);
     }
 	else if(copiedAnnotations.length) {

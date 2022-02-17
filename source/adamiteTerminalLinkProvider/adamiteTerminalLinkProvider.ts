@@ -21,5 +21,9 @@ export class AdamiteTerminalLinkProvider implements TerminalLinkProvider {
 
     public async handleTerminalLink(link: AdamiteTerminalLink) : Promise<void> {
         view?.addTerminalMessage(link.content);
+        // text
     }
-}
+}   
+
+// console.log('hconsologi')
+

@@ -4,6 +4,7 @@ interface CssExports {
   'hiding': string;
   'showing': string;
   'subheading': string;
+  'sublist': string;
 }
 export const cssExports: CssExports;
 export default cssExports;

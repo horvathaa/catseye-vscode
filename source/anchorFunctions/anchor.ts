@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import Annotation from '../constants/constants';
-import { buildAnnotation, sortAnnotationsByLocation, getProjectName, getVisiblePath } from '../utils/utils';
-import { annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList } from '../extension';
+import { buildAnnotation, sortAnnotationsByLocation, getProjectName, getVisiblePath, getGithubUrl } from '../utils/utils';
+import { annotationDecorations, setOutOfDateAnnotationList, view, setAnnotationList, activeEditor } from '../extension';
 import { userDeletedAnchor, userAutocompletedOrCommented, userChangedTextBeforeStart, userChangedTextBeforeEnd, userChangedLinesBeforeStart, userChangedLinesInMiddle, shrinkOrExpandBackOfRange, shrinkOrExpandFrontOfRange } from './translateChangesHelpers';
 
 export function getIndicesOf(searchStr: string, str: string, caseSensitive: boolean) {
@@ -49,7 +49,9 @@ export const translateChanges = (
 	: Annotation => {
 		const originalStartLine = originalAnnotation.startLine, originalEndLine = originalAnnotation.endLine, originalStartOffset = originalAnnotation.startOffset, originalEndOffset = originalAnnotation.endOffset;
 		let newRange = { startLine: originalStartLine, endLine: originalEndLine, startOffset: originalStartOffset, endOffset: originalEndOffset };	
+		// let originalAnchor = { ...newRange };
 		let originalAnchor = newRange;
+		// console.log('originalAnchor at beginning of translate changes', originalAnchor);
 		const { anchorText } = originalAnnotation;
 		let newAnchorText = anchorText;
 		const startAndEndLineAreSameNoNewLine = originalStartLine === changeRange.start.line && originalEndLine === changeRange.end.line && !diff;
@@ -58,14 +60,20 @@ export const translateChanges = (
 		// const changeRange = new vscode.Range(new vscode.Position(startLine, startOffset), new vscode.Position(endLine, endOffset)); 
 		// user deleted the anchor
 
-		// console.log('changeRange', changeRange, 'changeText', changeText, 'changetext len', changeText.length)
+		// const editor = vscode.window.activeTextEditor;
+		if(activeEditor?.selection.isEmpty) {
+			console.log('curr position', activeEditor.selection);
+			
+		}
+
+		console.log('changeRange', changeRange)
 		const isDeleteOperation: boolean = !textLength;
 		if(isDeleteOperation && changeRange.contains(originalRange)) {
 			console.log('userDeletedAnchor');
 			return userDeletedAnchor(originalAnnotation);
 		}
 
-		if(textLength && changeRange.contains(originalRange)) {
+		if(!isDeleteOperation && changeRange.contains(originalRange)) {
 			console.log('git Operation most likely...');
 
 		}
@@ -77,7 +85,9 @@ export const translateChanges = (
 		// user adds/removes text at or before start of anchor on same line (no new lines)
 		if(changeRange.start.character <= originalStartOffset && changeRange.start.line === originalStartLine && !diff) {
 			console.log('userChangedTextBeforeStart');
-			newRange = userChangedTextBeforeStart(newRange, originalAnchor, isDeleteOperation, textLength, rangeLength, startAndEndLineAreSameNoNewLine, originalAnchor.startOffset === changeRange.start.character);
+			console.log('changeRange', changeRange);
+			console.log('originalAnchor', originalAnchor);
+			newRange = userChangedTextBeforeStart(newRange, originalAnchor, changeRange, isDeleteOperation, textLength, rangeLength, startAndEndLineAreSameNoNewLine, originalAnchor.startOffset === changeRange.start.character);
 			if(originalAnchor.startOffset === changeRange.start.character) changeOccurredInRange = true;
 		}
 
@@ -89,6 +99,7 @@ export const translateChanges = (
 		}
 
 		// USER ADDED OR REMOVED LINE
+		// console.log('originalAnchorCheck', originalAnchor);
 
 		// user added lines above start of range
 		if (changeRange.start.line < originalStartLine && diff) {
@@ -96,11 +107,22 @@ export const translateChanges = (
 			newRange = userChangedLinesBeforeStart(newRange, originalAnchor, diff);
 		}
 
+		// console.log('originalAnchorCheck', originalAnchor);
+		// user adds newline at beginning of anchor
+		console.log('diff?', diff, 'bool 1', changeRange.start.line === originalStartLine, '3', changeRange.start.character === originalStartOffset, '4', originalEndLine === originalStartLine)
+		if((changeRange.start.line === originalStartLine) && diff && (changeRange.start.character === originalStartOffset) && (originalEndLine === originalStartLine)) {
+			console.log('in new condition');
+			newRange.startLine = changeRange.end.line + diff;
+			newRange.endLine = changeRange.end.line + diff;
+			console.log('oogabooga', changeText.substring(changeText.lastIndexOf('\n')), changeText.substring(changeText.lastIndexOf('\n')).length, 'oso', originalStartOffset, 'crso', changeRange.start.character)
+			newRange.startOffset = changeText.substring(changeText.lastIndexOf('\n') + 1).length + (originalStartOffset - changeRange.start.character);
+			newRange.endOffset = newRange.startOffset + (originalEndOffset - originalStartOffset);
+		}
 		// user added/removed line in middle of the anchor -- we are not including end offset
-		if(changeRange.start.line >= originalStartLine && changeRange.end.line <= originalEndLine && diff) {
+		else if(changeRange.start.line >= originalStartLine && changeRange.end.line <= originalEndLine && diff) {
 			changeOccurredInRange = true;
 			console.log('userChangedLinesInMiddle');
-			newRange = userChangedLinesInMiddle(newRange, originalAnchor, changeRange, diff, startAndEndLineAreSameNewLine, anchorText, changeText, textLength);
+			newRange = userChangedLinesInMiddle(newRange, originalAnchor, changeRange, diff, startAndEndLineAreSameNewLine, anchorText, changeText, textLength, rangeLength);
 		}
 		else if(changeRange.start.line >= originalStartLine && changeRange.start.line <= originalEndLine && changeRange.end.line >= originalEndLine && diff) {
 			console.log('shrinkOrExpandBackOfRange');
@@ -108,7 +130,9 @@ export const translateChanges = (
 		}
 		else if(changeRange.end.line >= originalStartLine && changeRange.end.line <= originalEndLine && changeRange.start.line <=  originalEndLine && diff) {
 			console.log('shrinkOrExpandFrontOfRange');
-			newRange = shrinkOrExpandFrontOfRange(newRange, changeRange, diff, changeText, anchorText, rangeLength, originalAnchor);
+			console.log('what in tarnation', originalAnchor);
+			// just pass in original start and original end here or osomething i dont even wanna deal with changing everything
+			newRange = shrinkOrExpandFrontOfRange(newRange, changeRange, diff, changeText, anchorText, rangeLength, originalStartLine, originalStartOffset);
 		}
 
 		if(newRange.endOffset === 0 || doc.getText(new vscode.Range(newRange.endLine, 0, newRange.endLine, newRange.endOffset)).replace(/\s/g, '').length === 0) {
@@ -126,7 +150,7 @@ export const translateChanges = (
 			newAnchorText = doc.getText(createRangeFromObject(newRange));
 		}
 
-		// console.log('final range', newRange);
+		console.log('final range', newRange);
 
 		const newAnno = {
 			...originalAnnotation, anchorText: newAnchorText, ...newRange
@@ -164,15 +188,12 @@ const createDecorationOptions = (ranges: { [key: string] : any }[]) : vscode.Dec
 
 export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode.TextEditor | undefined = undefined) : void => {
 	const filenames = [... new Set(annotationList.map(a => a.filename))];
-	const projectFilenames = [... new Set(annotationList.map(a => a.visiblePath))]
+	const githubUrls = [... new Set(annotationList.map(a => a.stableGitUrl))]
 	const projectName = getProjectName(text?.document.uri.toString());
-	console.log('rproj', projectName);
-	const textVisiblePath = getVisiblePath(projectName, text?.document.uri.fsPath)
-	const visibleEditors = vscode.window.visibleTextEditors.filter((t: vscode.TextEditor) => filenames.includes(t.document.uri.toString()) || projectFilenames.includes(textVisiblePath));
+	const textUrl = text ? getGithubUrl(getVisiblePath(projectName, text?.document.uri.fsPath), projectName, true) : "";
+	const visibleEditors = vscode.window.visibleTextEditors.filter((t: vscode.TextEditor) => filenames.includes(t.document.uri.toString()) || githubUrls.includes(textUrl));
 	// we have one specific doc we want to highlight
-
-	console.log('bool', 'path', textVisiblePath, !visibleEditors.length, text, vscode.window.visibleTextEditors.length)
-	if(annotationList.length && text && (filenames.includes(text.document.uri.toString()) || projectFilenames.includes(textVisiblePath))) {
+	if(annotationList.length && text && (filenames.includes(text.document.uri.toString()) || githubUrls.includes(textUrl))) {
 		let ranges = annotationList
 			.map(a => { return { id: a.id, anchorText: a.anchorText, annotation: a.annotation, filename: a.filename, range: createRangeFromAnnotation(a)}})
 			.filter(r => r.filename === text?.document.uri.toString())
@@ -228,6 +249,7 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 	// we want to highlight anything relevant -- probably should do validity check here too
 	// maybe extract validity check into a separate function
 	else if(!text && visibleEditors.length && annotationList.length) {
+		// console.log('in else if');
 		const filesToHighlight: {[key: string]: any} = {};
 		const visFileNames: string[] = visibleEditors.map((t: vscode.TextEditor) => t.document.uri.toString());
 		const highlighted: string[] = [];
@@ -248,27 +270,29 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 	// else if(!visibleEditors.length && text && vscode.window.visibleTextEditors.length) {
 		// may have a weird filename change on hand?
 		if(highlighted.length !== annotationList.length) {
-			console.log('in if')
+			// console.log('in if')
 			const annotationsToHighlight = annotationList.filter(a => !highlighted.includes(a.id))
 			const filesToHighlight2: {[key: string]: any} = {};
-			const projectLevelAnnotationFiles: string[] = annotationsToHighlight.map(a => a.visiblePath);
+			const projectLevelAnnotationFiles: string[] = annotationsToHighlight.map(a => a.stableGitUrl);
 			const projectLevelFileNames : string[] = vscode.window.visibleTextEditors.map((te: vscode.TextEditor) => {
-				console.log('doc', te.document.uri.fsPath, 'proj', getProjectName(te.document.uri.toString()))
-				
-				return getVisiblePath(getProjectName(te.document.uri.toString()), te.document.uri.fsPath);
+				// console.log('doc', te.document.uri.fsPath, 'proj', getProjectName(te.document.uri.toString()))
+				const projectName: string = getProjectName(te.document.uri.toString())
+				return getGithubUrl(getVisiblePath(projectName, te.document.uri.fsPath), projectName, true);
 			});
 
-			console.log('projectLevelAnnotationFiles', projectLevelAnnotationFiles)
-			console.log('projectLevelFile', projectLevelFileNames);
+			// console.log('projectLevelAnnotationFiles', projectLevelAnnotationFiles)
+			// console.log('projectLevelFile', projectLevelFileNames);
 			projectLevelFileNames.forEach((filename: string) => {
 				if(projectLevelAnnotationFiles.includes(filename)) {
-					const annoRangeObjs: {[key: string]: any}[] = annotationsToHighlight.filter((a: Annotation) => a.visiblePath === filename)
+					const annoRangeObjs: {[key: string]: any}[] = annotationsToHighlight.filter((a: Annotation) => a.stableGitUrl === filename)
 						.map((a: Annotation) => { return { id: a.id, annotation: a.annotation, range: createRangeFromAnnotation(a) } });
 						filesToHighlight2[filename] = createDecorationOptions(annoRangeObjs); 
 				}
 			});
 			vscode.window.visibleTextEditors.forEach((te: vscode.TextEditor) => {
-				te.setDecorations(annotationDecorations, filesToHighlight2[getVisiblePath(getProjectName(te.document.uri.toString()), te.document.uri.fsPath)])
+				const projectName: string = getProjectName(te.document.uri.toString())
+				const url = getGithubUrl(getVisiblePath(projectName, te.document.uri.fsPath), projectName, true)
+				te.setDecorations(annotationDecorations, filesToHighlight2[url])
 			});
 		}
 	}

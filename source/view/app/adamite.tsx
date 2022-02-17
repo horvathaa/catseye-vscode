@@ -4,6 +4,7 @@ import { useState } from "react";
 import NewAnnotation from "./components/newAnnotation";
 import AnnotationList from "./components/annotationList";
 import LogIn from './components/login';
+import styles from './styles/adamite.module.css';
 // import { areListsTheSame } from './viewUtils';
 // import { annotationList } from '../../extension';
 
@@ -24,6 +25,7 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
   const [showNewAnnotation, setShowNewAnnotation] = useState(false);
   const [currentProject, setCurrentProject] = useState("");
   const [currentFile, setCurrentFile] = useState("");
+  // const [currentUrl, setCurrentlUrl] = useState("");
 
   const handleIncomingMessages = (e: MessageEvent<any>) => {
     const message = e.data;
@@ -42,6 +44,11 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
         return;
       case 'scrollToAnno':
         const annoDiv: HTMLElement | null = document.getElementById(message.payload.id);
+        const currentFileDiv: Element | null | undefined = document.getElementById('Current File')?.nextElementSibling;
+        if(!currentFileDiv?.classList.contains(styles['showing'])) {
+          currentFileDiv?.classList.remove(styles['hiding']);
+          currentFileDiv?.classList.add(styles['showing']);
+        }
         annoDiv?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
         return;
     }

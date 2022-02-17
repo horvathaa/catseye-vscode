@@ -4,8 +4,7 @@ import * as vscode from 'vscode';
 vscode.window.showInformationMessage("LOADING EXTENSION.TS");
 import firebase from './firebase/firebase';
 vscode.window.showInformationMessage("LOADED FIREBASE");
-import ViewLoader from './view/ViewLoader';
-vscode.window.showInformationMessage("LOADED VIEWLOADER");
+
 import Annotation from './constants/constants';
 vscode.window.showInformationMessage("LOADED CONSTANTS");
 import * as commands from './commands/commands';
@@ -14,6 +13,8 @@ import * as eventHandlers from './listeners/listeners';
 vscode.window.showInformationMessage("LOADED LISTENERS");
 import * as utils from './utils/utils';
 vscode.window.showInformationMessage("LOADED UTILS");
+import ViewLoader from './view/ViewLoader';
+vscode.window.showInformationMessage("LOADED VIEWLOADER");
 // import { AdamiteTerminalLinkProvider } from './adamiteTerminalLinkProvider/adamiteTerminalLinkProvider';
 vscode.window.showInformationMessage("ABOUT TO LOAD vscode.git exports");
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;

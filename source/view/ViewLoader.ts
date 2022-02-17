@@ -1,3 +1,4 @@
+vscode.window.showInformationMessage("loading viewloader.ts 1")
 import * as vscode from "vscode";
 import * as path from "path";
 import Annotation from '../constants/constants';

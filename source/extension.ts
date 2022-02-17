@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+vscode.window.showInformationMessage("LOADING EXTENSION.TS");
 import firebase from './firebase/firebase';
 import ViewLoader from './view/ViewLoader';
 import Annotation from './constants/constants';
@@ -10,6 +11,8 @@ import * as utils from './utils/utils';
 // import { AdamiteTerminalLinkProvider } from './adamiteTerminalLinkProvider/adamiteTerminalLinkProvider';
 
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
+console.log('gitExtension', gitExtension);
+vscode.window.showInformationMessage("GOT GIT EXTENSION?");
 export const gitApi = gitExtension?.getAPI(1);
 export let gitInfo: {[key: string] : any} = {};
 export let annotationList: Annotation[] = [];
@@ -92,9 +95,12 @@ export const setOutOfDateAnnotationList = (newOutOfDateAnnotationList: Annotatio
 	setAnnotationList(utils.removeOutOfDateAnnotations(annotationList));
 }
 
+vscode.window.showInformationMessage("FINISHED SETTERS");
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+	vscode.window.showInformationMessage("RUNNING ACTIVATE");
 	// initialize authentication and listeners for annotations
 	commands.init();
 
@@ -153,5 +159,8 @@ export function activate(context: vscode.ExtensionContext) {
 	
 }
 
+vscode.window.showInformationMessage("FINISHED ACTIVATE.TS");
+
 // // this method is called when your extension is deactivated
 export function deactivate() {}
+vscode.window.showInformationMessage("AT BOTTOM OF EXTENSION.TS");

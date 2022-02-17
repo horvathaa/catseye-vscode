@@ -9,11 +9,16 @@ const SCOPES = ['read:user', 'user:email', 'repo'];
 
 export const initializeAuth = async () => {
     let session;
+    const authSessionOptions: vscode.AuthenticationGetSessionOptions = {
+        clearSessionPreference: false,
+        createIfNone: true
+    };
     try {
-        session = await vscode.authentication.getSession('github', SCOPES, { createIfNone: true });
+        session = await vscode.authentication.getSession('github', SCOPES, authSessionOptions);
     } catch (e) {
         throw e;
     }
+    console.log('auth session', session);
 
     if(session) {
         const { accessToken, account } = session;

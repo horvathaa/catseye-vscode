@@ -1,4 +1,6 @@
 import { tabSize, insertSpaces, view, annotationList, deletedAnnotations, setDeletedAnnotationList } from "../extension";
+// import { tabSize, insertSpaces,  annotationList, deletedAnnotations, setDeletedAnnotationList } from "../extension";
+
 import { addHighlightsToEditor, createRangeFromObject } from "./anchor";
 import Annotation, { Anchor } from '../constants/constants';
 import { buildAnnotation } from '../utils/utils';
@@ -11,7 +13,7 @@ export const userDeletedAnchor = (originalAnnotation: Annotation) : Annotation =
     }
     const deletedAnno = buildAnnotation(newAnno);
     setDeletedAnnotationList(deletedAnnotations.concat([deletedAnno]));
-    if(view) addHighlightsToEditor(annotationList.filter(a => a.id !== deletedAnno.id));
+    // if(view) addHighlightsToEditor(annotationList.filter(a => a.id !== deletedAnno.id));
     return deletedAnno;
 }
 

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { gitInfo, gitApi, setAnnotationList, setGitInfo, setUser } from '../extension';
+import { gitInfo, gitApi, setAnnotationList, setGitInfo, setUser, adamiteLog } from '../extension';
 import { initializeAnnotations, generateGitMetaData } from '../utils/utils';
 import { fbSignInWithEmailAndPassword, getUserGithubData, fbSignOut, signInWithGithubCredential, setUserGithubAccount } from '../firebase/functions/functions';
 const path = require('path');
@@ -18,7 +18,7 @@ export const initializeAuth = async () => {
     } catch (e) {
         throw e;
     }
-    console.log('auth session', session);
+    adamiteLog.appendLine('auth session');
 
     if(session) {
         const { accessToken, account } = session;
@@ -48,7 +48,7 @@ export const initializeAuth = async () => {
             setUser(user);
 
             setGitInfo(await generateGitMetaData(gitApi));
-            console.log('gitInfo', gitInfo, 'api', gitApi, 'git');
+            adamiteLog.append('user' + user?.uid);
             user ? await initializeAnnotations(user) : setAnnotationList([]);
             if(user)
             try {

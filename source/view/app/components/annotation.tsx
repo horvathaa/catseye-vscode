@@ -172,6 +172,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
                     createdTimestamp={anno.createdTimestamp} 
                   />
                   <AnnotationOperationButtons
+                    annotationId={anno.id}
                     userId={userId}
                     authorId={anno.authorId}
                     replyToAnnotation={() => { setReplying(!replying) }}

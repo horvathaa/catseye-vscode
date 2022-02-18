@@ -1,11 +1,33 @@
 .AnnotationItem {
-    width: 100%;
-    display: flex;
-    position: relative;
-    /* padding: 15px 15px 5px 15px; */
-    padding: 15px 5px 5px 5px;
-    margin-bottom: 2%;
+  width: 100%;
+  display: flex;
+  position: relative;
+  /* padding: 15px 15px 5px 15px; */
+  padding: 15px 5px 5px 5px;
+  margin-bottom: 2%;
+}
+
+.AnnotationIconsContainer {
+  display: flex;
+}
+
+.AnnotationsOptions{
+  display: none;
+  padding: .5em;
+  cursor: pointer;
+  outline-color: transparent !important;
+  padding-top: .2em !important;
+}
+
+@media (max-width:330px) {
+  .AnnotationsOptions {
+    display: block !important;
   }
+  .AnnotationIconsContainer {
+    display: none !important;
+  }
+}
+
 
 .Pad {
   padding: 8px 0px;

@@ -73,8 +73,8 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
 
         return (
             <>
-                <div onClick={showHideCluster} id={'other-projects-outer'} className={styles['subheading']}>
-                    Other Projects
+                <div onClick={showHideCluster} id={'other-projects-outer'} className={`${styles['subheading']} ${styles['showing']}`}>
+                    Other Projects ({projects.length} projects)
                 </div>
                 <ul style={{ margin: 0, padding: '0px 0px 0px 0px' }}>
                     {projects}
@@ -111,7 +111,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
                     createProjectsClusters(output[key])
                 );
             }
-            else {
+            else { 
                 const header = output[key].length === 1 ? 'annotation' : 'annotations';
                 const annotations = key !== 'Current File' ? output[key].sort((a: Annotation, b: Annotation) => a.createdTimestamp < b.createdTimestamp ? 1 : -1) : output[key];
                 jsx.push(

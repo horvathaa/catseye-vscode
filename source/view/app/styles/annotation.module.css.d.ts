@@ -5,6 +5,7 @@ interface CssExports {
   'AnchorButtonContainer': string;
   'AnchorContainer': string;
   'AnnotationContainer': string;
+  'AnnotationIconsContainer': string;
   'AnnotationItem': string;
   'AnnotationsOptions': string;
   'ContentContainer': string;

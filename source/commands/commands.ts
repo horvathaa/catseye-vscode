@@ -8,6 +8,7 @@ import { gitInfo,
 		setCopiedAnnotationList, 
 		copiedAnnotations, 
 		setStoredCopyText, 
+		adamiteLog,
 		setGitInfo, 
 		gitApi } 
 from "../extension";
@@ -21,9 +22,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { initializeAuth } from '../authHelper/authHelper';
 
 export const init = async () => {
-	vscode.window.showInformationMessage("INIT AUTH");
 	await initializeAuth();
-	vscode.window.showInformationMessage("FINISHED INIT AUTH");
 
 	if(view) {
 		view._panel?.reveal();
@@ -154,7 +153,7 @@ export const addNewHighlight = () => {
     }
         
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
-    const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
+	const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
 	const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);
 	// Get the branch and commit 
 	const newAnnoId: string = uuidv4();
@@ -165,9 +164,7 @@ export const addNewHighlight = () => {
 		const temp = {
 			id: newAnnoId,
 			filename: activeTextEditor.document.uri.toString(),
-			visiblePath: vscode.workspace.workspaceFolders ? 
-				utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) :
-				activeTextEditor.document.uri.fsPath,
+			visiblePath,
 			anchorText: text,
 			annotation: '',
 			deleted: false,
@@ -190,10 +187,10 @@ export const addNewHighlight = () => {
 			codeSnapshots: [],
 			sharedWith: "private"
 		};
-		console.log('new anno range', r);
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));
 		const textEdit = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === temp?.filename)[0];
 		setAnnotationList(utils.sortAnnotationsByLocation(annotationList, textEdit.document.uri.toString()));
+		// adamiteLog.appendLine('calling viewloader');
 		view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList));
 		anchor.addHighlightsToEditor(annotationList, textEdit);
     });

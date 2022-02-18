@@ -1,7 +1,7 @@
 import firebase from '../firebase/firebase';
 import Annotation from '../constants/constants';
 import { computeRangeFromOffset, updateAnchorsUsingDiffData } from '../anchorFunctions/anchor';
-import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations } from '../extension';
+import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations, adamiteLog } from '../extension';
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
 import { getAnnotationsOnSignIn } from '../firebase/functions/functions';
@@ -239,9 +239,13 @@ const writeToFile = async (serializedObjects: { [key: string] : any }[], annotat
 }
 
 export const getGithubUrl = (visiblePath: string, projectName: string, returnStable: boolean) : string => {
-	if(!gitInfo[projectName].repo) return "";
+	adamiteLog.appendLine('params = visiblePath: ' + visiblePath + ' projectName: ' + projectName + 'returnStable: ' + returnStable)
+	adamiteLog.appendLine("repo: " + gitInfo[projectName]?.repo);
+	if(!gitInfo[projectName]?.repo || gitInfo[projectName]?.repo === "") return "";
 	const baseUrl: string = gitInfo[projectName].repo.split('.git')[0];
+	adamiteLog.appendLine("baseUrl: " + baseUrl);
 	const endUrl: string = visiblePath.includes('\\') ? visiblePath.split(projectName)[1].replace(/\\/g, '/') : visiblePath.split(projectName)[1]; // '\\' : '\/';
+	adamiteLog.appendLine("endUrl: " + endUrl);
 	// console.log('wheehoo', baseUrl + "/tree/" + gitInfo[projectName].commit + endUrl)
 	return gitInfo[projectName].commit === 'localChange' || returnStable ? baseUrl + "/tree/main" + endUrl :  baseUrl + "/tree/" + gitInfo[projectName].commit + endUrl;
 }
@@ -308,6 +312,7 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 			modifiedAnnotations: []
 		}
 	});
+	adamiteLog.appendLine("huh?: " + gitApi.repositories[0]?.state?.remotes[0]?.fetchUrl)
 	return gitInfo;
 }
 

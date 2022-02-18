@@ -1,25 +1,15 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-vscode.window.showInformationMessage("LOADING EXTENSION.TS");
-import firebase from './firebase/firebase';
-vscode.window.showInformationMessage("LOADED FIREBASE");
 
+import firebase from './firebase/firebase';
 import Annotation from './constants/constants';
-vscode.window.showInformationMessage("LOADED CONSTANTS");
 import * as commands from './commands/commands';
-vscode.window.showInformationMessage("LOADED COMMANDS");
 import * as eventHandlers from './listeners/listeners';
-vscode.window.showInformationMessage("LOADED LISTENERS");
 import * as utils from './utils/utils';
-vscode.window.showInformationMessage("LOADED UTILS");
 import ViewLoader from './view/ViewLoader';
-vscode.window.showInformationMessage("LOADED VIEWLOADER");
 // import { AdamiteTerminalLinkProvider } from './adamiteTerminalLinkProvider/adamiteTerminalLinkProvider';
-vscode.window.showInformationMessage("ABOUT TO LOAD vscode.git exports");
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
-console.log('gitExtension', gitExtension);
-vscode.window.showInformationMessage("GOT GIT EXTENSION?");
 export const gitApi = gitExtension?.getAPI(1);
 export let gitInfo: {[key: string] : any} = {};
 export let annotationList: Annotation[] = [];
@@ -33,6 +23,7 @@ export let view: ViewLoader | undefined = undefined;
 export let user: firebase.User | null = null;
 export let tempAnno: Annotation | null = null;
 export let activeEditor = vscode.window.activeTextEditor;
+export let adamiteLog = vscode.window.createOutputChannel("Adamite");
 export const annotationDecorations = vscode.window.createTextEditorDecorationType({
 	// borderWidth: '0.25px',
 	// borderStyle: 'solid',
@@ -102,12 +93,9 @@ export const setOutOfDateAnnotationList = (newOutOfDateAnnotationList: Annotatio
 	setAnnotationList(utils.removeOutOfDateAnnotations(annotationList));
 }
 
-vscode.window.showInformationMessage("FINISHED SETTERS");
-
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-	vscode.window.showInformationMessage("RUNNING ACTIVATE");
 	// initialize authentication and listeners for annotations
 	commands.init();
 
@@ -166,8 +154,5 @@ export function activate(context: vscode.ExtensionContext) {
 	
 }
 
-vscode.window.showInformationMessage("FINISHED ACTIVATE.TS");
-
 // // this method is called when your extension is deactivated
 export function deactivate() {}
-vscode.window.showInformationMessage("AT BOTTOM OF EXTENSION.TS");

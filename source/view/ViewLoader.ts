@@ -1,19 +1,15 @@
-vscode.window.showInformationMessage("loading viewloader.ts 1")
 import * as vscode from "vscode";
 import * as path from "path";
 import Annotation from '../constants/constants';
 import { annotationList } from '../extension';
-vscode.window.showInformationMessage("loading viewloader.ts")
 export default class ViewLoader {
   public _panel: vscode.WebviewPanel | undefined;
   private readonly _extensionPath: string;
 
   constructor(fileUri: vscode.Uri, extensionPath: string) {
     this._extensionPath = extensionPath;
-    vscode.window.showInformationMessage("in constructor")
 
     if (annotationList) {
-      vscode.window.showInformationMessage("annotationlist true")
       this._panel = vscode.window.createWebviewPanel(
         "adamite",
         "Adamite",
@@ -26,20 +22,17 @@ export default class ViewLoader {
           ]
         }
       );
-      vscode.window.showInformationMessage("made panel")
-      vscode.window.showInformationMessage(`path: ${path.join(extensionPath, "dist")}`)
 
       this._panel.webview.html = this.getWebviewContent(annotationList);
     }
   }
 
   private getWebviewContent(annotationList: Annotation[]): string {
-    vscode.window.showInformationMessage("in getWebviewContent")
     // Local path to main script run in the webview
     const reactAppPathOnDisk = vscode.Uri.file(
       path.join(this._extensionPath, "dist", "configViewer.js")
     );
-    vscode.window.showInformationMessage(`reactAppPathOnDisk: ${path.join(this._extensionPath, "dist", "configViewer.js")}`)
+
     const reactAppUri = reactAppPathOnDisk.with({ scheme: "vscode-resource" });
     const annotationJson = JSON.stringify(annotationList);
 

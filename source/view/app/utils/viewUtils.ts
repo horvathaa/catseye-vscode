@@ -37,13 +37,16 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 		annoObj['gitRepo'],
 		annoObj['gitBranch'],
 		annoObj['gitCommit'],
+		annoObj['gitUrl'],
+		annoObj['stableGitUrl'],
 		annoObj['anchorPreview'],
 		annoObj['projectName'],
 		annoObj['githubUsername'],
 		annoObj['replies'],
 		annoObj['outputs'],
 		annoObj['originalCode'],
-		annoObj['codeSnapshots']
+		annoObj['codeSnapshots'],
+		annoObj['sharedWith']
 	)
 }
 

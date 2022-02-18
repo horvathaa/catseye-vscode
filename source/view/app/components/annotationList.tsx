@@ -38,12 +38,57 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
         }
     }
 
+    const createProjectsClusters = (otherProjects: {[key: string] : any}) : React.ReactElement => {
+        let projects: React.ReactElement[] = [];
+        const iterable = Object.keys(otherProjects).sort().reduce((obj: {[key: string]: any}, k: string) => {
+            obj[k] = otherProjects[k]; 
+            return obj;
+        }, {});
+        for(const project in iterable) {
+            let innerProject: React.ReactElement;
+            const header = otherProjects[project].length === 1 ? `${project} (${otherProjects[project].length} annotation)` : `${project} (${otherProjects[project].length} annotations)`;
+            innerProject = (
+                <div>
+                    <div onClick={showHideCluster} id={header+'-wrapper'} className={`${styles['subheading']} ${styles['sublist']}`}>
+                        {header}
+                    </div>
+                    <div className={styles['hiding']}>
+                        {otherProjects[project].sort((a: Annotation, b: Annotation) => a.createdTimestamp < b.createdTimestamp ? 1 : -1).map((a: Annotation) => {
+                            return <ReactAnnotation
+                                        key={'annotation'+a.id} 
+                                        annotation={a} 
+                                        vscode={vscode} 
+                                        window={window} 
+                                        username={username}
+                                        userId={userId}
+                                        initialSelected={selectedIds.includes(a.id)}
+                                        transmitSelected={transmitSelected}
+                                    />
+                        })}
+                    </div>
+                </div>
+            )
+            projects.push(innerProject);
+        }
+
+        return (
+            <>
+                <div onClick={showHideCluster} id={'other-projects-outer'} className={`${styles['subheading']} ${styles['showing']}`}>
+                    Other Projects ({projects.length} projects)
+                </div>
+                <ul style={{ margin: 0, padding: '0px 0px 0px 0px' }}>
+                    {projects}
+                </ul>
+            </>
+        )
+    }
+
     const createClusters = () : React.ReactElement<any>[] => {
         let output : { [key: string] : any } = {
             'Selected': [],
             'Current File': [],
             'Current Project': [],
-            'Other Projects': []
+            'Other Projects': {}
         };
         annotations.forEach((a: Annotation) => {
             if(selectedIds.includes(a.id)) {
@@ -56,33 +101,41 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
                 output['Current Project'].push(a);
             }
             else {
-                output['Other Projects'].push(a);
+                output['Other Projects'][a.projectName] = output['Other Projects'].hasOwnProperty(a.projectName) ? [...output['Other Projects'][a.projectName], a] : [a];
             }
         });
         const jsx : React.ReactElement[] = [];
         for(const key in output) {
-            const header = output[key].length === 1 ? 'annotation' : 'annotations';
-            jsx.push(
-                <div>
-                    <div onClick={showHideCluster} id={key} className={styles['subheading']}>
-                        {key} ({output[key].length} {header})
+            if(key === 'Other Projects') {
+                jsx.push(
+                    createProjectsClusters(output[key])
+                );
+            }
+            else { 
+                const header = output[key].length === 1 ? 'annotation' : 'annotations';
+                const annotations = key !== 'Current File' ? output[key].sort((a: Annotation, b: Annotation) => a.createdTimestamp < b.createdTimestamp ? 1 : -1) : output[key];
+                jsx.push(
+                    <div key={key}>
+                        <div onClick={showHideCluster} id={key} className={styles['subheading']}>
+                            {key} ({output[key].length} {header})
+                        </div>
+                        <div className={styles['showing']}>
+                            {annotations.map((a: Annotation) => {
+                                return <ReactAnnotation
+                                            key={'annotation'+a.id} 
+                                            annotation={a} 
+                                            vscode={vscode} 
+                                            window={window} 
+                                            username={username}
+                                            userId={userId}
+                                            initialSelected={selectedIds.includes(a.id)}
+                                            transmitSelected={transmitSelected}
+                                        />
+                            })}
+                        </div>
                     </div>
-                    <div className={styles['showing']}>
-                        {output[key].map((a: Annotation) => {
-                            return <ReactAnnotation
-                                      key={'annotation'+a.id} 
-                                      annotation={a} 
-                                      vscode={vscode} 
-                                      window={window} 
-                                      username={username}
-                                      userId={userId}
-                                      initialSelected={selectedIds.includes(a.id)}
-                                      transmitSelected={transmitSelected}
-                                    />
-                        })}
-                    </div>
-                </div>
-            )
+                )
+            }
         }
         return jsx;
     }

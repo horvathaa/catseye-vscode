@@ -11,3 +11,7 @@
     font-family: var(--vscode-editor-font-family);
     cursor: pointer;
 }
+
+.sublist {
+    padding-left: 1em;
+}

@@ -1,18 +1,16 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+
 import firebase from './firebase/firebase';
-import ViewLoader from './view/ViewLoader';
 import Annotation from './constants/constants';
 import * as commands from './commands/commands';
 import * as eventHandlers from './listeners/listeners';
 import * as utils from './utils/utils';
-import { AdamiteTerminalLinkProvider } from './adamiteTerminalLinkProvider/adamiteTerminalLinkProvider';
-
+import ViewLoader from './view/ViewLoader';
+// import { AdamiteTerminalLinkProvider } from './adamiteTerminalLinkProvider/adamiteTerminalLinkProvider';
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
 export const gitApi = gitExtension?.getAPI(1);
-const openDiff = vscode.workspace.getConfiguration('git').get('openDiffClick', true);
-console.log('openDiff', openDiff, 'git', vscode.workspace.getConfiguration('git'));
 export let gitInfo: {[key: string] : any} = {};
 export let annotationList: Annotation[] = [];
 export let copiedAnnotations:  {[key: string] : any }[] = [];
@@ -25,6 +23,7 @@ export let view: ViewLoader | undefined = undefined;
 export let user: firebase.User | null = null;
 export let tempAnno: Annotation | null = null;
 export let activeEditor = vscode.window.activeTextEditor;
+export let adamiteLog = vscode.window.createOutputChannel("Adamite");
 export const annotationDecorations = vscode.window.createTextEditorDecorationType({
 	// borderWidth: '0.25px',
 	// borderStyle: 'solid',
@@ -131,7 +130,7 @@ export function activate(context: vscode.ExtensionContext) {
 	/**************************************** PROVIDERS *********************************/
 	/*************************************************************************************/
 
-	let terminalLinkProviderDisposable = vscode.window.registerTerminalLinkProvider(new AdamiteTerminalLinkProvider());
+	// let terminalLinkProviderDisposable = vscode.window.registerTerminalLinkProvider(new AdamiteTerminalLinkProvider());
 
 	/*************************************************************************************/
 	/**************************************** DISPOSABLES ********************************/
@@ -151,7 +150,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(copyDisposable);
 	context.subscriptions.push(cutDisposable);
 	
-	context.subscriptions.push(terminalLinkProviderDisposable);
+	// context.subscriptions.push(terminalLinkProviderDisposable);
 	
 }
 

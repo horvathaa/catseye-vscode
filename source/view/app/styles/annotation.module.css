@@ -1,11 +1,33 @@
 .AnnotationItem {
-    width: 100%;
-    display: flex;
-    position: relative;
-    /* padding: 15px 15px 5px 15px; */
-    padding: 15px 5px 5px 5px;
-    margin-bottom: 2%;
+  width: 100%;
+  display: flex;
+  position: relative;
+  /* padding: 15px 15px 5px 15px; */
+  padding: 15px 5px 5px 5px;
+  margin-bottom: 2%;
+}
+
+.AnnotationIconsContainer {
+  display: flex;
+}
+
+.AnnotationsOptions{
+  display: none;
+  padding: .5em;
+  cursor: pointer;
+  outline-color: transparent !important;
+  padding-top: .2em !important;
+}
+
+@media (max-width:330px) {
+  .AnnotationsOptions {
+    display: block !important;
   }
+  .AnnotationIconsContainer {
+    display: none !important;
+  }
+}
+
 
 .Pad {
   padding: 8px 0px;
@@ -227,11 +249,20 @@
 
 .textboxContainer {
   display: block;
+  border-radius: 8px;
+  border: 1px solid #d3d3d359;
+  padding: 8px;
+  margin-top: 4px;
+  margin-bottom: 4px;
 }
+
+
 
 .textbox {
   width: 95%;
   resize: none;
+  min-height: 4em;
+  font-family: var(--vscode-font-family);
 }
 
 .topRow {
@@ -291,6 +322,7 @@
   overflow: inherit;
   display: flex;
 }
+
 
 .arrowBox {
   display: flex;
@@ -355,12 +387,13 @@ button.submit {
   border-radius: 8px;
   padding-left: 1em;
   padding-right: 1em;
-  margin-right: 10px;
   cursor: pointer;
   color: white;
+  margin-top: 6px;
   border: 1px solid transparent;
   border-color: #7fae42;
   background-color: var(--vscode-editor-background);
+  height: 30px;
 }
 
 button.submit:hover {
@@ -373,9 +406,10 @@ button.cancel {
   border-radius: 8px;
   padding-left: 1em;
   padding-right: 1em;
-  margin-right: 10px;
+  margin-left: 10px;
   cursor: pointer;
   color: white;
   border: 1px solid transparent;
   background-color: rgba(158, 158, 158, 0.651);
+  height: 30px;
 }

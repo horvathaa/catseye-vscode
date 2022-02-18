@@ -2,8 +2,6 @@ import * as vscode from "vscode";
 import * as path from "path";
 import Annotation from '../constants/constants';
 import { annotationList } from '../extension';
-
-
 export default class ViewLoader {
   public _panel: vscode.WebviewPanel | undefined;
   private readonly _extensionPath: string;
@@ -35,7 +33,6 @@ export default class ViewLoader {
       path.join(this._extensionPath, "dist", "configViewer.js")
     );
     const reactAppUri = reactAppPathOnDisk.with({ scheme: "vscode-resource" });
-
     const annotationJson = JSON.stringify(annotationList);
 
     return `<!DOCTYPE html>

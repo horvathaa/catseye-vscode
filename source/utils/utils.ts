@@ -1,29 +1,32 @@
 import firebase from '../firebase/firebase';
 import Annotation from '../constants/constants';
-import { computeRangeFromOffset } from '../anchorFunctions/anchor';
-import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations } from '../extension';
+import { computeRangeFromOffset, updateAnchorsUsingDiffData } from '../anchorFunctions/anchor';
+import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations, adamiteLog } from '../extension';
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
 import { getAnnotationsOnSignIn } from '../firebase/functions/functions';
 import { saveAnnotations as fbSaveAnnotations } from '../firebase/functions/functions';
+let { parse } = require('what-the-diff');
 var shiki = require('shiki');
 
 let lastSavedAnnotations: Annotation[] = annotationList && annotationList.length ? annotationList : [];
 
 // https://stackoverflow.com/questions/27030/comparing-arrays-of-objects-in-javascript
 const objectsEqual = (o1: { [key: string ] : any }, o2: { [key: string ] : any }) : boolean => 
-    typeof o1 === 'object' && Object.keys(o1).length > 0 
-        ? Object.keys(o1).length === Object.keys(o2).length 
-            && Object.keys(o1).every(p => objectsEqual(o1[p], o2[p]))
-        : o1 === o2;
+	typeof o1 === 'object' && Object.keys(o1).length > 0 
+		? Object.keys(o1).length === Object.keys(o2).length 
+			&& Object.keys(o1).every(p => objectsEqual(o1[p], o2[p]))
+		: o1 === o2;
 
 const arraysEqual = (a1: any[], a2: any[]) : boolean => {
 	return a1.length === a2.length && a1.every((o, idx) => objectsEqual(o, a2[idx]));
 }
 
 export const initializeAnnotations = async (user: firebase.User) : Promise<void> => {
-    const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
-    setAnnotationList(sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename));
+	// console.log('gitInfo in initalize', gitInfo);
+	// console.log('project', getProjectName());
+	const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
+	setAnnotationList(sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename));
 }
 
 export const getFirstLineOfHtml = (html: string, isOneLineAnchor: boolean) : string => {
@@ -47,11 +50,15 @@ export function getListFromSnapshots(snapshots: firebase.firestore.QuerySnapshot
 }
 
 export const reconstructAnnotations = (annotationOffsetList: {[key: string] : any}[], text: string, changeRange: vscode.Range, filePath: vscode.Uri, workspace: vscode.Uri, doc: vscode.TextDocument) : Annotation[] => {
+	console.log('workspace', workspace.fsPath)
 	return annotationOffsetList.map((a: {[key: string] : any}) => {
+		const visiblePath: string = vscode.workspace.workspaceFolders ? 
+			getVisiblePath(a.anno.projectName, vscode.window.activeTextEditor?.document.uri.fsPath) : vscode.window.activeTextEditor?.document.uri.fsPath ? vscode.window.activeTextEditor?.document.uri.fsPath : "" 
+		const projectName: string = getProjectName(filePath.toString());
 		const adjustedAnno = {
 			id: uuidv4(),
 			filename: filePath.toString(),
-			visiblePath: getVisiblePath(a.anno.projectName, workspace.fsPath),
+			visiblePath: visiblePath,
 			anchorText: a.anno.anchorText,
 			annotation: a.anno.annotation,
 			anchor: computeRangeFromOffset(changeRange, a.offsetInCopy),
@@ -61,17 +68,21 @@ export const reconstructAnnotations = (annotationOffsetList: {[key: string] : an
 			authorId: a.anno.authorId,
 			createdTimestamp: new Date().getTime(),
 			programmingLang: a.anno.programmingLang,
-			gitRepo: a.anno.gitRepo,
-			gitBranch: a.anno.gitBranch,
-			gitCommit: a.anno.gitCommit,
+			gitRepo: gitInfo[projectName]?.repo, // a.anno.gitRepo,
+			gitBranch: gitInfo[projectName]?.branch,
+			gitCommit: gitInfo[projectName]?.commit,
+			gitUrl: getGithubUrl(visiblePath, projectName, false), // a.anno.gitUrl,
+			stableGitUrl: getGithubUrl(visiblePath, projectName, true),
 			anchorPreview: a.anno.anchorPreview,
-			projectName: a.anno.projectName,
-			githubUsername: a.anno.githubUsername,
+			projectName: projectName,
+			githubUsername: gitInfo.author,
 			replies: a.anno.replies,
 			outputs: a.anno.outputs,
 			originalCode: a.anno.originalCode,
-			codeSnapshots: a.anno.codeSnapshots
+			codeSnapshots: a.anno.codeSnapshots,
+			sharedWith: a.anno.sharedWith
 		}
+
 		return buildAnnotation(adjustedAnno);
 	});
 }
@@ -139,8 +150,12 @@ export const handleSaveCloseEvent = async (annotationList: Annotation[], filePat
 		const visibleAnnotations: Annotation[] = currentFile === 'all' ? newList : annotationList.filter(a => !ids.includes(a.id)).concat(newList);
 		setAnnotationList(visibleAnnotations);
 		view?.updateDisplay(visibleAnnotations);
-		lastSavedAnnotations = annosToSave;
-		saveAnnotations(annosToSave, filePath);
+		if(!arraysEqual(annosToSave, lastSavedAnnotations)) {
+			console.log('arrays are not equal');
+			lastSavedAnnotations = annosToSave;
+			saveAnnotations(annosToSave, filePath);
+		}
+
 	}
 	else if(annotationsInCurrentFile.length && vscode.workspace.workspaceFolders && !arraysEqual(annosToSave, lastSavedAnnotations)) {
 		lastSavedAnnotations = annosToSave;
@@ -171,13 +186,16 @@ export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[
 			gitRepo: a.gitRepo ? a.gitRepo : "",
 			gitBranch: a.gitBranch ? a.gitBranch : "",
 			gitCommit: a.gitCommit ? a.gitCommit : "",
+			gitUrl: a.gitUrl ? a.gitUrl : "",
+			stableGitUrl: a.stableGitUrl ? a.stableGitUrl : "",
 			anchorPreview: a.anchorPreview ? a.anchorPreview : "",
 			projectName: a.projectName ? a.projectName : "",
 			githubUsername: a.githubUsername ? a.githubUsername : "",
 			replies: a.replies ? a.replies : [],
 			outputs: a.outputs ? a.outputs : [],
 			originalCode: a.originalCode ? a.originalCode : "",
-			codeSnapshots: a.codeSnapshots ? a.codeSnapshots : []
+			codeSnapshots: a.codeSnapshots ? a.codeSnapshots : [],
+			sharedWith: a.sharedWith ? a.sharedWith : "private"
 	}});
 }
 
@@ -220,6 +238,20 @@ const writeToFile = async (serializedObjects: { [key: string] : any }[], annotat
 	}
 }
 
+export const getGithubUrl = (visiblePath: string, projectName: string, returnStable: boolean) : string => {
+	adamiteLog.appendLine('params = visiblePath: ' + visiblePath + ' projectName: ' + projectName + 'returnStable: ' + returnStable)
+	adamiteLog.appendLine("repo: " + gitInfo[projectName]?.repo);
+	if(!gitInfo[projectName]?.repo || gitInfo[projectName]?.repo === "") return "";
+	const baseUrl: string = gitInfo[projectName].repo.split('.git')[0];
+	adamiteLog.appendLine("baseUrl: " + baseUrl);
+	const endUrl: string = visiblePath.includes('\\') ? visiblePath.split(projectName)[1].replace(/\\/g, '/') : visiblePath.split(projectName)[1]; // '\\' : '\/';
+	adamiteLog.appendLine("endUrl: " + endUrl);
+	// console.log('wheehoo', baseUrl + "/tree/" + gitInfo[projectName].commit + endUrl)
+	return gitInfo[projectName].commit === 'localChange' || returnStable ? baseUrl + "/tree/main" + endUrl :  baseUrl + "/tree/" + gitInfo[projectName].commit + endUrl;
+}
+
+
+
 export const getVisiblePath = (projectName: string, workspacePath: string | undefined) : string => {
 	if(projectName && workspacePath) {
 		const path: string = workspacePath.substring(workspacePath.indexOf(projectName));
@@ -241,14 +273,31 @@ export const updateAnnotationCommit = (commit: string, branch: string, repo: str
 }
 
 export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] : any}> => {
-	gitApi.repositories?.forEach(async (r: any) => {
+	await gitApi.repositories?.forEach(async (r: any) => {
 		const currentProjectName: string = getProjectName(r?.rootUri?.path);
-		const branch = await r?.diff()
-		console.log(branch);
+		// const branch = await r?.diff()
+		// console.log(branch);
 		r?.state?.onDidChange(async () => {
-			console.log('calling on did change', r.state);
-			const branch = await r?.diff();
-			console.log('diff', branch);
+			// console.log('calling on did change', r.state, 'gitInfo', gitInfo);
+			const currentProjectName: string = getProjectName(r?.rootUri?.path);
+			// const diffs = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch);
+			// // if(diffs.length > 0 && diffs.length !== gitInfo[currentProjectName].changes.length) {
+			// 	gitInfo[currentProjectName] = { ...gitInfo[currentProjectName], changes: diffs };
+				// diffs.forEach(async (diff: {[key: string]: any}) => {
+				// 	console.log('diff', diff);
+				// 	const path: string = '.' + diff.uri.path.split(currentProjectName)[1];
+				// 	let diffWithMain = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch, path);
+				// 	// console.log('diffWithMain', diffWithMain);
+				// 	const diffData = parse(diffWithMain);
+				// 	// console.log('diffData', diffData);
+				// 	const annotationsInFile: Annotation[] = annotationList.filter(a => '.' + a.filename.toString().split(currentProjectName)[1] === path)
+				// 	if(diffData.length && annotationsInFile.length)
+				// 	// updateAnchorsUsingDiffData(diffData, annotationsInFile);
+				// }) 
+			// }
+			// let diffWithMain = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch, './source/anchorFunctions/anchor.ts')
+			// console.log('diff', diffs)
+			// console.log( 'dwm', diffWithMain);
 			if(gitInfo[currentProjectName].commit !== r.state.HEAD.commit || gitInfo[currentProjectName].branch !== r.state.HEAD.name) {
 				gitInfo[currentProjectName].commit = r.state.HEAD.commit;
 				gitInfo[currentProjectName].branch = r.state.HEAD.name;
@@ -258,14 +307,17 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 		gitInfo[currentProjectName] = {
 			repo: r?.state?.remotes[0]?.fetchUrl ? r?.state?.remotes[0]?.fetchUrl : r?.state?.remotes[0]?.pushUrl ? r?.state?.remotes[0]?.pushUrl : "",
 			branch: r?.state?.HEAD?.name ? r?.state?.HEAD?.name : "",
-			commit: r?.state?.HEAD?.commit ? r?.state?.HEAD?.commit : ""
+			commit: r?.state?.HEAD?.commit ? r?.state?.HEAD?.commit : "",
+			changes: await r?.diffBetween('origin/HEAD', r?.state?.HEAD?.name),
+			modifiedAnnotations: []
 		}
 	});
+	adamiteLog.appendLine("huh?: " + gitApi.repositories[0]?.state?.remotes[0]?.fetchUrl)
 	return gitInfo;
 }
 
 
-export const getProjectName = (filename: string | undefined) : string => {
+export const getProjectName = (filename?: string | undefined) : string => {
 	if(vscode.workspace.workspaceFolders && filename) {
 		const slash: string = filename.includes('\\') ? '\\' : '\/';
 		if(vscode.workspace.workspaceFolders.length > 1) {
@@ -322,13 +374,15 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 		annoObj['gitRepo'],
 		annoObj['gitBranch'],
 		annoObj['gitCommit'],
+		annoObj['gitUrl'],
+		annoObj['stableGitUrl'],
 		annoObj['anchorPreview'],
 		annoObj['projectName'],
 		annoObj['githubUsername'],
 		annoObj['replies'],
 		annoObj['outputs'],
 		annoObj['originalCode'],
-		annoObj['codeSnapshots']
+		annoObj['codeSnapshots'],
+		annoObj['sharedWith']
 	)
 }
-

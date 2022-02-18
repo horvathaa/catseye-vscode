@@ -19,6 +19,8 @@ export default class Annotation {
 	gitRepo: string;
 	gitBranch: string;
 	gitCommit: string;
+	gitUrl: string;
+	stableGitUrl: string;
 	anchorPreview: string;
 	projectName: string;
 	githubUsername: string;
@@ -26,14 +28,16 @@ export default class Annotation {
 	outputs: {[key: string]: any}[];
 	originalCode: string;
 	codeSnapshots: {[key: string]: any}[];
+	sharedWith: string;
 
 	constructor(
 			id: string, filename: string | vscode.Uri, visiblePath: string, anchorText: string, annotation: string, 
 			anchorStartLine: number, anchorEndLine: number, anchorStartOffset: number, 
 			anchorEndOffset: number, deleted: boolean, outOfDate: boolean, html: string, authorId: string,
 			createdTimestamp: number, programmingLang: string, gitRepo: string, gitBranch: string, gitCommit: string,
+			gitUrl: string, stableGitUrl: string,
 			anchorPreview: string, projectName: string, githubUsername: string, replies: {[key: string]: any}[],
-			outputs: {[key: string]: any}[], originalCode: string, codeSnapshots: {[key: string]: any}[]
+			outputs: {[key: string]: any}[], originalCode: string, codeSnapshots: {[key: string]: any}[], sharedWith: string
 		) 
 	{
 		this.id = id;
@@ -54,6 +58,8 @@ export default class Annotation {
 		this.gitRepo = gitRepo;
 		this.gitBranch = gitBranch;
 		this.gitCommit = gitCommit;
+		this.gitUrl = gitUrl;
+		this.stableGitUrl = stableGitUrl;
 		this.anchorPreview = anchorPreview;
 		this.projectName = projectName;
 		this.githubUsername = githubUsername;
@@ -61,6 +67,7 @@ export default class Annotation {
 		this.outputs = outputs;
 		this.originalCode = originalCode;
 		this.codeSnapshots = codeSnapshots;
+		this.sharedWith = sharedWith;
 	}
 }
 

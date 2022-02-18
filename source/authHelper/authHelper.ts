@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { gitInfo, setAnnotationList, setGitInfo, setUser } from '../extension';
-import { initializeAnnotations } from '../utils/utils';
+import { gitInfo, gitApi, setAnnotationList, setGitInfo, setUser, adamiteLog } from '../extension';
+import { initializeAnnotations, generateGitMetaData } from '../utils/utils';
 import { fbSignInWithEmailAndPassword, getUserGithubData, fbSignOut, signInWithGithubCredential, setUserGithubAccount } from '../firebase/functions/functions';
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname).includes('\\') ? path.resolve(__dirname, '..\\..\\.env.local') : path.resolve(__dirname, '..\/..\/.env.local') });
@@ -9,11 +9,16 @@ const SCOPES = ['read:user', 'user:email', 'repo'];
 
 export const initializeAuth = async () => {
     let session;
+    const authSessionOptions: vscode.AuthenticationGetSessionOptions = {
+        clearSessionPreference: false,
+        createIfNone: true
+    };
     try {
-        session = await vscode.authentication.getSession('github', SCOPES, { createIfNone: true });
+        session = await vscode.authentication.getSession('github', SCOPES, authSessionOptions);
     } catch (e) {
         throw e;
     }
+    adamiteLog.appendLine('auth session');
 
     if(session) {
         const { accessToken, account } = session;
@@ -41,6 +46,9 @@ export const initializeAuth = async () => {
         try {
             const user = await signInWithGithubCredential(result?.data);
             setUser(user);
+
+            setGitInfo(await generateGitMetaData(gitApi));
+            adamiteLog.append('user' + user?.uid);
             user ? await initializeAnnotations(user) : setAnnotationList([]);
             if(user)
             try {

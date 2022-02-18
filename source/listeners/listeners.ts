@@ -7,16 +7,19 @@ import Annotation, { Anchor } from '../constants/constants';
 
 export const handleChangeVisibleTextEditors = (textEditors: vscode.TextEditor[]) => {
     const textEditorFileNames = textEditors.map(t => t.document.uri.toString());
+    const textEditorProjectFileNames =  vscode.window.activeTextEditor ? textEditors.map(t => utils.getGithubUrl(utils.getVisiblePath(utils.getProjectName(t.document.uri.toString()), vscode.window.activeTextEditor?.document.uri.fsPath), utils.getProjectName(t.document.uri.toString()), true)) : []
     // nneed to decide if we want to write to DB that often... if(vscode.workspace.workspaceFolders !== undefined) utils.saveAnnotations(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json');
-    
-    const annotationsToHighlight = annotationList.filter(a => textEditorFileNames.includes(a.filename.toString()));
+    // console.log('handleChangeVisibleText', textEditorProjectFileNames)
+    const annotationsToHighlight = annotationList.filter(a => textEditorProjectFileNames.includes(a.stableGitUrl) || textEditorFileNames.includes(a.filename.toString()));
+    // console.log('annotationsToHighlight', annotationsToHighlight);
     if(!annotationsToHighlight.length) return;
     // TODO: see if we can change the behavior of markdown string so it has an onclick event to navigate to the annotation
-    if(view) anchor.addHighlightsToEditor(annotationsToHighlight);
-	
+    // console.log('view', view);
+    if(view) anchor.addHighlightsToEditor(annotationsToHighlight);	
 }
 
 export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | undefined) => {
+    // console.log('handleChangeActive');
     if(vscode.workspace.workspaceFolders) {
             if(TextEditor) {
                 if(TextEditor.options?.tabSize) setTabSize(TextEditor.options.tabSize);
@@ -53,6 +56,8 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
             const linesInRange = endLine - startLine;
             const linesInserted = change.text.split("\n").length - 1;
             const diff = linesInserted - linesInRange;
+            // console.log('wow', vscode.window.activeTextEditor?.document.positionAt(change.rangeOffset));
+            // console.log('hmm', vscode.window.activeTextEditor?.document.positionAt(change.rangeOffset).translate(diff, change.text.length))
             // check to see if user pasted a copied or previously-deleted annotation... 
 
             if(utils.didUserPaste(change.text) && copiedAnnotations.length && change.text.length) { // make sure this isn't a cut w/o paste

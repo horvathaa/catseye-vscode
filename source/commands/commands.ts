@@ -8,6 +8,7 @@ import { gitInfo,
 		setCopiedAnnotationList, 
 		copiedAnnotations, 
 		setStoredCopyText, 
+		adamiteLog,
 		setGitInfo, 
 		gitApi } 
 from "../extension";
@@ -22,8 +23,7 @@ import { initializeAuth } from '../authHelper/authHelper';
 
 export const init = async () => {
 	await initializeAuth();
-	setGitInfo(utils.generateGitMetaData(gitApi));
-	console.log('gitInfo', gitInfo, 'api', gitApi);
+
 	if(view) {
 		view._panel?.reveal();
 	}
@@ -112,11 +112,12 @@ export const createNewAnnotation = () => {
     utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then((html: string) => {
 		const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);
 		const programmingLang: string = activeTextEditor.document.uri.toString().split('.')[activeTextEditor.document.uri.toString().split('.').length - 1];
+		const visiblePath: string = vscode.workspace.workspaceFolders ? 
+			utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) : activeTextEditor.document.uri.fsPath;
 		const temp = {
 			id: newAnnoId,
 			filename: activeTextEditor.document.uri.toString(),
-			visiblePath: vscode.workspace.workspaceFolders ? 
-				utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) : activeTextEditor.document.uri.fsPath,
+			visiblePath,
 			anchorText: text,
 			annotation: '',
 			deleted: false,
@@ -128,13 +129,16 @@ export const createNewAnnotation = () => {
 			gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : "",
 			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
 			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "localChange",
+			gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
+			stableGitUrl: utils.getGithubUrl(visiblePath, projectName, true),
 			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
 			projectName: projectName,
 			githubUsername: gitInfo.author,
 			replies: [],
 			outputs: [],
 			originalCode: html,
-			codeSnapshots: []
+			codeSnapshots: [],
+			sharedWith: "private"
 		};
 		setTempAnno(utils.buildAnnotation(temp, r));
         view?.createNewAnno(html, annotationList);
@@ -149,18 +153,18 @@ export const addNewHighlight = () => {
     }
         
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
-    const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
+	const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
 	const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);
 	// Get the branch and commit 
 	const newAnnoId: string = uuidv4();
 	const programmingLang: string = activeTextEditor.document.uri.toString().split('.')[activeTextEditor.document.uri.toString().split('.').length - 1];
+	const visiblePath: string = vscode.workspace.workspaceFolders ? 
+		utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) : activeTextEditor.document.uri.fsPath;
 	utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then(html => {
 		const temp = {
 			id: newAnnoId,
 			filename: activeTextEditor.document.uri.toString(),
-			visiblePath: vscode.workspace.workspaceFolders ? 
-				utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) :
-				activeTextEditor.document.uri.fsPath,
+			visiblePath,
 			anchorText: text,
 			annotation: '',
 			deleted: false,
@@ -172,23 +176,26 @@ export const addNewHighlight = () => {
 			gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : "",
 			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
 			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "localChange",
+			gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
+			stableGitUrl: utils.getGithubUrl(visiblePath, projectName, true),
 			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
 			projectName: projectName,
 			githubUsername: gitInfo.author,
 			replies: [],
 			outputs: [],
 			originalCode: html,
-			codeSnapshots: []
+			codeSnapshots: [],
+			sharedWith: "private"
 		};
-
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));
 		const textEdit = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === temp?.filename)[0];
 		setAnnotationList(utils.sortAnnotationsByLocation(annotationList, textEdit.document.uri.toString()));
+		// adamiteLog.appendLine('calling viewloader');
 		view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList));
 		anchor.addHighlightsToEditor(annotationList, textEdit);
     });
 }
-
+// anchor.addHighlightsToEditor(annotationList, textEdit);
 export const showAnnoInWebview = (id: string) => {
 	if(view?._panel?.visible) {
 		view?.scrollToAnnotation(id);
@@ -218,6 +225,7 @@ export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edi
 					}
 				};
 		});
+		console.log('annosWithCopyMeta', annosWithCopyMetaData)
 		setCopiedAnnotationList(annosWithCopyMetaData);
     }
 	else if(copiedAnnotations.length) {

@@ -1,13 +1,16 @@
 import * as React from "react";
+import SplitButton from './muiSplitButton';
 import styles from '../../styles/annotation.module.css';
+
 
 interface Props {
     content: any,
-    submissionHandler: (newContent: any) => void,
-    cancelHandler: () => void
+    submissionHandler: (newContent: any, shareWith?: string) => void,
+    cancelHandler: () => void;
+    showSplitButton: boolean
 }
 
-const TextEditor: React.FC<Props> = ({ content, submissionHandler, cancelHandler }) => {
+const TextEditor: React.FC<Props> = ({ content, submissionHandler, cancelHandler, showSplitButton }) => {
     const [text, setText] = React.useState<any>(content);
 
     const updateAnnotationContent = (e: React.SyntheticEvent) => {
@@ -19,6 +22,10 @@ const TextEditor: React.FC<Props> = ({ content, submissionHandler, cancelHandler
         }
     }
 
+    const handleSubmission = (shareWith: string) => {
+        submissionHandler(text, shareWith);
+    }
+
     return (
         <div className={styles['textboxContainer']}>
             <textarea 
@@ -27,8 +34,14 @@ const TextEditor: React.FC<Props> = ({ content, submissionHandler, cancelHandler
                 onChange={updateAnnotationContent}
                 onClick={(e: React.SyntheticEvent) => e.stopPropagation()}
             />
-            <button className={styles['submit']} onClick={() => submissionHandler(text)}>Submit</button>
-            <button className={styles['cancel']} onClick={() => cancelHandler()}>Cancel</button>
+            {showSplitButton ? 
+                <SplitButton
+                    submissionHandler={handleSubmission} 
+                /> : 
+                <button className={styles['submit']} onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); submissionHandler(text) }}>Submit</button>
+            }
+            
+            <button className={styles['cancel']} onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); cancelHandler()}}>Cancel</button>
         </div>
     )
 }

@@ -32,7 +32,6 @@ export default class ViewLoader {
     const reactAppPathOnDisk = vscode.Uri.file(
       path.join(this._extensionPath, "dist", "configViewer.js")
     );
-
     const reactAppUri = reactAppPathOnDisk.with({ scheme: "vscode-resource" });
     const annotationJson = JSON.stringify(annotationList);
 

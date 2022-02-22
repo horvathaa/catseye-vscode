@@ -1,7 +1,19 @@
 import * as vscode from 'vscode';
 import firebase from 'firebase';
 import Annotation from '../constants/constants';
-import { user, gitInfo, setStoredCopyText, annotationList, setAnnotationList, view, setView, tempAnno, setTempAnno, annotationDecorations } from '../extension';
+import { user, 
+        gitInfo, 
+        setStoredCopyText, 
+        annotationList, 
+        setAnnotationList, 
+        view, 
+        setView, 
+        tempAnno, 
+        setTempAnno, 
+        annotationDecorations,
+        selectedAnnotationsNavigations,
+        setSelectedAnnotationsNavigations
+} from '../extension';
 import { initializeAnnotations, handleSaveCloseEvent, saveAnnotations, removeOutOfDateAnnotations, buildAnnotation, sortAnnotationsByLocation, getProjectName, getShikiCodeHighlighting } from '../utils/utils';
 import { addHighlightsToEditor, createRangeFromAnnotation } from '../anchorFunctions/anchor';
 import { v4 as uuidv4 } from 'uuid';
@@ -77,12 +89,13 @@ export const handleExportAnnotationAsComment = async (annoId: string) : Promise<
     })
 }
 
-export const handleCreateAnnotation = (annotationContent: string) : void => {
-    if(!tempAnno) return
+export const handleCreateAnnotation = (annotationContent: string, willBePinned: boolean) : void => {
+    if(!tempAnno) return;
     getShikiCodeHighlighting(tempAnno.filename.toString(), tempAnno.anchorText).then(html => {
         if(tempAnno) {
             let newAnno = tempAnno;
             newAnno.annotation = annotationContent;
+            newAnno.selected = willBePinned;
             newAnno.html = html;
             setAnnotationList(annotationList.concat([newAnno]));
             const text = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === tempAnno?.filename)[0];
@@ -90,6 +103,9 @@ export const handleCreateAnnotation = (annotationContent: string) : void => {
             setAnnotationList(sortAnnotationsByLocation(annotationList, text.document.uri.toString()));
             view?.updateDisplay(annotationList);
             addHighlightsToEditor(annotationList, text);
+            if(willBePinned) {
+                setSelectedAnnotationsNavigations([...selectedAnnotationsNavigations, { id: newAnno.id, lastVisited: false } ]);
+            }
         }
     });
 }
@@ -104,15 +120,25 @@ export const handleUpdateAnnotation = (id: string, key: string | string[], value
     }
     let updatedAnno: Annotation;
     console.log('key', key, 'value', value);
-    if(typeof key === 'string') {
+    console.log('typeof key', typeof key);
+    if(typeof value === 'boolean' && typeof key === 'string') {
+        updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], [key]: value });
+        setSelectedAnnotationsNavigations(
+            value ? [...selectedAnnotationsNavigations, { id, lastVisited: false}] : selectedAnnotationsNavigations.filter(a => a.id !== id) 
+        );
+        console.log('new selectednav', selectedAnnotationsNavigations);
+    }
+    else if(typeof key === 'string') {
         updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], [key]: value });
     }
     else {
         updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], [key[0]]: value[key[0]], [key[1]]: value[key[1]] });
     }
-    console.log('updated', updatedAnno);
+    // console.log('updated', updatedAnno);
     const updatedList = annotationList.filter(a => a.id !== id).concat([updatedAnno]);
     setAnnotationList(updatedList);
+    if(typeof value === 'boolean' && typeof key === 'string')
+    view?.updateDisplay(updatedList);
 }
 
 export const handleDeleteAnnotation = (id: string) : void => {

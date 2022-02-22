@@ -10,7 +10,9 @@ import { gitInfo,
 		setStoredCopyText, 
 		adamiteLog,
 		setGitInfo, 
-		gitApi } 
+		gitApi,
+		selectedAnnotationsNavigations, 
+		setSelectedAnnotationsNavigations} 
 from "../extension";
 import Annotation from '../constants/constants';
 import * as anchor from '../anchorFunctions/anchor';
@@ -64,8 +66,8 @@ export const createView = (context: vscode.ExtensionContext) => {
 						break;
 					}
 					case 'createAnnotation': {
-						const { anno } = message;
-						viewHelper.handleCreateAnnotation(anno);
+						const { anno, willBePinned } = message;
+						viewHelper.handleCreateAnnotation(anno, willBePinned);
 						break;
 					}
 					case 'updateAnnotation': {
@@ -138,18 +140,19 @@ export const createNewAnnotation = () => {
 			outputs: [],
 			originalCode: html,
 			codeSnapshots: [],
-			sharedWith: "private"
+			sharedWith: "private",
+			selected: false
 		};
 		setTempAnno(utils.buildAnnotation(temp, r));
         view?.createNewAnno(html, annotationList);
     });
 }
 
-export const addNewHighlight = () => {
+export const addNewHighlight = (selected?: boolean) : string | Promise<string> => {
 	const { activeTextEditor } = vscode.window;
     if (!activeTextEditor) {
         vscode.window.showInformationMessage("No text editor is open!");
-        return;
+        return "";
     }
         
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
@@ -160,7 +163,7 @@ export const addNewHighlight = () => {
 	const programmingLang: string = activeTextEditor.document.uri.toString().split('.')[activeTextEditor.document.uri.toString().split('.').length - 1];
 	const visiblePath: string = vscode.workspace.workspaceFolders ? 
 		utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) : activeTextEditor.document.uri.fsPath;
-	utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then(html => {
+	return utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then(html => {
 		const temp = {
 			id: newAnnoId,
 			filename: activeTextEditor.document.uri.toString(),
@@ -185,7 +188,8 @@ export const addNewHighlight = () => {
 			outputs: [],
 			originalCode: html,
 			codeSnapshots: [],
-			sharedWith: "private"
+			sharedWith: "private",
+			selected: selected ? selected : false
 		};
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));
 		const textEdit = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === temp?.filename)[0];
@@ -193,7 +197,38 @@ export const addNewHighlight = () => {
 		// adamiteLog.appendLine('calling viewloader');
 		view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList));
 		anchor.addHighlightsToEditor(annotationList, textEdit);
-    });
+		return newAnnoId;
+	});
+}
+
+export const addNewSelectedAnnotation = async () : Promise<void> => {
+	const id: string = await addNewHighlight(true);
+	setSelectedAnnotationsNavigations([...selectedAnnotationsNavigations, { id, lastVisited: false}]);
+}
+
+export const navigateSelectedAnnotations = (direction: string) : void => {
+	// addNewHighlight(true);
+	console.log('selectedAnnotationsNavigations', selectedAnnotationsNavigations);
+	const lastVisited: number = selectedAnnotationsNavigations.findIndex(a => a.lastVisited);
+	if(lastVisited === -1) {
+		console.log('in if');
+		const id: string = selectedAnnotationsNavigations[0].id;
+		viewHelper.handleScrollInEditor(id);
+		selectedAnnotationsNavigations[0].lastVisited = true;
+		return;
+	}
+	const newIdx: number = direction === 'forward' ? 
+						lastVisited + 1 < selectedAnnotationsNavigations.length ? 
+						lastVisited + 1 : 
+						0 :
+						lastVisited - 1 >= 0 ?
+						lastVisited - 1 :
+						selectedAnnotationsNavigations.length - 1;
+	console.log('newIdx', newIdx);
+	const id: string = selectedAnnotationsNavigations[newIdx].id;
+	viewHelper.handleScrollInEditor(id);
+	selectedAnnotationsNavigations[lastVisited].lastVisited = false;
+	selectedAnnotationsNavigations[newIdx].lastVisited = true;
 }
 // anchor.addHighlightsToEditor(annotationList, textEdit);
 export const showAnnoInWebview = (id: string) => {

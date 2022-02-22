@@ -16,17 +16,13 @@ interface Props {
   window: Window;
   username: string;
   userId: string;
-  initialSelected: boolean;
-  transmitSelected: (id: string) => void;
 }
 
-const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username, userId, initialSelected, transmitSelected }) => {
+const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username, userId }) => {
   const [anno, setAnno] = React.useState<Annotation>(annotation);
   const [edit, setEdit] = React.useState<boolean>(false);
   const [replying, setReplying] = React.useState<boolean>(false);
-  const [selected, setSelected] = React.useState<boolean>(initialSelected);
 
-  const selectedRef: React.MutableRefObject<boolean> = React.useRef(selected);
   const annoRef: React.MutableRefObject<Annotation> = React.useRef(anno);
 
   const handleIncomingMessages = (e: MessageEvent<any>) => {
@@ -41,7 +37,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
         }
         break;
       case 'addTerminalMessage':
-        if(selectedRef.current) {
+        if(anno.selected) {
           updateOutputs(message.payload.content);
         }
         break;
@@ -71,9 +67,12 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
   }
 
   const handleSelectedClick = () : void => {
-    selectedRef.current = !selected;
-    transmitSelected(anno.id);
-    setSelected(!selected);
+    vscode.postMessage({
+      command: 'updateAnnotation',
+      annoId: anno.id,
+      key: 'selected',
+      value: !anno.selected
+    });
   }
 
   const exportAnnotationAsComment = () : void => {
@@ -165,7 +164,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
   return (
       <React.Fragment>
           <div key={'annotation-container'+annotation.id} className={styles['Pad']} id={annotation.id} >
-              <li key={'annotation-li'+annotation.id} className={cn({ [styles.selected]: selected, [styles.AnnotationContainer]: true })} onClick={handleSelectedClick} >
+              <li key={'annotation-li'+annotation.id} className={cn({ [styles.selected]: anno.selected, [styles.AnnotationContainer]: true })} >
                 <div className={styles['topRow']}>
                   <UserProfile 
                     githubUsername={anno.githubUsername} 
@@ -180,6 +179,8 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
                     editAnnotation={() => { setEdit(!edit) }} 
                     deleteAnnotation={(e) => deleteAnnotation(e)}
                     snapshotCode={snapshotCode}
+                    pinAnnotation={handleSelectedClick}
+                    pinned={anno.selected}
                   />
                 </div>
                 <Anchor 

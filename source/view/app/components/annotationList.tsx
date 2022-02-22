@@ -14,7 +14,7 @@ interface AnnoListProps {
   }
   
 const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, currentFile, currentProject, username, userId }) => {
-    const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
+    // const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
 
     React.useEffect(() => {
         if(annotations.length) {
@@ -22,9 +22,9 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
         }
     }, []);
 
-    const transmitSelected = (id: string) : void => {
-        selectedIds.includes(id) ? setSelectedIds((selectedIds) => selectedIds.filter(annoId => annoId !== id)) : setSelectedIds((selectedIds) => selectedIds.concat([id]));
-    }
+    React.useEffect(() => {
+        
+    }, [annotations])
 
     const showHideCluster = (e: any) => {
         const div = e.target.nextElementSibling;
@@ -61,8 +61,6 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
                                         window={window} 
                                         username={username}
                                         userId={userId}
-                                        initialSelected={selectedIds.includes(a.id)}
-                                        transmitSelected={transmitSelected}
                                     />
                         })}
                     </div>
@@ -85,14 +83,14 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
 
     const createClusters = () : React.ReactElement<any>[] => {
         let output : { [key: string] : any } = {
-            'Selected': [],
+            'Pinned': [],
             'Current File': [],
             'Current Project': [],
             'Other Projects': {}
         };
         annotations.forEach((a: Annotation) => {
-            if(selectedIds.includes(a.id)) {
-                output['Selected'].push(a);
+            if(a.selected) {
+                output['Pinned'].push(a);
             }
             else if(a.filename === currentFile) {
                 output['Current File'].push(a);
@@ -128,8 +126,6 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
                                             window={window} 
                                             username={username}
                                             userId={userId}
-                                            initialSelected={selectedIds.includes(a.id)}
-                                            transmitSelected={transmitSelected}
                                         />
                             })}
                         </div>

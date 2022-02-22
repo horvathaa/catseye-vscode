@@ -46,7 +46,8 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 		annoObj['outputs'],
 		annoObj['originalCode'],
 		annoObj['codeSnapshots'],
-		annoObj['sharedWith']
+		annoObj['sharedWith'],
+		annoObj['selected']
 	)
 }
 

@@ -1,7 +1,7 @@
 import firebase from '../firebase/firebase';
 import Annotation from '../constants/constants';
 import { computeRangeFromOffset, updateAnchorsUsingDiffData } from '../anchorFunctions/anchor';
-import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations, adamiteLog } from '../extension';
+import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations, adamiteLog, setSelectedAnnotationsNavigations } from '../extension';
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
 import { getAnnotationsOnSignIn } from '../firebase/functions/functions';
@@ -26,7 +26,15 @@ export const initializeAnnotations = async (user: firebase.User) : Promise<void>
 	// console.log('gitInfo in initalize', gitInfo);
 	// console.log('project', getProjectName());
 	const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
+	const annotations: Annotation [] = sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename);
 	setAnnotationList(sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename));
+	const selectedAnnotations: Annotation[] = annotations.filter(a => a.selected);
+	setSelectedAnnotationsNavigations(
+		selectedAnnotations.length ? 
+		selectedAnnotations.map((a: Annotation) => {
+			return { id: a.id, lastVisited: false}
+		}) : []
+	);
 }
 
 export const getFirstLineOfHtml = (html: string, isOneLineAnchor: boolean) : string => {
@@ -80,7 +88,8 @@ export const reconstructAnnotations = (annotationOffsetList: {[key: string] : an
 			outputs: a.anno.outputs,
 			originalCode: a.anno.originalCode,
 			codeSnapshots: a.anno.codeSnapshots,
-			sharedWith: a.anno.sharedWith
+			sharedWith: a.anno.sharedWith,
+			selected: a.anno.selected
 		}
 
 		return buildAnnotation(adjustedAnno);
@@ -195,7 +204,8 @@ export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[
 			outputs: a.outputs ? a.outputs : [],
 			originalCode: a.originalCode ? a.originalCode : "",
 			codeSnapshots: a.codeSnapshots ? a.codeSnapshots : [],
-			sharedWith: a.sharedWith ? a.sharedWith : "private"
+			sharedWith: a.sharedWith ? a.sharedWith : "private",
+			selected: a.selected ? a.selected : false
 	}});
 }
 
@@ -383,6 +393,7 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 		annoObj['outputs'],
 		annoObj['originalCode'],
 		annoObj['codeSnapshots'],
-		annoObj['sharedWith']
+		annoObj['sharedWith'],
+		annoObj['selected']
 	)
 }

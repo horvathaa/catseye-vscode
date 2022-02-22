@@ -19,7 +19,7 @@
   padding-top: .2em !important;
 }
 
-@media (max-width:330px) {
+@media (max-width: 360px) {
   .AnnotationsOptions {
     display: block !important;
   }

@@ -29,6 +29,7 @@ export default class Annotation {
 	originalCode: string;
 	codeSnapshots: {[key: string]: any}[];
 	sharedWith: string;
+	selected: boolean
 
 	constructor(
 			id: string, filename: string | vscode.Uri, visiblePath: string, anchorText: string, annotation: string, 
@@ -37,7 +38,8 @@ export default class Annotation {
 			createdTimestamp: number, programmingLang: string, gitRepo: string, gitBranch: string, gitCommit: string,
 			gitUrl: string, stableGitUrl: string,
 			anchorPreview: string, projectName: string, githubUsername: string, replies: {[key: string]: any}[],
-			outputs: {[key: string]: any}[], originalCode: string, codeSnapshots: {[key: string]: any}[], sharedWith: string
+			outputs: {[key: string]: any}[], originalCode: string, codeSnapshots: {[key: string]: any}[], sharedWith: string,
+			selected: boolean
 		) 
 	{
 		this.id = id;
@@ -68,6 +70,7 @@ export default class Annotation {
 		this.originalCode = originalCode;
 		this.codeSnapshots = codeSnapshots;
 		this.sharedWith = sharedWith;
+		this.selected = selected;
 	}
 }
 

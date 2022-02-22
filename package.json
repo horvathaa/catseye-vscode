@@ -36,6 +36,18 @@
       {
         "command": "adamite.addHighlight",
         "title": "Adamite: Create Highlight"
+      },
+      {
+        "command": "adamite.addSelectedAnnotation",
+        "title": "Adamite: Create Pinned Annotation"
+      },
+      {
+        "command": "adamite.navigateForward",
+        "title": "Adamite: Go to Next Pinned Annotation"
+      },
+      {
+        "command": "adamite.navigateBack",
+        "title": "Adamite: Go to Last Pinned Annotation"
       }
     ],
     "keybindings": [
@@ -48,6 +60,21 @@
         "command": "adamite.addHighlight",
         "key": "ctrl+alt+h",
         "mac": "cmd+alt+h"
+      },
+      {
+        "command": "adamite.addSelectedAnnotation",
+        "key": "ctrl+alt+g",
+        "mac": "cmd+alt+g"
+      },
+      {
+        "command": "adamite.navigateForward",
+        "key": "ctrl+alt+]",
+        "mac": "cmd+alt+]"
+      },
+      {
+        "command": "adamite.navigateBack",
+        "key": "ctrl+alt+[",
+        "mac": "cmd+alt+["
       }
     ],
     "menus": {
@@ -55,6 +82,17 @@
         {
           "when": "editorHasSelection",
           "command": "adamite.addAnnotation",
+          "group": "2_adamite"
+        },
+        {
+          "when": "adamite.showUnPinAnchor",
+          "command": "adamite.navigateForward",
+          "group": "2_adamite"
+        }
+        ,
+        {
+          "when": "adamite.showPinAnchor",
+          "command": "adamite.navigateForward",
           "group": "2_adamite"
         }
       ]

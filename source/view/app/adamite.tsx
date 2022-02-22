@@ -17,15 +17,16 @@ interface Props {
 }
 
 const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, userId }) => {
-  const [annotations, setAnnotations] = useState([]);
+  const [annotations, setAnnotations] = useState(window.data);
   const [showLogin, setShowLogin] = useState(showLogIn);
-  const [userName, setUsername] = useState(username ? username : "");
-  const [uid, setUserId] = useState(userId ? userId : "");
+  const [userName, setUsername] = useState(window.username ? window.username : "");
+  const [uid, setUserId] = useState(window.userId ? window.userId : "");
   const [selection, setSelection] = useState("");
   const [showNewAnnotation, setShowNewAnnotation] = useState(false);
   const [currentProject, setCurrentProject] = useState("");
   const [currentFile, setCurrentFile] = useState("");
   // const [currentUrl, setCurrentlUrl] = useState("");
+
 
   const handleIncomingMessages = (e: MessageEvent<any>) => {
     const message = e.data;

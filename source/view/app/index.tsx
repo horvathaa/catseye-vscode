@@ -1,11 +1,13 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import AdamitePanel from "./adamite";
-import Annotation from '../../constants/constants'
+import Annotation from '../../constants/constants';
 declare global {
   interface Window {
     acquireVsCodeApi(): any;
     data: Annotation[];
+    userId: string;
+    username: string;
     selection: string;
     login: boolean;
     addEventListener(): any;
@@ -29,4 +31,9 @@ window.addEventListener('message', event => {
       document.getElementById("root")
     );
   }
-})
+});
+
+ReactDOM.render(
+  <AdamitePanel vscode={vscode} window={window} showLogIn={false}  />,
+  document.getElementById("root")
+);

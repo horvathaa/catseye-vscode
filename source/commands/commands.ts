@@ -34,6 +34,7 @@ export const init = async () => {
 export const createView = (context: vscode.ExtensionContext) => {
 	if(vscode.workspace.workspaceFolders) {
 		const newView : ViewLoader = new ViewLoader(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
+
 		setView(newView);
 		if(newView) {
 	/***********************************************************************************/

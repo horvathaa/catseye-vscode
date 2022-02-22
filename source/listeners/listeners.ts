@@ -108,12 +108,9 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
 }
 
 export const handleDidChangeTextEditorSelection = (e: vscode.TextEditorSelectionChangeEvent) => {
-    console.log('e', e);
     const ranges: {[key: string] : any}[] = annotationList.filter(a => a.filename === e.textEditor.document.uri.toString()).map(a => { return { id: a.id, range: anchor.createRangeFromAnnotation(a) }});
-    console.log('ranges', ranges);
     const range: {[key: string] : any} | undefined = ranges.find(r => r.range.contains(e.selections[0]));
     if(!range) {
-        console.log('in here?')
         vscode.commands.executeCommand('setContext', 'adamite.showUnPinAnchor', false);
         vscode.commands.executeCommand('setContext', 'adamite.showPinAnchor', false);
         return;

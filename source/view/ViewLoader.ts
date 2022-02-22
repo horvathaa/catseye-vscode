@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import Annotation from '../constants/constants';
-import { annotationList } from '../extension';
+import { annotationList, user, gitInfo } from '../extension';
 export default class ViewLoader {
   public _panel: vscode.WebviewPanel | undefined;
   private readonly _extensionPath: string;
@@ -27,13 +27,15 @@ export default class ViewLoader {
     }
   }
 
-  private getWebviewContent(annotationList: Annotation[]): string {
+  private getWebviewContent(annotationList: Annotation[]) : string {
     // Local path to main script run in the webview
     const reactAppPathOnDisk = vscode.Uri.file(
       path.join(this._extensionPath, "dist", "configViewer.js")
     );
     const reactAppUri = reactAppPathOnDisk.with({ scheme: "vscode-resource" });
     const annotationJson = JSON.stringify(annotationList);
+    const userId = JSON.stringify(user?.uid)
+    const username = JSON.stringify(gitInfo.author)
 
     return `<!DOCTYPE html>
     <html lang="en">
@@ -51,6 +53,8 @@ export default class ViewLoader {
         <script>
           window.acquireVsCodeApi = acquireVsCodeApi;
           window.data = ${annotationJson}
+          window.userId = ${userId}
+          window.username = ${username}
         </script>
     </head>
     <body>

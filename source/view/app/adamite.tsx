@@ -23,8 +23,9 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
   const [uid, setUserId] = useState(window.userId ? window.userId : "");
   const [selection, setSelection] = useState("");
   const [showNewAnnotation, setShowNewAnnotation] = useState(false);
-  const [currentProject, setCurrentProject] = useState("");
-  const [currentFile, setCurrentFile] = useState("");
+  const [currentProject, setCurrentProject] = useState(window.currentProject ? window.currentProject : "");
+  const [currentFile, setCurrentFile] = useState(window.currentFile ? window.currentFile : "");
+  // console.log('window', window);
   // const [currentUrl, setCurrentlUrl] = useState("");
 
 

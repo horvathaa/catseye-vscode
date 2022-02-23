@@ -52,9 +52,13 @@
     ],
     "keybindings": [
       {
+        "command": "adamite.launch",
+        "key": "ctrl+shift+a",
+        "mac": "cmd+shift+a"
+      },{
         "command": "adamite.addAnnotation",
-        "key": "ctrl+alt+s",
-        "mac": "cmd+alt+s"
+        "key": "ctrl+alt+a",
+        "mac": "cmd+alt+a"
       },
       {
         "command": "adamite.addHighlight",
@@ -63,8 +67,8 @@
       },
       {
         "command": "adamite.addSelectedAnnotation",
-        "key": "ctrl+alt+g",
-        "mac": "cmd+alt+g"
+        "key": "ctrl+alt+p",
+        "mac": "cmd+alt+p"
       },
       {
         "command": "adamite.navigateForward",
@@ -85,14 +89,13 @@
           "group": "2_adamite"
         },
         {
-          "when": "adamite.showUnPinAnchor",
-          "command": "adamite.navigateForward",
+          "when": "editorHasSelection",
+          "command": "adamite.addHighlight",
           "group": "2_adamite"
-        }
-        ,
+        },
         {
-          "when": "adamite.showPinAnchor",
-          "command": "adamite.navigateForward",
+          "when": "editorHasSelection",
+          "command": "adamite.addSelectedAnnotation",
           "group": "2_adamite"
         }
       ]

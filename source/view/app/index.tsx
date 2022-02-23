@@ -8,6 +8,8 @@ declare global {
     data: Annotation[];
     userId: string;
     username: string;
+    currentFile: string;
+    currentProject: string;
     selection: string;
     login: boolean;
     addEventListener(): any;

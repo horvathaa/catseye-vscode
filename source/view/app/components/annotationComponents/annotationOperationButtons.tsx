@@ -71,7 +71,7 @@ const AnnotationOperationButtons: React.FC<Props> = ({ annotationId, userId, aut
                 }
             }
         }
-    })
+    });
     
     return (
         <div className={styles['buttonRow']}>

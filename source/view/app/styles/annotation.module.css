@@ -28,6 +28,11 @@
   }
 }
 
+.bottomRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 
 .Pad {
   padding: 8px 0px;

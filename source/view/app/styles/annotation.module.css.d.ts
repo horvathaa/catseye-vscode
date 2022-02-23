@@ -25,6 +25,7 @@ interface CssExports {
   'active': string;
   'arrowBox': string;
   'arrowBox-leftAlign': string;
+  'bottomRow': string;
   'btn-primary': string;
   'buttonRow': string;
   'cancel': string;

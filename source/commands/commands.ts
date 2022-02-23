@@ -209,7 +209,7 @@ export const addNewSelectedAnnotation = async () : Promise<void> => {
 
 export const navigateSelectedAnnotations = (direction: string) : void => {
 	// addNewHighlight(true);
-	console.log('selectedAnnotationsNavigations', selectedAnnotationsNavigations);
+	// console.log('selectedAnnotationsNavigations', selectedAnnotationsNavigations);
 	const lastVisited: number = selectedAnnotationsNavigations.findIndex(a => a.lastVisited);
 	if(lastVisited === -1) {
 		console.log('in if');
@@ -225,7 +225,7 @@ export const navigateSelectedAnnotations = (direction: string) : void => {
 						lastVisited - 1 >= 0 ?
 						lastVisited - 1 :
 						selectedAnnotationsNavigations.length - 1;
-	console.log('newIdx', newIdx);
+	// console.log('newIdx', newIdx);
 	const id: string = selectedAnnotationsNavigations[newIdx].id;
 	viewHelper.handleScrollInEditor(id);
 	selectedAnnotationsNavigations[lastVisited].lastVisited = false;
@@ -261,7 +261,6 @@ export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edi
 					}
 				};
 		});
-		console.log('annosWithCopyMeta', annosWithCopyMetaData)
 		setCopiedAnnotationList(annosWithCopyMetaData);
     }
 	else if(copiedAnnotations.length) {

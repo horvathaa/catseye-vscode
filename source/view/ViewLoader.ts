@@ -1,7 +1,8 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import Annotation from '../constants/constants';
-import { annotationList, user, gitInfo } from '../extension';
+import { annotationList, user, gitInfo, activeEditor } from '../extension';
+import { getProjectName } from "../utils/utils";
 export default class ViewLoader {
   public _panel: vscode.WebviewPanel | undefined;
   private readonly _extensionPath: string;
@@ -34,8 +35,10 @@ export default class ViewLoader {
     );
     const reactAppUri = reactAppPathOnDisk.with({ scheme: "vscode-resource" });
     const annotationJson = JSON.stringify(annotationList);
-    const userId = JSON.stringify(user?.uid)
-    const username = JSON.stringify(gitInfo.author)
+    const userId = JSON.stringify(user?.uid);
+    const username = JSON.stringify(gitInfo.author);
+    const currentFile = JSON.stringify(activeEditor?.document.uri.toString());
+    const currentProject = JSON.stringify(getProjectName(activeEditor?.document.uri.toString()));
 
     return `<!DOCTYPE html>
     <html lang="en">
@@ -55,6 +58,8 @@ export default class ViewLoader {
           window.data = ${annotationJson}
           window.userId = ${userId}
           window.username = ${username}
+          window.currentFile = ${currentFile}
+          window.currentProject = ${currentProject}
         </script>
     </head>
     <body>

@@ -8,8 +8,10 @@ import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
 import MenuItem from '@mui/material/MenuItem';
 import MenuList from '@mui/material/MenuList';
+import { green } from '@material-ui/core/colors';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 
-const options = ['Post as Private', 'Post as Public', 'Post to Collaborators'];
+const options = ['Post as Private', 'Post to Collaborators'];
 
 interface Props {
   submissionHandler: (shareWith: string) => void;
@@ -20,9 +22,81 @@ const SplitButton: React.FC<Props> = ({ submissionHandler }) => {
   const anchorRef = React.useRef<HTMLDivElement>(null);
   const [selectedIndex, setSelectedIndex] = React.useState(0);
 
+  const theme = createTheme({
+    palette: {
+        primary: {
+            main: '#1e1e1e' 
+        }
+    },
+    typography: {
+        allVariants: {
+            fontSize: 12,
+            color: 'white',
+            fontFamily: 'Arial'
+        }
+    },
+    components: {
+        MuiButtonGroup: {
+            styleOverrides: {
+              root: {
+                  borderStyle: 'solid',
+                  borderWidth: '0.15em',
+                  // borderColor: '#d4d4d44f',
+                  backgroundColor: green[400],
+                  '&:hover': {
+                      background: green[600],
+                  }
+              },
+              grouped: {
+                border: 'none',
+              }
+          }
+        },
+        MuiButton: {
+          styleOverrides: {
+            root: {
+                borderStyle: 'solid',
+                borderWidth: '0.15em',
+                // borderColor: '#d4d4d44f',
+                backgroundColor: green[400],
+                '&:hover': {
+                    background: green[600],
+                }
+            }
+        }
+      },
+        MuiMenu: {
+            styleOverrides: {
+                root: {
+                    borderStyle: 'solid',
+                    borderWidth: '0.15em',
+                    borderColor: '#d4d4d44f'
+                }
+            }
+        },
+        MuiMenuItem: {
+            styleOverrides: {
+                root: {
+                    backgroundColor: green[400],
+                    '&:hover': {
+                        background: green[600],
+                    }
+                },
+            }
+        },
+        MuiList: {
+            styleOverrides: {
+                root: {
+                    backgroundColor: '#1e1e1e'
+                }
+            }
+        }
+    }
+});
+
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    const shareWith : string = selectedIndex === 0 ? "private" : selectedIndex === 1 ? "public" : "group";
+    const shareWith : string = selectedIndex === 0 ? "private" : "group";
     submissionHandler(shareWith);
   };
 
@@ -54,7 +128,8 @@ const SplitButton: React.FC<Props> = ({ submissionHandler }) => {
 
   return (
     <React.Fragment>
-      <ButtonGroup size="small" variant="contained" color="success" ref={anchorRef} aria-label="split button">
+      <ThemeProvider theme={theme}>
+      <ButtonGroup size="small" variant="contained" ref={anchorRef} aria-label="split button">
         <Button onClick={handleClick}>{options[selectedIndex]}</Button>
         <Button
           size="small"
@@ -100,6 +175,7 @@ const SplitButton: React.FC<Props> = ({ submissionHandler }) => {
           </Grow>
         )}
       </Popper>
+      </ThemeProvider>
     </React.Fragment>
   );
 }

@@ -108,16 +108,7 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
 }
 
 export const handleDidChangeTextEditorSelection = (e: vscode.TextEditorSelectionChangeEvent) => {
-    const ranges: {[key: string] : any}[] = annotationList.filter(a => a.filename === e.textEditor.document.uri.toString()).map(a => { return { id: a.id, range: anchor.createRangeFromAnnotation(a) }});
-    const range: {[key: string] : any} | undefined = ranges.find(r => r.range.contains(e.selections[0]));
-    if(!range) {
-        vscode.commands.executeCommand('setContext', 'adamite.showUnPinAnchor', false);
-        vscode.commands.executeCommand('setContext', 'adamite.showPinAnchor', false);
-        return;
-    }
-    const annoPinned: boolean | undefined = annotationList.find(a => a.id === range.id)?.selected;
-    annoPinned ? vscode.commands.executeCommand('setContext', 'adamite.showUnPinAnchor', true) : vscode.commands.executeCommand('setContext', 'adamite.showPinAnchor', true);
-    annoPinned ? vscode.commands.executeCommand('setContext', 'adamite.showPinAnchor', false) : vscode.commands.executeCommand('setContext', 'adamite.showUnPinAnchor', false);
+    
 }
 
 export const handleDidStartDebugSession = (e: vscode.DebugSession) : void => {

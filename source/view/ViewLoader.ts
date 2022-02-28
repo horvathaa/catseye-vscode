@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import Annotation from '../constants/constants';
+import { Annotation } from '../constants/constants';
 import { annotationList, user, gitInfo, activeEditor } from '../extension';
 import { getProjectName } from "../utils/utils";
 export default class ViewLoader {

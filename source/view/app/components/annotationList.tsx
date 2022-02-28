@@ -1,5 +1,6 @@
 import styles from '../styles/adamite.module.css';
-import Annotation from '../../../constants/constants';
+import { Annotation } from '../../../constants/constants';
+import { getAllAnnotationFilenames }  from '../utils/viewUtils';
 import ReactAnnotation from '../components/annotation';
 import * as React from 'react';
 
@@ -89,10 +90,11 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
             'Other Projects': {}
         };
         annotations.forEach((a: Annotation) => {
+            const annoFiles = getAllAnnotationFilenames([a]);
             if(a.selected) {
                 output['Pinned'].push(a);
             }
-            else if(a.filename === currentFile) {
+            else if(annoFiles.includes(currentFile)) {
                 output['Current File'].push(a);
             }
             else if(a.projectName === currentProject) {

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import AuthorOperationButtons from './authorOperationButtons';
-import { VscComment, VscDeviceCamera, VscFileSymlinkFile, VscPin, VscPinned, VscMenu } from 'react-icons/vsc';
+import { VscComment, VscFileSymlinkFile, VscPin, VscPinned, VscMenu } from 'react-icons/vsc';
+import { BiAnchor } from 'react-icons/bi';
 import styles from '../../styles/annotation.module.css';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -14,12 +15,25 @@ interface Props {
     editAnnotation: () => void;
     exportAnnotationAsComment: () => void;
     deleteAnnotation: (e: React.SyntheticEvent) => void;
-    snapshotCode: (e: React.SyntheticEvent) => void;
+    // snapshotCode: (e: React.SyntheticEvent, id: string) => void;
     pinAnnotation: () => void;
+    addAnchor: () => void;
     pinned: boolean;
   }
   
-const AnnotationOperationButtons: React.FC<Props> = ({ annotationId, userId, authorId, replyToAnnotation, exportAnnotationAsComment, editAnnotation, deleteAnnotation, snapshotCode, pinAnnotation, pinned }) => {
+const AnnotationOperationButtons: React.FC<Props> = ({ 
+        annotationId, 
+        userId, 
+        authorId, 
+        replyToAnnotation, 
+        exportAnnotationAsComment, 
+        editAnnotation, 
+        deleteAnnotation, 
+        // snapshotCode, 
+        pinAnnotation,
+        addAnchor,
+        pinned 
+    }) => {
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -86,14 +100,14 @@ const AnnotationOperationButtons: React.FC<Props> = ({ annotationId, userId, aut
                         <VscFileSymlinkFile className={styles['profileMenu']} />
                     </div>
                 </div>
-                <div onClick={(e: React.SyntheticEvent) => { snapshotCode(e); }} className={styles['DropdownItemOverwrite']}>
-                    <div className={styles['DropdownIconsWrapper']}>
-                        <VscDeviceCamera className={styles['profileMenu']} />
-                    </div>
-                </div>
                 <div onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); pinAnnotation(); }} className={styles['DropdownItemOverwrite']}>
                     <div className={styles['DropdownIconsWrapper']}>
                         {pinned ? <VscPinned className={styles['profileMenu']} /> : <VscPin className={styles['profileMenu']} /> }
+                    </div>
+                </div>
+                <div onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); addAnchor(); }} className={styles['DropdownItemOverwrite']}>
+                    <div className={styles['DropdownIconsWrapper']}>
+                        <BiAnchor className={styles['profileMenu']} />
                     </div>
                 </div>
 
@@ -131,12 +145,12 @@ const AnnotationOperationButtons: React.FC<Props> = ({ annotationId, userId, aut
                         >
                             Export as Comment
                         </MenuItem>
-                        <MenuItem 
+                        {/* <MenuItem 
                             href=""
                             onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {  handleClose(e); snapshotCode(e); }}
                         >
                             Snapshot Code
-                        </MenuItem>
+                        </MenuItem> */}
                         <MenuItem 
                             href=""
                             onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {  handleClose(e); pinAnnotation(); }}

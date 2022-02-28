@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 
 import firebase from './firebase/firebase';
-import Annotation from './constants/constants';
+import { Annotation } from './constants/constants';
 import * as commands from './commands/commands';
 import * as eventHandlers from './listeners/listeners';
 import * as utils from './utils/utils';
@@ -130,8 +130,8 @@ export function activate(context: vscode.ExtensionContext) {
 	let navigateBackSelectedDisposable = vscode.commands.registerCommand('adamite.navigateBack', () => commands.navigateSelectedAnnotations('back'));
 	let scrollDisposable = vscode.commands.registerCommand('adamite.showAnnoInWebview', (id) => commands.showAnnoInWebview(id));
 
-	let copyDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', commands.overriddenClipboardCopyAction);
-	let cutDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCutAction', commands.overriddenClipboardCutAction);
+	// let copyDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', commands.overriddenClipboardCopyAction);
+	// let cutDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCutAction', commands.overriddenClipboardCutAction);
 
 	vscode.commands.executeCommand('setContext', 'adamite.showAnchorMenuOptions', true);
 
@@ -160,8 +160,8 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(navigateForwardSelectedDisposable);
 	context.subscriptions.push(navigateBackSelectedDisposable);
 	context.subscriptions.push(scrollDisposable);
-	context.subscriptions.push(copyDisposable);
-	context.subscriptions.push(cutDisposable);
+	// context.subscriptions.push(copyDisposable);
+	// context.subscriptions.push(cutDisposable);
 	
 	// context.subscriptions.push(terminalLinkProviderDisposable);
 	

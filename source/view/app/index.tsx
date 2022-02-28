@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import AdamitePanel from "./adamite";
-import Annotation from '../../constants/constants';
+import { Annotation } from '../../constants/constants';
 declare global {
   interface Window {
     acquireVsCodeApi(): any;

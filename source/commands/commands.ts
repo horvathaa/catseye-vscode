@@ -14,7 +14,7 @@ import { gitInfo,
 		selectedAnnotationsNavigations, 
 		setSelectedAnnotationsNavigations} 
 from "../extension";
-import Annotation from '../constants/constants';
+import { AnchorObject, Annotation } from '../constants/constants';
 import * as anchor from '../anchorFunctions/anchor';
 import * as vscode from 'vscode';
 import * as utils from '../utils/utils';
@@ -22,6 +22,7 @@ import ViewLoader from "../view/ViewLoader";
 import * as viewHelper from '../viewHelper/viewHelper';
 import { v4 as uuidv4 } from 'uuid';
 import { initializeAuth } from '../authHelper/authHelper';
+import AnnotationList from "../view/app/components/annotationList";
 
 export const init = async () => {
 	await initializeAuth();
@@ -43,8 +44,8 @@ export const createView = (context: vscode.ExtensionContext) => {
 			newView._panel?.webview.onDidReceiveMessage((message) => {
 				switch(message.command) {
 					case 'scrollInEditor': {
-						const { id } = message;
-						viewHelper.handleScrollInEditor(id);
+						const { id, anchorId } = message;
+						viewHelper.handleScrollInEditor(id, anchorId);
 						break;
 					}
 					case 'emailAndPassReceived': {
@@ -61,9 +62,14 @@ export const createView = (context: vscode.ExtensionContext) => {
 						viewHelper.handleExportAnnotationAsComment(annoId);
 						break;
 					}
-					case 'snapshotCode': {
+					case 'addAnchor': {
 						const { annoId } = message;
-						viewHelper.handleSnapshotCode(annoId);
+						viewHelper.handleAddAnchor(annoId);
+						break;
+					}
+					case 'snapshotCode': {
+						const { annoId, anchorId } = message;
+						viewHelper.handleSnapshotCode(annoId, anchorId);
 						break;
 					}
 					case 'createAnnotation': {
@@ -117,34 +123,41 @@ export const createNewAnnotation = () => {
 		const programmingLang: string = activeTextEditor.document.uri.toString().split('.')[activeTextEditor.document.uri.toString().split('.').length - 1];
 		const visiblePath: string = vscode.workspace.workspaceFolders ? 
 			utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) : activeTextEditor.document.uri.fsPath;
+		const anchorObject: AnchorObject = {
+			anchor: anchor.createAnchorFromRange(r),
+			anchorText: text,
+			html,
+			filename: activeTextEditor.document.uri.toString(),
+			gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
+			stableGitUrl: utils.getGithubUrl(visiblePath, projectName, true),
+			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
+			visiblePath,
+			anchorId: uuidv4(),
+			originalCode: html,
+			parentId: newAnnoId,
+			programmingLang
+		}
 		const temp = {
 			id: newAnnoId,
-			filename: activeTextEditor.document.uri.toString(),
-			visiblePath,
-			anchorText: text,
+			anchors: [anchorObject],
 			annotation: '',
 			deleted: false,
 			outOfDate: false,
-			html,
-			programmingLang: programmingLang,
 			createdTimestamp: new Date().getTime(),
 			authorId: user?.uid,
 			gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : "",
 			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
 			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "localChange",
-			gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
-			stableGitUrl: utils.getGithubUrl(visiblePath, projectName, true),
-			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
 			projectName: projectName,
 			githubUsername: gitInfo.author,
 			replies: [],
 			outputs: [],
-			originalCode: html,
 			codeSnapshots: [],
 			sharedWith: "private",
-			selected: false
+			selected: false,
+			needToUpdate: true
 		};
-		setTempAnno(utils.buildAnnotation(temp, r));
+		setTempAnno(utils.buildAnnotation(temp));
         view?.createNewAnno(html, annotationList);
     });
 }
@@ -161,75 +174,120 @@ export const addNewHighlight = (selected?: boolean) : string | Promise<string> =
 	const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);
 	// Get the branch and commit 
 	const newAnnoId: string = uuidv4();
+	console.log('is this undefined???', activeTextEditor.document.uri.toString().split('.'));
 	const programmingLang: string = activeTextEditor.document.uri.toString().split('.')[activeTextEditor.document.uri.toString().split('.').length - 1];
 	const visiblePath: string = vscode.workspace.workspaceFolders ? 
 		utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) : activeTextEditor.document.uri.fsPath;
 	return utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then(html => {
+		const anchorObject: AnchorObject = {
+			anchor: anchor.createAnchorFromRange(r),
+			anchorText: text,
+			html,
+			filename: activeTextEditor.document.uri.toString(),
+			gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
+			stableGitUrl: utils.getGithubUrl(visiblePath, projectName, true),
+			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
+			visiblePath,
+			anchorId: uuidv4(),
+			originalCode: html,
+			parentId: newAnnoId,
+			programmingLang
+		}
 		const temp = {
 			id: newAnnoId,
-			filename: activeTextEditor.document.uri.toString(),
-			visiblePath,
-			anchorText: text,
+			anchors: [anchorObject],
 			annotation: '',
 			deleted: false,
 			outOfDate: false,
-			html,
-			programmingLang: programmingLang,
 			createdTimestamp: new Date().getTime(),
 			authorId: user?.uid,
 			gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : "",
 			gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
 			gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "localChange",
-			gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
-			stableGitUrl: utils.getGithubUrl(visiblePath, projectName, true),
-			anchorPreview: utils.getFirstLineOfHtml(html, !text.includes('\n')),
 			projectName: projectName,
 			githubUsername: gitInfo.author,
 			replies: [],
 			outputs: [],
-			originalCode: html,
 			codeSnapshots: [],
 			sharedWith: "private",
-			selected: selected ? selected : false
+			selected: selected ? selected : false,
+			needToUpdate: true
 		};
-        setAnnotationList(annotationList.concat([utils.buildAnnotation(temp, r)]));
-		const textEdit = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === temp?.filename)[0];
-		setAnnotationList(utils.sortAnnotationsByLocation(annotationList, textEdit.document.uri.toString()));
+        setAnnotationList(annotationList.concat([utils.buildAnnotation(temp)]));
+		// const textEdit = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === temp?.filename)[0];
+		// setAnnotationList(utils.sortAnnotationsByLocation(annotationList, textEdit.document.uri.toString()));
 		// adamiteLog.appendLine('calling viewloader');
 		view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList));
-		anchor.addHighlightsToEditor(annotationList, textEdit);
+		anchor.addHighlightsToEditor(annotationList, activeTextEditor);
 		return newAnnoId;
 	});
 }
 
 export const addNewSelectedAnnotation = async () : Promise<void> => {
 	const id: string = await addNewHighlight(true);
-	setSelectedAnnotationsNavigations([...selectedAnnotationsNavigations, { id, lastVisited: false}]);
+	setSelectedAnnotationsNavigations([...selectedAnnotationsNavigations, { id, anchorId: annotationList.find(a => a.id === id)?.anchors[0].anchorId, lastVisited: false}]);
 }
 
 export const navigateSelectedAnnotations = (direction: string) : void => {
 	// addNewHighlight(true);
 	// console.log('selectedAnnotationsNavigations', selectedAnnotationsNavigations);
-	const lastVisited: number = selectedAnnotationsNavigations.findIndex(a => a.lastVisited);
+	let lastVisited: number = selectedAnnotationsNavigations.findIndex(a => a.lastVisited);
 	if(lastVisited === -1) {
-		console.log('in if');
 		const id: string = selectedAnnotationsNavigations[0].id;
-		viewHelper.handleScrollInEditor(id);
+		const anchorId: string = selectedAnnotationsNavigations[0].anchorId;
+		viewHelper.handleScrollInEditor(id, anchorId);
 		selectedAnnotationsNavigations[0].lastVisited = true;
 		return;
 	}
-	const newIdx: number = direction === 'forward' ? 
-						lastVisited + 1 < selectedAnnotationsNavigations.length ? 
-						lastVisited + 1 : 
-						0 :
-						lastVisited - 1 >= 0 ?
-						lastVisited - 1 :
-						selectedAnnotationsNavigations.length - 1;
-	// console.log('newIdx', newIdx);
-	const id: string = selectedAnnotationsNavigations[newIdx].id;
-	viewHelper.handleScrollInEditor(id);
-	selectedAnnotationsNavigations[lastVisited].lastVisited = false;
-	selectedAnnotationsNavigations[newIdx].lastVisited = true;
+	const selectedAnno: Annotation | undefined = annotationList.find(a => a.id === selectedAnnotationsNavigations[lastVisited].id);
+	
+	const anchorIdx: number | undefined = selectedAnno?.anchors.findIndex(a => a.anchorId === selectedAnnotationsNavigations[lastVisited].anchorId); 
+	if(selectedAnno && anchorIdx !== undefined && anchorIdx !== -1) {
+		let newAnchorIdx: number = direction === 'forward' ? 
+						anchorIdx + 1 < selectedAnno.anchors.length ? 
+						anchorIdx + 1 : 
+						-1 :
+						anchorIdx - 1 >= 0 ?
+						anchorIdx - 1 :
+						-2;
+		let id = "", anchorId = "";
+		// switching to next annotation in list
+		if(newAnchorIdx === -1 || newAnchorIdx === -2) {
+			selectedAnnotationsNavigations[lastVisited].lastVisited = false;
+			lastVisited = newAnchorIdx === -1 ? lastVisited + 1 < selectedAnnotationsNavigations.length ? 
+				lastVisited + 1 : 
+				0 :
+				lastVisited - 1 >= 0 ?
+				lastVisited - 1 :
+				selectedAnnotationsNavigations.length - 1;
+			id = selectedAnnotationsNavigations[lastVisited].id;
+			const newAnno: Annotation | undefined = annotationList.find(a => a.id === selectedAnnotationsNavigations[lastVisited].id);
+			newAnchorIdx = newAnchorIdx === -1 ? 0 : newAnno ? newAnno.anchors.length - 1 : 0;
+			selectedAnnotationsNavigations[lastVisited].lastVisited = true;
+			selectedAnnotationsNavigations[lastVisited].anchorId = newAnno?.anchors[newAnchorIdx].anchorId;
+			anchorId = selectedAnnotationsNavigations[lastVisited].anchorId;
+		}
+		// staying within annotation 
+		else {
+			id = selectedAnno.id;
+			anchorId = selectedAnno.anchors[newAnchorIdx].anchorId;
+			selectedAnnotationsNavigations[lastVisited].anchorId = anchorId;
+		}
+		viewHelper.handleScrollInEditor(id, anchorId);
+	}
+	// const newIdx: number = direction === 'forward' ? 
+	// 					lastVisited + 1 < selectedAnnotationsNavigations.length ? 
+	// 					lastVisited + 1 : 
+	// 					0 :
+	// 					lastVisited - 1 >= 0 ?
+	// 					lastVisited - 1 :
+	// 					selectedAnnotationsNavigations.length - 1;
+	// // console.log('newIdx', newIdx);
+	// const id: string = selectedAnnotationsNavigations[newIdx].id;
+	
+
+	// selectedAnnotationsNavigations[lastVisited].lastVisited = false;
+	// selectedAnnotationsNavigations[newIdx].lastVisited = true;
 }
 // anchor.addHighlightsToEditor(annotationList, textEdit);
 export const showAnnoInWebview = (id: string) => {
@@ -243,15 +301,15 @@ export const showAnnoInWebview = (id: string) => {
 }
 
 export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
-    const annotationsInEditor = annotationList.filter((a: Annotation) => a.filename === textEditor.document.uri.toString());
-	const annosInRange = anchor.getAnchorsInRange(textEditor.selection, annotationsInEditor);
+    const annotationsInEditor = utils.getAnnotationsInFile(annotationList, textEditor.document.uri.toString());
+	const anchorsInRange = anchor.getAnchorsInRange(textEditor.selection, annotationsInEditor);
 	const copiedText = textEditor.document.getText(textEditor.selection)
-    if(annosInRange.length) {
-        const annoIds = annosInRange.map(a => a.id);
+    if(anchorsInRange.length) {
+        const annoIds = anchorsInRange.map(a => a.anchor.parentId);
 		const { start } = textEditor.selection;
-		const annosWithCopyMetaData = annosInRange.map(a => {
+		const annosWithCopyMetaData = anchorsInRange.map(a => {
 			return {
-					id: a.id,
+					anchor: a.anchor,
 					anno: annotationList.filter(a => annoIds.includes(a.id))[0],
 					offsetInCopy: {
 						startLine: a.range.start.line - start.line < 0 ? a.range.start.line : a.range.start.line - start.line,
@@ -273,18 +331,18 @@ export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edi
 
 // probs should merge this with copy - only difference is removing the selection
 export const overriddenClipboardCutAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
-    const annotationsInEditor = annotationList.filter((a: Annotation) => a.filename === textEditor.document.uri.toString());
-	const annosInRange = anchor.getAnchorsInRange(textEditor.selection, annotationsInEditor);
+	const annotationsInEditor = utils.getAnnotationsInFile(annotationList, textEditor.document.uri.toString());
+	const anchorsInRange = anchor.getAnchorsInRange(textEditor.selection, annotationsInEditor);
     const copiedText = textEditor.document.getText(textEditor.selection);
-	if(annosInRange.length) {
-        const annoIds = annosInRange.map(a => a.id);
-		const remainingAnnos = annotationList.filter(a => !annoIds.includes(a.id));
-		const cutAnnos = annotationList.filter(a => annoIds.includes(a.id));
+	if(anchorsInRange.length) {
+        const annoIds = anchorsInRange.map(a => a.anchor.parentId);
+		const remainingAnnos = annotationList.filter(id => !annoIds.includes(id));
+		const cutAnnos = annotationList.filter(id => annoIds.includes(id));
 		if(view) anchor.addHighlightsToEditor(remainingAnnos, textEditor); // why only when view???
 		const { start } = textEditor.selection;
-		const annosWithCopyMetaData = annosInRange.map(a => {
+		const annosWithCopyMetaData = anchorsInRange.map(a => {
 			return {
-					id: a.id,
+					anchor: a.anchor,
 					anno: cutAnnos.filter(a => annoIds.includes(a.id))[0],
 					offsetInCopy: {
 						startLine: a.range.start.line - start.line < 0 ? a.range.start.line : a.range.start.line - start.line,

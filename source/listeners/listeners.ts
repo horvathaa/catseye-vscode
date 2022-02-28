@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, deletedAnnotations, setDeletedAnnotationList, setInsertSpaces } from '../extension';
 import * as anchor from '../anchorFunctions/anchor';
 import * as utils from '../utils/utils';
-import Annotation, { Anchor } from '../constants/constants';
+import { Annotation, Anchor, AnchorObject } from '../constants/constants';
 
 
 export const handleChangeVisibleTextEditors = (textEditors: vscode.TextEditor[]) => {
@@ -10,7 +10,11 @@ export const handleChangeVisibleTextEditors = (textEditors: vscode.TextEditor[])
     const textEditorProjectFileNames =  vscode.window.activeTextEditor ? textEditors.map(t => utils.getGithubUrl(utils.getVisiblePath(utils.getProjectName(t.document.uri.toString()), vscode.window.activeTextEditor?.document.uri.fsPath), utils.getProjectName(t.document.uri.toString()), true)) : []
     // nneed to decide if we want to write to DB that often... if(vscode.workspace.workspaceFolders !== undefined) utils.saveAnnotations(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json');
     // console.log('handleChangeVisibleText', textEditorProjectFileNames)
-    const annotationsToHighlight = annotationList.filter(a => textEditorProjectFileNames.includes(a.stableGitUrl) || textEditorFileNames.includes(a.filename.toString()));
+    const annotationsToHighlight = annotationList.filter(a => { 
+        const filenames = utils.getAllAnnotationFilenames([a]);
+        const gitUrls = utils.getAllAnnotationStableGitUrls([a]);
+        return textEditorProjectFileNames.some(t => gitUrls.includes(t)) || textEditorFileNames.some(t => filenames.includes(t));
+    });
     // console.log('annotationsToHighlight', annotationsToHighlight);
     if(!annotationsToHighlight.length) return;
     // TODO: see if we can change the behavior of markdown string so it has an onclick event to navigate to the annotation
@@ -21,16 +25,16 @@ export const handleChangeVisibleTextEditors = (textEditors: vscode.TextEditor[])
 export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | undefined) => {
     // console.log('handleChangeActive');
     if(vscode.workspace.workspaceFolders) {
-            if(TextEditor) {
-                if(TextEditor.options?.tabSize) setTabSize(TextEditor.options.tabSize);
-                if(TextEditor.options?.insertSpaces) setInsertSpaces(TextEditor.options.insertSpaces);
-                utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextEditor.document.uri.toString(), TextEditor.document);
-                // utils.findOutOfDateAnchors(annotationList.filter(a => a.filename === TextEditor.document.uri.toString()), TextEditor.document);
-                setAnnotationList(utils.sortAnnotationsByLocation(annotationList, TextEditor.document.uri.toString())); // mark these annos as out of date
-                const currentProject: string = utils.getProjectName(TextEditor.document.uri.fsPath);
-                if(user && vscode.workspace.workspaceFolders)
-                view?.updateDisplay(undefined, TextEditor.document.uri.toString(), currentProject);
-            }
+        if(TextEditor) {
+            if(TextEditor.options?.tabSize) setTabSize(TextEditor.options.tabSize);
+            if(TextEditor.options?.insertSpaces) setInsertSpaces(TextEditor.options.insertSpaces);
+            utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextEditor.document.uri.toString(), TextEditor.document);
+            // utils.findOutOfDateAnchors(annotationList.filter(a => a.filename === TextEditor.document.uri.toString()), TextEditor.document);
+            setAnnotationList(utils.sortAnnotationsByLocation(annotationList, TextEditor.document.uri.toString())); // mark these annos as out of date
+            const currentProject: string = utils.getProjectName(TextEditor.document.uri.fsPath);
+            if(user && vscode.workspace.workspaceFolders)
+            view?.updateDisplay(undefined, TextEditor.document.uri.toString(), currentProject);
+        }
         else {
             utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', "all");
         }
@@ -43,13 +47,14 @@ export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
 }
 
 export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) => {
-    const currentAnnotations = annotationList.filter(a => a.filename === e.document.uri.toString());
-    const couldBeUndoOrPaste = deletedAnnotations.filter(a => a.filename === e.document.uri.toString()).length > 0 || copiedAnnotations.length > 0;
+    const currentAnnotations = utils.getAllAnnotationsWithAnchorInFile(annotationList, e.document.uri.toString());
+    const couldBeUndoOrPaste = utils.getAllAnnotationsWithAnchorInFile(deletedAnnotations, e.document.uri.toString()).length > 0 || copiedAnnotations.length > 0;
     if(!currentAnnotations.length && !tempAnno && !couldBeUndoOrPaste) { return } // no annotations could possibly be affected by this change
     else {
         let translatedAnnotations: Annotation[] = currentAnnotations;
         let rangeAdjustedAnnotations: Annotation[] = [];
         for (const change of e.contentChanges) {
+            console.log("BEGINNING DID CHANGE TEXT")
             console.log('change', change);
             const startLine = change.range.start.line;
             const endLine = change.range.end.line;
@@ -81,22 +86,30 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
                 }
             }
 
+            let needToHighlight = false;
             translatedAnnotations = utils.removeOutOfDateAnnotations(
-                translatedAnnotations.map(a => anchor.translateChanges(a, change.range, 
-                change.text.length, diff, change.rangeLength, e.document, change.text))
+                translatedAnnotations.map((a: Annotation) => {
+                    console.log('translating this anno', a);
+                    const [anchorsToTranslate, anchorsNotToTranslate] = utils.partition(a.anchors, (a: AnchorObject) => a.filename === e.document.uri.toString());
+                    const translatedAnchors = utils.removeNulls(anchorsToTranslate.map((a: AnchorObject) => anchor.translateChanges(a, change.range, 
+                        change.text.length, diff, change.rangeLength, e.document, change.text)));
+                    const needToUpdate = translatedAnchors.some(t => anchorsToTranslate.find((o: AnchorObject) => t.anchorId === o.anchorId) ? utils.objectsEqual(anchorsToTranslate.find((o: AnchorObject) => t.anchorId === o.anchorId).anchor, t.anchor) : true)
+                    return utils.buildAnnotation({ ...a, needToUpdate, anchors: [...translatedAnchors, ...anchorsNotToTranslate] })
+                })
             );
 
-            if(tempAnno) {
-                const newTemp = anchor.translateChanges(tempAnno, change.range, 
+            if(tempAnno && tempAnno.anchors[0].filename === e.document.uri.toString()) {
+                const newAnchor = anchor.translateChanges(tempAnno.anchors[0], change.range, 
                     change.text.length, diff, change.rangeLength, e.document, change.text)
-                setTempAnno(newTemp);
+                if(newAnchor) setTempAnno({ ...tempAnno, anchors: [newAnchor] });
             }
             
 
         }
 
         // console.log('translated', translatedAnnotations, 'annotationList', annotationList, 'rangeAdjusted', rangeAdjustedAnnotations);
-        const newAnnotationList: Annotation[] = translatedAnnotations.concat(annotationList.filter(a => a.filename !== e.document.uri.toString()), rangeAdjustedAnnotations);
+        const notUpdatedAnnotations: Annotation[] = utils.getAnnotationsNotInFile(annotationList, e.document.uri.toString());
+        const newAnnotationList: Annotation[] = translatedAnnotations.concat(notUpdatedAnnotations, rangeAdjustedAnnotations);
         // console.log('new list', newAnnotationList);
         if(vscode.window.activeTextEditor && view)  {
             anchor.addHighlightsToEditor(newAnnotationList, vscode.window.activeTextEditor);

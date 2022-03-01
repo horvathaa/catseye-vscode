@@ -386,7 +386,7 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 			// let diffWithMain = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch, './source/anchorFunctions/anchor.ts')
 			// console.log('diff', diffs)
 			// console.log( 'dwm', diffWithMain);
-			if(gitInfo[currentProjectName].commit !== r.state.HEAD.commit || gitInfo[currentProjectName].branch !== r.state.HEAD.name) {
+			if(gitInfo[currentProjectName]?.commit !== r.state.HEAD.commit || gitInfo[currentProjectName]?.branch !== r.state.HEAD.name) {
 				gitInfo[currentProjectName].commit = r.state.HEAD.commit;
 				gitInfo[currentProjectName].branch = r.state.HEAD.name;
 				updateAnnotationCommit(r.state.HEAD.commit, r.state.HEAD.name, r?.state?.remotes[0]?.fetchUrl);
@@ -399,6 +399,7 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 			changes: await r?.diffBetween('origin/HEAD', r?.state?.HEAD?.name),
 			modifiedAnnotations: []
 		}
+		console.log('gitInfo[proj]', gitInfo[currentProjectName])
 	});
 	adamiteLog.appendLine("huh?: " + gitApi.repositories[0]?.state?.remotes[0]?.fetchUrl)
 	return gitInfo;

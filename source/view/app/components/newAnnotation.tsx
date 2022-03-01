@@ -34,7 +34,7 @@ const NewAnnotation: React.FC<Props> = ({ selection, vscode, notifyDone = () => 
 
     return (
         <div className={annoStyles['Pad']}>
-            <div className={annoStyles['AnnotationContainer']} >
+            <div className={annoStyles['AnnotationContainer']} id="NewAnnotation">
                 <Syntax html={selection} />
                 <TextEditor 
                     content={""} 

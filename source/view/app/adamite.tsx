@@ -43,6 +43,8 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
       case 'newAnno':
         setSelection(message.payload.selection);
         setShowNewAnnotation(true);
+        const newAnnoDiv: HTMLElement | null = document.getElementById("NewAnnotation");
+        newAnnoDiv?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
         return;
       case 'scrollToAnno':
         const annoDiv: HTMLElement | null = document.getElementById(message.payload.id);

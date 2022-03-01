@@ -311,15 +311,19 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 		const highlighted: string[] = [];
 		visFileNames.forEach((key: string) => {
 			const annotationsInCurrentFile = getAnnotationsInFile(annotationList, key);
+			console.log('annotationsInCurrentFile', annotationsInCurrentFile);
 			const annoRangeObjs: {[key: string]: any}[] = annotationsInCurrentFile
 				.flatMap((a: Annotation) => { 
 					highlighted.push(a.id);
 					return a.anchors.flatMap(a => { return { id: a.parentId, range: createRangeFromAnchorObject(a) }})
 				})
-			
+			console.log('annoRangeObjs', annoRangeObjs, annotationList);
 			filesToHighlight[key] = createDecorationOptions(annoRangeObjs, annotationList);
+			console.log('files', filesToHighlight[key]);
 		});
 		visibleEditors.forEach((v: vscode.TextEditor) => {
+			console.log('v', v, 'filesToHighlight', filesToHighlight, 'indexed', filesToHighlight[v.document.uri.toString()])
+			console.log('anno decorations???', annotationDecorations);
 			v.setDecorations(annotationDecorations, filesToHighlight[v.document.uri.toString()]);
 		});
 	// }
@@ -327,7 +331,7 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 	// else if(!visibleEditors.length && text && vscode.window.visibleTextEditors.length) {
 		// may have a weird filename change on hand?
 		if(highlighted.length !== annotationList.length) {
-			// console.log('in if')
+			console.log('in if')
 			const annotationsToHighlight = annotationList.filter(a => !highlighted.includes(a.id))
 			const filesToHighlight2: {[key: string]: any} = {};
 			const projectLevelAnnotationFiles: string[] = getAllAnnotationStableGitUrls(annotationsToHighlight);
@@ -338,7 +342,11 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 			});
 
 			// console.log('projectLevelAnnotationFiles', projectLevelAnnotationFiles)
-			// console.log('projectLevelFile', projectLevelFileNames);
+			// it's a p rare situation where we actually need this highlighting so be conservative in invoking it
+			// thru more robust checks
+			if(!projectLevelFileNames || !projectLevelFileNames.length || !projectLevelFileNames.some(s => s.includes('github.com'))) {
+				return;
+			}
 			projectLevelFileNames.forEach((filename: string) => {
 				if(projectLevelAnnotationFiles.includes(filename)) {
 					const annotationsWithStableUrl = getAnnotationsWithStableGitUrl(annotationsToHighlight, filename);
@@ -347,9 +355,11 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 						filesToHighlight2[filename] = createDecorationOptions(annoRangeObjs, annotationsWithStableUrl); 
 				}
 			});
+			console.log('filesToHighlight2', filesToHighlight2);
 			vscode.window.visibleTextEditors.forEach((te: vscode.TextEditor) => {
 				const projectName: string = getProjectName(te.document.uri.toString())
 				const url = getGithubUrl(getVisiblePath(projectName, te.document.uri.fsPath), projectName, true)
+				console.log('indexed', filesToHighlight2[url], 'url', url);
 				te.setDecorations(annotationDecorations, filesToHighlight2[url])
 			});
 		}

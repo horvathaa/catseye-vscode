@@ -26,9 +26,7 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
   const [currentProject, setCurrentProject] = useState(window.currentProject ? window.currentProject : "");
   const [currentFile, setCurrentFile] = useState(window.currentFile ? window.currentFile : "");
   // console.log('window', window);
-  // const [currentUrl, setCurrentlUrl] = useState("");
-
-
+  
   const handleIncomingMessages = (e: MessageEvent<any>) => {
     const message = e.data;
     switch(message.command) {

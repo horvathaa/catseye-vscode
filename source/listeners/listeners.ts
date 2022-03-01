@@ -3,6 +3,7 @@ import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, u
 import * as anchor from '../anchorFunctions/anchor';
 import * as utils from '../utils/utils';
 import { Annotation, Anchor, AnchorObject } from '../constants/constants';
+import { ChangeCircleSharp } from '@mui/icons-material';
 
 
 export const handleChangeVisibleTextEditors = (textEditors: vscode.TextEditor[]) => {
@@ -45,6 +46,41 @@ export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | und
 export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
     if(vscode.workspace.workspaceFolders) utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextDocument.uri.toString(), TextDocument);
 }
+interface ChangeEvent {
+    startTime: number,
+    endTime: number,
+    changes: vscode.TextDocumentContentChangeEvent[],
+    isComment: boolean,
+    complete: boolean
+}
+const checkIfComment = (changeObj: ChangeEvent) : boolean => {
+    const addedText: string = changeObj.changes.map(c => c.text).join('').trimLeft();
+    console.log('addedText', addedText);
+    return addedText[0] === '/' && (addedText[1] === '/' || addedText[1] === '*')
+}
+let changeObj: ChangeEvent = { startTime: 0, endTime: 0, changes: [], isComment: false, complete: false };
+const checkIfPartOfChange = (change: vscode.TextDocumentContentChangeEvent) : void => {
+    const currTime: number = new Date().getTime();
+    console.log('changeObj at top', changeObj)
+    if(changeObj.startTime === 0) {
+        console.log('in if');
+        changeObj.startTime = currTime;
+        changeObj.changes.push(change);
+    }
+    else if((currTime - changeObj.startTime) >= 1000) {
+        changeObj.endTime = currTime;
+        changeObj.isComment = checkIfComment(changeObj);
+        console.log('changeObj in else if', changeObj);
+        if(!changeObj.isComment && !changeObj.complete) {
+            setTimeout(() => vscode.window.showInformationMessage('Change task!'), 15000);
+            changeObj.complete = true;
+        }
+    }
+    else {
+        changeObj.changes.push(change); 
+    }
+    console.log('changeObj in else if', changeObj);
+}
 
 export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) => {
     const currentAnnotations = utils.getAllAnnotationsWithAnchorInFile(annotationList, e.document.uri.toString());
@@ -56,6 +92,7 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
         for (const change of e.contentChanges) {
             console.log("BEGINNING DID CHANGE TEXT")
             console.log('change', change);
+            checkIfPartOfChange(change);
             const startLine = change.range.start.line;
             const endLine = change.range.end.line;
             const linesInRange = endLine - startLine;
@@ -86,10 +123,8 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
                 }
             }
 
-            let needToHighlight = false;
             translatedAnnotations = utils.removeOutOfDateAnnotations(
                 translatedAnnotations.map((a: Annotation) => {
-                    console.log('translating this anno', a);
                     const [anchorsToTranslate, anchorsNotToTranslate] = utils.partition(a.anchors, (a: AnchorObject) => a.filename === e.document.uri.toString());
                     const translatedAnchors = utils.removeNulls(anchorsToTranslate.map((a: AnchorObject) => anchor.translateChanges(a, change.range, 
                         change.text.length, diff, change.rangeLength, e.document, change.text)));

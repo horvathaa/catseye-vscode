@@ -25,5 +25,9 @@ export class AdamiteTerminalLinkProvider implements TerminalLinkProvider {
     }
 }   
 
-// console.log('hconsologi')
+//sole.log('hi')
 
+// window.addEventListener('keydown', (ev: KeyboardEvent) => {
+//     console.log('im dyinscoob', ev)
+
+console.log('hewwo')

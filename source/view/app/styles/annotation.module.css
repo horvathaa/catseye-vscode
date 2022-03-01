@@ -7,6 +7,22 @@
   margin-bottom: 2%;
 }
 
+.AnchorListContainer {
+  border: 0.25px solid rgb(239 255 201 / 20%);
+  padding: 4px;
+  border-radius: 2px;
+  overflow: inherit;
+}
+
+.AnchorListButtonContainer.AnchorButtonContainer {
+  margin-right: 0.75rem;
+}
+
+.AnchorListButtonContainer {
+  margin-bottom: 0.25rem;
+  /* margin-right: 0.75rem; */
+}
+
 .AnnotationIconsContainer {
   display: flex;
 }
@@ -19,7 +35,7 @@
   padding-top: .2em !important;
 }
 
-@media (max-width:330px) {
+@media (max-width: 360px) {
   .AnnotationsOptions {
     display: block !important;
   }
@@ -28,6 +44,11 @@
   }
 }
 
+.bottomRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 
 .Pad {
   padding: 8px 0px;
@@ -309,7 +330,7 @@
   border: 0.25px solid rgb(239 255 201 / 20%);
   padding: 5px;
   border-radius: 4px;
-  overflow: inherit;
+  overflow: scroll;
 }
 
 .LocationWrapper {

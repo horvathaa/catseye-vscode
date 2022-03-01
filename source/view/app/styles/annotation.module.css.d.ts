@@ -4,6 +4,8 @@ interface CssExports {
   'AnchorBox': string;
   'AnchorButtonContainer': string;
   'AnchorContainer': string;
+  'AnchorListButtonContainer': string;
+  'AnchorListContainer': string;
   'AnnotationContainer': string;
   'AnnotationIconsContainer': string;
   'AnnotationItem': string;
@@ -25,6 +27,7 @@ interface CssExports {
   'active': string;
   'arrowBox': string;
   'arrowBox-leftAlign': string;
+  'bottomRow': string;
   'btn-primary': string;
   'buttonRow': string;
   'cancel': string;

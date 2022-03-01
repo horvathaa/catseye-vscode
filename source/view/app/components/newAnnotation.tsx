@@ -23,11 +23,12 @@ const NewAnnotation: React.FC<Props> = ({ selection, vscode, notifyDone = () => 
         });
     }
 
-    const createAnnotation = (annoContent: string) => {
+    const createAnnotation = (annoContent: string, shareWith: string | undefined, willBePinned: boolean | undefined) => {
         notifyDone();
         vscode.postMessage({
               command: 'createAnnotation',
-              anno: annoContent
+              anno: annoContent,
+              willBePinned
         });
     }
 

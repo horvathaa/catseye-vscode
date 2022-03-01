@@ -17,15 +17,17 @@ interface Props {
 }
 
 const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, userId }) => {
-  const [annotations, setAnnotations] = useState([]);
+  const [annotations, setAnnotations] = useState(window.data);
   const [showLogin, setShowLogin] = useState(showLogIn);
-  const [userName, setUsername] = useState(username ? username : "");
-  const [uid, setUserId] = useState(userId ? userId : "");
+  const [userName, setUsername] = useState(window.username ? window.username : "");
+  const [uid, setUserId] = useState(window.userId ? window.userId : "");
   const [selection, setSelection] = useState("");
   const [showNewAnnotation, setShowNewAnnotation] = useState(false);
-  const [currentProject, setCurrentProject] = useState("");
-  const [currentFile, setCurrentFile] = useState("");
+  const [currentProject, setCurrentProject] = useState(window.currentProject ? window.currentProject : "");
+  const [currentFile, setCurrentFile] = useState(window.currentFile ? window.currentFile : "");
+  // console.log('window', window);
   // const [currentUrl, setCurrentlUrl] = useState("");
+
 
   const handleIncomingMessages = (e: MessageEvent<any>) => {
     const message = e.data;
@@ -45,9 +47,14 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
       case 'scrollToAnno':
         const annoDiv: HTMLElement | null = document.getElementById(message.payload.id);
         const currentFileDiv: Element | null | undefined = document.getElementById('Current File')?.nextElementSibling;
-        if(!currentFileDiv?.classList.contains(styles['showing'])) {
+        const selectedDiv: Element | null | undefined = document.getElementById('Pinned')?.nextElementSibling;
+        if(currentFileDiv && currentFileDiv.contains(annoDiv) && !currentFileDiv?.classList.contains(styles['showing'])) {
           currentFileDiv?.classList.remove(styles['hiding']);
           currentFileDiv?.classList.add(styles['showing']);
+        }
+        else if(selectedDiv && selectedDiv.contains(annoDiv) && !selectedDiv?.classList.contains(styles['showing'])) {
+          selectedDiv?.classList.remove(styles['hiding']);
+          selectedDiv?.classList.add(styles['showing']);
         }
         annoDiv?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
         return;

@@ -2,10 +2,10 @@
     "compilerOptions": {
         "module": "esnext",
         "moduleResolution": "node",
-        "target": "es6",
+        "target": "es2019",
         "outDir": "dist",
         "lib": [
-            "es6",
+            "es2019",
             "dom"
         ],  
         "jsx": "react",

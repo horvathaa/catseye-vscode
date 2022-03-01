@@ -2,9 +2,9 @@ import * as React from "react";
 import cn from 'classnames';
 import { buildAnnotation } from '../utils/viewUtils';
 import styles from '../styles/annotation.module.css';
-import Annotation from '../../../constants/constants';
+import { Annotation, AnchorObject } from '../../../constants/constants';
 import AnnotationOperationButtons from './annotationComponents/annotationOperationButtons';
-import Anchor from './annotationComponents/anchor';
+import AnchorList from './annotationComponents/anchorList';
 import TextEditor from "./annotationComponents/textEditor";
 import UserProfile from "./annotationComponents/userProfile";
 import ReplyContainer from './annotationComponents/replyContainer';
@@ -16,35 +16,35 @@ interface Props {
   window: Window;
   username: string;
   userId: string;
-  initialSelected: boolean;
-  transmitSelected: (id: string) => void;
 }
 
-const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username, userId, initialSelected, transmitSelected }) => {
+const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username, userId }) => {
   const [anno, setAnno] = React.useState<Annotation>(annotation);
   const [edit, setEdit] = React.useState<boolean>(false);
   const [replying, setReplying] = React.useState<boolean>(false);
-  const [selected, setSelected] = React.useState<boolean>(initialSelected);
-
-  const selectedRef: React.MutableRefObject<boolean> = React.useRef(selected);
+  
   const annoRef: React.MutableRefObject<Annotation> = React.useRef(anno);
 
   const handleIncomingMessages = (e: MessageEvent<any>) => {
     const message = e.data;
     switch(message.command) {
       case 'newHtml':
-        const { html, anchorText, anchorPreview, id } = message.payload;
+        const { html, anchorText, anchorPreview, id, anchorId } = message.payload;
         if(id === anno.id) {
-          const newAnno: Annotation = buildAnnotation({ ...anno, html: html, anchorText: anchorText, anchorPreview: anchorPreview});
-          annoRef.current = newAnno;
-          setAnno(newAnno);
+          const oldAnchorObject: AnchorObject | undefined = anno.anchors.find(a => a.anchorId === anchorId);
+          if(oldAnchorObject) {
+            const newAnchorList: AnchorObject[] = [ ...anno.anchors.filter(a => a.anchorId !== anchorId), { ...oldAnchorObject, html: html, anchorText: anchorText, anchorPreview: anchorPreview}]; 
+            const newAnno: Annotation = buildAnnotation({ ...anno, anchors: newAnchorList });
+            annoRef.current = newAnno;
+            setAnno(newAnno);
+          }
         }
         break;
-      case 'addTerminalMessage':
-        if(selectedRef.current) {
-          updateOutputs(message.payload.content);
-        }
-        break;
+      // case 'addTerminalMessage':
+      //   if(anno.selected) {
+      //     updateOutputs(message.payload.content);
+      //   }
+      //   break;
     }
   }
 
@@ -63,17 +63,21 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
     }
   }, [annotation]);
 
-  const scrollInEditor = () : void => {
+  const scrollInEditor = (id: string) : void => {
     vscode.postMessage({
       command: 'scrollInEditor',
-      id: anno.id
+      id: anno.id,
+      anchorId: id
     });
   }
 
   const handleSelectedClick = () : void => {
-    selectedRef.current = !selected;
-    transmitSelected(anno.id);
-    setSelected(!selected);
+    vscode.postMessage({
+      command: 'updateAnnotation',
+      annoId: anno.id,
+      key: 'selected',
+      value: !anno.selected
+    });
   }
 
   const exportAnnotationAsComment = () : void => {
@@ -81,6 +85,37 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
       command: 'exportAnnotationAsComment',
       annoId: anno.id
     });
+  }
+
+  const addAnchor = () : void => {
+    vscode.postMessage({
+      command: 'addAnchor',
+      annoId: anno.id
+    });
+  }
+
+  const cancelAnnotation = () : void => {
+    setEdit(false);
+  }
+
+  const deleteAnnotation = (e: React.SyntheticEvent) : void => {
+    e.stopPropagation();
+    vscode.postMessage({
+      command: 'deleteAnnotation',
+      annoId: anno.id,
+    });
+  }
+
+  const snapshotCode = (id: string) : void => {
+    vscode.postMessage({
+      command: 'snapshotCode',
+      annoId: anno.id,
+      anchorId: id
+    });
+    const newSnapshots: {[key: string] : string}[] = anno.codeSnapshots ? anno.codeSnapshots.concat([{ createdTimestamp: new Date().getTime(), snapshot: anno.anchors.find(a => a.anchorId === id)?.html }]) : [{ createdTimestamp: new Date().getTime(), snapshot: anno.anchors.find(a => a.anchorId === id)?.html }]
+    const newAnno: Annotation = buildAnnotation({ ...anno, codeSnapshots: newSnapshots });
+    setAnno(newAnno);
+    annoRef.current = newAnno;
   }
 
   const submitReply = (reply: {[key: string] : any}) : void => {
@@ -125,47 +160,12 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
     setEdit(false);
   }
 
-  const updateOutputs = (outputContent: string) : void => {
-    const newOutput: {[key: string]: any} = { message: outputContent, timestamp: new Date().getTime(), codeAtTime: annoRef.current.html };
-    const newOutputs: {[key: string]: any}[] = annoRef.current.outputs && annoRef.current.outputs.length ? annoRef.current.outputs.concat([newOutput]) : [newOutput];
-    const newAnno: Annotation = buildAnnotation({ ...anno, outputs: newOutputs });
-    annoRef.current = newAnno;
-    setAnno(newAnno);
-    vscode.postMessage({
-      command: 'updateAnnotation',
-      annoId: anno.id,
-      key: 'outputs',
-      value: newOutputs
-    });
-  }
 
-  const cancelAnnotation = () : void => {
-    setEdit(false);
-  }
-
-  const deleteAnnotation = (e: React.SyntheticEvent) : void => {
-    e.stopPropagation();
-    vscode.postMessage({
-      command: 'deleteAnnotation',
-      annoId: anno.id,
-    });
-  }
-
-  const snapshotCode = (e: React.SyntheticEvent) : void => {
-    e.stopPropagation();
-    vscode.postMessage({
-      command: 'snapshotCode',
-      annoId: anno.id
-    });
-    const newAnno: Annotation = buildAnnotation({ ...anno, codeSnapshots: anno.codeSnapshots ? anno.codeSnapshots.concat([{ createdTimestamp: new Date().getTime(), snapshot: anno.html }]) : [{ createdTimestamp: new Date().getTime(), snapshot: anno.html }] });
-    setAnno(newAnno);
-    annoRef.current = newAnno;
-  }
 
   return (
       <React.Fragment>
           <div key={'annotation-container'+annotation.id} className={styles['Pad']} id={annotation.id} >
-              <li key={'annotation-li'+annotation.id} className={cn({ [styles.selected]: selected, [styles.AnnotationContainer]: true })} onClick={handleSelectedClick} >
+              <li key={'annotation-li'+annotation.id} className={cn({ [styles.selected]: anno.selected, [styles.AnnotationContainer]: true })} >
                 <div className={styles['topRow']}>
                   <UserProfile 
                     githubUsername={anno.githubUsername} 
@@ -179,17 +179,15 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
                     exportAnnotationAsComment={exportAnnotationAsComment}
                     editAnnotation={() => { setEdit(!edit) }} 
                     deleteAnnotation={(e) => deleteAnnotation(e)}
-                    snapshotCode={snapshotCode}
+                    pinAnnotation={handleSelectedClick}
+                    addAnchor={addAnchor}
+                    pinned={anno.selected}
                   />
                 </div>
-                <Anchor 
-                  html={anno.html} 
-                  anchorPreview={anno.anchorPreview} 
-                  visiblePath={anno.visiblePath}
-                  startLine={anno.startLine}
-                  endLine={anno.endLine}
+                <AnchorList 
+                  anchors={anno.anchors}
+                  snapshotCode={snapshotCode}
                   scrollInEditor={scrollInEditor}
-                  originalCode={anno.originalCode}
                 />
                 <div className={styles['ContentContainer']}>
                   {edit ? (

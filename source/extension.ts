@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 
 import firebase from './firebase/firebase';
-import Annotation from './constants/constants';
+import { Annotation } from './constants/constants';
 import * as commands from './commands/commands';
 import * as eventHandlers from './listeners/listeners';
 import * as utils from './utils/utils';
@@ -16,6 +16,7 @@ export let annotationList: Annotation[] = [];
 export let copiedAnnotations:  {[key: string] : any }[] = [];
 export let deletedAnnotations: Annotation[] = [];
 export let outOfDateAnnotations: Annotation[] = [];
+export let selectedAnnotationsNavigations: {[key: string] : any }[] = [];
 export let storedCopyText: string = "";
 export let tabSize: number | string = 4;
 export let insertSpaces: boolean | string = true; // not sure what to have as default here... VS Code API doesn't say what the default is lol 
@@ -93,6 +94,10 @@ export const setOutOfDateAnnotationList = (newOutOfDateAnnotationList: Annotatio
 	setAnnotationList(utils.removeOutOfDateAnnotations(annotationList));
 }
 
+export const setSelectedAnnotationsNavigations = (newSelectedAnnotationsNavigationList: {[key: string] : any }[]) => {
+	selectedAnnotationsNavigations = newSelectedAnnotationsNavigationList;
+}
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -120,10 +125,15 @@ export function activate(context: vscode.ExtensionContext) {
 	let createViewDisposable = vscode.commands.registerCommand('adamite.launch', () => commands.createView(context));
 	let annotateDisposable = vscode.commands.registerCommand('adamite.addAnnotation', () => commands.createNewAnnotation());
 	let highlightDisposable = vscode.commands.registerCommand('adamite.addHighlight', () => commands.addNewHighlight());
+	let selectedDisposable = vscode.commands.registerCommand('adamite.addSelectedAnnotation', () => commands.addNewSelectedAnnotation());
+	let navigateForwardSelectedDisposable = vscode.commands.registerCommand('adamite.navigateForward', () => commands.navigateSelectedAnnotations('forward'));
+	let navigateBackSelectedDisposable = vscode.commands.registerCommand('adamite.navigateBack', () => commands.navigateSelectedAnnotations('back'));
 	let scrollDisposable = vscode.commands.registerCommand('adamite.showAnnoInWebview', (id) => commands.showAnnoInWebview(id));
 
-	let copyDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', commands.overriddenClipboardCopyAction);
-	let cutDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCutAction', commands.overriddenClipboardCutAction);
+	// let copyDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', commands.overriddenClipboardCopyAction);
+	// let cutDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCutAction', commands.overriddenClipboardCutAction);
+
+	vscode.commands.executeCommand('setContext', 'adamite.showAnchorMenuOptions', true);
 
 
 	/*************************************************************************************/
@@ -146,9 +156,12 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(createViewDisposable);
 	context.subscriptions.push(annotateDisposable);
 	context.subscriptions.push(highlightDisposable);
+	context.subscriptions.push(selectedDisposable);
+	context.subscriptions.push(navigateForwardSelectedDisposable);
+	context.subscriptions.push(navigateBackSelectedDisposable);
 	context.subscriptions.push(scrollDisposable);
-	context.subscriptions.push(copyDisposable);
-	context.subscriptions.push(cutDisposable);
+	// context.subscriptions.push(copyDisposable);
+	// context.subscriptions.push(cutDisposable);
 	
 	// context.subscriptions.push(terminalLinkProviderDisposable);
 	

@@ -1,4 +1,4 @@
-import Annotation from '../../constants/constants';
+import  { Annotation } from '../../constants/constants';
 export interface ICommand {
   action: CommandAction;
   content: Annotation[];

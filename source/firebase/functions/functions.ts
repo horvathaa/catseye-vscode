@@ -1,4 +1,4 @@
-import Annotation from '../../constants/constants';
+import { Annotation } from '../../constants/constants';
 import { user } from '../../extension';
 import { getListFromSnapshots, makeObjectListFromAnnotations, buildAnnotation } from '../../utils/utils';
 import firebase from '../firebase';
@@ -30,7 +30,7 @@ export const getAnnotationsOnSignIn = async (user: firebase.User) : Promise<Anno
 	// 	return buildAnnotation(a);
 	// }) : [];
 	const annotations: Annotation[] = dataAnnotations && dataAnnotations.length ? dataAnnotations.map((a: any) => {
-		return buildAnnotation(a);
+		return buildAnnotation( { ...a, needToUpdate: false } );
 	}) : [];
 	return annotations;
 }

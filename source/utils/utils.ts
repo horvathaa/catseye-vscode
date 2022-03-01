@@ -1,7 +1,7 @@
 import firebase from '../firebase/firebase';
-import Annotation from '../constants/constants';
-import { computeRangeFromOffset, updateAnchorsUsingDiffData } from '../anchorFunctions/anchor';
-import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations, adamiteLog } from '../extension';
+import { Annotation, AnchorObject, Anchor } from '../constants/constants';
+import { computeRangeFromOffset, createAnchorFromRange } from '../anchorFunctions/anchor';
+import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations, adamiteLog, setSelectedAnnotationsNavigations } from '../extension';
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
 import { getAnnotationsOnSignIn } from '../firebase/functions/functions';
@@ -12,7 +12,7 @@ var shiki = require('shiki');
 let lastSavedAnnotations: Annotation[] = annotationList && annotationList.length ? annotationList : [];
 
 // https://stackoverflow.com/questions/27030/comparing-arrays-of-objects-in-javascript
-const objectsEqual = (o1: { [key: string ] : any }, o2: { [key: string ] : any }) : boolean => 
+export const objectsEqual = (o1: any, o2: any) : boolean => 
 	typeof o1 === 'object' && Object.keys(o1).length > 0 
 		? Object.keys(o1).length === Object.keys(o2).length 
 			&& Object.keys(o1).every(p => objectsEqual(o1[p], o2[p]))
@@ -26,7 +26,58 @@ export const initializeAnnotations = async (user: firebase.User) : Promise<void>
 	// console.log('gitInfo in initalize', gitInfo);
 	// console.log('project', getProjectName());
 	const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
+	const annotations: Annotation [] = sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename);
 	setAnnotationList(sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename));
+	const selectedAnnotations: Annotation[] = annotations.filter(a => a.selected);
+	setSelectedAnnotationsNavigations(
+		selectedAnnotations.length ? 
+		selectedAnnotations.map((a: Annotation) => {
+			return { id: a.id, anchorId: a.anchors[0].anchorId, lastVisited: false}
+		}) : []
+	);
+}
+
+export const removeNulls = (arr: any[]) : any[] => {
+	return arr.filter(a => a !== null);
+}
+
+export function partition(array: any[], isValid: (a: any) => boolean) {
+	return array.reduce(([pass, fail], elem) => {
+	  return isValid(elem) ? [[...pass, elem], fail] : [pass, [...fail, elem]];
+	}, [[], []]);
+}
+
+export const getAnnotationsWithStableGitUrl = (annotationList: Annotation[], stableGitUrl: string) : Annotation[] => {
+	return annotationList.filter(a => {
+		const annoUrls = getAllAnnotationStableGitUrls([a])
+		return annoUrls.includes(stableGitUrl);
+	})
+}
+
+export const getAnnotationsInFile = (annotationList: Annotation[], filename: string) : Annotation[] => {
+	return annotationList.filter(a => {
+		const annoFiles = getAllAnnotationFilenames([a])
+		return annoFiles.includes(filename);
+	})
+}
+
+export const getAnnotationsNotInFile = (annotationList: Annotation[], filename: string) : Annotation[] => {
+	return annotationList.filter(a => {
+		const annoFiles = getAllAnnotationFilenames([a])
+		return !annoFiles.includes(filename);
+	})
+}
+
+export const getAllAnnotationFilenames = (annotationList: Annotation[]) : string[] => {
+	const flatMapReturn = annotationList.flatMap(a => {
+		// console.log('a', a);
+		return a.anchors?.map(a => a.filename) 
+	});
+	return [ ... new Set(flatMapReturn) ];
+}
+
+export const getAllAnnotationStableGitUrls = (annotationList: Annotation[]) : string[] => {
+	return [ ... new Set(annotationList.flatMap(a => a.anchors.map(a => a.stableGitUrl))) ];
 }
 
 export const getFirstLineOfHtml = (html: string, isOneLineAnchor: boolean) : string => {
@@ -55,32 +106,40 @@ export const reconstructAnnotations = (annotationOffsetList: {[key: string] : an
 		const visiblePath: string = vscode.workspace.workspaceFolders ? 
 			getVisiblePath(a.anno.projectName, vscode.window.activeTextEditor?.document.uri.fsPath) : vscode.window.activeTextEditor?.document.uri.fsPath ? vscode.window.activeTextEditor?.document.uri.fsPath : "" 
 		const projectName: string = getProjectName(filePath.toString());
-		const adjustedAnno = {
-			id: uuidv4(),
-			filename: filePath.toString(),
-			visiblePath: visiblePath,
-			anchorText: a.anno.anchorText,
-			annotation: a.anno.annotation,
+		const newAnnoId: string = uuidv4();
+		const anchorObject: AnchorObject = {
 			anchor: computeRangeFromOffset(changeRange, a.offsetInCopy),
+			anchorText: a.anchor.anchorText,
+			html: a.anchor.html,
+			filename: filePath.toString(),
+			gitUrl: getGithubUrl(visiblePath, projectName, false), // a.anno.gitUrl,
+			stableGitUrl: getGithubUrl(visiblePath, projectName, true),
+			visiblePath,
+			anchorPreview: a.anchor.anchorPreview,
+			programmingLang: a.anchor.programmingLang,
+			anchorId: uuidv4(),
+			originalCode: a.anchor.originalCode,
+			parentId: newAnnoId
+		}
+		const adjustedAnno = {
+			id: newAnnoId,
+			annotation: a.anno.annotation,
+			anchors: [anchorObject],
 			deleted: false,
 			outOfDate: false,
-			html: a.anno.html,
 			authorId: a.anno.authorId,
 			createdTimestamp: new Date().getTime(),
-			programmingLang: a.anno.programmingLang,
 			gitRepo: gitInfo[projectName]?.repo, // a.anno.gitRepo,
 			gitBranch: gitInfo[projectName]?.branch,
 			gitCommit: gitInfo[projectName]?.commit,
-			gitUrl: getGithubUrl(visiblePath, projectName, false), // a.anno.gitUrl,
-			stableGitUrl: getGithubUrl(visiblePath, projectName, true),
-			anchorPreview: a.anno.anchorPreview,
 			projectName: projectName,
 			githubUsername: gitInfo.author,
 			replies: a.anno.replies,
 			outputs: a.anno.outputs,
-			originalCode: a.anno.originalCode,
 			codeSnapshots: a.anno.codeSnapshots,
-			sharedWith: a.anno.sharedWith
+			sharedWith: a.anno.sharedWith,
+			selected: a.anno.selected,
+			needToUpdate: true
 		}
 
 		return buildAnnotation(adjustedAnno);
@@ -91,26 +150,35 @@ export const didUserPaste = (changeText: string) : boolean => {
 	return changeText === storedCopyText;
 }
 
-export const checkIfChangeIncludesAnchor = (annotationList : Annotation[], text: string) : Annotation[] => {
-	const anchorTextArr : {[key: string] : any}[] = annotationList.map((a : Annotation) => { return { cleanText: a.anchorText.replace(/\s+/g, ''), id: a.id } });
+const checkIfAnnotationIncludesChange = (anno: Annotation, text: string) : boolean => {
 	const cleanChangeText = text.replace(/\s+/g, '');
-	if(cleanChangeText === "") return [];
-	const matches: string[] = anchorTextArr.filter((a: {[key: string] : any}) => (cleanChangeText.includes(a.cleanText))).map(a => a.id); // bug: if the user annotates something common like just "console" this will match on other instances it shouldn't
-	return annotationList.filter((a: Annotation) => matches.includes(a.id));
+	if(cleanChangeText === "") return false;
+	const anchorTextArr: string[] = anno.anchors.map(a => a.anchorText.replace(/\s+/g, ''));
+	return anchorTextArr.includes(cleanChangeText);
 }
 
+export const checkIfChangeIncludesAnchor = (annotationList : Annotation[], text: string) : Annotation[] => {
+	return annotationList.filter((a: Annotation) => checkIfAnnotationIncludesChange(a, text));
+}
+
+const sortAnchorsByLocation = (anchors: AnchorObject[]) : AnchorObject[] => {
+	return anchors.sort((a: AnchorObject, b: AnchorObject) => {
+		return b.anchor.startLine - a.anchor.startLine === 0 ? b.anchor.startOffset - a.anchor.startOffset : b.anchor.startLine - a.anchor.startLine;
+	});
+}
 
 export const sortAnnotationsByLocation = (annotationList: Annotation[], filename: string | undefined) : Annotation[] => {
+	const sortedAnchors: string[] = sortAnchorsByLocation(annotationList.flatMap(a => a.anchors)).map(a => a.parentId);
 	annotationList.sort((a: Annotation, b: Annotation) => {
-		return b.startLine - a.startLine === 0 ? b.startOffset - a.startOffset : b.startLine - a.startLine;
+		return sortedAnchors.indexOf(b.id) - sortedAnchors.indexOf(a.id);
 	});
-	annotationList.sort((a: Annotation, b: Annotation) => {
-		// if a is the same as the filename and b isn't OR if a and b are both pointing at the same file, keep the order
-		// else move annotation b before a
-		let order: number = -1;
-		if(filename) order = (a.filename === filename && b.filename !== filename) || (a.filename === b.filename && a.filename === filename) ? -1 : 1;
-		return order;
-	})
+	// annotationList.sort((a: Annotation, b: Annotation) => {
+	// 	// if a is the same as the filename and b isn't OR if a and b are both pointing at the same file, keep the order
+	// 	// else move annotation b before a
+	// 	let order: number = -1;
+	// 	if(filename) order = (a.filename === filename && b.filename !== filename) || (a.filename === b.filename && a.filename === filename) ? -1 : 1;
+	// 	return order;
+	// })
 	return annotationList;
 }
 
@@ -123,16 +191,27 @@ export const getShikiCodeHighlighting = async (filename: string, anchorText: str
 	return html ? html : anchorText;
 }
 
+const updateAnchorHtml = async (anno: Annotation, doc: vscode.TextDocument) : Promise<Annotation> => {
+	const updatedAnchors: AnchorObject[] = await Promise.all(anno.anchors.map(async (a: AnchorObject) => {
+		if(a.filename === doc.uri.toString()) {
+			const newVscodeRange: vscode.Range = new vscode.Range(new vscode.Position(a.anchor.startLine, a.anchor.startOffset), new vscode.Position(a.anchor.endLine, a.anchor.endOffset));
+			const newAnchorText: string = doc.getText(newVscodeRange);
+			const newHtml: string = await getShikiCodeHighlighting(a.filename.toString(), newAnchorText);
+			const firstLine: string = getFirstLineOfHtml(newHtml, !newAnchorText.includes('\n'));
+			return { ...a, html: newHtml, anchorText: newAnchorText, anchorPreview: firstLine }
+		}
+		else {
+			return a;
+		}
+		
+	}));
+	return buildAnnotation({ ...anno, anchors: updatedAnchors, needToUpdate: true })
+}
+
 const updateHtml = async (annos: Annotation[], doc: vscode.TextDocument) : Promise<Annotation[]> => {
 	let updatedList : Annotation [] = [];
 	for(let x = 0; x < annos.length; x++) {
-		const newVscodeRange: vscode.Range = new vscode.Range(new vscode.Position(annos[x].startLine, annos[x].startOffset), new vscode.Position(annos[x].endLine, annos[x].endOffset));
-		const newAnchorText: string = doc.getText(newVscodeRange);
-		const newHtml: string = await getShikiCodeHighlighting(annos[x].filename.toString(), newAnchorText);
-		const firstLine: string = getFirstLineOfHtml(newHtml, !newAnchorText.includes('\n'));
-		const newAnno = buildAnnotation({
-			...annos[x], html: newHtml, anchorText: newAnchorText, anchorPreview: firstLine
-		});
+		const newAnno = await updateAnchorHtml(annos[x], doc);
 		updatedList.push(newAnno);
 	}
 
@@ -140,26 +219,33 @@ const updateHtml = async (annos: Annotation[], doc: vscode.TextDocument) : Promi
 
 }
 
+export const getAllAnnotationsWithAnchorInFile = (annotationList: Annotation[], currentFile: string) : Annotation[] => {
+	return annotationList.filter((a: Annotation) => {
+		const filesThisAnnotationIsIn: string[] = a.anchors.map(a => a.filename);
+		return filesThisAnnotationIsIn.includes(currentFile);
+	})
+}
 
 export const handleSaveCloseEvent = async (annotationList: Annotation[], filePath: string = "", currentFile: string = "all", doc : vscode.TextDocument | undefined = undefined) : Promise<void> => {
 	const annosToSave: Annotation[] = annotationList.concat(outOfDateAnnotations, deletedAnnotations);
-	const annotationsInCurrentFile = currentFile !== "all" ? annotationList.filter(a => a.filename === currentFile) : annotationList;
+	const annotationsInCurrentFile = currentFile !== "all" ? getAllAnnotationsWithAnchorInFile(annotationList, currentFile) : annotationList;
 	if(doc && vscode.workspace.workspaceFolders) {
 		let newList = await updateHtml(annotationsInCurrentFile, doc);
 		const ids: string[] = newList.map(a => a.id);
 		const visibleAnnotations: Annotation[] = currentFile === 'all' ? newList : annotationList.filter(a => !ids.includes(a.id)).concat(newList);
 		setAnnotationList(visibleAnnotations);
 		view?.updateDisplay(visibleAnnotations);
-		if(!arraysEqual(annosToSave, lastSavedAnnotations)) {
-			console.log('arrays are not equal');
+		if(annosToSave.some((a: Annotation) => a.needToUpdate)) {
 			lastSavedAnnotations = annosToSave;
-			saveAnnotations(annosToSave, filePath);
+			saveAnnotations(annosToSave.filter(a => a.needToUpdate), filePath);
+			const updatedList: Annotation[] = annosToSave.map(a => { return buildAnnotation({ ...a, needToUpdate: false }) });
+			setAnnotationList(removeOutOfDateAnnotations(updatedList));
 		}
 
 	}
 	else if(annotationsInCurrentFile.length && vscode.workspace.workspaceFolders && !arraysEqual(annosToSave, lastSavedAnnotations)) {
 		lastSavedAnnotations = annosToSave;
-		saveAnnotations(annosToSave, filePath);
+		saveAnnotations(annosToSave.filter(a => a.needToUpdate), filePath);
 	}
 }
 
@@ -167,35 +253,37 @@ export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[
 	return annotationList.map(a => { 
 		return {
 			id: a.id ? a.id : uuidv4(),
-			filename: a.filename ? a.filename : "",
-			visiblePath: a.visiblePath ? a.visiblePath : "",
-			anchorText: a.anchorText ? a.anchorText : "",
+			// filename: a.filename ? a.filename : "",
+			// visiblePath: a.visiblePath ? a.visiblePath : "",
+			// anchorText: a.anchorText ? a.anchorText : "",
 			annotation: a.annotation ? a.annotation : "",
-			anchor: {
-				startLine: a.startLine ? a.startLine : 0,
-				endLine: a.endLine ? a.endLine : 0,
-				startOffset: a.startOffset ? a.startOffset : 0,
-				endOffset: a.endOffset ? a.endOffset : 0
-			},
-			html: a.html ? a.html : "",
+			anchors: a.anchors ? a.anchors : [{ }],
+			// anchor: {
+			// 	startLine: a.startLine ? a.startLine : 0,
+			// 	endLine: a.endLine ? a.endLine : 0,
+			// 	startOffset: a.startOffset ? a.startOffset : 0,
+			// 	endOffset: a.endOffset ? a.endOffset : 0
+			// },
+			// html: a.html ? a.html : "",
 			authorId: a.authorId ? a.authorId : "",
 			createdTimestamp: a.createdTimestamp ? a.createdTimestamp : new Date().getTime(),
-			programmingLang: a.programmingLang ? a.programmingLang : "",
+			// programmingLang: a.programmingLang ? a.programmingLang : "",
 			deleted: a.deleted !== undefined ? a.deleted : true,
 			outOfDate: a.outOfDate !== undefined ? a.outOfDate : false,
 			gitRepo: a.gitRepo ? a.gitRepo : "",
 			gitBranch: a.gitBranch ? a.gitBranch : "",
 			gitCommit: a.gitCommit ? a.gitCommit : "",
-			gitUrl: a.gitUrl ? a.gitUrl : "",
-			stableGitUrl: a.stableGitUrl ? a.stableGitUrl : "",
-			anchorPreview: a.anchorPreview ? a.anchorPreview : "",
+			// gitUrl: a.gitUrl ? a.gitUrl : "",
+			// stableGitUrl: a.stableGitUrl ? a.stableGitUrl : "",
+			// anchorPreview: a.anchorPreview ? a.anchorPreview : "",
 			projectName: a.projectName ? a.projectName : "",
 			githubUsername: a.githubUsername ? a.githubUsername : "",
 			replies: a.replies ? a.replies : [],
 			outputs: a.outputs ? a.outputs : [],
-			originalCode: a.originalCode ? a.originalCode : "",
+			// originalCode: a.originalCode ? a.originalCode : "",
 			codeSnapshots: a.codeSnapshots ? a.codeSnapshots : [],
-			sharedWith: a.sharedWith ? a.sharedWith : "private"
+			sharedWith: a.sharedWith ? a.sharedWith : "private",
+			selected: a.selected ? a.selected : false
 	}});
 }
 
@@ -334,55 +422,113 @@ export const getProjectName = (filename?: string | undefined) : string => {
 	return "";
 }
 
-export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefined) : Annotation => {
-	const annoObj: { [key: string]: any } = 
-		range ?
+const translateAnnotationAnchorStandard = (annoInfo: any) : {[ key: string ] : any } => {
+
+	return {
+		id: annoInfo.id,
+		annotation: annoInfo.annotation,
+		anchors: [
 			{
-				...annoInfo,
-				startLine: range.start.line,
-				endLine: range.end.line,
-				startOffset: range.start.character,
-				endOffset: range.end.character,
+				anchor: {
+					startLine: annoInfo.anchor ? annoInfo.anchor.startLine : annoInfo.startLine,
+					startOffset: annoInfo.anchor ? annoInfo.anchor.startOffset : annoInfo.startOffset,
+					endLine: annoInfo.anchor ? annoInfo.anchor.endLine : annoInfo.endLine,
+					endOffset: annoInfo.anchor? annoInfo.anchor.endOffset : annoInfo.endOffset
+				},
+				anchorText: annoInfo.anchorText,
+				html: annoInfo.html,
+				filename: annoInfo.filename,
+				gitUrl: annoInfo.gitUrl,
+				stableGitUrl: annoInfo.stableGitUrl,
+				visiblePath: annoInfo.visiblePath,
+				anchorPreview: annoInfo.anchorPreview,
+				programmingLang: annoInfo.programmingLang,
+				anchorId: uuidv4(),
+				originalCode: annoInfo.originalCode,
+				parentId: annoInfo.id
 			}
-		: annoInfo.anchor ?
-			{
-				...annoInfo,
-				startLine: annoInfo.anchor.startLine,
-				endLine: annoInfo.anchor.endLine,
-				startOffset: annoInfo.anchor.startOffset,
-				endOffset: annoInfo.anchor.endOffset,
-			} 
-		: annoInfo;
+		],
+		deleted: annoInfo.deleted,
+		outOfDate: annoInfo.outOfDate,
+		authorId: annoInfo.authorId,
+		createdTimestamp: annoInfo.createdTimestamp,
+		gitRepo: annoInfo.gitRepo,
+		gitBranch: annoInfo.gitBranch,
+		gitCommit: annoInfo.gitCommit,
+		projectName: annoInfo.projectName,
+		githubUsername: annoInfo.githubUsername,
+		replies: annoInfo.replies,
+		outputs: annoInfo.outputs,
+		codeSnapshots: annoInfo.codeSnapshots,
+		sharedWith: annoInfo.sharedWith,
+		selected: annoInfo.selected,
+		needToUpdate: annoInfo.needToUpdate ? annoInfo.needToUpdate : false
+	}
+}
+
+export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefined) : Annotation => {
+	let annoObj = null
+	if(annoInfo.hasOwnProperty('anchor') || annoInfo.hasOwnProperty('anchorText')) {
+		annoObj = translateAnnotationAnchorStandard(annoInfo)
+	}
+	else {
+		annoObj = annoInfo;
+	}
 
 
 	return new Annotation(
 		annoObj['id'], 
-		annoObj['filename'], 
-		annoObj['visiblePath'], 
-		annoObj['anchorText'],
 		annoObj['annotation'],
-		annoObj['startLine'],
-		annoObj['endLine'],
-		annoObj['startOffset'],
-		annoObj['endOffset'],
+		annoObj['anchors'],
 		annoObj['deleted'],
 		annoObj['outOfDate'],
-		annoObj['html'],
 		annoObj['authorId'],
 		annoObj['createdTimestamp'],
-		annoObj['programmingLang'],
 		annoObj['gitRepo'],
 		annoObj['gitBranch'],
 		annoObj['gitCommit'],
-		annoObj['gitUrl'],
-		annoObj['stableGitUrl'],
-		annoObj['anchorPreview'],
 		annoObj['projectName'],
 		annoObj['githubUsername'],
 		annoObj['replies'],
 		annoObj['outputs'],
-		annoObj['originalCode'],
 		annoObj['codeSnapshots'],
-		annoObj['sharedWith']
+		annoObj['sharedWith'],
+		annoObj['selected'],
+		annoObj['needToUpdate']
 	)
+}
+
+export const createAnchorObject = async (annoId: string, range: vscode.Range) : Promise<AnchorObject | undefined> => {
+	if(vscode.window.activeTextEditor) {
+		const filename: string = vscode.window.activeTextEditor.document.uri.toString();
+		const anchorText: string = vscode.window.activeTextEditor.document.getText(range);
+		const html: string = await getShikiCodeHighlighting(filename, anchorText);
+		const firstLineOfHtml: string = getFirstLineOfHtml(html, !anchorText.includes('\n'));
+		const projectName: string = getProjectName(filename);
+		const visiblePath: string = getVisiblePath(projectName, vscode.window.activeTextEditor.document.uri.fsPath)
+		const gitUrl: string = getGithubUrl(visiblePath, projectName, false);
+		const stableGitUrl: string = getGithubUrl(visiblePath, projectName, true);
+		const programmingLang: string = vscode.window.activeTextEditor.document.uri.toString().split('.')[vscode.window.activeTextEditor.document.uri.toString().split('.').length - 1]
+		return {
+			parentId: annoId,
+			anchorId: uuidv4(),
+			anchorText,
+			html,
+			anchorPreview: firstLineOfHtml,
+			originalCode: html,
+			gitUrl,
+			stableGitUrl,
+			anchor: createAnchorFromRange(range),
+			programmingLang,
+			filename,
+			visiblePath
+		}
+	}
+	else {
+		vscode.window.showInformationMessage('Must have open text editor!')
+	}
+}
+
+export const buildAnchorObject = (anchorInfo: AnchorObject, range?: vscode.Range) : AnchorObject => {
+	return range ? { ...anchorInfo, anchor: createAnchorFromRange(range) } : anchorInfo;
 }

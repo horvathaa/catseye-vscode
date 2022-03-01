@@ -1,5 +1,6 @@
 import styles from '../styles/adamite.module.css';
-import Annotation from '../../../constants/constants';
+import { Annotation } from '../../../constants/constants';
+import { getAllAnnotationFilenames }  from '../utils/viewUtils';
 import ReactAnnotation from '../components/annotation';
 import * as React from 'react';
 
@@ -14,7 +15,7 @@ interface AnnoListProps {
   }
   
 const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, currentFile, currentProject, username, userId }) => {
-    const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
+    // const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
 
     React.useEffect(() => {
         if(annotations.length) {
@@ -22,9 +23,9 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
         }
     }, []);
 
-    const transmitSelected = (id: string) : void => {
-        selectedIds.includes(id) ? setSelectedIds((selectedIds) => selectedIds.filter(annoId => annoId !== id)) : setSelectedIds((selectedIds) => selectedIds.concat([id]));
-    }
+    React.useEffect(() => {
+        
+    }, [annotations])
 
     const showHideCluster = (e: any) => {
         const div = e.target.nextElementSibling;
@@ -48,21 +49,19 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
             let innerProject: React.ReactElement;
             const header = otherProjects[project].length === 1 ? `${project} (${otherProjects[project].length} annotation)` : `${project} (${otherProjects[project].length} annotations)`;
             innerProject = (
-                <div>
+                <div key={header + project}>
                     <div onClick={showHideCluster} id={header+'-wrapper'} className={`${styles['subheading']} ${styles['sublist']}`}>
                         {header}
                     </div>
                     <div className={styles['hiding']}>
                         {otherProjects[project].sort((a: Annotation, b: Annotation) => a.createdTimestamp < b.createdTimestamp ? 1 : -1).map((a: Annotation) => {
                             return <ReactAnnotation
-                                        key={'annotation'+a.id} 
+                                        key={'annotationlist-project-cluster'+a.id} 
                                         annotation={a} 
                                         vscode={vscode} 
                                         window={window} 
                                         username={username}
                                         userId={userId}
-                                        initialSelected={selectedIds.includes(a.id)}
-                                        transmitSelected={transmitSelected}
                                     />
                         })}
                     </div>
@@ -85,16 +84,17 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
 
     const createClusters = () : React.ReactElement<any>[] => {
         let output : { [key: string] : any } = {
-            'Selected': [],
+            'Pinned': [],
             'Current File': [],
             'Current Project': [],
             'Other Projects': {}
         };
         annotations.forEach((a: Annotation) => {
-            if(selectedIds.includes(a.id)) {
-                output['Selected'].push(a);
+            const annoFiles = getAllAnnotationFilenames([a]);
+            if(a.selected) {
+                output['Pinned'].push(a);
             }
-            else if(a.filename === currentFile) {
+            else if(annoFiles.includes(currentFile)) {
                 output['Current File'].push(a);
             }
             else if(a.projectName === currentProject) {
@@ -115,21 +115,19 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
                 const header = output[key].length === 1 ? 'annotation' : 'annotations';
                 const annotations = key !== 'Current File' ? output[key].sort((a: Annotation, b: Annotation) => a.createdTimestamp < b.createdTimestamp ? 1 : -1) : output[key];
                 jsx.push(
-                    <div key={key}>
+                    <div key={key + '-annotationList'}>
                         <div onClick={showHideCluster} id={key} className={styles['subheading']}>
                             {key} ({output[key].length} {header})
                         </div>
                         <div className={styles['showing']}>
                             {annotations.map((a: Annotation) => {
                                 return <ReactAnnotation
-                                            key={'annotation'+a.id} 
+                                            key={'annotationListtsx-'+a.id} 
                                             annotation={a} 
                                             vscode={vscode} 
                                             window={window} 
                                             username={username}
                                             userId={userId}
-                                            initialSelected={selectedIds.includes(a.id)}
-                                            transmitSelected={transmitSelected}
                                         />
                             })}
                         </div>

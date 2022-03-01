@@ -1,6 +1,6 @@
 import * as React from "react";
 import styles from '../../styles/annotation.module.css';
-import { VscChevronUp, VscChevronDown, VscChevronLeft, VscChevronRight } from 'react-icons/vsc';
+import { VscChevronUp, VscChevronDown, VscChevronLeft, VscChevronRight, VscDeviceCamera } from 'react-icons/vsc';
 interface SynProps {
     html: string;
     anchorPreview?: string;
@@ -21,15 +21,17 @@ export const Syntax: React.FC<SynProps> = ({ html, anchorPreview, collapsed }) =
 
 interface Props {
     html: string;
+    anchorId: string;
     anchorPreview: string;
     visiblePath: string;
     startLine: number;
     endLine: number;
-    scrollInEditor: () => void;
+    scrollInEditor: (id: string) => void;
+    snapshotCode: (id: string) => void;
     originalCode: string;
 }
 
-const Anchor: React.FC<Props> = ({ html, anchorPreview, visiblePath, startLine, endLine, scrollInEditor, originalCode }) => {
+const Anchor: React.FC<Props> = ({ html, anchorId, anchorPreview, visiblePath, startLine, endLine, scrollInEditor, snapshotCode, originalCode }) => {
     const [collapsed, setCollapsed] = React.useState<boolean>(false);
     const [showingOriginalCode, setShowingOriginalCode] = React.useState<boolean>(false);
     const isSingleLineAnchor: boolean = (endLine - startLine) === 0;
@@ -55,13 +57,18 @@ const Anchor: React.FC<Props> = ({ html, anchorPreview, visiblePath, startLine, 
 
     const handleShowInEditor = (e: React.SyntheticEvent) : void => {
         e.stopPropagation(); 
-        if(!showingOriginalCode) scrollInEditor();
+        if(!showingOriginalCode) scrollInEditor(anchorId);
     }
 
 
 
     return (
         <div className={styles['AnchorContainer']}>
+            <div onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); snapshotCode(anchorId); }} className={styles['DropdownItemOverwrite']}>
+                <div className={styles['DropdownIconsWrapper']}>
+                    <VscDeviceCamera className={styles['profileMenu']} />
+                </div>
+            </div>
             <div className={styles['HTMLContainer']} onClick={handleShowInEditor}>
                 {showingOriginalCode ? (
                     <React.Fragment>
@@ -79,7 +86,7 @@ const Anchor: React.FC<Props> = ({ html, anchorPreview, visiblePath, startLine, 
             }
             </div>
             <div className={styles['LocationWrapper']}>
-                <div className={styles['LocationContainer']} onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); scrollInEditor(); }}>
+                <div className={styles['LocationContainer']} onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); scrollInEditor(anchorId); }}>
                     {visiblePath}: Line {startLine + 1} to Line {endLine + 1}
                 </div>
                 <div className={styles['AnchorButtonContainer']}>

@@ -7,6 +7,22 @@
   margin-bottom: 2%;
 }
 
+.AnchorListContainer {
+  border: 0.25px solid rgb(239 255 201 / 20%);
+  padding: 4px;
+  border-radius: 2px;
+  overflow: inherit;
+}
+
+.AnchorListButtonContainer.AnchorButtonContainer {
+  margin-right: 0.75rem;
+}
+
+.AnchorListButtonContainer {
+  margin-bottom: 0.25rem;
+  /* margin-right: 0.75rem; */
+}
+
 .AnnotationIconsContainer {
   display: flex;
 }
@@ -314,7 +330,7 @@
   border: 0.25px solid rgb(239 255 201 / 20%);
   padding: 5px;
   border-radius: 4px;
-  overflow: inherit;
+  overflow: scroll;
 }
 
 .LocationWrapper {

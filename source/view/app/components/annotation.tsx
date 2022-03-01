@@ -4,7 +4,7 @@ import { buildAnnotation } from '../utils/viewUtils';
 import styles from '../styles/annotation.module.css';
 import { Annotation, AnchorObject } from '../../../constants/constants';
 import AnnotationOperationButtons from './annotationComponents/annotationOperationButtons';
-import Anchor from './annotationComponents/anchor';
+import AnchorList from './annotationComponents/anchorList';
 import TextEditor from "./annotationComponents/textEditor";
 import UserProfile from "./annotationComponents/userProfile";
 import ReplyContainer from './annotationComponents/replyContainer';
@@ -22,7 +22,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
   const [anno, setAnno] = React.useState<Annotation>(annotation);
   const [edit, setEdit] = React.useState<boolean>(false);
   const [replying, setReplying] = React.useState<boolean>(false);
-
+  
   const annoRef: React.MutableRefObject<Annotation> = React.useRef(anno);
 
   const handleIncomingMessages = (e: MessageEvent<any>) => {
@@ -179,28 +179,16 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
                     exportAnnotationAsComment={exportAnnotationAsComment}
                     editAnnotation={() => { setEdit(!edit) }} 
                     deleteAnnotation={(e) => deleteAnnotation(e)}
-                    // snapshotCode={snapshotCode}
                     pinAnnotation={handleSelectedClick}
                     addAnchor={addAnchor}
                     pinned={anno.selected}
                   />
                 </div>
-                {anno.anchors.map((a: AnchorObject) => {
-                  return <Anchor
-                    key={a.parentId + a.anchorId}
-                    anchorId={a.anchorId}
-                    html={a.html} 
-                    anchorPreview={a.anchorPreview} 
-                    visiblePath={a.visiblePath}
-                    startLine={a.anchor.startLine}
-                    endLine={a.anchor.endLine}
-                    scrollInEditor={scrollInEditor}
-                    snapshotCode={snapshotCode}
-                    originalCode={a.originalCode}
-                  />
-                })
-                  
-                }
+                <AnchorList 
+                  anchors={anno.anchors}
+                  snapshotCode={snapshotCode}
+                  scrollInEditor={scrollInEditor}
+                />
                 <div className={styles['ContentContainer']}>
                   {edit ? (
                     <TextEditor 
@@ -234,18 +222,3 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
 }
 
 export default ReactAnnotation;
-
-
-// const updateOutputs = (outputContent: string) : void => {
-//   const newOutput: {[key: string]: any} = { message: outputContent, timestamp: new Date().getTime(), codeAtTime: annoRef.current.html };
-//   const newOutputs: {[key: string]: any}[] = annoRef.current.outputs && annoRef.current.outputs.length ? annoRef.current.outputs.concat([newOutput]) : [newOutput];
-//   const newAnno: Annotation = buildAnnotation({ ...anno, outputs: newOutputs });
-//   annoRef.current = newAnno;
-//   setAnno(newAnno);
-//   vscode.postMessage({
-//     command: 'updateAnnotation',
-//     annoId: anno.id,
-//     key: 'outputs',
-//     value: newOutputs
-//   });
-// }

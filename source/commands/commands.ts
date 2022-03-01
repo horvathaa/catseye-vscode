@@ -174,7 +174,7 @@ export const addNewHighlight = (selected?: boolean) : string | Promise<string> =
 	const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);
 	// Get the branch and commit 
 	const newAnnoId: string = uuidv4();
-	console.log('is this undefined???', activeTextEditor.document.uri.toString().split('.'));
+	// console.log('is this undefined???', activeTextEditor.document.uri.toString().split('.'));
 	const programmingLang: string = activeTextEditor.document.uri.toString().split('.')[activeTextEditor.document.uri.toString().split('.').length - 1];
 	const visiblePath: string = vscode.workspace.workspaceFolders ? 
 		utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) : activeTextEditor.document.uri.fsPath;

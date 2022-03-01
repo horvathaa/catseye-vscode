@@ -14,8 +14,8 @@ import { user,
         selectedAnnotationsNavigations,
         setSelectedAnnotationsNavigations
 } from '../extension';
-import { initializeAnnotations, handleSaveCloseEvent, saveAnnotations, removeOutOfDateAnnotations, buildAnnotation, sortAnnotationsByLocation, getProjectName, getShikiCodeHighlighting, getAllAnnotationFilenames } from '../utils/utils';
-import { addHighlightsToEditor, createRangeFromAnchorObject, createRangesFromAnnotation, updateAnchorInAnchorObject } from '../anchorFunctions/anchor';
+import { initializeAnnotations, handleSaveCloseEvent, saveAnnotations, removeOutOfDateAnnotations, buildAnnotation, sortAnnotationsByLocation, getProjectName, getShikiCodeHighlighting, getAllAnnotationFilenames, createAnchorObject } from '../utils/utils';
+import { addHighlightsToEditor, createAnchorFromRange, createRangeFromAnchorObject, createRangesFromAnnotation, updateAnchorInAnchorObject } from '../anchorFunctions/anchor';
 import { v4 as uuidv4 } from 'uuid';
 // import Anchor from '../view/app/components/annotationComponents/anchor';
 
@@ -49,10 +49,23 @@ export const handleSnapshotCode = (id: string, anchorId: string) : void => {
     }
 }
 
-export const handleAddAnchor = (id: string) : void => {
+export const handleAddAnchor = async (id: string) : Promise<void> => {
     const anno: Annotation | undefined = annotationList.find(anno => anno.id === id);
-    if(anno) {
-        console.log('anno', anno);
+    const currentSelection: vscode.Selection | undefined = vscode.window.activeTextEditor?.selection;
+    if(anno && currentSelection) {
+        const newAnchor: AnchorObject | undefined =  await createAnchorObject(id, new vscode.Range(currentSelection.start, currentSelection.end));
+        const newAnno: Annotation = newAnchor ? buildAnnotation({ ...anno, anchors: [...anno.anchors, newAnchor] }) : anno;
+        if(!newAnchor) {
+            console.error('could not make new anchor - returning original annotation...');
+        }
+        console.log('newAnno', newAnno);
+        setAnnotationList(annotationList.filter(anno => anno.id !== id).concat([newAnno]));
+        if(vscode.window.activeTextEditor) addHighlightsToEditor(annotationList, vscode.window.activeTextEditor)
+        // const anchor: AnchorObject = createAnchorFromRange(new vscode.Range(currentSelection.start, currentSelection.end));
+    }
+    else if(anno) {
+        vscode.window.showInformationMessage('Select the code you want to add as an anchor!');
+        return;
     }
 }
 

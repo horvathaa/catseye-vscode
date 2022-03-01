@@ -49,14 +49,14 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
             let innerProject: React.ReactElement;
             const header = otherProjects[project].length === 1 ? `${project} (${otherProjects[project].length} annotation)` : `${project} (${otherProjects[project].length} annotations)`;
             innerProject = (
-                <div>
+                <div key={header + project}>
                     <div onClick={showHideCluster} id={header+'-wrapper'} className={`${styles['subheading']} ${styles['sublist']}`}>
                         {header}
                     </div>
                     <div className={styles['hiding']}>
                         {otherProjects[project].sort((a: Annotation, b: Annotation) => a.createdTimestamp < b.createdTimestamp ? 1 : -1).map((a: Annotation) => {
                             return <ReactAnnotation
-                                        key={'annotation'+a.id} 
+                                        key={'annotationlist-project-cluster'+a.id} 
                                         annotation={a} 
                                         vscode={vscode} 
                                         window={window} 
@@ -115,14 +115,14 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
                 const header = output[key].length === 1 ? 'annotation' : 'annotations';
                 const annotations = key !== 'Current File' ? output[key].sort((a: Annotation, b: Annotation) => a.createdTimestamp < b.createdTimestamp ? 1 : -1) : output[key];
                 jsx.push(
-                    <div key={key}>
+                    <div key={key + '-annotationList'}>
                         <div onClick={showHideCluster} id={key} className={styles['subheading']}>
                             {key} ({output[key].length} {header})
                         </div>
                         <div className={styles['showing']}>
                             {annotations.map((a: Annotation) => {
                                 return <ReactAnnotation
-                                            key={'annotation'+a.id} 
+                                            key={'annotationListtsx-'+a.id} 
                                             annotation={a} 
                                             vscode={vscode} 
                                             window={window} 

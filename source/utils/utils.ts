@@ -193,11 +193,17 @@ export const getShikiCodeHighlighting = async (filename: string, anchorText: str
 
 const updateAnchorHtml = async (anno: Annotation, doc: vscode.TextDocument) : Promise<Annotation> => {
 	const updatedAnchors: AnchorObject[] = await Promise.all(anno.anchors.map(async (a: AnchorObject) => {
-		const newVscodeRange: vscode.Range = new vscode.Range(new vscode.Position(a.anchor.startLine, a.anchor.startOffset), new vscode.Position(a.anchor.endLine, a.anchor.endOffset));
-		const newAnchorText: string = doc.getText(newVscodeRange);
-		const newHtml: string = await getShikiCodeHighlighting(a.filename.toString(), newAnchorText);
-		const firstLine: string = getFirstLineOfHtml(newHtml, !newAnchorText.includes('\n'));
-		return { ...a, html: newHtml, anchorText: newAnchorText, anchorPreview: firstLine }
+		if(a.filename === doc.uri.toString()) {
+			const newVscodeRange: vscode.Range = new vscode.Range(new vscode.Position(a.anchor.startLine, a.anchor.startOffset), new vscode.Position(a.anchor.endLine, a.anchor.endOffset));
+			const newAnchorText: string = doc.getText(newVscodeRange);
+			const newHtml: string = await getShikiCodeHighlighting(a.filename.toString(), newAnchorText);
+			const firstLine: string = getFirstLineOfHtml(newHtml, !newAnchorText.includes('\n'));
+			return { ...a, html: newHtml, anchorText: newAnchorText, anchorPreview: firstLine }
+		}
+		else {
+			return a;
+		}
+		
 	}));
 	return buildAnnotation({ ...anno, anchors: updatedAnchors, needToUpdate: true })
 }
@@ -490,6 +496,37 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 		annoObj['selected'],
 		annoObj['needToUpdate']
 	)
+}
+
+export const createAnchorObject = async (annoId: string, range: vscode.Range) : Promise<AnchorObject | undefined> => {
+	if(vscode.window.activeTextEditor) {
+		const filename: string = vscode.window.activeTextEditor.document.uri.toString();
+		const anchorText: string = vscode.window.activeTextEditor.document.getText(range);
+		const html: string = await getShikiCodeHighlighting(filename, anchorText);
+		const firstLineOfHtml: string = getFirstLineOfHtml(html, !anchorText.includes('\n'));
+		const projectName: string = getProjectName(filename);
+		const visiblePath: string = getVisiblePath(projectName, vscode.window.activeTextEditor.document.uri.fsPath)
+		const gitUrl: string = getGithubUrl(visiblePath, projectName, false);
+		const stableGitUrl: string = getGithubUrl(visiblePath, projectName, true);
+		const programmingLang: string = vscode.window.activeTextEditor.document.uri.toString().split('.')[vscode.window.activeTextEditor.document.uri.toString().split('.').length - 1]
+		return {
+			parentId: annoId,
+			anchorId: uuidv4(),
+			anchorText,
+			html,
+			anchorPreview: firstLineOfHtml,
+			originalCode: html,
+			gitUrl,
+			stableGitUrl,
+			anchor: createAnchorFromRange(range),
+			programmingLang,
+			filename,
+			visiblePath
+		}
+	}
+	else {
+		vscode.window.showInformationMessage('Must have open text editor!')
+	}
 }
 
 export const buildAnchorObject = (anchorInfo: AnchorObject, range?: vscode.Range) : AnchorObject => {

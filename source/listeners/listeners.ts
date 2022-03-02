@@ -49,8 +49,7 @@ export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
 
 const checkIfComment = (changeObj: ChangeEvent) : boolean => {
     const addedText: string = changeObj.changes.map(c => c.text).join('').trimLeft();
-    console.log('addedText', addedText);
-    return addedText[0] === '/' && (addedText[1] === '/' || addedText[1] === '*')
+    return addedText[0] === '/' && (addedText[1] === '/' || addedText[1] === '*');
 }
 
 const checkIfPartOfChange = (change: vscode.TextDocumentContentChangeEvent) : void => {
@@ -62,22 +61,17 @@ const checkIfPartOfChange = (change: vscode.TextDocumentContentChangeEvent) : vo
 
     let changeObj: ChangeEvent = changes[changes.length - 1];
     if(changeObj.startTime === 0) {
-        console.log('in if');
         changeObj.startTime = currTime;
         changeObj.changes.push(change);
     }
     else if((currTime - changeObj.startTime) >= 1000) {
         changeObj.endTime = currTime;
         changeObj.isComment = checkIfComment(changeObj);
-        console.log('changeObj in else if', changeObj);
         if(!changeObj.isComment && !changeObj.complete) {
             // setTimeout(() => vscode.window.showInformationMessage('Change task!'), 15000);
             setTimeout(async () => {
                 let correctParticipantResult = false;
                 while(!correctParticipantResult) {
-
-
-                    console.log('in while loop');
                     const operandOne: number = parseInt(`${Math.floor(Math.random() * (9 - 2 + 1) + 2)}${Math.floor(Math.random() * (9 - 2 + 1) + 2)}`);
                     const operandTwo: number = parseInt(`${Math.floor(Math.random() * (9 - 2 + 1) + 2)}${Math.floor(Math.random() * (9 - 2 + 1) + 2)}`);
                     const result = operandTwo * operandOne;
@@ -95,7 +89,6 @@ const checkIfPartOfChange = (change: vscode.TextDocumentContentChangeEvent) : vo
     else {
         changeObj.changes.push(change); 
     }
-    console.log('changeObj in bottom', changeObj, 'changes', changes);
 }
     // hi
 export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) => {
@@ -108,7 +101,7 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
         for (const change of e.contentChanges) {
             console.log("BEGINNING DID CHANGE TEXT")
             console.log('change', change);
-            if(numChangeEventsCompleted < 3) checkIfPartOfChange(change);
+            // if(numChangeEventsCompleted < 3) checkIfPartOfChange(change);
             const startLine = change.range.start.line;
             const endLine = change.range.end.line;
             const linesInRange = endLine - startLine;

@@ -1,3 +1,4 @@
+import * as vscode from 'vscode';
 export class Annotation {
 	id: string;
 	annotation: string;
@@ -107,4 +108,12 @@ export interface AnchorObject {
 	anchorId: string,
 	originalCode: string,
 	parentId: string
+}
+
+export interface ChangeEvent {
+    startTime: number,
+    endTime: number,
+    changes: vscode.TextDocumentContentChangeEvent[],
+    isComment: boolean,
+    complete: boolean
 }

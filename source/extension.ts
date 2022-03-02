@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 
 import firebase from './firebase/firebase';
-import { Annotation } from './constants/constants';
+import { Annotation, ChangeEvent } from './constants/constants';
 import * as commands from './commands/commands';
 import * as eventHandlers from './listeners/listeners';
 import * as utils from './utils/utils';
@@ -24,7 +24,11 @@ export let view: ViewLoader | undefined = undefined;
 export let user: firebase.User | null = null;
 export let tempAnno: Annotation | null = null;
 export let activeEditor = vscode.window.activeTextEditor;
+
 export let adamiteLog = vscode.window.createOutputChannel("Adamite");
+export let changes: ChangeEvent[] = [];
+export let numChangeEventsCompleted = 0;
+
 export const annotationDecorations = vscode.window.createTextEditorDecorationType({
 	// borderWidth: '0.25px',
 	// borderStyle: 'solid',
@@ -98,6 +102,13 @@ export const setSelectedAnnotationsNavigations = (newSelectedAnnotationsNavigati
 	selectedAnnotationsNavigations = newSelectedAnnotationsNavigationList;
 }
 
+export const setChangeEvents = (newChangeEvents: ChangeEvent[]) : void => {
+	changes = newChangeEvents;
+}
+
+export const incrementNumChangeEventsCompleted = () : void => {
+	numChangeEventsCompleted++;
+}
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {

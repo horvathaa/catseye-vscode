@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
-import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, deletedAnnotations, setDeletedAnnotationList, setInsertSpaces } from '../extension';
+import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, deletedAnnotations, setDeletedAnnotationList, setInsertSpaces, changes, setChangeEvents, incrementNumChangeEventsCompleted, numChangeEventsCompleted } from '../extension';
 import * as anchor from '../anchorFunctions/anchor';
 import * as utils from '../utils/utils';
-import { Annotation, Anchor, AnchorObject } from '../constants/constants';
+import { Annotation, AnchorObject, ChangeEvent } from '../constants/constants';
+
 
 
 export const handleChangeVisibleTextEditors = (textEditors: vscode.TextEditor[]) => {
@@ -46,6 +47,50 @@ export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
     if(vscode.workspace.workspaceFolders) utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextDocument.uri.toString(), TextDocument);
 }
 
+const checkIfComment = (changeObj: ChangeEvent) : boolean => {
+    const addedText: string = changeObj.changes.map(c => c.text).join('').trimLeft();
+    return addedText[0] === '/' && (addedText[1] === '/' || addedText[1] === '*');
+}
+
+const checkIfPartOfChange = (change: vscode.TextDocumentContentChangeEvent) : void => {
+    const currTime: number = new Date().getTime();
+    // console.log('changeObj at top', changeObj)
+    if(!changes.length) {
+        changes.push({ startTime: 0, endTime: 0, changes: [], isComment: false, complete: false });
+    }
+
+    let changeObj: ChangeEvent = changes[changes.length - 1];
+    if(changeObj.startTime === 0) {
+        changeObj.startTime = currTime;
+        changeObj.changes.push(change);
+    }
+    else if((currTime - changeObj.startTime) >= 1000) {
+        changeObj.endTime = currTime;
+        changeObj.isComment = checkIfComment(changeObj);
+        if(!changeObj.isComment && !changeObj.complete) {
+            // setTimeout(() => vscode.window.showInformationMessage('Change task!'), 15000);
+            setTimeout(async () => {
+                let correctParticipantResult = false;
+                while(!correctParticipantResult) {
+                    const operandOne: number = parseInt(`${Math.floor(Math.random() * (9 - 2 + 1) + 2)}${Math.floor(Math.random() * (9 - 2 + 1) + 2)}`);
+                    const operandTwo: number = parseInt(`${Math.floor(Math.random() * (9 - 2 + 1) + 2)}${Math.floor(Math.random() * (9 - 2 + 1) + 2)}`);
+                    const result = operandTwo * operandOne;
+                    const participantResult = await vscode.window.showInputBox({ ignoreFocusOut: true, placeHolder: 'Enter multiplication solution here', title: 'Interruption', prompt: `Solve this multiplaction problem: ${operandOne} x ${operandTwo}`});
+                    correctParticipantResult = participantResult !== undefined && parseInt(participantResult) === result;
+                    if(correctParticipantResult) {
+                        changeObj.complete = true;
+                        incrementNumChangeEventsCompleted();
+                        setChangeEvents([{ startTime: 0, endTime: 0, changes: [], isComment: false, complete: false }]);
+                    }
+                }
+            }, 15000);
+        }
+    }
+    else {
+        changeObj.changes.push(change); 
+    }
+}
+    // hi
 export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) => {
     const currentAnnotations = utils.getAllAnnotationsWithAnchorInFile(annotationList, e.document.uri.toString());
     const couldBeUndoOrPaste = utils.getAllAnnotationsWithAnchorInFile(deletedAnnotations, e.document.uri.toString()).length > 0 || copiedAnnotations.length > 0;
@@ -56,6 +101,7 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
         for (const change of e.contentChanges) {
             console.log("BEGINNING DID CHANGE TEXT")
             console.log('change', change);
+            // if(numChangeEventsCompleted < 3) checkIfPartOfChange(change);
             const startLine = change.range.start.line;
             const endLine = change.range.end.line;
             const linesInRange = endLine - startLine;
@@ -86,10 +132,8 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
                 }
             }
 
-            let needToHighlight = false;
             translatedAnnotations = utils.removeOutOfDateAnnotations(
                 translatedAnnotations.map((a: Annotation) => {
-                    console.log('translating this anno', a);
                     const [anchorsToTranslate, anchorsNotToTranslate] = utils.partition(a.anchors, (a: AnchorObject) => a.filename === e.document.uri.toString());
                     const translatedAnchors = utils.removeNulls(anchorsToTranslate.map((a: AnchorObject) => anchor.translateChanges(a, change.range, 
                         change.text.length, diff, change.rangeLength, e.document, change.text)));

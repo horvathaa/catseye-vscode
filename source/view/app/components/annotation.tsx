@@ -2,7 +2,7 @@ import * as React from "react";
 import cn from 'classnames';
 import { buildAnnotation } from '../utils/viewUtils';
 import styles from '../styles/annotation.module.css';
-import { Annotation, AnchorObject } from '../../../constants/constants';
+import { Annotation, AnchorObject, Reply, Snapshot } from '../../../constants/constants';
 import AnnotationOperationButtons from './annotationComponents/annotationOperationButtons';
 import AnchorList from './annotationComponents/anchorList';
 import TextEditor from "./annotationComponents/textEditor";
@@ -112,15 +112,29 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
       annoId: anno.id,
       anchorId: id
     });
-    const newSnapshots: {[key: string] : string}[] = anno.codeSnapshots ? anno.codeSnapshots.concat([{ createdTimestamp: new Date().getTime(), snapshot: anno.anchors.find(a => a.anchorId === id)?.html }]) : [{ createdTimestamp: new Date().getTime(), snapshot: anno.anchors.find(a => a.anchorId === id)?.html }]
+    const newSnapshots: Snapshot[] = anno.codeSnapshots ? anno.codeSnapshots.concat([{ 
+      createdTimestamp: new Date().getTime(), 
+      snapshot: anno.anchors.find(a => a.anchorId === id)?.html,
+      githubUsername: username,
+      comment: "",
+      id: "",
+      deleted: false
+    }]) : [{ 
+      createdTimestamp: new Date().getTime(), 
+      snapshot: anno.anchors.find(a => a.anchorId === id)?.html,
+      githubUsername: username,
+      comment: "",
+      id: "",
+      deleted: false
+    }];
     const newAnno: Annotation = buildAnnotation({ ...anno, codeSnapshots: newSnapshots });
     setAnno(newAnno);
     annoRef.current = newAnno;
   }
 
-  const submitReply = (reply: {[key: string] : any}) : void => {
+  const submitReply = (reply: Reply) : void => {
     const replyIds: string[] = anno.replies?.map(r => r.id);
-    const updatedReplies: {[key: string]: any}[] = replyIds.includes(reply.id) ? anno.replies.filter(r => r.id !== reply.id).concat([reply]) : anno.replies.concat([reply])
+    const updatedReplies: Reply[] = replyIds.includes(reply.id) ? anno.replies.filter(r => r.id !== reply.id).concat([reply]) : anno.replies.concat([reply])
     const newAnno: Annotation = buildAnnotation({ ...anno, replies: updatedReplies });
     setAnno(newAnno);
     annoRef.current = newAnno;
@@ -146,6 +160,36 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
       value: updatedReplies
     });
   }
+
+  const submitSnapshot = (snapshot: Snapshot) : void => {
+    const updatedSnapshots: Snapshot[] = anno.codeSnapshots.map((s: Snapshot) => {
+      return s.id === snapshot.id ? snapshot : s
+    });
+    const newAnno: Annotation = buildAnnotation({ ...anno, codeSnapshots: updatedSnapshots });
+    setAnno(newAnno);
+    annoRef.current = newAnno;
+    vscode.postMessage({
+      command: 'updateAnnotation',
+      annoId: anno.id,
+      key: 'codeSnapshots',
+      value: updatedSnapshots
+    });
+  }
+
+  const deleteSnapshot = (id: string) : void => {
+    const updatedSnapshots = anno.codeSnapshots.map((s: Snapshot) => {
+      return s.id === id ? { ...s, deleted: true } : s
+    });
+    const newAnno: Annotation = buildAnnotation({ ...anno, codeSnapshots: updatedSnapshots });
+    setAnno(newAnno);
+    annoRef.current = newAnno;
+    vscode.postMessage({
+      command: 'updateAnnotation',
+      annoId: anno.id,
+      key: 'codeSnapshots',
+      value: updatedSnapshots
+    });
+  }
   
   const updateContent = (newAnnoContent: string, shareWith: string | undefined) : void => {
     const newAnno: Annotation = buildAnnotation({ ...anno, annotation: newAnnoContent, shareWith });
@@ -164,8 +208,8 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
 
   return (
       <React.Fragment>
-          <div key={'annotation-container'+annotation.id} className={styles['Pad']} id={annotation.id} >
-              <li key={'annotation-li'+annotation.id} className={cn({ [styles.selected]: anno.selected, [styles.AnnotationContainer]: true })} >
+          <div key={'annotation-container'+annotation.id} className={styles['Pad']}  >
+              <li key={'annotation-li'+annotation.id} id={annotation.id} className={cn({ [styles.selected]: anno.selected, [styles.AnnotationContainer]: true })} >
                 <div className={styles['topRow']}>
                   <UserProfile 
                     githubUsername={anno.githubUsername} 
@@ -199,7 +243,12 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
                     />
                   ) : (`${anno.annotation}`)}
                 </div>
-                <Snapshots snapshots={anno.codeSnapshots} />
+                <Snapshots 
+                  snapshots={anno.codeSnapshots}
+                  githubUsername={username}
+                  deleteHandler={deleteSnapshot}
+                  submissionHandler={submitSnapshot}
+                />
                 <Outputs 
                   outputs={anno.outputs} 
                   id={anno.id} 

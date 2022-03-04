@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import firebase from 'firebase';
-import { Annotation, Anchor, AnchorObject } from '../constants/constants';
+import { Annotation, Anchor, AnchorObject, Reply, Snapshot } from '../constants/constants';
 import { user, 
         gitInfo, 
         setStoredCopyText, 
@@ -43,7 +43,22 @@ export const handleSnapshotCode = (id: string, anchorId: string) : void => {
     const anno: Annotation | undefined = annotationList.find(anno => anno.id === id);
     const anchor: AnchorObject | undefined = anno?.anchors.find(a => a.anchorId === anchorId);
     if(anno && anchor) {
-        const newSnapshots: {[key: string] : string}[] = anno.codeSnapshots ? anno.codeSnapshots.concat([{ createdTimestamp: new Date().getTime(), snapshot: anno.anchors.find(a => a.anchorId === anchorId)?.html }]) : [{ createdTimestamp: new Date().getTime(), snapshot: anno.anchors.find(a => a.anchorId === anchorId)?.html }]
+        const newSnapshots: Snapshot[] = anno.codeSnapshots ? anno.codeSnapshots.concat([{ 
+            createdTimestamp: new Date().getTime(), 
+            snapshot: anchor.html,
+            githubUsername: gitInfo.author,
+            comment: "",
+            id: uuidv4(),
+            deleted: false
+          }]) : [{ 
+            createdTimestamp: new Date().getTime(), 
+            snapshot: anchor.html,
+            githubUsername: gitInfo.author,
+            comment: "",
+            id: uuidv4(),
+            deleted: false
+        }];
+        console.log('newSnapshots', newSnapshots);
         const newAnno: Annotation = buildAnnotation({ ...anno, codeSnapshots: newSnapshots, needToUpdate: true });
         setAnnotationList(annotationList.filter(anno => anno.id !== id).concat([newAnno]));
     }
@@ -138,16 +153,14 @@ export const handleCreateAnnotation = (annotationContent: string, willBePinned: 
 }
 
 export const handleUpdateAnnotation = (id: string, key: string | string[], value: any) : void => {
-    if(key === 'replies') {
-        value.forEach((r: {[key: string]: any}) => {
-            if(r.id === "") {
-                r.id = uuidv4();
+    if(key === 'replies' || key === 'codeSnapshots') {
+        value.forEach((obj: Reply | Snapshot) => {
+            if(obj.id === "") {
+                obj.id = uuidv4();
             }
         });
     }
     let updatedAnno: Annotation;
-    console.log('key', key, 'value', value);
-    console.log('typeof key', typeof key);
     if(typeof value === 'boolean' && typeof key === 'string') {
         updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], [key]: value, needToUpdate: true });
         setSelectedAnnotationsNavigations(

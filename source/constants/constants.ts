@@ -12,10 +12,10 @@ export class Annotation {
 	gitCommit: string;
 	projectName: string;
 	githubUsername: string;
-	replies: {[key: string]: any}[];
+	replies: Reply[];
 	outputs: {[key: string]: any}[];
 	// originalCode: string;
-	codeSnapshots: {[key: string]: any}[];
+	codeSnapshots: Snapshot[];
 	sharedWith: string;
 	selected: boolean;
 	needToUpdate: boolean;
@@ -45,10 +45,10 @@ export class Annotation {
 			// anchorPreview: string, 
 			projectName: string, 
 			githubUsername: string, 
-			replies: {[key: string]: any}[],
+			replies: Reply[],
 			outputs: {[key: string]: any}[], 
 			// originalCode: string, 
-			codeSnapshots: {[key: string]: any}[], 
+			codeSnapshots: Snapshot[], 
 			sharedWith: string,
 			selected: boolean,
 			needToUpdate: boolean
@@ -116,4 +116,22 @@ export interface ChangeEvent {
     changes: vscode.TextDocumentContentChangeEvent[],
     isComment: boolean,
     complete: boolean
+}
+
+export interface Snapshot {
+	createdTimestamp: number,
+	snapshot: string,
+	githubUsername: string,
+	comment: string,
+	id: string,
+	deleted: boolean
+}
+
+export interface Reply {
+	authorId: string,
+	createdTimestamp: number,
+	deleted: boolean,
+	githubUsername: string,
+	id: string,
+	replyContent: string
 }

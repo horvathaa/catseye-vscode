@@ -35,6 +35,8 @@ interface CssExports {
   'disabled': string;
   'dropdown': string;
   'dropdown-toggle': string;
+  'inFocus': string;
+  'outOfFocus': string;
   'outerSnapshotContainer': string;
   'overflowButtonContainer': string;
   'overflowHidden': string;

@@ -1,13 +1,14 @@
 import * as React from 'react';
-import Reply from './reply';
+import { Reply as ReactReply } from './reply';
 import { collapseExpandToggle } from '../../utils/viewUtilsTsx';
+import { Reply } from '../../../../constants/constants';
 
 interface Props {
     replying: boolean;
-    replies: {[key: string]: any}[];
+    replies: Reply[];
     username: string;
     userId: string;
-    submitReply: (reply: {[key: string]: any}) => void;
+    submitReply: (reply: Reply) => void;
     cancelReply: () => void;
     deleteReply: (id: string) => void;
 }
@@ -20,7 +21,7 @@ const ReplyContainer: React.FC<Props> = ({ replying, replies, username, userId, 
     return (
         <div>
             {replying && 
-                <Reply
+                <ReactReply
                     githubUsername={username}
                     authorId={userId}
                     userId={userId}
@@ -31,10 +32,10 @@ const ReplyContainer: React.FC<Props> = ({ replying, replies, username, userId, 
                 />
             }
             {hasReplies ? collapseExpandToggle(showingReplies, activeReplies, setShowingReplies, 'reply') : (null)}
-            {showingReplies && hasReplies && replies?.map((r: {[key: string] : any }) => {
+            {showingReplies && hasReplies && replies?.map((r: Reply) => {
                 return (
                     !r.deleted ?
-                    <Reply
+                    <ReactReply
                         key={'reply-' + r.id}
                         id={r.id}
                         replyContent={r.replyContent}

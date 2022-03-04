@@ -7,6 +7,7 @@ import NewAnnotation from "./components/newAnnotation";
 import AnnotationList from "./components/annotationList";
 import LogIn from './components/login';
 import styles from './styles/adamite.module.css';
+import annoStyles from './styles/annotation.module.css';
 import TopBar from "./components/topbar";
 // import { areListsTheSame } from './viewUtils';
 // import { annotationList } from '../../extension';
@@ -61,7 +62,15 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
           selectedDiv?.classList.remove(styles['hiding']);
           selectedDiv?.classList.add(styles['showing']);
         }
+        if(annoDiv?.classList.contains(annoStyles['outOfFocus'])) {
+          annoDiv?.classList.remove(annoStyles['outOfFocus']);
+        }
+        annoDiv?.classList.add(annoStyles['inFocus']);
         annoDiv?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        setTimeout(() => { 
+          annoDiv?.classList.remove(annoStyles['inFocus']);
+          annoDiv?.classList.add(annoStyles['outOfFocus']);
+        }, 3000);
         return;
     }
   }

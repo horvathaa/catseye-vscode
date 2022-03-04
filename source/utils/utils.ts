@@ -1,5 +1,5 @@
 import firebase from '../firebase/firebase';
-import { Annotation, AnchorObject, Anchor } from '../constants/constants';
+import { Annotation, AnchorObject, Anchor, Snapshot } from '../constants/constants';
 import { computeRangeFromOffset, createAnchorFromRange } from '../anchorFunctions/anchor';
 import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations, adamiteLog, setSelectedAnnotationsNavigations } from '../extension';
 import * as vscode from 'vscode';
@@ -249,6 +249,19 @@ export const handleSaveCloseEvent = async (annotationList: Annotation[], filePat
 	}
 }
 
+const translateSnapshotStandard = (snapshots: any[]) : Snapshot[] => {
+	return snapshots.map((s: any) => {
+		return {
+			createdTimestamp: s.createdTimestamp,
+			snapshot: s.snapshot,
+			githubUsername: "",
+			id: uuidv4(),
+			comment: "",
+			deleted: false
+		}
+	})
+}
+
 export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[key: string] : any}[] => {
 	return annotationList.map(a => { 
 		return {
@@ -281,7 +294,7 @@ export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[
 			replies: a.replies ? a.replies : [],
 			outputs: a.outputs ? a.outputs : [],
 			// originalCode: a.originalCode ? a.originalCode : "",
-			codeSnapshots: a.codeSnapshots ? a.codeSnapshots : [],
+			codeSnapshots: a.codeSnapshots ? a.codeSnapshots.length > 0 && a.codeSnapshots[0].hasOwnProperty('githubUsername') ? a.codeSnapshots : translateSnapshotStandard(a.codeSnapshots) : [],
 			sharedWith: a.sharedWith ? a.sharedWith : "private",
 			selected: a.selected ? a.selected : false
 	}});

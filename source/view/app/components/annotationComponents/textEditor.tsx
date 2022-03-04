@@ -56,20 +56,27 @@ const TextEditor: React.FC<Props> = ({ content, submissionHandler, cancelHandler
         if(typeof text === 'string') {
             setText((e.target as HTMLTextAreaElement).value);
         }
-        else {
+        else if(text.hasOwnProperty('replyContent')) {
             setText({ ...text, replyContent: (e.target as HTMLTextAreaElement).value });
+        }
+        else if(text.hasOwnProperty('comment')) {
+            setText({ ...text, comment: (e.target as HTMLTextAreaElement).value });
         }
     }
 
     const handleSubmission = (shareWith: string) => {
+        if(text.hasOwnProperty('comment')) {
+            cancelHandler();
+        }
         submissionHandler(text, shareWith, willBePinned);
     }
 
     return (
         <div className={styles['textboxContainer']}>
             <textarea 
-                className={styles['textbox']} 
-                value={typeof text === 'string' ? text : text.replyContent} 
+                className={styles['textbox']}
+                autoFocus
+                value={typeof text === 'string' ? text : text.hasOwnProperty('replyContent') ? text.replyContent : text.hasOwnProperty('comment') ? text.comment : ""} 
                 onChange={updateAnnotationContent}
                 onClick={(e: React.SyntheticEvent) => e.stopPropagation()}
             />
@@ -79,7 +86,14 @@ const TextEditor: React.FC<Props> = ({ content, submissionHandler, cancelHandler
                         <SplitButton
                             submissionHandler={handleSubmission} 
                         /> : 
-                        <button className={styles['submit']} onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); submissionHandler(text) }}>Submit</button>
+                        <button className={styles['submit']} onClick={
+                            (e: React.SyntheticEvent) => { 
+                            e.stopPropagation();
+                            if(text.hasOwnProperty('comment')) {
+                                cancelHandler();
+                            }
+                            submissionHandler(text);
+                        }}>Submit</button>
                     }
                     
                     <button className={styles['cancel']} onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); cancelHandler()}}>Cancel</button>

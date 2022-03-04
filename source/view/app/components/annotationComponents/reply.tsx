@@ -3,6 +3,7 @@ import UserProfile from './userProfile';
 import AuthorOperationButtons from './authorOperationButtons';
 import TextEditor from './textEditor';
 import styles from '../../styles/annotation.module.css';
+import { Reply as ReplyInterface } from '../../../../constants/constants';
 
 interface Props {
     id?: string | undefined,
@@ -12,13 +13,13 @@ interface Props {
     userId: string,
     deleted?: boolean,
     authorId: string,
-    replying: boolean
-    submissionHandler: (reply: {[key: string]: any}) => void
+    replying: boolean,
+    submissionHandler: (reply: ReplyInterface) => void;
     cancelHandler: () => void;
     deleteHandler?: (id: string) => void;
 }
 
-const Reply : React.FC<Props> = ({ id = undefined, replyContent = undefined, createdTimestamp, githubUsername, userId, authorId, replying, deleted, submissionHandler, cancelHandler, deleteHandler }) => {
+export const Reply : React.FC<Props> = ({ id = undefined, replyContent = undefined, createdTimestamp, githubUsername, userId, authorId, replying, deleted, submissionHandler, cancelHandler, deleteHandler }) => {
     const [editing, setEditing] = React.useState<boolean>(false);
     const [reply, setReply] = React.useState({
         id: id ? id : "",
@@ -87,4 +88,4 @@ const Reply : React.FC<Props> = ({ id = undefined, replyContent = undefined, cre
     )
 }
 
-export default Reply;
+// export const Reply;

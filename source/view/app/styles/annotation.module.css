@@ -294,6 +294,7 @@
   display: flex;
   border: 0.25px solid rgb(239 255 201 / 20%);
   padding-left: 6px;
+  overflow-x: scroll;
 }
 
 .outerSnapshotContainer {

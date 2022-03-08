@@ -55,12 +55,13 @@ interface Props {
 
 const Snapshots : React.FC<Props> = ({ snapshots, githubUsername, submissionHandler, deleteHandler }) => {
     const [showingSnapshots, setShowingSnapshots] = React.useState<boolean>(false);
+    const activeSnapshots: SnapshotInterface[] = snapshots.filter(s => !s.deleted);
 
     return (
         <div className={styles['outerSnapshotContainer']}>
-            {snapshots && snapshots.length ? collapseExpandToggle(showingSnapshots, snapshots, setShowingSnapshots, 'snapshot') : (null)}
-            {showingSnapshots && snapshots.map((s: SnapshotInterface) => {
-                return s.deleted ? (null) : <Snapshot 
+            {activeSnapshots && activeSnapshots.length ? collapseExpandToggle(showingSnapshots, activeSnapshots, setShowingSnapshots, 'snapshot') : (null)}
+            {showingSnapshots && activeSnapshots.map((s: SnapshotInterface) => {
+                return <Snapshot 
                     snapshot={s}
                     githubUsername={githubUsername}
                     submissionHandler={submissionHandler}

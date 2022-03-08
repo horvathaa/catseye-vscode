@@ -112,16 +112,21 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
       annoId: anno.id,
       anchorId: id
     });
+    const anchor: AnchorObject | undefined = anno.anchors.find(a => a.anchorId === id);
+    if(!anchor) {
+      console.error('could not find anchor - leaving annotation as is');
+      return;
+    }
     const newSnapshots: Snapshot[] = anno.codeSnapshots ? anno.codeSnapshots.concat([{ 
       createdTimestamp: new Date().getTime(), 
-      snapshot: anno.anchors.find(a => a.anchorId === id)?.html,
+      snapshot: anchor.html,
       githubUsername: username,
       comment: "",
       id: "",
       deleted: false
     }]) : [{ 
       createdTimestamp: new Date().getTime(), 
-      snapshot: anno.anchors.find(a => a.anchorId === id)?.html,
+      snapshot: anchor.html,
       githubUsername: username,
       comment: "",
       id: "",

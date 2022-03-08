@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import firebase from 'firebase';
-import { Annotation, Anchor, AnchorObject, Reply, Snapshot } from '../constants/constants';
+import { Annotation, AnchorObject, Reply, Snapshot } from '../constants/constants';
 import { user, 
         gitInfo, 
         setStoredCopyText, 
@@ -66,16 +66,19 @@ export const handleSnapshotCode = (id: string, anchorId: string) : void => {
 
 export const handleAddAnchor = async (id: string) : Promise<void> => {
     const anno: Annotation | undefined = annotationList.find(anno => anno.id === id);
-    const currentSelection: vscode.Selection | undefined = vscode.window.activeTextEditor?.selection;
+    let currentSelection: vscode.Selection | undefined = vscode.window.activeTextEditor?.selection;
+    if(!currentSelection) {
+        currentSelection = vscode.window.visibleTextEditors[0].selection;
+    }
     if(anno && currentSelection) {
         const newAnchor: AnchorObject | undefined =  await createAnchorObject(id, new vscode.Range(currentSelection.start, currentSelection.end));
         const newAnno: Annotation = newAnchor ? buildAnnotation({ ...anno, anchors: [...anno.anchors, newAnchor] }) : anno;
         if(!newAnchor) {
             console.error('could not make new anchor - returning original annotation...');
         }
-        console.log('newAnno', newAnno);
         setAnnotationList(annotationList.filter(anno => anno.id !== id).concat([newAnno]));
-        if(vscode.window.activeTextEditor) addHighlightsToEditor(annotationList, vscode.window.activeTextEditor)
+        const textEditorToHighlight: vscode.TextEditor = vscode.window.activeTextEditor ? vscode.window.activeTextEditor : vscode.window.visibleTextEditors[0];
+        if(newAnchor && textEditorToHighlight) addHighlightsToEditor(annotationList, textEditorToHighlight)
         // const anchor: AnchorObject = createAnchorFromRange(new vscode.Range(currentSelection.start, currentSelection.end));
     }
     else if(anno) {
@@ -117,18 +120,7 @@ export const handleExportAnnotationAsComment = async (annoId: string) : Promise<
         const insertionPoint: vscode.Position = new vscode.Position(startingRange.start.line,  0); 
         editBuilder.insert(insertionPoint, anno.annotation);
     });
-    // const thisIsStupid: vscode.Selection = new vscode.Selection(insertionPoint, endingPoint);
-    if(didInsert)
-    vscode.commands.executeCommand('editor.action.commentLine').then((value) => {
-        const originalAnchor: Anchor = anno.anchors[0].anchor;
-        const newAnchors: AnchorObject[] = updateAnchorInAnchorObject(anno.anchors[0].anchorId, anno.id, { startLine: originalAnchor.startLine + 1, startOffset: originalAnchor.startOffset, endLine: originalAnchor.endLine + 1, endOffset: originalAnchor.endOffset })
-        const updatedAnno: Annotation = buildAnnotation({ ...anno, anchors: newAnchors, needToUpdate: true });
-        console.log('updatedAnno', updatedAnno);
-        setAnnotationList(annotationList.filter(a => a.id !== annoId).concat([updatedAnno]));
-        console.log(annotationList);
-        addHighlightsToEditor(annotationList, TextEditor);
-        view?.updateDisplay(annotationList);
-    })
+    if(didInsert) vscode.commands.executeCommand('editor.action.commentLine')
 }
 
 export const handleCreateAnnotation = (annotationContent: string, willBePinned: boolean) : void => {

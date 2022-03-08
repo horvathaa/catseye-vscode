@@ -1,63 +1,73 @@
 import * as React from 'react';
+import { Snapshot as SnapshotInterface } from '../../../../constants/constants';
 import { Syntax } from './anchor';
+import UserProfile from './userProfile';
+import AuthorOperationButtons from './authorOperationButtons';
+import TextEditor from './textEditor';
 import styles from '../../styles/annotation.module.css';
-import { VscChevronRight, VscChevronLeft } from 'react-icons/vsc';
 import { collapseExpandToggle } from '../../utils/viewUtilsTsx';
 
-interface Props {
-    snapshots: {[key: string]: any}[]
+interface SnapshotProps {
+    snapshot: SnapshotInterface,
+    githubUsername: string,
+    deleteHandler: (id: string) => void;
+    submissionHandler: (snapshot: SnapshotInterface) => void;
 }
 
-const Snapshots : React.FC<Props> = ({ snapshots }) => {
-    const [snapshotShowing, setSnapshotShowing] = React.useState<number>(0);
+export const Snapshot: React.FC<SnapshotProps> = ({ snapshot, githubUsername, deleteHandler, submissionHandler }) => {
+    const [editing, setEditing] = React.useState<boolean>(false);
+
+    return (
+        <div className={styles['replyContainer']}>
+            <div className={styles['topRow']}>
+                <UserProfile 
+                    githubUsername={snapshot.githubUsername}
+                    createdTimestamp={snapshot.createdTimestamp}
+                />
+                {githubUsername === snapshot.githubUsername && (
+                    <div className={styles['buttonRow']}>
+                        <AuthorOperationButtons editAnnotation={() => setEditing(!editing)} deleteAnnotation={() => { if(deleteHandler) deleteHandler(snapshot.id) }}/>
+                    </div>
+                )}
+            </div>
+            <div className={styles['snapshotContainer']}>
+                <Syntax html={snapshot.snapshot} />
+            </div>
+            {editing ? 
+            <TextEditor 
+                content={snapshot}
+                submissionHandler={submissionHandler}
+                cancelHandler={() => setEditing(false)}
+                showSplitButton={false}
+            />
+            : `${snapshot.comment}`}
+        </div>
+    )
+}
+
+interface Props {
+    snapshots: SnapshotInterface[],
+    githubUsername: string,
+    deleteHandler: (id: string) => void;
+    submissionHandler: (snapshot: SnapshotInterface) => void;
+}
+
+
+const Snapshots : React.FC<Props> = ({ snapshots, githubUsername, submissionHandler, deleteHandler }) => {
     const [showingSnapshots, setShowingSnapshots] = React.useState<boolean>(false);
-
-    const changeSnapshots = () : React.ReactElement | null => {
-        if(!snapshots) return null;
-
-        if(snapshots.length === 1) {
-            return <Syntax html={snapshots[0].snapshot} />
-        }
-        else if(snapshots.length > 1 && snapshotShowing === 0) {
-            return (
-                <div className={styles['snapshotContainer']}>
-                    <Syntax html={snapshots[0].snapshot} />
-                    <div className={styles['arrowBox']}>
-                        <VscChevronRight onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); setSnapshotShowing((snapshotShowing) => snapshotShowing + 1) }} className={styles['IconContainer']} /> 
-                    </div>
-                </div>
-            )
-        }
-        else if(snapshots.length > 1 && snapshotShowing > 0 && snapshotShowing !== (snapshots.length - 1)) {
-                return (
-                    <div className={styles['snapshotContainer']}>
-                        <div className={styles['arrowBox-leftAlign']}>
-                            <VscChevronLeft onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); setSnapshotShowing((snapshotShowing) => snapshotShowing - 1) }} className={styles['IconContainer']} /> 
-                        </div>
-                        <Syntax html={snapshots[snapshotShowing].snapshot} />
-                        <div className={styles['arrowBox']}>
-                            <VscChevronRight onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); setSnapshotShowing((snapshotShowing) => snapshotShowing + 1) }} className={styles['IconContainer']} /> 
-                        </div>
-                    </div>
-                )
-        }
-        else if(snapshotShowing === (snapshots.length - 1)) {
-            return (
-                <div className={styles['snapshotContainer']}>
-                    <div className={styles['arrowBox-leftAlign']}>
-                        <VscChevronLeft onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); setSnapshotShowing((snapshotShowing) => snapshotShowing - 1) }} className={styles['IconContainer']} /> 
-                    </div>
-                    <Syntax html={snapshots[snapshotShowing].snapshot} />
-                </div>
-            );
-        }
-        return null;
-    }
+    const activeSnapshots: SnapshotInterface[] = snapshots.filter(s => !s.deleted);
 
     return (
         <div className={styles['outerSnapshotContainer']}>
-            {snapshots && snapshots.length ? collapseExpandToggle(showingSnapshots, snapshots, setShowingSnapshots, 'snapshot') : (null)}
-            {showingSnapshots && changeSnapshots()}
+            {activeSnapshots && activeSnapshots.length ? collapseExpandToggle(showingSnapshots, activeSnapshots, setShowingSnapshots, 'snapshot') : (null)}
+            {showingSnapshots && activeSnapshots.map((s: SnapshotInterface) => {
+                return <Snapshot 
+                    snapshot={s}
+                    githubUsername={githubUsername}
+                    submissionHandler={submissionHandler}
+                    deleteHandler={deleteHandler}
+                />
+            })}
         </div>
     )
 }

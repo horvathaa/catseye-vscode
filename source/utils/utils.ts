@@ -1,5 +1,5 @@
 import firebase from '../firebase/firebase';
-import { Annotation, AnchorObject, Anchor } from '../constants/constants';
+import { Annotation, AnchorObject, Anchor, Snapshot } from '../constants/constants';
 import { computeRangeFromOffset, createAnchorFromRange } from '../anchorFunctions/anchor';
 import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations, adamiteLog, setSelectedAnnotationsNavigations } from '../extension';
 import * as vscode from 'vscode';
@@ -23,8 +23,6 @@ const arraysEqual = (a1: any[], a2: any[]) : boolean => {
 }
 
 export const initializeAnnotations = async (user: firebase.User) : Promise<void> => {
-	// console.log('gitInfo in initalize', gitInfo);
-	// console.log('project', getProjectName());
 	const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
 	const annotations: Annotation [] = sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename);
 	setAnnotationList(sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename));
@@ -87,7 +85,12 @@ export const getFirstLineOfHtml = (html: string, isOneLineAnchor: boolean) : str
 }
 
 export const removeOutOfDateAnnotations = (annotationList: Annotation[]) : Annotation[] => {
-	return annotationList.filter(a => !(a.deleted || a.outOfDate));
+	return annotationList.filter(a => {
+		if(a.deleted || a.outOfDate) {
+			console.log('removing this anno', a);
+		}
+		return !(a.deleted || a.outOfDate) 
+	});
 }
 
 export function getListFromSnapshots(snapshots: firebase.firestore.QuerySnapshot) : any[] {
@@ -101,7 +104,6 @@ export function getListFromSnapshots(snapshots: firebase.firestore.QuerySnapshot
 }
 
 export const reconstructAnnotations = (annotationOffsetList: {[key: string] : any}[], text: string, changeRange: vscode.Range, filePath: vscode.Uri, workspace: vscode.Uri, doc: vscode.TextDocument) : Annotation[] => {
-	console.log('workspace', workspace.fsPath)
 	return annotationOffsetList.map((a: {[key: string] : any}) => {
 		const visiblePath: string = vscode.workspace.workspaceFolders ? 
 			getVisiblePath(a.anno.projectName, vscode.window.activeTextEditor?.document.uri.fsPath) : vscode.window.activeTextEditor?.document.uri.fsPath ? vscode.window.activeTextEditor?.document.uri.fsPath : "" 
@@ -249,6 +251,19 @@ export const handleSaveCloseEvent = async (annotationList: Annotation[], filePat
 	}
 }
 
+const translateSnapshotStandard = (snapshots: any[]) : Snapshot[] => {
+	return snapshots.map((s: any) => {
+		return {
+			createdTimestamp: s.createdTimestamp,
+			snapshot: s.snapshot,
+			githubUsername: "",
+			id: uuidv4(),
+			comment: "",
+			deleted: false
+		}
+	})
+}
+
 export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[key: string] : any}[] => {
 	return annotationList.map(a => { 
 		return {
@@ -281,7 +296,7 @@ export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[
 			replies: a.replies ? a.replies : [],
 			outputs: a.outputs ? a.outputs : [],
 			// originalCode: a.originalCode ? a.originalCode : "",
-			codeSnapshots: a.codeSnapshots ? a.codeSnapshots : [],
+			codeSnapshots: a.codeSnapshots ? a.codeSnapshots.length > 0 && a.codeSnapshots[0].hasOwnProperty('githubUsername') ? a.codeSnapshots : translateSnapshotStandard(a.codeSnapshots) : [],
 			sharedWith: a.sharedWith ? a.sharedWith : "private",
 			selected: a.selected ? a.selected : false
 	}});
@@ -362,6 +377,7 @@ export const updateAnnotationCommit = (commit: string, branch: string, repo: str
 
 export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] : any}> => {
 	await gitApi.repositories?.forEach(async (r: any) => {
+		console.log('r', r);
 		const currentProjectName: string = getProjectName(r?.rootUri?.path);
 		// const branch = await r?.diff()
 		// console.log(branch);
@@ -386,7 +402,8 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 			// let diffWithMain = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch, './source/anchorFunctions/anchor.ts')
 			// console.log('diff', diffs)
 			// console.log( 'dwm', diffWithMain);
-			if(gitInfo[currentProjectName]?.commit !== r.state.HEAD.commit || gitInfo[currentProjectName]?.branch !== r.state.HEAD.name) {
+			console.log('gitInfo', gitInfo[currentProjectName], gitInfo, gitInfo.hasOwnProperty(currentProjectName));
+			if(gitInfo.hasOwnProperty(currentProjectName) && (gitInfo[currentProjectName]?.commit !== r.state.HEAD.commit || gitInfo[currentProjectName]?.branch !== r.state.HEAD.name)) {
 				gitInfo[currentProjectName].commit = r.state.HEAD.commit;
 				gitInfo[currentProjectName].branch = r.state.HEAD.name;
 				updateAnnotationCommit(r.state.HEAD.commit, r.state.HEAD.name, r?.state?.remotes[0]?.fetchUrl);
@@ -399,7 +416,6 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 			changes: await r?.diffBetween('origin/HEAD', r?.state?.HEAD?.name),
 			modifiedAnnotations: []
 		}
-		console.log('gitInfo[proj]', gitInfo[currentProjectName])
 	});
 	adamiteLog.appendLine("huh?: " + gitApi.repositories[0]?.state?.remotes[0]?.fetchUrl)
 	return gitInfo;
@@ -500,16 +516,17 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 }
 
 export const createAnchorObject = async (annoId: string, range: vscode.Range) : Promise<AnchorObject | undefined> => {
-	if(vscode.window.activeTextEditor) {
-		const filename: string = vscode.window.activeTextEditor.document.uri.toString();
-		const anchorText: string = vscode.window.activeTextEditor.document.getText(range);
+	const textEditor: vscode.TextEditor = vscode.window.activeTextEditor ? vscode.window.activeTextEditor : vscode.window.visibleTextEditors[0];
+	if(textEditor) {
+		const filename: string = textEditor.document.uri.toString();
+		const anchorText: string = textEditor.document.getText(range);
 		const html: string = await getShikiCodeHighlighting(filename, anchorText);
 		const firstLineOfHtml: string = getFirstLineOfHtml(html, !anchorText.includes('\n'));
 		const projectName: string = getProjectName(filename);
-		const visiblePath: string = getVisiblePath(projectName, vscode.window.activeTextEditor.document.uri.fsPath)
+		const visiblePath: string = getVisiblePath(projectName, textEditor.document.uri.fsPath)
 		const gitUrl: string = getGithubUrl(visiblePath, projectName, false);
 		const stableGitUrl: string = getGithubUrl(visiblePath, projectName, true);
-		const programmingLang: string = vscode.window.activeTextEditor.document.uri.toString().split('.')[vscode.window.activeTextEditor.document.uri.toString().split('.').length - 1]
+		const programmingLang: string = textEditor.document.uri.toString().split('.')[textEditor.document.uri.toString().split('.').length - 1]
 		return {
 			parentId: annoId,
 			anchorId: uuidv4(),
@@ -528,8 +545,4 @@ export const createAnchorObject = async (annoId: string, range: vscode.Range) : 
 	else {
 		vscode.window.showInformationMessage('Must have open text editor!')
 	}
-}
-
-export const buildAnchorObject = (anchorInfo: AnchorObject, range?: vscode.Range) : AnchorObject => {
-	return range ? { ...anchorInfo, anchor: createAnchorFromRange(range) } : anchorInfo;
 }

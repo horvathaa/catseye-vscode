@@ -145,12 +145,12 @@ const AnnotationOperationButtons: React.FC<Props> = ({
                         >
                             Export as Comment
                         </MenuItem>
-                        {/* <MenuItem 
+                        <MenuItem 
                             href=""
-                            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {  handleClose(e); snapshotCode(e); }}
+                            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {  e.stopPropagation; handleClose(e); addAnchor(); }}
                         >
-                            Snapshot Code
-                        </MenuItem> */}
+                            Add Anchor
+                        </MenuItem>
                         <MenuItem 
                             href=""
                             onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {  handleClose(e); pinAnnotation(); }}

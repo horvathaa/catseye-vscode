@@ -18,7 +18,7 @@ export const initializeAuth = async () => {
     } catch (e) {
         throw e;
     }
-    adamiteLog.appendLine('auth session');
+
 
     if(session) {
         const { accessToken, account } = session;
@@ -46,9 +46,7 @@ export const initializeAuth = async () => {
         try {
             const user = await signInWithGithubCredential(result?.data);
             setUser(user);
-
             setGitInfo(await generateGitMetaData(gitApi));
-            adamiteLog.append('user' + user?.uid);
             user ? await initializeAnnotations(user) : setAnnotationList([]);
             if(user)
             try {

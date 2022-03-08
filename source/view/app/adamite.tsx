@@ -1,10 +1,14 @@
 import * as React from "react";
 // import { useEffect } from "react"; // -- may bring back for prop bugs
 import { useState } from "react";
+import { Annotation } from "../../constants/constants";
+import ReactAnnotation from "./components/annotation";
 import NewAnnotation from "./components/newAnnotation";
 import AnnotationList from "./components/annotationList";
 import LogIn from './components/login';
 import styles from './styles/adamite.module.css';
+import annoStyles from './styles/annotation.module.css';
+import TopBar from "./components/topbar";
 // import { areListsTheSame } from './viewUtils';
 // import { annotationList } from '../../extension';
 
@@ -23,6 +27,8 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
   const [uid, setUserId] = useState(window.userId ? window.userId : "");
   const [selection, setSelection] = useState("");
   const [showNewAnnotation, setShowNewAnnotation] = useState(false);
+  const [showSearchedAnnotations, setShowSearchedAnnotations] = useState(false);
+  const [searchedAnnotations, setSearchedAnnotations] = useState<Annotation[]>([])
   const [currentProject, setCurrentProject] = useState(window.currentProject ? window.currentProject : "");
   const [currentFile, setCurrentFile] = useState(window.currentFile ? window.currentFile : "");
   // console.log('window', window);
@@ -56,7 +62,15 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
           selectedDiv?.classList.remove(styles['hiding']);
           selectedDiv?.classList.add(styles['showing']);
         }
+        if(annoDiv?.classList.contains(annoStyles['outOfFocus'])) {
+          annoDiv?.classList.remove(annoStyles['outOfFocus']);
+        }
+        annoDiv?.classList.add(annoStyles['inFocus']);
         annoDiv?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        setTimeout(() => { 
+          annoDiv?.classList.remove(annoStyles['inFocus']);
+          annoDiv?.classList.add(annoStyles['outOfFocus']);
+        }, 3000);
         return;
     }
   }
@@ -71,6 +85,11 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
         text: copiedText
       });
     }
+  }
+
+  const getSearchedAnnotations = (annotations: Annotation[]) : void => {
+    setSearchedAnnotations(annotations);
+    setShowSearchedAnnotations(annotations.length > 0);
   }
 
   React.useEffect(() => {
@@ -103,15 +122,30 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
         />
       ) : (null)}
       {!showLogin && 
-        <AnnotationList 
-          currentFile={currentFile} 
-          currentProject={currentProject} 
-          annotations={annotations} 
-          vscode={vscode} 
-          window={window}
-          username={userName}
-          userId={uid}
-        />
+      <>
+          <TopBar 
+            annotations={annotations}
+            getSearchedAnnotations={getSearchedAnnotations}
+          />
+          {showSearchedAnnotations && searchedAnnotations.map(a => {
+            return <ReactAnnotation 
+                    annotation={a} 
+                    vscode={vscode} 
+                    window={window}
+                    userId={uid}
+                    username={userName}
+                  />
+          })}
+          <AnnotationList 
+            currentFile={currentFile} 
+            currentProject={currentProject} 
+            annotations={annotations} 
+            vscode={vscode} 
+            window={window}
+            username={userName}
+            userId={uid}
+          />
+        </>
       }
       {showLogin && <LogIn vscode={vscode} />}
     </React.Fragment>

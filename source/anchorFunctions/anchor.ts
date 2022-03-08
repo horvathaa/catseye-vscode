@@ -45,8 +45,11 @@ export const createAnchorFromPositions = (startPosition: vscode.Position, endPos
 }
 
 export const updateAnchorInAnchorObject = (id: string, annoId: string, anchor: Anchor) : AnchorObject[] => {
+	console.log('anchor id', id, 'anno id', annoId, 'anchor', anchor);
 	const anno: Annotation | undefined = annotationList.find(a => a.id === annoId);
+	console.log('anno', anno);
 	const anchorObject: AnchorObject | undefined = anno?.anchors.find((a: AnchorObject) => a.anchorId === id);
+	console.log('anchorObject', anchorObject);
 	if(anno && anchorObject) return anno.anchors.filter((a: AnchorObject) => a.anchorId !== id).concat({ ...anchorObject, anchor });
 	return []; // this sucks
 }
@@ -311,19 +314,14 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 		const highlighted: string[] = [];
 		visFileNames.forEach((key: string) => {
 			const annotationsInCurrentFile = getAnnotationsInFile(annotationList, key);
-			console.log('annotationsInCurrentFile', annotationsInCurrentFile);
 			const annoRangeObjs: {[key: string]: any}[] = annotationsInCurrentFile
 				.flatMap((a: Annotation) => { 
 					highlighted.push(a.id);
 					return a.anchors.flatMap(a => { return { id: a.parentId, range: createRangeFromAnchorObject(a) }})
 				})
-			console.log('annoRangeObjs', annoRangeObjs, annotationList);
 			filesToHighlight[key] = createDecorationOptions(annoRangeObjs, annotationList);
-			console.log('files', filesToHighlight[key]);
 		});
 		visibleEditors.forEach((v: vscode.TextEditor) => {
-			console.log('v', v, 'filesToHighlight', filesToHighlight, 'indexed', filesToHighlight[v.document.uri.toString()])
-			console.log('anno decorations???', annotationDecorations);
 			v.setDecorations(annotationDecorations, filesToHighlight[v.document.uri.toString()]);
 		});
 	// }
@@ -331,7 +329,6 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 	// else if(!visibleEditors.length && text && vscode.window.visibleTextEditors.length) {
 		// may have a weird filename change on hand?
 		if(highlighted.length !== annotationList.length) {
-			console.log('in if')
 			const annotationsToHighlight = annotationList.filter(a => !highlighted.includes(a.id))
 			const filesToHighlight2: {[key: string]: any} = {};
 			const projectLevelAnnotationFiles: string[] = getAllAnnotationStableGitUrls(annotationsToHighlight);
@@ -355,11 +352,9 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 						filesToHighlight2[filename] = createDecorationOptions(annoRangeObjs, annotationsWithStableUrl); 
 				}
 			});
-			console.log('filesToHighlight2', filesToHighlight2);
 			vscode.window.visibleTextEditors.forEach((te: vscode.TextEditor) => {
 				const projectName: string = getProjectName(te.document.uri.toString())
 				const url = getGithubUrl(getVisiblePath(projectName, te.document.uri.fsPath), projectName, true)
-				console.log('indexed', filesToHighlight2[url], 'url', url);
 				te.setDecorations(annotationDecorations, filesToHighlight2[url])
 			});
 		}

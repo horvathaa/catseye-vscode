@@ -150,7 +150,7 @@
   text-decoration: none;
   color: var(--vscode-inputOption-activeForeground);
   display: flex;
-  background: var(--vscode-editor-background);
+  /* background: var(--vscode-editor-background); */
 }
 
 .DropdownIconsWrapper:hover { 
@@ -292,6 +292,9 @@
 
 .snapshotContainer {
   display: flex;
+  border: 0.25px solid rgb(239 255 201 / 20%);
+  padding-left: 6px;
+  overflow-x: scroll;
 }
 
 .outerSnapshotContainer {
@@ -307,7 +310,7 @@
     border-top-right-radius: 8px;
     flex: 1;
     /* min-width: 0; */
-    transition: all 0.1s ease-in;
+    /* transition: all 0.1s ease-in; */
     position: relative;
     list-style-type: none;
     border-style: solid;
@@ -315,6 +318,19 @@
     overflow-x: auto;
     /* min-width: fit-content; */
     border-color: #d4d4d44f;
+    /* box-shadow: none; */
+}
+
+
+
+.AnnotationContainer.inFocus {
+  transition: all 0.5s ease-in-out;
+  box-shadow:  1px 1px 8px 1px #dcdcdc;
+}
+
+.AnnotationContainer.outOfFocus {
+  transition: all 0.5s ease-in-out;
+  box-shadow: none;
 }
 
 .AnchorBox {
@@ -328,9 +344,15 @@
 
 .AnchorContainer {
   border: 0.25px solid rgb(239 255 201 / 20%);
-  padding: 5px;
+  padding: 2px 0px 2px 4px;
   border-radius: 4px;
   overflow: scroll;
+  box-shadow: none;
+  transition: all 0.5s ease-in-out;
+}
+
+.AnchorContainer:hover {
+  box-shadow:  1px 1px 8px 1px #dcdcdc;
 }
 
 .LocationWrapper {

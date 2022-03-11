@@ -151,6 +151,8 @@
   color: var(--vscode-inputOption-activeForeground);
   display: flex;
   /* background: var(--vscode-editor-background); */
+  justify-content: space-between;
+  align-items: center;
 }
 
 .DropdownIconsWrapper:hover { 
@@ -231,7 +233,8 @@
   flex-direction: row;
   align-items: stretch;
   padding-left: 6px;
-  font-family: var(--vscode-font-family);;
+  font-family: var(--vscode-font-family);
+  margin-bottom: 4px;
 }
 
 .replyShowHide .IconContainer {
@@ -317,7 +320,7 @@
     border-width: 0.15em;
     overflow-x: auto;
     /* min-width: fit-content; */
-    border-color: #d4d4d44f;
+    border-color: #ffffff8a;
     /* box-shadow: none; */
 }
 
@@ -396,8 +399,17 @@
 .ContentContainer {
   font-family: var(--vscode-font-family);
   overflow-wrap: anywhere;
-  font-size: 1.125em;
+  font-size: 1.138em;;
   padding: 4px 6px;
+}
+
+.collapseExpandButton {
+  background-color: #cccccc29;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding-left: 4px;
+  cursor: pointer;
 }
 
 .LocationContainer {
@@ -405,6 +417,10 @@
   overflow-wrap: anywhere;
   cursor: pointer;
   padding: 4px 0px;
+}
+
+.LocationContainer.multiLine {
+  padding: 4px 6px 0px;
 }
 
 .AnnotationContainer.vscode-light {

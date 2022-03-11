@@ -56,11 +56,11 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
   }, []);
 
   React.useEffect(() => {
-    if(JSON.stringify(anno) !== JSON.stringify(annotation)) {
+    // if(JSON.stringify(anno) !== JSON.stringify(annotation)) {
       const newAnno: Annotation = buildAnnotation(annotation);
       setAnno(newAnno);
       annoRef.current = newAnno;
-    }
+    // }
   }, [annotation]);
 
   const scrollInEditor = (id: string) : void => {

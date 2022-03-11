@@ -22,7 +22,6 @@ import ViewLoader from "../view/ViewLoader";
 import * as viewHelper from '../viewHelper/viewHelper';
 import { v4 as uuidv4 } from 'uuid';
 import { initializeAuth } from '../authHelper/authHelper';
-import AnnotationList from "../view/app/components/annotationList";
 
 export const init = async () => {
 	await initializeAuth();
@@ -109,12 +108,18 @@ export const createView = (context: vscode.ExtensionContext) => {
 }
 
 export const createNewAnnotation = () => {
+	console.log('wtf');
     const { activeTextEditor } = vscode.window;
     if (!activeTextEditor) {
         vscode.window.showInformationMessage("No text editor is open!");
         return;
     }
-        
+    if(!view) {
+		vscode.commands.executeCommand('adamite.launch');
+	}
+	else if(!view?._panel?.visible) {
+		view?._panel?.reveal(vscode.ViewColumn.Beside);
+	} 
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
 	const newAnnoId: string = uuidv4();
     const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
@@ -168,7 +173,13 @@ export const addNewHighlight = (selected?: boolean) : string | Promise<string> =
         vscode.window.showInformationMessage("No text editor is open!");
         return "";
     }
-        
+	console.log('view', view);
+	if(!view) {
+		vscode.commands.executeCommand('adamite.launch');
+	}
+	else if(!view?._panel?.visible) {
+		view?._panel?.reveal(vscode.ViewColumn.Beside);
+	}   
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
 	const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
 	const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);

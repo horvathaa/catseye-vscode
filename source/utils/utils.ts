@@ -189,8 +189,12 @@ export const getShikiCodeHighlighting = async (filename: string, anchorText: str
 	const regexMatch: RegExpMatchArray | null = filename.match(/\.[0-9a-z]+$/i);
 	const pl: string = regexMatch ? regexMatch[0].replace(".", "") : "js";
 	const html: string = highlighter.codeToHtml(anchorText, pl);
+	const insertionPoint = html.indexOf('style');
+	const insert = ';margin-bottom: 0;margin-top: 0.5em;';
+	const modifiedHtml = html.slice(0, insertionPoint + 'style="background-color: #1E1E1E'.length) + insert + html.slice(insertionPoint + 'style="background-color: #1E1E1E'.length);
+	console.log('modified', modifiedHtml);
 	// either return the marked-up HTML or just return the basic anchor text
-	return html ? html : anchorText;
+	return modifiedHtml ? modifiedHtml : anchorText;
 }
 
 const updateAnchorHtml = async (anno: Annotation, doc: vscode.TextDocument) : Promise<Annotation> => {
@@ -214,6 +218,7 @@ const updateHtml = async (annos: Annotation[], doc: vscode.TextDocument) : Promi
 	let updatedList : Annotation [] = [];
 	for(let x = 0; x < annos.length; x++) {
 		const newAnno = await updateAnchorHtml(annos[x], doc);
+		console.log('newAnno', newAnno);
 		updatedList.push(newAnno);
 	}
 
@@ -233,6 +238,7 @@ export const handleSaveCloseEvent = async (annotationList: Annotation[], filePat
 	const annotationsInCurrentFile = currentFile !== "all" ? getAllAnnotationsWithAnchorInFile(annotationList, currentFile) : annotationList;
 	if(doc && vscode.workspace.workspaceFolders) {
 		let newList = await updateHtml(annotationsInCurrentFile, doc);
+		console.log('newList', newList);
 		const ids: string[] = newList.map(a => a.id);
 		const visibleAnnotations: Annotation[] = currentFile === 'all' ? newList : annotationList.filter(a => !ids.includes(a.id)).concat(newList);
 		setAnnotationList(visibleAnnotations);

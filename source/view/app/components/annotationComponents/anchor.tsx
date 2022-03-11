@@ -1,4 +1,5 @@
 import * as React from "react";
+import cn from 'classnames';
 import styles from '../../styles/annotation.module.css';
 import { VscChevronUp, VscChevronDown, VscChevronLeft, VscChevronRight, VscDeviceCamera } from 'react-icons/vsc';
 interface SynProps {
@@ -68,6 +69,14 @@ const Anchor: React.FC<Props> = ({ html, anchorId, anchorPreview, visiblePath, s
                 <div className={styles['DropdownIconsWrapper']}>
                     <VscDeviceCamera className={styles['profileMenu']} />
                 </div>
+                <div className={styles['LocationWrapper']}>
+                    <div className={cn({ [styles['LocationContainer']]: true, [styles['multiLine']]: !isSingleLineAnchor })} onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); scrollInEditor(anchorId); }}>
+                        {visiblePath}: Line {startLine + 1} to Line {endLine + 1}
+                    </div>
+                    <div className={styles['AnchorButtonContainer']}>
+                        {!isSingleLineAnchor && collapseExpandToggle()}
+                    </div>
+                </div>
             </div>
             <div className={styles['HTMLContainer']} onClick={handleShowInEditor}>
                 {showingOriginalCode ? (
@@ -85,14 +94,7 @@ const Anchor: React.FC<Props> = ({ html, anchorId, anchorPreview, visiblePath, s
                 
             }
             </div>
-            <div className={styles['LocationWrapper']}>
-                <div className={styles['LocationContainer']} onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); scrollInEditor(anchorId); }}>
-                    {visiblePath}: Line {startLine + 1} to Line {endLine + 1}
-                </div>
-                <div className={styles['AnchorButtonContainer']}>
-                    {!isSingleLineAnchor && collapseExpandToggle()}
-                </div>
-            </div>
+            
         </div>
     )
 }

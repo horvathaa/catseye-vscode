@@ -31,11 +31,13 @@ interface CssExports {
   'btn-primary': string;
   'buttonRow': string;
   'cancel': string;
+  'collapseExpandButton': string;
   'container': string;
   'disabled': string;
   'dropdown': string;
   'dropdown-toggle': string;
   'inFocus': string;
+  'multiLine': string;
   'outOfFocus': string;
   'outerSnapshotContainer': string;
   'overflowButtonContainer': string;

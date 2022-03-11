@@ -10,8 +10,16 @@
     font-size: medium;
     font-family: var(--vscode-editor-font-family);
     cursor: pointer;
+    display: flex;
+    align-content: center;
+    align-items: center;
 }
 
 .sublist {
     padding-left: 1em;
+}
+
+.chevron {
+    width: 24px;
+    height: 24px;
 }

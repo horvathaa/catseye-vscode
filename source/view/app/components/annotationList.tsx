@@ -3,6 +3,7 @@ import { Annotation } from '../../../constants/constants';
 import { getAllAnnotationFilenames }  from '../utils/viewUtils';
 import ReactAnnotation from '../components/annotation';
 import * as React from 'react';
+// import { VscChevronDown, VscChevronRight } from 'react-icons/vsc';
 
 interface AnnoListProps {
     annotations: Annotation[];
@@ -17,6 +18,12 @@ interface AnnoListProps {
 const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, currentFile, currentProject, username, userId }) => {
     // const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
 
+    // const getChevron = (divId: string) : React.ReactElement => {
+    //     const div = document.getElementById(divId);
+    //     console.log('div', div, 'sib', div?.nextElementSibling)
+    //     return div && div.nextElementSibling.classList.contains(styles['showing']) ? <VscChevronDown className={styles['chevron']} /> : <VscChevronRight className={styles['chevron']} />
+    // }
+
     React.useEffect(() => {
         if(annotations.length) {
             createClusters();
@@ -28,7 +35,8 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
     }, [annotations])
 
     const showHideCluster = (e: any) => {
-        const div = e.target.nextElementSibling;
+        const div = e.target.nextElementSibling ? e.target.nextElementSibling : e.target.parentNode.nextElementSibling;
+        // console.log('div', div, 'e.target', e.target);
         if(div.classList.contains(styles['showing'])) {
             div.classList.remove(styles['showing']);
             div.classList.add(styles['hiding']);
@@ -73,7 +81,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
         return (
             <>
                 <div onClick={showHideCluster} id={'other-projects-outer'} className={`${styles['subheading']} ${styles['showing']}`}>
-                    Other Projects ({projects.length} projects)
+                    Other Projects ({projects.length} projects) 
                 </div>
                 <ul style={{ margin: 0, padding: '0px 0px 0px 0px' }}>
                     {projects}
@@ -117,7 +125,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
                 jsx.push(
                     <div key={key + '-annotationList'}>
                         <div onClick={showHideCluster} id={key} className={styles['subheading']}>
-                            {key} ({output[key].length} {header})
+                            {key} ({output[key].length} {header}) 
                         </div>
                         <div className={styles['showing']}>
                             {annotations.map((a: Annotation) => {

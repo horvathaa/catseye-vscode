@@ -14,7 +14,7 @@ export default class ViewLoader {
       this._panel = vscode.window.createWebviewPanel(
         "adamite",
         "Adamite",
-        vscode.ViewColumn.One,
+        vscode.ViewColumn.Beside,
         {
           enableScripts: true,
           retainContextWhenHidden: true,
@@ -105,6 +105,7 @@ export default class ViewLoader {
   }
 
   public updateDisplay(annotationList: Annotation[] | undefined, currentFile: string | undefined = undefined, currentProject: string | undefined = undefined) {
+      console.log('updating display?', annotationList);
       if(this._panel && this._panel.webview) {
         this._panel.webview.postMessage({
           command: 'update',

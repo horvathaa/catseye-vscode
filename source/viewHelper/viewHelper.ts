@@ -22,7 +22,6 @@ import { v4 as uuidv4 } from 'uuid';
 export const handleAdamiteWebviewLaunch = () : void => {
     const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
     view?._panel?.reveal();
-    console.log('reload', view);
     if(user) view?.reload(gitInfo.author, user.uid);
     if(vscode.workspace.workspaceFolders)
         view?.updateDisplay(annotationList, currFilename, getProjectName(vscode.window.activeTextEditor?.document.uri.fsPath));

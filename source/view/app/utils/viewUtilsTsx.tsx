@@ -7,11 +7,18 @@ export const collapseExpandToggle = (showing: boolean, obj: any[], callback: (bo
     const subjectString: string = showing ? `Hide ${obj.length} ${obj.length === 1 ? subject : plural}` :
 		`Show ${obj.length} ${obj.length === 1 ? subject : plural}`
 	const icon: React.ReactElement<any> = !showing ? 
-	( <VscChevronRight onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); callback(true); }} className={styles['IconContainer']} /> ) : 
-		(<VscChevronDown onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); callback(false); }} className={styles['IconContainer']} /> )
+		( <VscChevronRight className={styles['IconContainer']} /> ) : 
+		( <VscChevronDown className={styles['IconContainer']} /> )
 	return (
 		<div className={styles['replyShowHide']}>
-			{subjectString} {icon}
+			<div className={styles['collapseExpandButton']} onClick={
+				(e: React.SyntheticEvent) => {
+					e.stopPropagation();
+					showing ? callback(false) : callback(true);
+				}
+			}>
+				{subjectString} {icon}
+			</div>
 		</div>
 	)
 }

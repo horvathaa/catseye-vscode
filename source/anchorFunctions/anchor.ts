@@ -45,11 +45,8 @@ export const createAnchorFromPositions = (startPosition: vscode.Position, endPos
 }
 
 export const updateAnchorInAnchorObject = (id: string, annoId: string, anchor: Anchor) : AnchorObject[] => {
-	console.log('anchor id', id, 'anno id', annoId, 'anchor', anchor);
 	const anno: Annotation | undefined = annotationList.find(a => a.id === annoId);
-	console.log('anno', anno);
 	const anchorObject: AnchorObject | undefined = anno?.anchors.find((a: AnchorObject) => a.anchorId === id);
-	console.log('anchorObject', anchorObject);
 	if(anno && anchorObject) return anno.anchors.filter((a: AnchorObject) => a.anchorId !== id).concat({ ...anchorObject, anchor });
 	return []; // this sucks
 }
@@ -85,8 +82,8 @@ export const translateChanges = (
 		const originalStartLine = anchorObject.anchor.startLine, originalEndLine = anchorObject.anchor.endLine, originalStartOffset = anchorObject.anchor.startOffset, originalEndOffset = anchorObject.anchor.endOffset;
 		let newRange = { startLine: originalStartLine, endLine: originalEndLine, startOffset: originalStartOffset, endOffset: originalEndOffset };	
 		// let originalAnchor = { ...newRange };
-		console.log("STARTING TRANSLATE CHANGES CALL");
-		console.log('originalAnchor', newRange);
+		// console.log("STARTING TRANSLATE CHANGES CALL");
+		// console.log('originalAnchor', newRange);
 		let originalAnchor = newRange;
 		// console.log('originalAnchor at beginning of translate changes', originalAnchor);
 		const { anchorText } = anchorObject;
@@ -99,7 +96,7 @@ export const translateChanges = (
 
 		// const editor = vscode.window.activeTextEditor;
 
-		console.log('changeRange', changeRange)
+		// console.log('changeRange', changeRange)
 		const isDeleteOperation: boolean = !textLength;
 		if(isDeleteOperation && changeRange.contains(originalRange)) {
 			console.log('userDeletedAnchor');
@@ -203,8 +200,6 @@ export const translateChanges = (
 		if(changeOccurredInRange) {
 			newAnchorText = doc.getText(createRangeFromObject(newRange));
 		}
-
-		console.log('final range', newRange);
 
 		const newAnchor: AnchorObject = {
 			...anchorObject, anchorText: newAnchorText, anchor: newRange

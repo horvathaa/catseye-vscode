@@ -189,13 +189,21 @@ export const getShikiCodeHighlighting = async (filename: string, anchorText: str
 	const highlighter: any = await shiki.getHighlighter({ theme: 'dark-plus' });
 	const regexMatch: RegExpMatchArray | null = filename.match(/\.[0-9a-z]+$/i);
 	const pl: string = regexMatch ? regexMatch[0].replace(".", "") : "js";
-	const html: string = highlighter.codeToHtml(anchorText, pl);
-	const insertionPoint = html.indexOf('style');
-	const insert = ';margin-bottom: 0;margin-top: 0.5em;';
-	const modifiedHtml = html.slice(0, insertionPoint + 'style="background-color: #1E1E1E'.length) + insert + html.slice(insertionPoint + 'style="background-color: #1E1E1E'.length);
+	console.log('anchorText', anchorText, 'highlighter',  highlighter, 'pl', pl)
+	try {
+		const html: string = highlighter.codeToHtml(anchorText, pl);
+		const insertionPoint = html.indexOf('style');
+		const insert = ';margin-bottom: 0;margin-top: 0.5em;';
+		const modifiedHtml = html.slice(0, insertionPoint + 'style="background-color: #1E1E1E'.length) + insert + html.slice(insertionPoint + 'style="background-color: #1E1E1E'.length);
+		return modifiedHtml ? modifiedHtml : anchorText;
+	} catch (error) {
+		console.error('shiki failed', error);
+		return anchorText;
+	}
+	
 	// console.log('modified', modifiedHtml);
 	// either return the marked-up HTML or just return the basic anchor text
-	return modifiedHtml ? modifiedHtml : anchorText;
+	
 }
 
 const updateAnchorHtml = async (anno: Annotation, doc: vscode.TextDocument) : Promise<Annotation> => {

@@ -65,8 +65,8 @@ const Anchor: React.FC<Props> = ({ html, anchorId, anchorPreview, visiblePath, s
 
     return (
         <div className={styles['AnchorContainer']}>
-            <div onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); snapshotCode(anchorId); }} className={styles['DropdownItemOverwrite']}>
-                <div className={styles['DropdownIconsWrapper']}>
+            <div className={styles['DropdownItemOverwrite']}>
+                <div className={styles['DropdownIconsWrapper']} onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); snapshotCode(anchorId); }}>
                     <VscDeviceCamera className={styles['profileMenu']} />
                 </div>
                 <div className={styles['LocationWrapper']}>

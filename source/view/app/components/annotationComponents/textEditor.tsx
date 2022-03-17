@@ -25,7 +25,7 @@ const TextEditor: React.FC<Props> = ({ content, submissionHandler, cancelHandler
         // },
         typography: {
             allVariants: {
-                fontSize: 14,
+                fontSize: 12,
                 color: 'white',
                 fontFamily: 'Arial'
             }

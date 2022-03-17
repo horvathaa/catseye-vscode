@@ -17,6 +17,7 @@ import { user,
 import { initializeAnnotations, handleSaveCloseEvent, saveAnnotations, removeOutOfDateAnnotations, buildAnnotation, sortAnnotationsByLocation, getProjectName, getShikiCodeHighlighting, getAllAnnotationFilenames, createAnchorObject } from '../utils/utils';
 import { addHighlightsToEditor, createAnchorFromRange, createRangeFromAnchorObject, createRangesFromAnnotation, updateAnchorInAnchorObject } from '../anchorFunctions/anchor';
 import { v4 as uuidv4 } from 'uuid';
+let gitDiff = require('git-diff');
 // import Anchor from '../view/app/components/annotationComponents/anchor';
 
 export const handleAdamiteWebviewLaunch = () : void => {
@@ -26,6 +27,7 @@ export const handleAdamiteWebviewLaunch = () : void => {
     if(vscode.workspace.workspaceFolders)
         view?.updateDisplay(annotationList, currFilename, getProjectName(vscode.window.activeTextEditor?.document.uri.fsPath));
     const annoFiles: string[] = getAllAnnotationFilenames(annotationList);
+    console.log('annoFiles', annoFiles);
     vscode.window.visibleTextEditors.forEach((v: vscode.TextEditor) => {
         if(annoFiles.includes(v.document.uri.toString())) {
             addHighlightsToEditor(annotationList, v); 
@@ -45,16 +47,22 @@ export const handleSnapshotCode = (id: string, anchorId: string) : void => {
         const newSnapshots: Snapshot[] = anno.codeSnapshots ? anno.codeSnapshots.concat([{ 
             createdTimestamp: new Date().getTime(), 
             snapshot: anchor.html,
+            anchorText: anchor.anchorText,
             githubUsername: gitInfo.author,
             comment: "",
+            diff: "",
             id: uuidv4(),
+            anchorId: anchor.anchorId,
             deleted: false
           }]) : [{ 
             createdTimestamp: new Date().getTime(), 
             snapshot: anchor.html,
+            anchorText: anchor.anchorText,
             githubUsername: gitInfo.author,
             comment: "",
+            diff: "",
             id: uuidv4(),
+            anchorId: anchor.anchorId,
             deleted: false
         }];
         console.log('newSnapshots', newSnapshots);
@@ -181,6 +189,9 @@ export const handleDeleteAnnotation = (id: string) : void => {
     view?.updateDisplay(annotationList);
     if(visible) {
         addHighlightsToEditor(annotationList, visible);
+    }
+    if(selectedAnnotationsNavigations.map(a => a.id).includes(id)) {
+        setSelectedAnnotationsNavigations(selectedAnnotationsNavigations.filter(n => n.id !== id));
     }
 }
 

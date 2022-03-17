@@ -18,6 +18,7 @@
   "categories": [
     "Other"
   ],
+  "icon": "Adamite.png",
   "activationEvents": [
     "onCommand:adamite.launch",
     "onStartupFinished"
@@ -55,7 +56,8 @@
         "command": "adamite.launch",
         "key": "ctrl+shift+a",
         "mac": "cmd+shift+a"
-      },{
+      },
+      {
         "command": "adamite.addAnnotation",
         "key": "ctrl+alt+a",
         "mac": "cmd+alt+a"
@@ -83,6 +85,10 @@
     ],
     "menus": {
       "editor/context": [
+        {
+          "command": "adamite.launch",
+          "group": "2_adamite"
+        },
         {
           "when": "editorHasSelection",
           "command": "adamite.addAnnotation",
@@ -153,9 +159,12 @@
     "dotenv": "^10.0.0",
     "esnext": "^3.3.1",
     "firebase": "^8.10.0",
+    "git-diff": "^2.0.6",
     "npm-run-all": "^4.1.5",
     "react": "^17.0.2",
     "react-bootstrap": "^1.6.4",
+    "react-diff-view": "^2.4.10",
+    "react-diff-viewer": "^3.1.1",
     "react-dom": "^17.0.2",
     "react-scripts": "^4.0.3",
     "shiki": "^0.9.5",

@@ -71,6 +71,7 @@ export const getAllAnnotationFilenames = (annotationList: Annotation[]) : string
 		// console.log('a', a);
 		return a.anchors?.map(a => a.filename) 
 	});
+	// console.log('flatMapReturn', flatMapReturn);
 	return [ ... new Set(flatMapReturn) ];
 }
 
@@ -192,7 +193,7 @@ export const getShikiCodeHighlighting = async (filename: string, anchorText: str
 	const insertionPoint = html.indexOf('style');
 	const insert = ';margin-bottom: 0;margin-top: 0.5em;';
 	const modifiedHtml = html.slice(0, insertionPoint + 'style="background-color: #1E1E1E'.length) + insert + html.slice(insertionPoint + 'style="background-color: #1E1E1E'.length);
-	console.log('modified', modifiedHtml);
+	// console.log('modified', modifiedHtml);
 	// either return the marked-up HTML or just return the basic anchor text
 	return modifiedHtml ? modifiedHtml : anchorText;
 }
@@ -218,7 +219,6 @@ const updateHtml = async (annos: Annotation[], doc: vscode.TextDocument) : Promi
 	let updatedList : Annotation [] = [];
 	for(let x = 0; x < annos.length; x++) {
 		const newAnno = await updateAnchorHtml(annos[x], doc);
-		console.log('newAnno', newAnno);
 		updatedList.push(newAnno);
 	}
 
@@ -237,8 +237,8 @@ export const handleSaveCloseEvent = async (annotationList: Annotation[], filePat
 	const annosToSave: Annotation[] = annotationList.concat(outOfDateAnnotations, deletedAnnotations);
 	const annotationsInCurrentFile = currentFile !== "all" ? getAllAnnotationsWithAnchorInFile(annotationList, currentFile) : annotationList;
 	if(doc && vscode.workspace.workspaceFolders) {
-		let newList = await updateHtml(annotationsInCurrentFile, doc);
-		console.log('newList', newList);
+		let newList = await updateHtml(annotationsInCurrentFile, doc); // probably don't need to call this this much... maybe save for just "need to update" annos in translate change handler...
+		// console.log('newList', newList);
 		const ids: string[] = newList.map(a => a.id);
 		const visibleAnnotations: Annotation[] = currentFile === 'all' ? newList : annotationList.filter(a => !ids.includes(a.id)).concat(newList);
 		setAnnotationList(visibleAnnotations);
@@ -262,6 +262,9 @@ const translateSnapshotStandard = (snapshots: any[]) : Snapshot[] => {
 		return {
 			createdTimestamp: s.createdTimestamp,
 			snapshot: s.snapshot,
+			anchorId: "",
+			anchorText: "",
+			diff: "",
 			githubUsername: "",
 			id: uuidv4(),
 			comment: "",
@@ -302,7 +305,7 @@ export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[
 			replies: a.replies ? a.replies : [],
 			outputs: a.outputs ? a.outputs : [],
 			// originalCode: a.originalCode ? a.originalCode : "",
-			codeSnapshots: a.codeSnapshots ? a.codeSnapshots.length > 0 && a.codeSnapshots[0].hasOwnProperty('githubUsername') ? a.codeSnapshots : translateSnapshotStandard(a.codeSnapshots) : [],
+			codeSnapshots: a.codeSnapshots ? a.codeSnapshots.length > 0 && a.codeSnapshots[0].hasOwnProperty('diff') ? a.codeSnapshots : translateSnapshotStandard(a.codeSnapshots) : [],
 			sharedWith: a.sharedWith ? a.sharedWith : "private",
 			selected: a.selected ? a.selected : false
 	}});
@@ -353,7 +356,7 @@ export const getGithubUrl = (visiblePath: string, projectName: string, returnSta
 	if(!gitInfo[projectName]?.repo || gitInfo[projectName]?.repo === "") return "";
 	const baseUrl: string = gitInfo[projectName].repo.split('.git')[0];
 	adamiteLog.appendLine("baseUrl: " + baseUrl);
-	const endUrl: string = visiblePath.includes('\\') ? visiblePath.split(projectName)[1].replace(/\\/g, '/') : visiblePath.split(projectName)[1]; // '\\' : '\/';
+	const endUrl: string = visiblePath.includes('\\') ? visiblePath.split(projectName)[1]?.replace(/\\/g, '/') : visiblePath.split(projectName)[1]; // '\\' : '\/';
 	adamiteLog.appendLine("endUrl: " + endUrl);
 	// console.log('wheehoo', baseUrl + "/tree/" + gitInfo[projectName].commit + endUrl)
 	return gitInfo[projectName].commit === 'localChange' || returnStable ? baseUrl + "/tree/main" + endUrl :  baseUrl + "/tree/" + gitInfo[projectName].commit + endUrl;
@@ -383,13 +386,23 @@ export const updateAnnotationCommit = (commit: string, branch: string, repo: str
 
 export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] : any}> => {
 	await gitApi.repositories?.forEach(async (r: any) => {
-		console.log('r', r);
+		
 		const currentProjectName: string = getProjectName(r?.rootUri?.path);
 		// const branch = await r?.diff()
 		// console.log(branch);
 		r?.state?.onDidChange(async () => {
+			console.log('r', r);
 			// console.log('calling on did change', r.state, 'gitInfo', gitInfo);
 			const currentProjectName: string = getProjectName(r?.rootUri?.path);
+			if(!gitInfo[currentProjectName] && r) {
+				gitInfo[currentProjectName] = {
+					repo: r?.state?.remotes[0]?.fetchUrl ? r?.state?.remotes[0]?.fetchUrl : r?.state?.remotes[0]?.pushUrl ? r?.state?.remotes[0]?.pushUrl : "",
+					branch: r?.state?.HEAD?.name ? r?.state?.HEAD?.name : "",
+					commit: r?.state?.HEAD?.commit ? r?.state?.HEAD?.commit : "",
+					// changes: await r?.diffBetween('origin/HEAD', r?.state?.HEAD?.name),
+					modifiedAnnotations: []
+				}
+			}
 			// const diffs = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch);
 			// // if(diffs.length > 0 && diffs.length !== gitInfo[currentProjectName].changes.length) {
 			// 	gitInfo[currentProjectName] = { ...gitInfo[currentProjectName], changes: diffs };
@@ -408,7 +421,7 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 			// let diffWithMain = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch, './source/anchorFunctions/anchor.ts')
 			// console.log('diff', diffs)
 			// console.log( 'dwm', diffWithMain);
-			console.log('gitInfo', gitInfo[currentProjectName], gitInfo, gitInfo.hasOwnProperty(currentProjectName));
+			console.log('gitInfo', gitInfo);
 			if(gitInfo.hasOwnProperty(currentProjectName) && (gitInfo[currentProjectName]?.commit !== r.state.HEAD.commit || gitInfo[currentProjectName]?.branch !== r.state.HEAD.name)) {
 				gitInfo[currentProjectName].commit = r.state.HEAD.commit;
 				gitInfo[currentProjectName].branch = r.state.HEAD.name;
@@ -419,7 +432,7 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 			repo: r?.state?.remotes[0]?.fetchUrl ? r?.state?.remotes[0]?.fetchUrl : r?.state?.remotes[0]?.pushUrl ? r?.state?.remotes[0]?.pushUrl : "",
 			branch: r?.state?.HEAD?.name ? r?.state?.HEAD?.name : "",
 			commit: r?.state?.HEAD?.commit ? r?.state?.HEAD?.commit : "",
-			changes: await r?.diffBetween('origin/HEAD', r?.state?.HEAD?.name),
+			// changes: await r?.diffBetween('origin/HEAD', r?.state?.HEAD?.name),
 			modifiedAnnotations: []
 		}
 	});

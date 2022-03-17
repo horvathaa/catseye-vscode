@@ -57,6 +57,7 @@ const SplitButton: React.FC<Props> = ({ submissionHandler }) => {
             root: {
                 borderStyle: 'solid',
                 borderWidth: '0.15em',
+                fontSize: '8px',
                 // borderColor: '#d4d4d44f',
                 backgroundColor: green[400],
                 '&:hover': {
@@ -130,7 +131,7 @@ const SplitButton: React.FC<Props> = ({ submissionHandler }) => {
     <React.Fragment>
       <ThemeProvider theme={theme}>
       <ButtonGroup size="small" variant="contained" ref={anchorRef} aria-label="split button">
-        <Button onClick={handleClick}>{options[selectedIndex]}</Button>
+        <Button style={{ 'fontSize': '10px' }} onClick={handleClick}>{options[selectedIndex]}</Button>
         <Button
           size="small"
           aria-controls={open ? 'split-button-menu' : undefined}
@@ -148,6 +149,7 @@ const SplitButton: React.FC<Props> = ({ submissionHandler }) => {
         role={undefined}
         transition
         disablePortal
+        placement={'top'}
       >
         {({ TransitionProps, placement }) => (
           <Grow

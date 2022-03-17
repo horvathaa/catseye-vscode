@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, deletedAnnotations, setDeletedAnnotationList, setInsertSpaces, changes, setChangeEvents, incrementNumChangeEventsCompleted, numChangeEventsCompleted } from '../extension';
 import * as anchor from '../anchorFunctions/anchor';
 import * as utils from '../utils/utils';
-import { Annotation, AnchorObject, ChangeEvent } from '../constants/constants';
-
+import { Annotation, AnchorObject, ChangeEvent, Snapshot } from '../constants/constants';
+let gitDiff = require('git-diff');
 
 
 export const handleChangeVisibleTextEditors = (textEditors: vscode.TextEditor[]) => {
@@ -18,9 +18,9 @@ export const handleChangeVisibleTextEditors = (textEditors: vscode.TextEditor[])
     });
     // console.log('annotationsToHighlight', annotationsToHighlight);
     if(!annotationsToHighlight.length) return;
-    // TODO: see if we can change the behavior of markdown string so it has an onclick event to navigate to the annotation
-    // console.log('view', view);
-    if(view) anchor.addHighlightsToEditor(annotationsToHighlight);	
+    if(view) { 
+        anchor.addHighlightsToEditor(annotationsToHighlight);
+    }
 }
 
 export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | undefined) => {
@@ -29,16 +29,16 @@ export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | und
         if(TextEditor) {
             if(TextEditor.options?.tabSize) setTabSize(TextEditor.options.tabSize);
             if(TextEditor.options?.insertSpaces) setInsertSpaces(TextEditor.options.insertSpaces);
-            utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextEditor.document.uri.toString(), TextEditor.document);
+            // utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextEditor.document.uri.toString(), TextEditor.document); // maybe don't need to do this here?
             // utils.findOutOfDateAnchors(annotationList.filter(a => a.filename === TextEditor.document.uri.toString()), TextEditor.document);
             setAnnotationList(utils.sortAnnotationsByLocation(annotationList, TextEditor.document.uri.toString())); // mark these annos as out of date
             const currentProject: string = utils.getProjectName(TextEditor.document.uri.fsPath);
             if(user && vscode.workspace.workspaceFolders)
             view?.updateDisplay(undefined, TextEditor.document.uri.toString(), currentProject);
         }
-        else {
-            utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', "all");
-        }
+        // else {
+        //     // utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', "all");
+        // }
     }
     setActiveEditor(TextEditor);
 }
@@ -99,8 +99,8 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
         let translatedAnnotations: Annotation[] = currentAnnotations;
         let rangeAdjustedAnnotations: Annotation[] = [];
         for (const change of e.contentChanges) {
-            console.log("BEGINNING DID CHANGE TEXT")
-            console.log('change', change);
+            // console.log("BEGINNING DID CHANGE TEXT")
+            // console.log('change', change);
             // if(numChangeEventsCompleted < 3) checkIfPartOfChange(change);
             const startLine = change.range.start.line;
             const endLine = change.range.end.line;
@@ -137,8 +137,21 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
                     const [anchorsToTranslate, anchorsNotToTranslate] = utils.partition(a.anchors, (a: AnchorObject) => a.filename === e.document.uri.toString());
                     const translatedAnchors = utils.removeNulls(anchorsToTranslate.map((a: AnchorObject) => anchor.translateChanges(a, change.range, 
                         change.text.length, diff, change.rangeLength, e.document, change.text)));
-                    const needToUpdate = translatedAnchors.some(t => anchorsToTranslate.find((o: AnchorObject) => t.anchorId === o.anchorId) ? utils.objectsEqual(anchorsToTranslate.find((o: AnchorObject) => t.anchorId === o.anchorId).anchor, t.anchor) : true)
-                    return utils.buildAnnotation({ ...a, needToUpdate, anchors: [...translatedAnchors, ...anchorsNotToTranslate] })
+                    const needToUpdate = translatedAnchors.some(
+                        t => anchorsToTranslate.find((o: AnchorObject) => t.anchorId === o.anchorId) ?
+                         utils.objectsEqual(anchorsToTranslate.find((o: AnchorObject) => t.anchorId === o.anchorId).anchor, t.anchor) : true
+                        )
+                    // console.log('needToUpdate?',  needToUpdate);
+                    let newSnapshots = null
+                    if(a.codeSnapshots.length) {
+                        newSnapshots = a.codeSnapshots.map((c: Snapshot) => {
+                            const newText = a.anchors.find(anch => anch.anchorId === c.anchorId)?.anchorText;
+                            console.log('newText', newText, 'anchorText', c.anchorText, 'diff', gitDiff(c.anchorText, newText));
+                            return newText ? { ...c, diff: gitDiff(c.anchorText, newText )} : c
+                        });
+                    }
+                    // console.log('newSnapshots', newSnapshots);
+                    return utils.buildAnnotation({ ...a, needToUpdate, anchors: [...translatedAnchors, ...anchorsNotToTranslate], codeSnapshots: newSnapshots !== null ? newSnapshots : a.codeSnapshots })
                 })
             );
 

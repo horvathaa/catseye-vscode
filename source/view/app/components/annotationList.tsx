@@ -3,7 +3,7 @@ import { Annotation } from '../../../constants/constants';
 import { getAllAnnotationFilenames }  from '../utils/viewUtils';
 import ReactAnnotation from '../components/annotation';
 import * as React from 'react';
-// import { VscChevronDown, VscChevronRight } from 'react-icons/vsc';
+
 
 interface AnnoListProps {
     annotations: Annotation[];
@@ -16,14 +16,7 @@ interface AnnoListProps {
   }
   
 const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, currentFile, currentProject, username, userId }) => {
-    // const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
-
-    // const getChevron = (divId: string) : React.ReactElement => {
-    //     const div = document.getElementById(divId);
-    //     console.log('div', div, 'sib', div?.nextElementSibling)
-    //     return div && div.nextElementSibling.classList.contains(styles['showing']) ? <VscChevronDown className={styles['chevron']} /> : <VscChevronRight className={styles['chevron']} />
-    // }
-
+ 
     React.useEffect(() => {
         if(annotations.length) {
             createClusters();
@@ -130,7 +123,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
                         <div className={styles['showing']}>
                             {annotations.map((a: Annotation) => {
                                 return <ReactAnnotation
-                                            key={'annotationListtsx-'+a.id} 
+                                            key={'annotationList-tsx-'+a.id} 
                                             annotation={a} 
                                             vscode={vscode} 
                                             window={window} 

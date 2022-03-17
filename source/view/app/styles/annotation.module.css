@@ -46,8 +46,9 @@
 
 .bottomRow {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
+  flex-wrap: wrap;
 }
 
 .Pad {
@@ -287,6 +288,7 @@
   resize: none;
   min-height: 4em;
   font-family: var(--vscode-font-family);
+  background-color: var(--vscode-breadcrumb-activeSelectionForeground);
 }
 
 .topRow {
@@ -471,4 +473,9 @@ button.cancel {
   border: 1px solid transparent;
   background-color: rgba(158, 158, 158, 0.651);
   height: 30px;
+  transition: all 0.5s ease-in-out;
+}
+
+button.cancel:hover {
+  filter: brightness(1.0);
 }

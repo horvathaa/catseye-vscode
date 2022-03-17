@@ -121,10 +121,13 @@ export interface ChangeEvent {
 export interface Snapshot {
 	createdTimestamp: number,
 	snapshot: string,
+	anchorText: string,
 	githubUsername: string,
 	comment: string,
 	id: string,
+	anchorId: string,
 	deleted: boolean
+	diff: string
 }
 
 export interface Reply {

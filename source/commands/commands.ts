@@ -33,8 +33,11 @@ export const init = async () => {
 
 export const createView = (context: vscode.ExtensionContext) => {
 	if(vscode.workspace.workspaceFolders) {
+		if(view) {
+			view._panel?.reveal();
+			return;
+		}
 		const newView : ViewLoader = new ViewLoader(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
-
 		setView(newView);
 		if(newView) {
 	/***********************************************************************************/
@@ -96,6 +99,7 @@ export const createView = (context: vscode.ExtensionContext) => {
 				}
 			});
 
+			anchor.addHighlightsToEditor(annotationList, vscode.window.activeTextEditor);
 			newView._panel?.onDidDispose((e: void) => {
 				viewHelper.handleOnDidDispose();
 			}, null, context.subscriptions);
@@ -108,7 +112,6 @@ export const createView = (context: vscode.ExtensionContext) => {
 }
 
 export const createNewAnnotation = () => {
-	console.log('wtf');
     const { activeTextEditor } = vscode.window;
     if (!activeTextEditor) {
         vscode.window.showInformationMessage("No text editor is open!");
@@ -241,7 +244,7 @@ export const addNewSelectedAnnotation = async () : Promise<void> => {
 
 export const navigateSelectedAnnotations = (direction: string) : void => {
 	// addNewHighlight(true);
-	// console.log('selectedAnnotationsNavigations', selectedAnnotationsNavigations);
+	console.log('selectedAnnotationsNavigations', selectedAnnotationsNavigations);
 	let lastVisited: number = selectedAnnotationsNavigations.findIndex(a => a.lastVisited);
 	if(lastVisited === -1) {
 		const id: string = selectedAnnotationsNavigations[0].id;

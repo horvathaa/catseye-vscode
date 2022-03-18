@@ -8,6 +8,8 @@ import * as commands from './commands/commands';
 import * as eventHandlers from './listeners/listeners';
 import * as utils from './utils/utils';
 import ViewLoader from './view/ViewLoader';
+// console.log('window activeColorTheme', vscode.window.activeColorTheme);
+// console.log('config', vscode.workspace.getConfiguration('workbench', vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri))
 // import { AdamiteTerminalLinkProvider } from './adamiteTerminalLinkProvider/adamiteTerminalLinkProvider';
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
 export const gitApi = gitExtension?.getAPI(1);
@@ -24,7 +26,8 @@ export let view: ViewLoader | undefined = undefined;
 export let user: firebase.User | null = null;
 export let tempAnno: Annotation | null = null;
 export let activeEditor = vscode.window.activeTextEditor;
-
+export let currentColorTheme: string = vscode.workspace.getConfiguration('workbench', vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri).colorTheme;
+console.log('currentColorTheme', currentColorTheme);
 export let adamiteLog = vscode.window.createOutputChannel("Adamite");
 export let changes: ChangeEvent[] = [];
 export let numChangeEventsCompleted = 0;
@@ -88,6 +91,10 @@ export const setStoredCopyText = (newCopyText: string) : void => {
 	storedCopyText = newCopyText;
 }
 
+export const setCurrentColorTheme = (newCurrentColorTheme: string) : void => {
+	currentColorTheme = newCurrentColorTheme;
+}
+
 export const setDeletedAnnotationList = (newDeletedAnnotationList: Annotation[]) : void => {
 	deletedAnnotations = newDeletedAnnotationList;
 	setAnnotationList(utils.removeOutOfDateAnnotations(annotationList));
@@ -122,7 +129,8 @@ export function activate(context: vscode.ExtensionContext) {
 	let didChangeVisibleListenerDisposable = vscode.window.onDidChangeVisibleTextEditors(eventHandlers.handleChangeVisibleTextEditors);
 	let didChangeActiveEditorListenerDisposable = vscode.window.onDidChangeActiveTextEditor(eventHandlers.handleChangeActiveTextEditor);
 	let didChangeTextEditorSelection = vscode.window.onDidChangeTextEditorSelection(eventHandlers.handleDidChangeTextEditorSelection);
-	
+	let didChangeActiveColorTheme = vscode.window.onDidChangeActiveColorTheme(eventHandlers.handleDidChangeActiveColorTheme);
+
 	let didSaveListenerDisposable = vscode.workspace.onDidSaveTextDocument(eventHandlers.handleDidSaveDidClose);
 	let didCloseListenerDisposable = vscode.workspace.onDidCloseTextDocument(eventHandlers.handleDidSaveDidClose)
 	let didChangeTextDocumentDisposable = vscode.workspace.onDidChangeTextDocument(eventHandlers.handleDidChangeTextDocument)
@@ -160,6 +168,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(didChangeVisibleListenerDisposable);
 	context.subscriptions.push(didChangeActiveEditorListenerDisposable);
 	context.subscriptions.push(didChangeTextEditorSelection);
+	context.subscriptions.push(didChangeActiveColorTheme);
 	context.subscriptions.push(didSaveListenerDisposable);
 	context.subscriptions.push(didCloseListenerDisposable);
 	context.subscriptions.push(didChangeTextDocumentDisposable);

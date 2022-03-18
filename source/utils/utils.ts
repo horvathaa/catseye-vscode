@@ -1,7 +1,7 @@
 import firebase from '../firebase/firebase';
-import { Annotation, AnchorObject, Anchor, Snapshot } from '../constants/constants';
+import { Annotation, AnchorObject, Anchor, Snapshot, stringToShikiThemes } from '../constants/constants';
 import { computeRangeFromOffset, createAnchorFromRange } from '../anchorFunctions/anchor';
-import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations, adamiteLog, setSelectedAnnotationsNavigations } from '../extension';
+import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations, adamiteLog, setSelectedAnnotationsNavigations, currentColorTheme } from '../extension';
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
 import { getAnnotationsOnSignIn } from '../firebase/functions/functions';
@@ -185,11 +185,38 @@ export const sortAnnotationsByLocation = (annotationList: Annotation[], filename
 	return annotationList;
 }
 
+const getShikiTheme = (pl: string) : string => {
+	let theme;
+	if(pl === 'css') {
+		theme = stringToShikiThemes[pl];
+	}
+	else if(stringToShikiThemes[currentColorTheme]) {
+		theme = stringToShikiThemes[currentColorTheme];
+	}
+	else {
+		switch(vscode.window.activeColorTheme.kind) {
+			case 1: // LIGHT
+				theme = 'light-plus';
+				break;
+			case 2: // DARK
+				theme = 'dark-plus';
+				break;
+			case 3: // HIGH CONTRAST
+				theme = 'hc_light';
+				break;
+			default:
+				theme = 'dark-plus';
+				break;
+		}
+	}
+	return theme;
+}
+
 export const getShikiCodeHighlighting = async (filename: string, anchorText: string): Promise<string> => {
-	const highlighter: any = await shiki.getHighlighter({ theme: 'dark-plus' });
 	const regexMatch: RegExpMatchArray | null = filename.match(/\.[0-9a-z]+$/i);
 	const pl: string = regexMatch ? regexMatch[0].replace(".", "") : "js";
-	console.log('anchorText', anchorText, 'highlighter',  highlighter, 'pl', pl)
+	const highlighter: any = await shiki.getHighlighter({ theme: getShikiTheme(pl) });
+	// console.log('anchorText', anchorText, 'highlighter',  highlighter, 'pl', pl)
 	try {
 		const html: string = highlighter.codeToHtml(anchorText, pl);
 		const insertionPoint = html.indexOf('style');
@@ -201,9 +228,7 @@ export const getShikiCodeHighlighting = async (filename: string, anchorText: str
 		return anchorText;
 	}
 	
-	// console.log('modified', modifiedHtml);
-	// either return the marked-up HTML or just return the basic anchor text
-	
+
 }
 
 const updateAnchorHtml = async (anno: Annotation, doc: vscode.TextDocument) : Promise<Annotation> => {

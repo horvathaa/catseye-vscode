@@ -1,10 +1,16 @@
 import * as vscode from 'vscode';
-import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, deletedAnnotations, setDeletedAnnotationList, setInsertSpaces, changes, setChangeEvents, incrementNumChangeEventsCompleted, numChangeEventsCompleted } from '../extension';
+import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, deletedAnnotations, setDeletedAnnotationList, setInsertSpaces, changes, setChangeEvents, incrementNumChangeEventsCompleted, numChangeEventsCompleted, setCurrentColorTheme } from '../extension';
 import * as anchor from '../anchorFunctions/anchor';
 import * as utils from '../utils/utils';
 import { Annotation, AnchorObject, ChangeEvent, Snapshot } from '../constants/constants';
-let gitDiff = require('git-diff');
 
+export const handleDidChangeActiveColorTheme = (colorTheme: vscode.ColorTheme) => {
+    // give editor time to update...
+    setTimeout(() => { 
+        setCurrentColorTheme(vscode.workspace.getConfiguration('workbench', vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri).colorTheme)
+    }, 3000);
+    // maybe worth adding to this an update for existing annotations to new color theme... but maybe not worth it
+}
 
 export const handleChangeVisibleTextEditors = (textEditors: vscode.TextEditor[]) => {
     const textEditorFileNames = textEditors.map(t => t.document.uri.toString());
@@ -143,13 +149,13 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
                         )
                     // console.log('needToUpdate?',  needToUpdate);
                     let newSnapshots = null
-                    if(a.codeSnapshots.length) {
-                        newSnapshots = a.codeSnapshots.map((c: Snapshot) => {
-                            const newText = a.anchors.find(anch => anch.anchorId === c.anchorId)?.anchorText;
-                            console.log('newText', newText, 'anchorText', c.anchorText, 'diff', gitDiff(c.anchorText, newText));
-                            return newText ? { ...c, diff: gitDiff(c.anchorText, newText )} : c
-                        });
-                    }
+                    // if(a.codeSnapshots.length) {
+                    //     newSnapshots = a.codeSnapshots.map((c: Snapshot) => {
+                    //         const newText = a.anchors.find(anch => anch.anchorId === c.anchorId)?.anchorText;
+                    //         console.log('newText', newText, 'anchorText', c.anchorText, 'diff', gitDiff(c.anchorText, newText));
+                    //         return newText ? { ...c, diff: gitDiff(c.anchorText, newText )} : c
+                    //     });
+                    // }
                     // console.log('newSnapshots', newSnapshots);
                     return utils.buildAnnotation({ ...a, needToUpdate, anchors: [...translatedAnchors, ...anchorsNotToTranslate], codeSnapshots: newSnapshots !== null ? newSnapshots : a.codeSnapshots })
                 })

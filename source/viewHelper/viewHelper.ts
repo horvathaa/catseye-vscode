@@ -17,7 +17,7 @@ import { user,
 import { initializeAnnotations, handleSaveCloseEvent, saveAnnotations, removeOutOfDateAnnotations, buildAnnotation, sortAnnotationsByLocation, getProjectName, getShikiCodeHighlighting, getAllAnnotationFilenames, createAnchorObject } from '../utils/utils';
 import { addHighlightsToEditor, createAnchorFromRange, createRangeFromAnchorObject, createRangesFromAnnotation, updateAnchorInAnchorObject } from '../anchorFunctions/anchor';
 import { v4 as uuidv4 } from 'uuid';
-let gitDiff = require('git-diff');
+// let gitDiff = require('git-diff');
 // import Anchor from '../view/app/components/annotationComponents/anchor';
 
 export const handleAdamiteWebviewLaunch = () : void => {

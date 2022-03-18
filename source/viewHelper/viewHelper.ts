@@ -77,7 +77,7 @@ export const handleAddAnchor = async (id: string) : Promise<void> => {
     if(!currentSelection) {
         currentSelection = vscode.window.visibleTextEditors[0].selection;
     }
-    if(anno && currentSelection) {
+    if(anno && currentSelection && !currentSelection.start.isEqual(currentSelection.end)) {
         const newAnchor: AnchorObject | undefined =  await createAnchorObject(id, new vscode.Range(currentSelection.start, currentSelection.end));
         const newAnno: Annotation = newAnchor ? buildAnnotation({ ...anno, anchors: [...anno.anchors, newAnchor] }) : anno;
         if(!newAnchor) {

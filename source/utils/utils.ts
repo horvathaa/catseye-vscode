@@ -424,7 +424,7 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 		// const branch = await r?.diff()
 		// console.log(branch);
 		r?.state?.onDidChange(async () => {
-			console.log('r', r);
+			// console.log('r', r);
 			// console.log('calling on did change', r.state, 'gitInfo', gitInfo);
 			const currentProjectName: string = getProjectName(r?.rootUri?.path);
 			if(!gitInfo[currentProjectName] && r) {
@@ -454,7 +454,7 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 			// let diffWithMain = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch, './source/anchorFunctions/anchor.ts')
 			// console.log('diff', diffs)
 			// console.log( 'dwm', diffWithMain);
-			console.log('gitInfo', gitInfo);
+			// console.log('gitInfo', gitInfo);
 			if(gitInfo.hasOwnProperty(currentProjectName) && (gitInfo[currentProjectName]?.commit !== r.state.HEAD.commit || gitInfo[currentProjectName]?.branch !== r.state.HEAD.name)) {
 				gitInfo[currentProjectName].commit = r.state.HEAD.commit;
 				gitInfo[currentProjectName].branch = r.state.HEAD.name;

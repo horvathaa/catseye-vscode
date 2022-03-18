@@ -145,7 +145,7 @@ export const handleCreateAnnotation = (annotationContent: string, willBePinned: 
             view?.updateDisplay(annotationList);
             addHighlightsToEditor(annotationList, text);
             if(willBePinned) {
-                setSelectedAnnotationsNavigations([...selectedAnnotationsNavigations, { id: newAnno.id, lastVisited: false } ]);
+                setSelectedAnnotationsNavigations([...selectedAnnotationsNavigations, { id: newAnno.id, lastVisited: false, anchorId: newAnno.anchors[0].anchorId } ]);
             }
         }
     });
@@ -163,7 +163,7 @@ export const handleUpdateAnnotation = (id: string, key: string | string[], value
     if(typeof value === 'boolean' && typeof key === 'string') {
         updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], [key]: value, needToUpdate: true });
         setSelectedAnnotationsNavigations(
-            value ? [...selectedAnnotationsNavigations, { id, lastVisited: false }] : selectedAnnotationsNavigations.filter(a => a.id !== id) 
+            value ? [...selectedAnnotationsNavigations, { id, lastVisited: false, anchorId: annotationList.filter(a => a.id === id)[0].anchors[0].anchorId }] : selectedAnnotationsNavigations.filter(a => a.id !== id) 
         );
     }
     else if(typeof key === 'string') {

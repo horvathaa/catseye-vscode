@@ -176,7 +176,6 @@ export const addNewHighlight = (selected?: boolean) : string | Promise<string> =
         vscode.window.showInformationMessage("No text editor is open!");
         return "";
     }
-	console.log('view', view);
 	if(!view) {
 		vscode.commands.executeCommand('adamite.launch');
 	}

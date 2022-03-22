@@ -1,4 +1,4 @@
-import { tabSize, insertSpaces, view, annotationList, deletedAnnotations, setDeletedAnnotationList } from "../extension";
+import { tabSize, insertSpaces, view, annotationList, deletedAnnotations, setDeletedAnnotationList, selectedAnnotationsNavigations, setSelectedAnnotationsNavigations } from "../extension";
 // import { tabSize, insertSpaces,  annotationList, deletedAnnotations, setDeletedAnnotationList } from "../extension";
 
 import { addHighlightsToEditor, createAnchorFromRange, createAnchorFromPositions, createRangeFromObject } from "./anchor";
@@ -11,6 +11,9 @@ export const userDeletedAnchor = (annotationId: string, anchorId: string) : null
     const affectedAnnotation: Annotation | undefined = annotationList.find((a: Annotation) => a.id === annotationId);
     if(!affectedAnnotation) return null;
     const updatedAnchors: AnchorObject[] = affectedAnnotation.anchors.filter((a: AnchorObject) => a.anchorId !== anchorId);
+    if(selectedAnnotationsNavigations.map(a => a.anchorId).includes(anchorId)) {
+        setSelectedAnnotationsNavigations(selectedAnnotationsNavigations.filter(nav => nav.anchorId !== anchorId && nav.id !== annotationId));
+    }
     if(!updatedAnchors.length) {
         const newAnno = {
             ...affectedAnnotation, deleted: true

@@ -4,6 +4,7 @@ import { buildAnnotation, sortAnnotationsByLocation, getProjectName, getVisibleP
 import { annotationDecorations, setOutOfDateAnnotationList, view, annotationList, setAnnotationList, activeEditor } from '../extension';
 import { userDeletedAnchor, userAutocompletedOrCommented, userChangedTextBeforeStart, userChangedTextBeforeEnd, userChangedLinesBeforeStart, userChangedLinesInMiddle, shrinkOrExpandBackOfRange, shrinkOrExpandFrontOfRange } from './translateChangesHelpers';
 
+
 export function getIndicesOf(searchStr: string, str: string, caseSensitive: boolean) {
     var searchStrLen = searchStr.length;
     if (searchStrLen == 0) {
@@ -289,7 +290,7 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 			if(invalidRanges.length) {
 				const invalidIds: string[] = invalidRanges.map(r => r.id);
 				const ood: Annotation[] = annotationList.filter((a: Annotation) => invalidIds.includes(a.id))
-				ood.forEach((a: Annotation) => a.outOfDate = true);
+				ood.forEach((a: Annotation) => { a.outOfDate = true; a.needToUpdate = true });
 				setOutOfDateAnnotationList(ood);
 			}
 			if(vscode.workspace.workspaceFolders) {

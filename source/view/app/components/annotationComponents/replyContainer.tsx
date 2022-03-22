@@ -32,7 +32,7 @@ const ReplyContainer: React.FC<Props> = ({ replying, replies, username, userId, 
                 />
             }
             {hasReplies ? collapseExpandToggle(showingReplies, activeReplies, setShowingReplies, 'reply') : (null)}
-            {showingReplies && hasReplies && replies?.map((r: Reply) => {
+            {showingReplies && hasReplies ? replies?.map((r: Reply) => {
                 return (
                     !r.deleted ?
                     <ReactReply
@@ -50,7 +50,7 @@ const ReplyContainer: React.FC<Props> = ({ replying, replies, username, userId, 
                         deleteHandler={deleteReply}
                     /> : (null)
                 )
-            })}
+            }) : (null)}
         </div>
     )
 }

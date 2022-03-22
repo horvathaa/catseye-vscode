@@ -120,16 +120,22 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
     const newSnapshots: Snapshot[] = anno.codeSnapshots ? anno.codeSnapshots.concat([{ 
       createdTimestamp: new Date().getTime(), 
       snapshot: anchor.html,
+      anchorText: anchor.anchorText,
+      anchorId: anchor.anchorId,
       githubUsername: username,
       comment: "",
       id: "",
+      diff: "",
       deleted: false
     }]) : [{ 
       createdTimestamp: new Date().getTime(), 
       snapshot: anchor.html,
+      anchorText: anchor.anchorText,
+      anchorId: anchor.anchorId,
       githubUsername: username,
       comment: "",
       id: "",
+      diff: "",
       deleted: false
     }];
     const newAnno: Annotation = buildAnnotation({ ...anno, codeSnapshots: newSnapshots });
@@ -182,9 +188,14 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
   }
 
   const deleteSnapshot = (id: string) : void => {
+    if(!id || id === "") {
+      console.error("Could not find snapshot.")
+      return;
+    }
     const updatedSnapshots = anno.codeSnapshots.map((s: Snapshot) => {
       return s.id === id ? { ...s, deleted: true } : s
     });
+
     const newAnno: Annotation = buildAnnotation({ ...anno, codeSnapshots: updatedSnapshots });
     setAnno(newAnno);
     annoRef.current = newAnno;
@@ -250,6 +261,7 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
                 </div>
                 <Snapshots 
                   snapshots={anno.codeSnapshots}
+                  anchors={anno.anchors}
                   githubUsername={username}
                   deleteHandler={deleteSnapshot}
                   submissionHandler={submitSnapshot}

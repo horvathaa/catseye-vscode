@@ -1,6 +1,8 @@
 import * as React from 'react';
-import { Snapshot as SnapshotInterface } from '../../../../constants/constants';
+import { AnchorObject, Snapshot as SnapshotInterface } from '../../../../constants/constants';
 import { Syntax } from './anchor';
+// import { parseDiff, Diff, Hunk } from 'react-diff-view';
+
 import UserProfile from './userProfile';
 import AuthorOperationButtons from './authorOperationButtons';
 import TextEditor from './textEditor';
@@ -9,14 +11,18 @@ import { collapseExpandToggle } from '../../utils/viewUtilsTsx';
 
 interface SnapshotProps {
     snapshot: SnapshotInterface,
+    currentCode: string | undefined,
     githubUsername: string,
     deleteHandler: (id: string) => void;
     submissionHandler: (snapshot: SnapshotInterface) => void;
 }
 
-export const Snapshot: React.FC<SnapshotProps> = ({ snapshot, githubUsername, deleteHandler, submissionHandler }) => {
+export const Snapshot: React.FC<SnapshotProps> = ({ snapshot, currentCode, githubUsername, deleteHandler, submissionHandler }) => {
     const [editing, setEditing] = React.useState<boolean>(false);
-
+    // console.log('snapshot', snapshot)
+    // const files = snapshot.diff ? parseDiff(snapshot.diff) : [];
+    // console.log('files', files);
+    // console.log('snapshot', snapshot, 'currentCode', currentCode);
     return (
         <div className={styles['replyContainer']}>
             <div className={styles['topRow']}>
@@ -33,6 +39,11 @@ export const Snapshot: React.FC<SnapshotProps> = ({ snapshot, githubUsername, de
             <div className={styles['snapshotContainer']}>
                 <Syntax html={snapshot.snapshot} />
             </div>
+            {/* <ReactDiffViewer 
+                oldValue={snapshot.anchorText}
+                newValue={currentCode ? currentCode : ""}
+                splitView={true}
+            /> */}
             {editing ? 
             <TextEditor 
                 content={snapshot}
@@ -47,13 +58,14 @@ export const Snapshot: React.FC<SnapshotProps> = ({ snapshot, githubUsername, de
 
 interface Props {
     snapshots: SnapshotInterface[],
+    anchors: AnchorObject[],
     githubUsername: string,
     deleteHandler: (id: string) => void;
     submissionHandler: (snapshot: SnapshotInterface) => void;
 }
 
 
-const Snapshots : React.FC<Props> = ({ snapshots, githubUsername, submissionHandler, deleteHandler }) => {
+const Snapshots : React.FC<Props> = ({ snapshots, anchors, githubUsername, submissionHandler, deleteHandler }) => {
     const [showingSnapshots, setShowingSnapshots] = React.useState<boolean>(false);
     const activeSnapshots: SnapshotInterface[] = snapshots.filter(s => !s.deleted);
 
@@ -61,8 +73,10 @@ const Snapshots : React.FC<Props> = ({ snapshots, githubUsername, submissionHand
         <div className={styles['outerSnapshotContainer']}>
             {activeSnapshots && activeSnapshots.length ? collapseExpandToggle(showingSnapshots, activeSnapshots, setShowingSnapshots, 'snapshot') : (null)}
             {showingSnapshots && activeSnapshots.map((s: SnapshotInterface) => {
-                return <Snapshot 
+                return <Snapshot
+                    key={'snapshot-'+s.id} 
                     snapshot={s}
+                    currentCode={anchors.find(a => a.anchorId === s.anchorId)?.anchorText}
                     githubUsername={githubUsername}
                     submissionHandler={submissionHandler}
                     deleteHandler={deleteHandler}

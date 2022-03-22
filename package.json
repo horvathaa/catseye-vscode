@@ -11,13 +11,14 @@
     "url": "https://github.com/horvathaa/adamite-vscode"
   },
   "publisher": "ahorvath",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "engines": {
     "vscode": "^1.57.0"
   },
   "categories": [
     "Other"
   ],
+  "icon": "source/constants/Adamite.png",
   "activationEvents": [
     "onCommand:adamite.launch",
     "onStartupFinished"
@@ -55,7 +56,8 @@
         "command": "adamite.launch",
         "key": "ctrl+shift+a",
         "mac": "cmd+shift+a"
-      },{
+      },
+      {
         "command": "adamite.addAnnotation",
         "key": "ctrl+alt+a",
         "mac": "cmd+alt+a"
@@ -83,6 +85,10 @@
     ],
     "menus": {
       "editor/context": [
+        {
+          "command": "adamite.launch",
+          "group": "2_adamite"
+        },
         {
           "when": "editorHasSelection",
           "command": "adamite.addAnnotation",

@@ -6,6 +6,7 @@ import styles from '../../styles/annotation.module.css';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Button from '@mui/material/Button';
+import { Tooltip } from '@material-ui/core';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 interface Props {
     annotationId: string,
@@ -44,16 +45,18 @@ const AnnotationOperationButtons: React.FC<Props> = ({
         event.stopPropagation();
         setAnchorEl(null);
     };
+    const computedValue: string = getComputedStyle(document.body).getPropertyValue('--vscode-editor-background');
+    const foreground: string = getComputedStyle(document.body).getPropertyValue('--vscode-button-foreground');
     const theme = createTheme({
         palette: {
             primary: {
-                main: '#1e1e1e' 
+                main: `${computedValue}` 
             }
         },
         typography: {
             allVariants: {
                 fontSize: 12,
-                color: 'white',
+                color: `${foreground}`,
                 fontFamily: 'Arial'
             }
         },
@@ -70,9 +73,9 @@ const AnnotationOperationButtons: React.FC<Props> = ({
             MuiMenuItem: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: '#1e1e1e',
+                        backgroundColor: 'var(--vscode-editor-background)',
                         '&:hover': {
-                            background: "#d4d4d44f",
+                            background: "var(--vscode-button-secondaryHoverBackground)",
                         }
                     },
                 }
@@ -80,7 +83,7 @@ const AnnotationOperationButtons: React.FC<Props> = ({
             MuiList: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: '#1e1e1e'
+                        backgroundColor: 'var(--vscode-editor-background)'
                     }
                 }
             }
@@ -92,22 +95,45 @@ const AnnotationOperationButtons: React.FC<Props> = ({
             <div className={styles['AnnotationIconsContainer']}>
                 <div onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); replyToAnnotation(); }} className={styles['DropdownItemOverwrite']}>
                     <div className={styles['DropdownIconsWrapper']}>
-                        <VscComment className={styles['profileMenu']} />
+                        <Tooltip title="Reply">
+                            <div>
+                                <VscComment className={styles['profileMenu']} />
+                            </div>
+                        </Tooltip>
                     </div>
                 </div> 
                 <div onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); exportAnnotationAsComment(); }} className={styles['DropdownItemOverwrite']}>
                     <div className={styles['DropdownIconsWrapper']}>
-                        <VscFileSymlinkFile className={styles['profileMenu']} />
+                        <Tooltip title="Export As Comment">
+                            <div>
+                                <VscFileSymlinkFile className={styles['profileMenu']} />
+                            </div>
+                        </Tooltip>
                     </div>
                 </div>
                 <div onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); pinAnnotation(); }} className={styles['DropdownItemOverwrite']}>
                     <div className={styles['DropdownIconsWrapper']}>
-                        {pinned ? <VscPinned className={styles['profileMenu']} /> : <VscPin className={styles['profileMenu']} /> }
+                        {pinned ?
+                            <Tooltip title="Un-pin">
+                                <div>
+                                    <VscPinned className={styles['profileMenu']} /> 
+                                </div>
+                            </Tooltip> :
+                            <Tooltip title="Pin">
+                                <div>
+                                    <VscPin className={styles['profileMenu']} /> 
+                                </div>
+                            </Tooltip>
+                        }
                     </div>
                 </div>
                 <div onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); addAnchor(); }} className={styles['DropdownItemOverwrite']}>
                     <div className={styles['DropdownIconsWrapper']}>
-                        <BiAnchor className={styles['profileMenu']} />
+                        <Tooltip title="Add Anchor">
+                            <div>
+                                <BiAnchor className={styles['profileMenu']} />
+                            </div>
+                        </Tooltip>
                     </div>
                 </div>
 

@@ -17,6 +17,7 @@ import { user,
 import { initializeAnnotations, handleSaveCloseEvent, saveAnnotations, removeOutOfDateAnnotations, buildAnnotation, sortAnnotationsByLocation, getProjectName, getShikiCodeHighlighting, getAllAnnotationFilenames, createAnchorObject } from '../utils/utils';
 import { addHighlightsToEditor, createAnchorFromRange, createRangeFromAnchorObject, createRangesFromAnnotation, updateAnchorInAnchorObject } from '../anchorFunctions/anchor';
 import { v4 as uuidv4 } from 'uuid';
+// let gitDiff = require('git-diff');
 // import Anchor from '../view/app/components/annotationComponents/anchor';
 
 export const handleAdamiteWebviewLaunch = () : void => {
@@ -26,6 +27,7 @@ export const handleAdamiteWebviewLaunch = () : void => {
     if(vscode.workspace.workspaceFolders)
         view?.updateDisplay(annotationList, currFilename, getProjectName(vscode.window.activeTextEditor?.document.uri.fsPath));
     const annoFiles: string[] = getAllAnnotationFilenames(annotationList);
+    console.log('annoFiles', annoFiles);
     vscode.window.visibleTextEditors.forEach((v: vscode.TextEditor) => {
         if(annoFiles.includes(v.document.uri.toString())) {
             addHighlightsToEditor(annotationList, v); 
@@ -45,16 +47,22 @@ export const handleSnapshotCode = (id: string, anchorId: string) : void => {
         const newSnapshots: Snapshot[] = anno.codeSnapshots ? anno.codeSnapshots.concat([{ 
             createdTimestamp: new Date().getTime(), 
             snapshot: anchor.html,
+            anchorText: anchor.anchorText,
             githubUsername: gitInfo.author,
             comment: "",
+            diff: "",
             id: uuidv4(),
+            anchorId: anchor.anchorId,
             deleted: false
           }]) : [{ 
             createdTimestamp: new Date().getTime(), 
             snapshot: anchor.html,
+            anchorText: anchor.anchorText,
             githubUsername: gitInfo.author,
             comment: "",
+            diff: "",
             id: uuidv4(),
+            anchorId: anchor.anchorId,
             deleted: false
         }];
         console.log('newSnapshots', newSnapshots);
@@ -69,7 +77,7 @@ export const handleAddAnchor = async (id: string) : Promise<void> => {
     if(!currentSelection) {
         currentSelection = vscode.window.visibleTextEditors[0].selection;
     }
-    if(anno && currentSelection) {
+    if(anno && currentSelection && !currentSelection.start.isEqual(currentSelection.end)) {
         const newAnchor: AnchorObject | undefined =  await createAnchorObject(id, new vscode.Range(currentSelection.start, currentSelection.end));
         const newAnno: Annotation = newAnchor ? buildAnnotation({ ...anno, anchors: [...anno.anchors, newAnchor] }) : anno;
         if(!newAnchor) {
@@ -137,7 +145,7 @@ export const handleCreateAnnotation = (annotationContent: string, willBePinned: 
             view?.updateDisplay(annotationList);
             addHighlightsToEditor(annotationList, text);
             if(willBePinned) {
-                setSelectedAnnotationsNavigations([...selectedAnnotationsNavigations, { id: newAnno.id, lastVisited: false } ]);
+                setSelectedAnnotationsNavigations([...selectedAnnotationsNavigations, { id: newAnno.id, lastVisited: false, anchorId: newAnno.anchors[0].anchorId } ]);
             }
         }
     });
@@ -155,7 +163,7 @@ export const handleUpdateAnnotation = (id: string, key: string | string[], value
     if(typeof value === 'boolean' && typeof key === 'string') {
         updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], [key]: value, needToUpdate: true });
         setSelectedAnnotationsNavigations(
-            value ? [...selectedAnnotationsNavigations, { id, lastVisited: false }] : selectedAnnotationsNavigations.filter(a => a.id !== id) 
+            value ? [...selectedAnnotationsNavigations, { id, lastVisited: false, anchorId: annotationList.filter(a => a.id === id)[0].anchors[0].anchorId }] : selectedAnnotationsNavigations.filter(a => a.id !== id) 
         );
     }
     else if(typeof key === 'string') {
@@ -181,6 +189,9 @@ export const handleDeleteAnnotation = (id: string) : void => {
     view?.updateDisplay(annotationList);
     if(visible) {
         addHighlightsToEditor(annotationList, visible);
+    }
+    if(selectedAnnotationsNavigations.map(a => a.id).includes(id)) {
+        setSelectedAnnotationsNavigations(selectedAnnotationsNavigations.filter(n => n.id !== id));
     }
 }
 
@@ -214,4 +225,14 @@ export const handleOnDidChangeViewState = () : void => {
         // for now will do but should find a better solution (may consider switching to having vs code handle the state when 
         // panel is not active)
     user ? view?.reload(gitInfo.author, user.uid) : view?.init();
+}
+
+export const handleSaveAnnotationsToJson = () : void => {
+    if(vscode.workspace.workspaceFolders) {
+        saveAnnotations(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/output.json', true);
+    }
+}
+
+export const handleShowKeyboardShortcuts = () : void => {
+    console.log('todo... not even sure if this is possible');
 }

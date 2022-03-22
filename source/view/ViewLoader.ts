@@ -23,7 +23,7 @@ export default class ViewLoader {
           ]
         }
       );
-
+      this._panel.iconPath = vscode.Uri.file(path.join(extensionPath, 'source/constants/Adamite.png')); 
       this._panel.webview.html = this.getWebviewContent(annotationList);
     }
   }
@@ -105,7 +105,6 @@ export default class ViewLoader {
   }
 
   public updateDisplay(annotationList: Annotation[] | undefined, currentFile: string | undefined = undefined, currentProject: string | undefined = undefined) {
-      console.log('updating display?', annotationList);
       if(this._panel && this._panel.webview) {
         this._panel.webview.postMessage({
           command: 'update',

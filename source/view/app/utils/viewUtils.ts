@@ -43,7 +43,7 @@ const translateAnnotationAnchorStandard = (annoInfo: any) : {[ key: string ] : a
 	}
 }
 
-export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefined) : Annotation => {
+export const buildAnnotation   = (annoInfo: any, range: vscode.Range | undefined = undefined) : Annotation => {
 	let annoObj = null
 	if(annoInfo.hasOwnProperty('anchor') || annoInfo.hasOwnProperty('anchorText')) {
 		annoObj = translateAnnotationAnchorStandard(annoInfo)

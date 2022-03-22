@@ -121,10 +121,13 @@ export interface ChangeEvent {
 export interface Snapshot {
 	createdTimestamp: number,
 	snapshot: string,
+	anchorText: string,
 	githubUsername: string,
 	comment: string,
 	id: string,
+	anchorId: string,
 	deleted: boolean
+	diff: string
 }
 
 export interface Reply {
@@ -134,4 +137,37 @@ export interface Reply {
 	githubUsername: string,
 	id: string,
 	replyContent: string
+}
+
+export const stringToShikiThemes : {[key: string]: string} = {
+	'Default Dark+': 'dark-plus',
+	'Default Light+': 'light-plus',
+	'GitHub Dark Dimmed': 'github-dark-dimmed',
+	'GitHub Dark Default': 'github-dark',
+	'GitHub Dark': 'github-dark',
+	'GitHub Light Default': 'github-light',
+	'GitHub Light': 'github-light',
+	'Light High Contrast': 'hc_light',
+	'Material Theme': 'material-default',
+	'Material Theme Darker': 'material-darker',
+	'Material Theme Lighter': 'material-lighter',
+	'Material Theme Ocean': 'material-ocean',
+	'Material Theme Palenight': 'material-palenight',
+	'Min Dark': 'min-dark',
+	'Min Light': 'min-light',
+	'Monokai': 'monokai',
+	'Nord': 'nord',
+	'One Dark Pro': 'one-dark-pro',
+	'poimandres': 'poimandres',
+	'Rosé Pine': 'rose-pine',
+	'Rosé Pine Moon': 'rose-pine-moon',
+	'Rosé Pine Dawn': 'rose-pine-dawn',
+	'Slack Theme Dark Mode': 'slack-dark',
+	'Slack Theme Ochin': 'slack-ochin',
+	'Solarized Dark': 'solarized-dark',
+	'Solarized Light': 'solarized-light',
+	'Vitesse Dark': 'vitesse-dark',
+	'Vitesse Light': 'vitesse-light',
+	'css': 'css-variables',
+
 }

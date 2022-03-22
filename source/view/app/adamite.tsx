@@ -92,6 +92,21 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
     setShowSearchedAnnotations(annotations.length > 0);
   }
 
+  const saveAnnotationsToJson = () : void => {
+    console.log('saving...');
+    vscode.postMessage({
+      command: 'saveAnnotationsToJson'
+    });
+    return;
+  }
+
+  const showKeyboardShortcuts = () : void => {
+    vscode.postMessage({
+      command: 'showKeyboardShortcuts'
+    });
+    return;
+  }
+
   React.useEffect(() => {
     window.addEventListener('message', handleIncomingMessages);
     window.document.addEventListener('keydown', handleCopyText);
@@ -126,6 +141,8 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
           <TopBar 
             annotations={annotations}
             getSearchedAnnotations={getSearchedAnnotations}
+            saveAnnotationsToJson={saveAnnotationsToJson}
+            showKeyboardShortcuts={showKeyboardShortcuts}
           />
           {showSearchedAnnotations && searchedAnnotations.map(a => {
             return <ReactAnnotation 

@@ -1,7 +1,6 @@
 
 
 .SearchBarContainer {
-    width: 80%;
     display: flex;
     z-index: 1;
     align-items: center;
@@ -13,9 +12,9 @@
     padding-left: 1em;
     padding-right: 1em;
     border: 1px solid transparent;
-    background-color: rgb(60, 60, 60);
-    border-color: rgb(60, 60, 60);
-    color: rgb(204, 204, 204);
+    background-color: var(--vscode-input-background);
+    border-color: var(--vscode-activityBar-activeBorder);
+    color: var(--vscode-input-foreground);
     max-width: 100%;
     font-size: 0.9rem;
     font-family: Arial, Helvetica, sans-serif;
@@ -26,14 +25,16 @@
     position: relative;
     transition: 0.1s all ease-in;
     transition: box-shadow .3s;
-    margin-right: .5em;
     height: 35px;
 }
 
 .TopRow {
     display: flex;
-    justify-items: center;
-    align-items: center;
+    flex-grow: 1;
+}
+
+.TopRowContainer {
+    display: flex;
 }
 
 .inputBox {
@@ -62,7 +63,7 @@ outline:none;
 }
 
 .SearchBarContainer::placeholder {
-color: #777;
+color: rgba(var(--vscode-input-foreground), 0.8);
 opacity: 1;
 -webkit-appearance: searchfield-cancel-button;
 }
@@ -78,3 +79,15 @@ margin: 5px
     cursor: pointer;
     outline-color: transparent !important;
 }
+
+.profileMenu {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+  }
+  
+  .profileMenu:hover {
+    filter: brightness(1.4);
+    transition: opacity .55s ease-in-out;
+    color: white;
+  }

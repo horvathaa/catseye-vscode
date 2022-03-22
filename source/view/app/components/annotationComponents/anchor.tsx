@@ -1,6 +1,7 @@
 import * as React from "react";
 import cn from 'classnames';
 import styles from '../../styles/annotation.module.css';
+import { Tooltip } from '@material-ui/core';
 import { VscChevronUp, VscChevronDown, VscChevronLeft, VscChevronRight, VscDeviceCamera } from 'react-icons/vsc';
 interface SynProps {
     html: string;
@@ -38,20 +39,37 @@ const Anchor: React.FC<Props> = ({ html, anchorId, anchorPreview, visiblePath, s
     const isSingleLineAnchor: boolean = (endLine - startLine) === 0;
     
     const collapseExpandToggle = () :  React.ReactElement<any> => {
-        return collapsed ? <VscChevronDown onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); setCollapsed(!collapsed) }} className={styles['IconContainer']} /> : 
-        <VscChevronUp onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); setCollapsed(!collapsed) }} className={styles['IconContainer']} />
+        return collapsed ?
+            <Tooltip title="Expand Code">
+                <div>
+                    <VscChevronDown onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); setCollapsed(!collapsed) }} className={styles['IconContainer']} /> 
+                </div>
+            </Tooltip> : 
+            <Tooltip title="Collapse Code">
+                <div>
+                    <VscChevronUp onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); setCollapsed(!collapsed) }} className={styles['IconContainer']} />
+                </div>
+            </Tooltip>
     }
 
     const collapseExpandOriginalCode = () : React.ReactElement<any> => {
         return showingOriginalCode ? 
         (
             <div className={styles['arrowBox']}>
-                <VscChevronLeft onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); setShowingOriginalCode(!showingOriginalCode) }} className={styles['IconContainer']} /> 
+                <Tooltip title="Show Current Code">
+                    <div>
+                        <VscChevronLeft onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); setShowingOriginalCode(!showingOriginalCode) }} className={styles['IconContainer']} /> 
+                    </div>
+                </Tooltip>
             </div>
         ) : 
         ( 
             <div className={styles['arrowBox']}>
-                <VscChevronRight onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); setShowingOriginalCode(!showingOriginalCode) }} className={styles['IconContainer']} /> 
+                <Tooltip title="Show Original Code">
+                    <div>
+                        <VscChevronRight onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); setShowingOriginalCode(!showingOriginalCode) }} className={styles['IconContainer']} /> 
+                    </div>
+                </Tooltip>
             </div>
         )
     }
@@ -61,13 +79,15 @@ const Anchor: React.FC<Props> = ({ html, anchorId, anchorPreview, visiblePath, s
         if(!showingOriginalCode) scrollInEditor(anchorId);
     }
 
-
-
     return (
         <div className={styles['AnchorContainer']}>
-            <div onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); snapshotCode(anchorId); }} className={styles['DropdownItemOverwrite']}>
-                <div className={styles['DropdownIconsWrapper']}>
-                    <VscDeviceCamera className={styles['profileMenu']} />
+            <div className={styles['DropdownItemOverwrite']}>
+                <div className={styles['DropdownIconsWrapper']} onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); snapshotCode(anchorId); }}>
+                    <Tooltip title="Snapshot code">
+                        <div>
+                            <VscDeviceCamera className={styles['profileMenu']} />
+                        </div>
+                    </Tooltip>
                 </div>
                 <div className={styles['LocationWrapper']}>
                     <div className={cn({ [styles['LocationContainer']]: true, [styles['multiLine']]: !isSingleLineAnchor })} onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); scrollInEditor(anchorId); }}>
@@ -84,7 +104,6 @@ const Anchor: React.FC<Props> = ({ html, anchorId, anchorPreview, visiblePath, s
                         <Syntax html={originalCode} /> 
                         {collapseExpandOriginalCode()} 
                     </React.Fragment>
-                    
                 ) : (
                     <React.Fragment>
                         <Syntax html={html} anchorPreview={anchorPreview} collapsed={collapsed} /> 

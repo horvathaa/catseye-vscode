@@ -3,6 +3,7 @@ import cn from 'classnames';
 import styles from '../../styles/annotation.module.css';
 import { AnchorObject } from '../../../../constants/constants';
 import { VscChevronUp, VscChevronDown } from 'react-icons/vsc';
+import { Tooltip } from '@material-ui/core';
 import Anchor from './anchor';
 interface Props {
     anchors: AnchorObject[];
@@ -16,11 +17,19 @@ const AnchorList: React.FC<Props> = ({ anchors, snapshotCode, scrollInEditor }) 
     const expandCollapseAnchorList = () => {
         return showingAnchors ? (
           <div className={`${styles['AnchorListButtonContainer']} ${styles['AnchorButtonContainer']}`}>
-            <VscChevronUp className={styles['IconContainer']} onClick={() => setShowingAnchors(false)} /> 
+              <Tooltip title="Collapse Anchors">
+                <div>
+                    <VscChevronUp className={styles['IconContainer']} onClick={() => setShowingAnchors(false)} /> 
+                </div>
+              </Tooltip>
           </div> 
           ) : ( 
           <div className={`${styles['AnchorListButtonContainer']} ${styles['AnchorButtonContainer']}`}>
-            <VscChevronDown className={styles['IconContainer']} onClick={() => setShowingAnchors(true)} /> 
+            <Tooltip title="Expand Anchors">
+                <div>
+                    <VscChevronDown className={styles['IconContainer']} onClick={() => setShowingAnchors(true)} /> 
+                </div>
+            </Tooltip>
           </div>
         );
     }

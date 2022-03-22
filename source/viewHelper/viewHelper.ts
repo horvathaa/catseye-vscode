@@ -226,3 +226,13 @@ export const handleOnDidChangeViewState = () : void => {
         // panel is not active)
     user ? view?.reload(gitInfo.author, user.uid) : view?.init();
 }
+
+export const handleSaveAnnotationsToJson = () : void => {
+    if(vscode.workspace.workspaceFolders) {
+        saveAnnotations(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/output.json', true);
+    }
+}
+
+export const handleShowKeyboardShortcuts = () : void => {
+    console.log('todo... not even sure if this is possible');
+}

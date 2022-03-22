@@ -11,7 +11,7 @@
   border: 0.25px solid rgb(239 255 201 / 20%);
   padding: 4px;
   border-radius: 2px;
-  overflow: inherit;
+  /* overflow: inherit; */
 }
 
 .AnchorListButtonContainer.AnchorButtonContainer {
@@ -322,7 +322,8 @@
     border-width: 0.15em;
     overflow-x: auto;
     /* min-width: fit-content; */
-    border-color: #ffffff8a;
+    /* border-color: #ffffff8a;  */
+    border-color: var(--vscode-editor-foreground);
     /* box-shadow: none; */
 }
 
@@ -353,6 +354,7 @@
   border-radius: 4px;
   overflow: scroll;
   box-shadow: none;
+  border-color: var(--vscode-badge-background);
   transition: all 0.5s ease-in-out;
 }
 

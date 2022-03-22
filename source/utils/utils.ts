@@ -344,7 +344,10 @@ export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[
 	}});
 }
 
-export const saveAnnotations = async (annotationList: Annotation[], filePath: string) : Promise<void> => {
+export const saveAnnotations = async (annotationList: Annotation[], filePath: string, requestedFromUi?: boolean) : Promise<void> => {
+	if(requestedFromUi) {
+		writeToFile(makeObjectListFromAnnotations(annotationList), annotationList, filePath);
+	}
 	if(user) {
 		fbSaveAnnotations(annotationList);
 	}

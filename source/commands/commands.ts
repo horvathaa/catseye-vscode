@@ -31,12 +31,13 @@ export const init = async () => {
 	}
 }
 
-export const createView = (context: vscode.ExtensionContext) => {
+export const createView = async (context: vscode.ExtensionContext) => {
 	if(vscode.workspace.workspaceFolders) {
 		if(view) {
 			view._panel?.reveal();
 			return;
 		}
+
 		const newView : ViewLoader = new ViewLoader(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
 		setView(newView);
 		if(newView) {
@@ -91,6 +92,14 @@ export const createView = (context: vscode.ExtensionContext) => {
 					}
 					case 'cancelAnnotation': {
 						viewHelper.handleCancelAnnotation();
+						break;
+					}
+					case 'saveAnnotationsToJson': {
+						viewHelper.handleSaveAnnotationsToJson();
+						break;
+					}
+					case 'showKeyboardShortcuts': {
+						viewHelper.handleShowKeyboardShortcuts();
 						break;
 					}
 					default: {

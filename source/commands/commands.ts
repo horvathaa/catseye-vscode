@@ -318,7 +318,7 @@ export const addNewHighlight = (selected?: boolean) : string | Promise<string> =
 
 export const addNewSelectedAnnotation = async () : Promise<void> => {
 	const id: string = await addNewHighlight(true);
-	setSelectedAnnotationsNavigations([...selectedAnnotationsNavigations, { id, anchorId: annotationList.find(a => a.id === id)?.anchors[0].anchorId, lastVisited: false}]);
+	if(id !== "") setSelectedAnnotationsNavigations([...selectedAnnotationsNavigations, { id, anchorId: annotationList.find(a => a.id === id)?.anchors[0].anchorId, lastVisited: false}]);
 }
 
 export const navigateSelectedAnnotations = (direction: string) : void => {

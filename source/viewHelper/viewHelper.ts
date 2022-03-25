@@ -1,3 +1,4 @@
+// d
 import * as vscode from 'vscode';
 import firebase from 'firebase';
 import { Annotation, AnchorObject, Reply, Snapshot } from '../constants/constants';
@@ -12,7 +13,9 @@ import { user,
         setTempAnno, 
         annotationDecorations,
         selectedAnnotationsNavigations,
-        setSelectedAnnotationsNavigations
+        setSelectedAnnotationsNavigations,
+        outOfDateAnnotations,
+        deletedAnnotations
 } from '../extension';
 import { initializeAnnotations, handleSaveCloseEvent, saveAnnotations, removeOutOfDateAnnotations, buildAnnotation, sortAnnotationsByLocation, getProjectName, getShikiCodeHighlighting, getAllAnnotationFilenames, createAnchorObject } from '../utils/utils';
 import { addHighlightsToEditor, createAnchorFromRange, createRangeFromAnchorObject, createRangesFromAnnotation, updateAnchorInAnchorObject } from '../anchorFunctions/anchor';
@@ -215,6 +218,7 @@ export const handleSignInWithEmailAndPassword = async (email: string, password: 
 export const handleOnDidDispose = () : void => {
     handleSaveCloseEvent(annotationList);
     setView(undefined);
+    if(tempAnno) setTempAnno(null);
     vscode.window.visibleTextEditors.forEach((v: vscode.TextEditor) => {
         v.setDecorations(annotationDecorations, []);
     });
@@ -229,7 +233,7 @@ export const handleOnDidChangeViewState = () : void => {
 
 export const handleSaveAnnotationsToJson = () : void => {
     if(vscode.workspace.workspaceFolders) {
-        saveAnnotations(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/output.json', true);
+        saveAnnotations(annotationList.concat(outOfDateAnnotations).concat(deletedAnnotations), vscode.workspace.workspaceFolders[0].uri.path + '/output.json', true);
     }
 }
 

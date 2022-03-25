@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import { Annotation } from '../constants/constants';
-import { annotationList, user, gitInfo, activeEditor } from '../extension';
+import { annotationList, user, gitInfo, activeEditor, adamiteLog } from '../extension';
 import { getProjectName } from "../utils/utils";
 export default class ViewLoader {
   public _panel: vscode.WebviewPanel | undefined;
@@ -9,8 +9,10 @@ export default class ViewLoader {
 
   constructor(fileUri: vscode.Uri, extensionPath: string) {
     this._extensionPath = extensionPath;
-
+    adamiteLog.appendLine(`Creating ViewLoader at ${extensionPath}`);
     if (annotationList) {
+      adamiteLog.appendLine(`Creating WebviewPanel`);
+      adamiteLog.appendLine(`localResourceRoots: ${vscode.Uri.file(path.join(extensionPath, "dist"))}`);
       this._panel = vscode.window.createWebviewPanel(
         "adamite",
         "Adamite",
@@ -39,35 +41,40 @@ export default class ViewLoader {
     const username = JSON.stringify(gitInfo.author);
     const currentFile = JSON.stringify(activeEditor?.document.uri.toString());
     const currentProject = JSON.stringify(getProjectName(activeEditor?.document.uri.toString()));
+    console.log('reactAppUri', reactAppUri);
+    let webviewContent = `<!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Config View</title>
 
-    return `<!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Config View</title>
+          <meta http-equiv="Content-Security-Policy"
+                      content="default-src 'none';
+                              img-src https:;
+                              script-src 'unsafe-eval' 'unsafe-inline' vscode-resource:;
+                              style-src vscode-resource: 'unsafe-inline';">
 
-        <meta http-equiv="Content-Security-Policy"
-                    content="default-src 'none';
-                             img-src https:;
-                             script-src 'unsafe-eval' 'unsafe-inline' vscode-resource:;
-                             style-src vscode-resource: 'unsafe-inline';">
+          <script>
+            window.acquireVsCodeApi = acquireVsCodeApi;
+            window.data = ${annotationJson}
+            window.userId = ${userId}
+            window.username = ${username}
+            window.currentFile = ${currentFile}
+            window.currentProject = ${currentProject}
+          </script>
+      </head>
+      <body>
+          <div id="root"></div>
 
-        <script>
-          window.acquireVsCodeApi = acquireVsCodeApi;
-          window.data = ${annotationJson}
-          window.userId = ${userId}
-          window.username = ${username}
-          window.currentFile = ${currentFile}
-          window.currentProject = ${currentProject}
-        </script>
-    </head>
-    <body>
-        <div id="root"></div>
+          <script src="${reactAppUri}"></script>
+      </body>
+    </html>`
 
-        <script src="${reactAppUri}"></script>
-    </body>
-    </html>`;
+    console.log('webviewContent', webviewContent);
+    adamiteLog.appendLine(`Webview content: ${webviewContent}`);
+    
+    return webviewContent;
   }
 
   public init() {

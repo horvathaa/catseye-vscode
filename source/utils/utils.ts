@@ -387,13 +387,9 @@ const writeToFile = async (serializedObjects: { [key: string] : any }[], annotat
 }
 
 export const getGithubUrl = (visiblePath: string, projectName: string, returnStable: boolean) : string => {
-	adamiteLog.appendLine('params = visiblePath: ' + visiblePath + ' projectName: ' + projectName + 'returnStable: ' + returnStable)
-	adamiteLog.appendLine("repo: " + gitInfo[projectName]?.repo);
 	if(!gitInfo[projectName]?.repo || gitInfo[projectName]?.repo === "") return "";
 	const baseUrl: string = gitInfo[projectName].repo.split('.git')[0];
-	adamiteLog.appendLine("baseUrl: " + baseUrl);
 	const endUrl: string = visiblePath.includes('\\') ? visiblePath.split(projectName)[1]?.replace(/\\/g, '/') : visiblePath.split(projectName)[1]; // '\\' : '\/';
-	adamiteLog.appendLine("endUrl: " + endUrl);
 	// console.log('wheehoo', baseUrl + "/tree/" + gitInfo[projectName].commit + endUrl)
 	return gitInfo[projectName].commit === 'localChange' || returnStable ? baseUrl + "/tree/main" + endUrl :  baseUrl + "/tree/" + gitInfo[projectName].commit + endUrl;
 }

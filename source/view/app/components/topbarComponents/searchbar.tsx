@@ -89,7 +89,7 @@ const SearchBar: React.FC<Props> = ({ annotations, getSearchedAnnotations }) => 
                 </div>
             </div>
             {searchedAnnotations.length > 0 && <>
-                {searchedAnnotations.length} results
+                {searchedAnnotations.length === 1 ? `1 result` : `${searchedAnnotations.length} results` }
             </>}
         </div>
     )

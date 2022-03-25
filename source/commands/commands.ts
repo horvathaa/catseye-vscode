@@ -12,7 +12,8 @@ import { gitInfo,
 		setGitInfo, 
 		gitApi,
 		selectedAnnotationsNavigations, 
-		setSelectedAnnotationsNavigations} 
+		setSelectedAnnotationsNavigations,
+		tempAnno} 
 from "../extension";
 import { AnchorObject, Annotation } from '../constants/constants';
 import * as anchor from '../anchorFunctions/anchor';
@@ -24,6 +25,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { initializeAuth } from '../authHelper/authHelper';
 
 export const init = async () => {
+	adamiteLog.appendLine("Calling init");
 	await initializeAuth();
 
 	if(view) {
@@ -34,10 +36,11 @@ export const init = async () => {
 export const createView = async (context: vscode.ExtensionContext) => {
 	if(vscode.workspace.workspaceFolders) {
 		if(view) {
+			adamiteLog.appendLine("Revealing Adamite panel.")
 			view._panel?.reveal();
 			return;
 		}
-
+		adamiteLog.appendLine("Creating new panel");
 		const newView : ViewLoader = new ViewLoader(vscode.workspace.workspaceFolders[0].uri, context.extensionPath);
 		setView(newView);
 		if(newView) {
@@ -120,19 +123,25 @@ export const createView = async (context: vscode.ExtensionContext) => {
 	}
 }
 
-export const createNewAnnotation = () => {
+export const createNewAnnotation = async () => {
     const { activeTextEditor } = vscode.window;
     if (!activeTextEditor) {
         vscode.window.showInformationMessage("No text editor is open!");
         return;
     }
     if(!view) {
-		vscode.commands.executeCommand('adamite.launch');
+		await vscode.commands.executeCommand('adamite.launch');
+		// console.log('creating view');
 	}
 	else if(!view?._panel?.visible) {
 		view?._panel?.reveal(vscode.ViewColumn.Beside);
+		// console.log('revealing view');
 	} 
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
+	if(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi.test(text)) {
+		vscode.window.showInformationMessage("Cannot annotate full script tag!");
+        return;
+	}
 	const newAnnoId: string = uuidv4();
     const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
     utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then((html: string) => {
@@ -179,12 +188,70 @@ export const createNewAnnotation = () => {
     });
 }
 
+export const createFileAnnotation = async (context: vscode.Uri) : Promise<void> => {
+
+	if(!view) {
+		await vscode.commands.executeCommand('adamite.launch');
+		// console.log('creating view');
+	}
+	else if(!view?._panel?.visible) {
+		view?._panel?.reveal(vscode.ViewColumn.Beside);
+		// console.log('revealing view');
+	} 
+	const newAnnoId: string = uuidv4();
+    // const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
+    // utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then((html: string) => {
+	const projectName: string = utils.getProjectName(context.fsPath);
+	const programmingLang: string = context.toString().split('.')[context.toString().split('.').length - 1];
+	const visiblePath: string = vscode.workspace.workspaceFolders ? 
+		utils.getVisiblePath(projectName, context.fsPath) : context.fsPath;
+	const anchorObject: AnchorObject = {
+		anchor: { startLine: 0, endLine: 0, startOffset: 0, endOffset: 0},
+		anchorText: visiblePath,
+		html: visiblePath,
+		filename: context.toString(),
+		gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
+		stableGitUrl: utils.getGithubUrl(visiblePath, projectName, true),
+		anchorPreview: visiblePath,
+		visiblePath,
+		anchorId: uuidv4(),
+		originalCode: visiblePath,
+		parentId: newAnnoId,
+		programmingLang
+	}
+	const temp = {
+		id: newAnnoId,
+		anchors: [anchorObject],
+		annotation: '',
+		deleted: false,
+		outOfDate: false,
+		createdTimestamp: new Date().getTime(),
+		authorId: user?.uid,
+		gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : "",
+		gitBranch: gitInfo[projectName]?.branch ? gitInfo[projectName]?.branch : "",
+		gitCommit: gitInfo[projectName]?.commit ? gitInfo[projectName]?.commit : "localChange",
+		projectName: projectName,
+		githubUsername: gitInfo.author,
+		replies: [],
+		outputs: [],
+		codeSnapshots: [],
+		sharedWith: "private",
+		selected: false,
+		needToUpdate: true
+	};
+	setTempAnno(utils.buildAnnotation(temp));
+	view?.createNewAnno(visiblePath, annotationList);
+    // });
+
+}
+
 export const addNewHighlight = (selected?: boolean) : string | Promise<string> => {
 	const { activeTextEditor } = vscode.window;
     if (!activeTextEditor) {
         vscode.window.showInformationMessage("No text editor is open!");
         return "";
     }
+	
 	if(!view) {
 		vscode.commands.executeCommand('adamite.launch');
 	}
@@ -192,6 +259,10 @@ export const addNewHighlight = (selected?: boolean) : string | Promise<string> =
 		view?._panel?.reveal(vscode.ViewColumn.Beside);
 	}   
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
+	if(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi.test(text)) {
+		vscode.window.showInformationMessage("Cannot annotate full script tag!");
+        return "";
+	}
 	const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
 	const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);
 	// Get the branch and commit 
@@ -247,7 +318,7 @@ export const addNewHighlight = (selected?: boolean) : string | Promise<string> =
 
 export const addNewSelectedAnnotation = async () : Promise<void> => {
 	const id: string = await addNewHighlight(true);
-	setSelectedAnnotationsNavigations([...selectedAnnotationsNavigations, { id, anchorId: annotationList.find(a => a.id === id)?.anchors[0].anchorId, lastVisited: false}]);
+	if(id !== "") setSelectedAnnotationsNavigations([...selectedAnnotationsNavigations, { id, anchorId: annotationList.find(a => a.id === id)?.anchors[0].anchorId, lastVisited: false}]);
 }
 
 export const navigateSelectedAnnotations = (direction: string) : void => {

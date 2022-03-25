@@ -27,7 +27,7 @@ export let user: firebase.User | null = null;
 export let tempAnno: Annotation | null = null;
 export let activeEditor = vscode.window.activeTextEditor;
 export let currentColorTheme: string = vscode.workspace.getConfiguration('workbench', vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri).colorTheme;
-console.log('currentColorTheme', currentColorTheme);
+// console.log('currentColorTheme', currentColorTheme);
 export let adamiteLog = vscode.window.createOutputChannel("Adamite");
 export let changes: ChangeEvent[] = [];
 export let numChangeEventsCompleted = 0;
@@ -119,6 +119,7 @@ export const incrementNumChangeEventsCompleted = () : void => {
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+	adamiteLog.appendLine('Starting activate');
 	// initialize authentication and listeners for annotations
 	commands.init();
 
@@ -143,6 +144,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	let createViewDisposable = vscode.commands.registerCommand('adamite.launch', () => commands.createView(context));
 	let annotateDisposable = vscode.commands.registerCommand('adamite.addAnnotation', () => commands.createNewAnnotation());
+	let annotateFileDisposable = vscode.commands.registerCommand('adamite.addFileAnnotation', (context: any) => commands.createFileAnnotation(context));
 	let highlightDisposable = vscode.commands.registerCommand('adamite.addHighlight', () => commands.addNewHighlight());
 	let selectedDisposable = vscode.commands.registerCommand('adamite.addSelectedAnnotation', () => commands.addNewSelectedAnnotation());
 	let navigateForwardSelectedDisposable = vscode.commands.registerCommand('adamite.navigateForward', () => commands.navigateSelectedAnnotations('forward'));
@@ -175,6 +177,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(createViewDisposable);
 	context.subscriptions.push(annotateDisposable);
+	context.subscriptions.push(annotateFileDisposable);
 	context.subscriptions.push(highlightDisposable);
 	context.subscriptions.push(selectedDisposable);
 	context.subscriptions.push(navigateForwardSelectedDisposable);

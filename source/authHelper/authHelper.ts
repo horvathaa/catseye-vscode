@@ -16,9 +16,10 @@ export const initializeAuth = async () => {
     try {
         session = await vscode.authentication.getSession('github', SCOPES, authSessionOptions);
     } catch (e) {
+        adamiteLog.appendLine("Unable to create VS Code GitHub auth session");
         throw e;
     }
-
+    adamiteLog.appendLine('creating session');
 
     if(session) {
         const { accessToken, account } = session;
@@ -29,13 +30,16 @@ export const initializeAuth = async () => {
             if(process.env.FB_SU_EMAIL && process.env.FB_SU_PASSWORD)
             await fbSignInWithEmailAndPassword(process.env.FB_SU_EMAIL, process.env.FB_SU_PASSWORD);
         } catch(e) {
+            adamiteLog.appendLine('Could not sign in to Firebase with SU');
             console.error(e);
             return;
         }
         try {
             result = await getUserGithubData({ id: id, oauth: accessToken });
+            adamiteLog.appendLine("Got user GitHub Data with Cloud Function");
         } catch(e) {
             console.error(e);
+            adamiteLog.appendLine('Could not get user GitHub data from Firebase');
             await fbSignOut();
             setUser(null);
             return;
@@ -45,18 +49,20 @@ export const initializeAuth = async () => {
     
         try {
             const user = await signInWithGithubCredential(result?.data);
+            adamiteLog.appendLine("Signed in to Firebase with GitHub auth credentials");
             setUser(user);
             setGitInfo(await generateGitMetaData(gitApi));
             user ? await initializeAnnotations(user) : setAnnotationList([]);
             if(user)
             try {
                 operationMessage = await setUserGithubAccount({ uid: user.uid, username: account.label});
-                // console.log(operationMessage?.data);
             }
             catch(e) {
+                adamiteLog.appendLine('Could not set GitHub data');
                 console.error(e);
             }
         } catch(e) {
+            adamiteLog.appendLine('Could not sign in to Firebase with GitHub data');
             console.error(e);
             setUser(null);
         }

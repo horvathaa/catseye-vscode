@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import { Annotation } from '../constants/constants';
-import { annotationList, user, gitInfo, activeEditor } from '../extension';
+import { annotationList, user, gitInfo, activeEditor, adamiteLog } from '../extension';
 import { getProjectName } from "../utils/utils";
 export default class ViewLoader {
   public _panel: vscode.WebviewPanel | undefined;
@@ -9,8 +9,9 @@ export default class ViewLoader {
 
   constructor(fileUri: vscode.Uri, extensionPath: string) {
     this._extensionPath = extensionPath;
-
+    adamiteLog.appendLine(`Creating ViewLoader at ${extensionPath}`);
     if (annotationList) {
+      adamiteLog.appendLine(`Creating WebviewPanel`);
       this._panel = vscode.window.createWebviewPanel(
         "adamite",
         "Adamite",

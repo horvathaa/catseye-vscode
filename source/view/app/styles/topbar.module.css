@@ -26,11 +26,13 @@
     transition: 0.1s all ease-in;
     transition: box-shadow .3s;
     height: 35px;
+    margin-right: 6px;
 }
 
 .TopRow {
     display: flex;
     flex-grow: 1;
+    align-items: center;
 }
 
 .TopRowContainer {

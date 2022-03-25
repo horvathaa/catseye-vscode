@@ -141,8 +141,11 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
             translatedAnnotations = utils.removeOutOfDateAnnotations(
                 translatedAnnotations.map((a: Annotation) => {
                     const [anchorsToTranslate, anchorsNotToTranslate] = utils.partition(a.anchors, (a: AnchorObject) => a.filename === e.document.uri.toString());
-                    const translatedAnchors = utils.removeNulls(anchorsToTranslate.map((a: AnchorObject) => anchor.translateChanges(a, change.range, 
-                        change.text.length, diff, change.rangeLength, e.document, change.text)));
+                    const translate =  anchorsToTranslate.map((a: AnchorObject) => anchor.translateChanges(a, change.range, 
+                        change.text.length, diff, change.rangeLength, e.document, change.text));
+                    const translatedAnchors = utils.removeNulls(
+                       translate
+                    );
                     const needToUpdate = translatedAnchors.some(
                         t => anchorsToTranslate.find((o: AnchorObject) => t.anchorId === o.anchorId) ?
                          utils.objectsEqual(anchorsToTranslate.find((o: AnchorObject) => t.anchorId === o.anchorId).anchor, t.anchor) : true

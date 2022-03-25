@@ -1,4 +1,6 @@
 {
+
+  
   "name": "adamite",
   "displayName": "Adamite",
   "description": "Annotate your code for lightweight commenting, sharing notes with collaborators, and integrating with your web-based annotations!",
@@ -11,7 +13,7 @@
     "url": "https://github.com/horvathaa/adamite-vscode"
   },
   "publisher": "ahorvath",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "engines": {
     "vscode": "^1.57.0"
   },
@@ -20,7 +22,6 @@
   ],
   "icon": "source/constants/Adamite.png",
   "activationEvents": [
-    "onCommand:adamite.launch",
     "onStartupFinished"
   ],
   "main": "./dist/extension.js",
@@ -33,6 +34,10 @@
       {
         "command": "adamite.addAnnotation",
         "title": "Adamite: Create Annotation"
+      },
+      {
+        "command": "adamite.addFileAnnotation",
+        "title": "Adamite: Create File Annotation"
       },
       {
         "command": "adamite.addHighlight",
@@ -102,6 +107,12 @@
         {
           "when": "editorHasSelection",
           "command": "adamite.addSelectedAnnotation",
+          "group": "2_adamite"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "adamite.addFileAnnotation",
           "group": "2_adamite"
         }
       ]

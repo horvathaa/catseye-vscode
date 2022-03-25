@@ -36,7 +36,7 @@ interface Props {
 const Anchor: React.FC<Props> = ({ html, anchorId, anchorPreview, visiblePath, startLine, endLine, scrollInEditor, snapshotCode, originalCode }) => {
     const [collapsed, setCollapsed] = React.useState<boolean>(false);
     const [showingOriginalCode, setShowingOriginalCode] = React.useState<boolean>(false);
-    const isSingleLineAnchor: boolean = (endLine - startLine) === 0;
+    const isSingleLineAnchor: boolean = endLine - startLine === 0;
     
     const collapseExpandToggle = () :  React.ReactElement<any> => {
         return collapsed ?

@@ -138,6 +138,10 @@ export const createNewAnnotation = async () => {
 		// console.log('revealing view');
 	} 
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
+	if(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi.test(text)) {
+		vscode.window.showInformationMessage("Cannot annotate full script tag!");
+        return;
+	}
 	const newAnnoId: string = uuidv4();
     const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
     utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then((html: string) => {
@@ -247,6 +251,7 @@ export const addNewHighlight = (selected?: boolean) : string | Promise<string> =
         vscode.window.showInformationMessage("No text editor is open!");
         return "";
     }
+	
 	if(!view) {
 		vscode.commands.executeCommand('adamite.launch');
 	}
@@ -254,6 +259,10 @@ export const addNewHighlight = (selected?: boolean) : string | Promise<string> =
 		view?._panel?.reveal(vscode.ViewColumn.Beside);
 	}   
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
+	if(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi.test(text)) {
+		vscode.window.showInformationMessage("Cannot annotate full script tag!");
+        return "";
+	}
 	const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
 	const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);
 	// Get the branch and commit 

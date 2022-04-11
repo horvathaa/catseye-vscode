@@ -15,7 +15,7 @@ export default class ViewLoader {
       adamiteLog.appendLine(`localResourceRoots: ${vscode.Uri.file(path.join(extensionPath, "dist"))}`);
       this._panel = vscode.window.createWebviewPanel(
         "adamite",
-        "Adamite",
+        "Catseye",
         vscode.ViewColumn.Beside,
         {
           enableScripts: true,
@@ -25,7 +25,7 @@ export default class ViewLoader {
           ]
         }
       );
-      this._panel.iconPath = vscode.Uri.file(path.join(extensionPath, 'source/constants/Adamite.png')); 
+      // this._panel.iconPath = vscode.Uri.file(path.join(extensionPath, 'source/constants/Adamite.png')); 
       this._panel.webview.html = this.getWebviewContent(annotationList);
     }
   }

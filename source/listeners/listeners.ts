@@ -106,7 +106,7 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
         let rangeAdjustedAnnotations: Annotation[] = [];
         for (const change of e.contentChanges) {
             // console.log("BEGINNING DID CHANGE TEXT")
-            // console.log('change', change);
+            console.log('change', change);
             // if(numChangeEventsCompleted < 3) checkIfPartOfChange(change);
             const startLine = change.range.start.line;
             const endLine = change.range.end.line;

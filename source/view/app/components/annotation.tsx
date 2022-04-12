@@ -220,8 +220,6 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
     setEdit(false);
   }
 
-
-
   return (
       <React.Fragment>
           <div key={'annotation-container'+annotation.id} className={styles['Pad']}  >

@@ -245,7 +245,7 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 	// we have one specific doc we want to highlight
 
 	if(annotationList.length && text && (filenames.includes(text.document.uri.toString()) || githubUrls.includes(textUrl))) {
-		let r: AnchorObject[] = annotationList.flatMap(a => a.anchors);
+		let r: AnchorObject[] = annotationList.flatMap(a => a.anchors).filter(a => a.filename === text.document.uri.toString());
 		let ranges = r
 			.map(a => { return { id: a.parentId, anchorText: a.anchorText, filename: a.filename, range: createRangeFromAnchorObject(a)}})
 			.filter(r => r.filename === text?.document.uri.toString())
@@ -313,7 +313,7 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 			const annoRangeObjs: {[key: string]: any}[] = annotationsInCurrentFile
 				.flatMap((a: Annotation) => { 
 					highlighted.push(a.id);
-					return a.anchors.flatMap(a => { return { id: a.parentId, range: createRangeFromAnchorObject(a) }})
+					return a.anchors.filter(a => a.filename === key).flatMap(a => { return { id: a.parentId, range: createRangeFromAnchorObject(a) }})
 				})
 			filesToHighlight[key] = createDecorationOptions(annoRangeObjs, annotationList);
 		});

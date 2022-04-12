@@ -41,7 +41,6 @@ export default class ViewLoader {
     const username = JSON.stringify(gitInfo.author);
     const currentFile = JSON.stringify(activeEditor?.document.uri.toString());
     const currentProject = JSON.stringify(getProjectName(activeEditor?.document.uri.toString()));
-    console.log('reactAppUri', reactAppUri);
     let webviewContent = `<!DOCTYPE html>
       <html lang="en">
       <head>
@@ -71,7 +70,6 @@ export default class ViewLoader {
       </body>
     </html>`
 
-    console.log('webviewContent', webviewContent);
     adamiteLog.appendLine(`Webview content: ${webviewContent}`);
     
     return webviewContent;

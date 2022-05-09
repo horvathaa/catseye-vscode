@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { Annotation, AnchorObject, Anchor } from '../constants/constants';
-import { buildAnnotation, sortAnnotationsByLocation, getProjectName, getVisiblePath, getGithubUrl, getAnnotationsInFile, getAllAnnotationFilenames, getAnnotationsWithStableGitUrl, getAllAnnotationStableGitUrls, getAnnotationsNotInFile } from '../utils/utils';
+import { sortAnnotationsByLocation, getProjectName, getVisiblePath, getGithubUrl, getAnnotationsInFile, getAllAnnotationFilenames, getAnnotationsWithStableGitUrl, getAllAnnotationStableGitUrls, getAnnotationsNotInFile } from '../utils/utils';
 import { annotationDecorations, setOutOfDateAnnotationList, view, annotationList, setAnnotationList, activeEditor } from '../extension';
 import { userDeletedAnchor, userAutocompletedOrCommented, userChangedTextBeforeStart, userChangedTextBeforeEnd, userChangedLinesBeforeStart, userChangedLinesInMiddle, shrinkOrExpandBackOfRange, shrinkOrExpandFrontOfRange } from './translateChangesHelpers';
 

@@ -61,9 +61,12 @@ export const getAnchorsInRange = (selection: vscode.Selection, annotationList: A
 
 export const getAnchorsInCurrentFile = (annotationList: Annotation[], currentFile?: string) : AnchorObject[] => {
 	const annos: Annotation[] = currentFile ? getAnnotationsInFile(annotationList, currentFile) : annotationList;
-	const anchors: AnchorObject[] = [];
+	if(!currentFile) currentFile = vscode.window.activeTextEditor?.document.uri.toString();
+	console.log(currentFile, annotationList);
+	let anchors: AnchorObject[] = [];
 	annos.forEach(a => {
-		anchors.concat(a.anchors.filter((a: AnchorObject) => a.filename === currentFile));
+		const annoAnchors = a.anchors.filter((a: AnchorObject) => a.filename === currentFile);
+		anchors = anchors.concat(annoAnchors);
 	})
 	return anchors;
 }

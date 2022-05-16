@@ -7,6 +7,7 @@ import { Annotation, ChangeEvent } from './constants/constants';
 import * as commands from './commands/commands';
 import * as eventHandlers from './listeners/listeners';
 import * as utils from './utils/utils';
+import * as debug from './debug/debug';
 import ViewLoader from './view/ViewLoader';
 // console.log('window activeColorTheme', vscode.window.activeColorTheme);
 // console.log('config', vscode.workspace.getConfiguration('workbench', vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri))
@@ -136,7 +137,8 @@ export function activate(context: vscode.ExtensionContext) {
 	let didCloseListenerDisposable = vscode.workspace.onDidCloseTextDocument(eventHandlers.handleDidSaveDidClose)
 	let didChangeTextDocumentDisposable = vscode.workspace.onDidChangeTextDocument(eventHandlers.handleDidChangeTextDocument)
 	
-	// let didStartDebugSessionDisposable = vscode.debug.onDidStartDebugSession(eventHandlers.handleDidStartDebugSession);
+
+	let didStartDebugSessionDisposable = vscode.debug.onDidStartDebugSession(debug.handleOnDidStartDebugSession);
 
 	/*************************************************************************************/
 	/**************************************** COMMANDS ***********************************/
@@ -174,6 +176,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(didSaveListenerDisposable);
 	context.subscriptions.push(didCloseListenerDisposable);
 	context.subscriptions.push(didChangeTextDocumentDisposable);
+	context.subscriptions.push(didStartDebugSessionDisposable);
 
 	context.subscriptions.push(createViewDisposable);
 	context.subscriptions.push(annotateDisposable);

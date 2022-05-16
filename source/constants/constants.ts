@@ -171,3 +171,9 @@ export const stringToShikiThemes : {[key: string]: string} = {
 	'css': 'css-variables',
 
 }
+
+export enum DEBUG_COMMANDS {
+    STACK_TRACE = "stackTrace",
+    CONTINUE = "continue",
+    DISCONNECT = "disconnect",
+}

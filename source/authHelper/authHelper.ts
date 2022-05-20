@@ -1,3 +1,10 @@
+/*
+ * 
+ * authHelper.ts
+ * Functionality to connect the VS Code extension to FireStore using GitHub auth
+ *
+ */
+
 import * as vscode from 'vscode';
 import { gitInfo, gitApi, setAnnotationList, setGitInfo, setUser, adamiteLog } from '../extension';
 import { initializeAnnotations, generateGitMetaData } from '../utils/utils';
@@ -7,6 +14,7 @@ require('dotenv').config({ path: path.resolve(__dirname).includes('\\') ? path.r
 
 const SCOPES = ['read:user', 'user:email', 'repo'];
 
+// Called on VS Code launch
 export const initializeAuth = async () => {
     let session;
     const authSessionOptions: vscode.AuthenticationGetSessionOptions = {
@@ -14,6 +22,7 @@ export const initializeAuth = async () => {
         createIfNone: true
     };
     try {
+        // create VS Code GitHub auth session
         session = await vscode.authentication.getSession('github', SCOPES, authSessionOptions);
     } catch (e) {
         adamiteLog.appendLine("Unable to create VS Code GitHub auth session");
@@ -22,11 +31,13 @@ export const initializeAuth = async () => {
     adamiteLog.appendLine('creating session');
 
     if(session) {
+        // get user auth token and account info
         const { accessToken, account } = session;
         setGitInfo({ ...gitInfo, author: account.label });
         const id = account.id.toString();
         let result, operationMessage;
         try {
+            // use FireStore worker account to sign in so we can make cloud function calls
             if(process.env.FB_SU_EMAIL && process.env.FB_SU_PASSWORD)
             await fbSignInWithEmailAndPassword(process.env.FB_SU_EMAIL, process.env.FB_SU_PASSWORD);
         } catch(e) {
@@ -35,6 +46,7 @@ export const initializeAuth = async () => {
             return;
         }
         try {
+            // using accessToken and user ID, query FireStore for matching user and token
             result = await getUserGithubData({ id: id, oauth: accessToken });
             adamiteLog.appendLine("Got user GitHub Data with Cloud Function");
         } catch(e) {
@@ -45,9 +57,11 @@ export const initializeAuth = async () => {
             return;
         }
         
+        // sign out of super user account
         await fbSignOut();
     
         try {
+            // sign in to FireStore with returned data
             const user = await signInWithGithubCredential(result?.data);
             adamiteLog.appendLine("Signed in to Firebase with GitHub auth credentials");
             setUser(user);

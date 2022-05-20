@@ -1,3 +1,9 @@
+/*
+ * 
+ * ViewLoader.ts
+ * Intermediary class between VS Code's Webview API, our extension, and our bootstrapped React implementation 
+ * For more information, check this Medium article out: https://medium.com/younited-tech-blog/reactception-extending-vs-code-extension-with-webviews-and-react-12be2a5898fd
+ */
 import * as vscode from "vscode";
 import * as path from "path";
 import { Annotation } from '../constants/constants';
@@ -7,6 +13,7 @@ export default class ViewLoader {
   public _panel: vscode.WebviewPanel | undefined;
   private readonly _extensionPath: string;
 
+  // create the webview and point it to our compiled/bundled extension
   constructor(fileUri: vscode.Uri, extensionPath: string) {
     this._extensionPath = extensionPath;
     adamiteLog.appendLine(`Creating ViewLoader at ${extensionPath}`);
@@ -15,7 +22,7 @@ export default class ViewLoader {
       adamiteLog.appendLine(`localResourceRoots: ${vscode.Uri.file(path.join(extensionPath, "dist"))}`);
       this._panel = vscode.window.createWebviewPanel(
         "adamite",
-        "Catseye",
+        "Adamite",
         vscode.ViewColumn.Beside,
         {
           enableScripts: true,
@@ -25,17 +32,19 @@ export default class ViewLoader {
           ]
         }
       );
-      // this._panel.iconPath = vscode.Uri.file(path.join(extensionPath, 'source/constants/Adamite.png')); 
+      this._panel.iconPath = vscode.Uri.file(path.join(extensionPath, 'source/constants/Adamite.png')); 
       this._panel.webview.html = this.getWebviewContent(annotationList);
     }
   }
 
+  // generate our "HTML" which will be used to load our React code
   private getWebviewContent(annotationList: Annotation[]) : string {
     // Local path to main script run in the webview
     const reactAppPathOnDisk = vscode.Uri.file(
       path.join(this._extensionPath, "dist", "configViewer.js")
     );
     const reactAppUri = reactAppPathOnDisk.with({ scheme: "vscode-resource" });
+    // These variables will be passed into the webview
     const annotationJson = JSON.stringify(annotationList);
     const userId = JSON.stringify(user?.uid);
     const username = JSON.stringify(gitInfo.author);
@@ -75,6 +84,8 @@ export default class ViewLoader {
     return webviewContent;
   }
 
+  // methods our extension can call to interface with the webview...
+  
   public init() {
     if(this._panel && this._panel.webview) {
       this._panel.webview.postMessage({

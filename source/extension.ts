@@ -130,7 +130,6 @@ export function activate(context: vscode.ExtensionContext) {
 	
 	let didChangeVisibleListenerDisposable = vscode.window.onDidChangeVisibleTextEditors(eventHandlers.handleChangeVisibleTextEditors);
 	let didChangeActiveEditorListenerDisposable = vscode.window.onDidChangeActiveTextEditor(eventHandlers.handleChangeActiveTextEditor);
-	let didChangeTextEditorSelection = vscode.window.onDidChangeTextEditorSelection(eventHandlers.handleDidChangeTextEditorSelection);
 	let didChangeActiveColorTheme = vscode.window.onDidChangeActiveColorTheme(eventHandlers.handleDidChangeActiveColorTheme);
 
 	let didSaveListenerDisposable = vscode.workspace.onDidSaveTextDocument(eventHandlers.handleDidSaveDidClose);
@@ -171,7 +170,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(didChangeVisibleListenerDisposable);
 	context.subscriptions.push(didChangeActiveEditorListenerDisposable);
-	context.subscriptions.push(didChangeTextEditorSelection);
 	context.subscriptions.push(didChangeActiveColorTheme);
 	context.subscriptions.push(didSaveListenerDisposable);
 	context.subscriptions.push(didCloseListenerDisposable);

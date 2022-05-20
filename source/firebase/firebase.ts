@@ -1,3 +1,11 @@
+/*
+ * 
+ * firebase.ts
+ * Required for init-ing Firebase with our config information
+ * Must have .env.local for this to work locally
+ * 
+ */
+
 import firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/auth';

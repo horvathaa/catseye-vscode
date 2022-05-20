@@ -1,9 +1,15 @@
+/*
+ * 
+ * debug.ts
+ * Allows for hooking into VS Code's debugging infrastructure
+ *
+ */
 import * as vscode from 'vscode';
 import { DebugAdapterFactory } from './debuggerAdapterTrackerFactory';
 import { MessagingService } from './messagingService';
 import { view } from '../extension';
+// https://github.com/microsoft/vscode-python-devicesimulator/blob/274869a67677b4038a6686cdb86123fc7b3094da/src/debugger/debugAdapterFactory.ts
 
-// import { DebugAdapterTrackerFactory } from 'vscode'; // https://github.com/microsoft/vscode-python-devicesimulator/blob/274869a67677b4038a6686cdb86123fc7b3094da/src/debugger/debugAdapterFactory.ts
 export const handleOnDidStartDebugSession = (e: vscode.DebugSession) => {
     const debugAdapterFactory = new DebugAdapterFactory(e, new MessagingService(view?._panel?.webview));
     vscode.debug.registerDebugAdapterTrackerFactory("*", debugAdapterFactory);

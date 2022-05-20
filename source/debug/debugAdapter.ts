@@ -1,6 +1,12 @@
+/*
+ * 
+ * debugAdapter.ts
+ * Handles listening for debug events that we can interpret and support with annotations
+ *
+ */
+
 import { DebugAdapterTracker, DebugConsole, DebugSession, window, debug, SourceBreakpoint } from "vscode";
 import { Location } from 'vscode'
-// import { DebuggerCommunicationService } from "../service/debuggerCommunicationService";
 import { MessagingService } from "./messagingService";
 import { DebugProtocol } from "@vscode/debugprotocol";
 import { annotationList, gitInfo, user } from "../extension";
@@ -10,7 +16,6 @@ import { Annotation, Reply } from '../constants/constants';
 import { handleUpdateAnnotation } from "../viewHelper/viewHelper";
 import { v4 as uuidv4 } from 'uuid';
 import { formatTimestamp } from "../view/app/utils/viewUtils";
-// import { DebugSession } from "@vscode/debugadapter";
 
 export interface AnnoBreakpoint {
     location: Location,
@@ -40,11 +45,10 @@ export class DebugAdapter implements DebugAdapterTracker {
         // this.debugCommunicationService = debugCommunicationService;
     }
     onWillStartSession() {
-        // To Implement
         if(!window.activeTextEditor) {
             return;
         }
-        // else if(window.activeTextEditor) {
+
         const annos: Annotation[] | undefined = window.activeTextEditor && getAllAnnotationsWithAnchorInFile(annotationList, window.activeTextEditor?.document.uri.toString()); 
         if(annos) {
             let breakpoints: SourceBreakpoint[] = [];

@@ -7,7 +7,6 @@ import { annotationList, gitInfo, user } from "../extension";
 import { getAllAnnotationsWithAnchorInFile } from '../utils/utils';
 import { getAnchorsInCurrentFile, createRangeFromAnchorObject } from '../anchorFunctions/anchor';
 import { Annotation, Reply } from '../constants/constants';
-import { createVerify } from "crypto";
 import { handleUpdateAnnotation } from "../viewHelper/viewHelper";
 import { v4 as uuidv4 } from 'uuid';
 import { formatTimestamp } from "../view/app/utils/viewUtils";
@@ -60,11 +59,9 @@ export class DebugAdapter implements DebugAdapterTracker {
                     }
                 ));
             });
-            console.log('b', breakpoints);
             breakpoints.length === this.annoBreakpoints.length && this.annoBreakpoints.forEach((v, i) => {
                 v.breakpointId = breakpoints[i].id;
             });
-            console.log('br', this.annoBreakpoints);
             debug.addBreakpoints(breakpoints);
             
         }
@@ -74,7 +71,6 @@ export class DebugAdapter implements DebugAdapterTracker {
 
     // @override
     onWillReceiveMessage(message: any): void {
-        // console.log('heewoo', message);
         if (message.command) {
             
             // Only send pertinent debug messages
@@ -88,41 +84,27 @@ export class DebugAdapter implements DebugAdapterTracker {
                 case "variables":
                     this.onVariablesRequest(message);
                     break;
-                // case DEBUG_COMMANDS.DISCONNECT:
-                //     // Triggered on stop event for debugger
-                //     if (!message.arguments.restart) {
-                //         this.debugCommunicationService.handleStopEvent();
-                //     }
-                //     break;
             }
         }
     }
 
+    // @override
     onDidSendMessage(message: any) {
-        // console.log('huh', message);
-        // console.log(window.activeTextEditor)
         if (message.command) {
-            
             // Only send pertinent debug messages
             switch ((message as DebugProtocol.Request).command as string) {
                 case "stackTrace":
-                    // this.messagingService.sendStartMessage(message);
-                    console.log('stack trace', message.body);
-                    console.log('locations', this.annoBreakpoints);
                     if(this.annoBreakpoints.length && message.body.stackFrames.length) {
-                        // const objs = this.annoBreakpoints.filter()
                         const files = [ ... new Set(this.annoBreakpoints.map(b => this.cleanPath(b.location.uri.fsPath))) ];
-                        console.log('files', files);
+
                         const possibleMatchingStackFrames: any[] = message.body.stackFrames.filter((sf: any) => files.includes(this.cleanPath(sf.source.path)));
-                        console.log('possible', possibleMatchingStackFrames);
                         if(possibleMatchingStackFrames.length !== 1) return; // later do something smarter here
                         const annoBreakpoint = this.annoBreakpoints.find(b => 
                             (b.location.range.start.line + 1) === possibleMatchingStackFrames[0].line && 
                             this.cleanPath(b.location.uri.fsPath) === this.cleanPath(possibleMatchingStackFrames[0].source.path)
                         );
-                        console.log('ab', annoBreakpoint);
+
                         if(annoBreakpoint && user) {
-                            console.log('found this', annoBreakpoint);
                             const anno = annotationList.find(a => a.id === annoBreakpoint.annoId);
                             const anchor = anno?.anchors.find(a => a.anchorId === annoBreakpoint.anchorId);
                             const autoReply: Reply = {
@@ -141,9 +123,7 @@ export class DebugAdapter implements DebugAdapterTracker {
                     }
                     break;
                 case "variables":
-                    console.log('variables', message.body);
                     const abNeedsUpdating = this.annoBreakpoints.find(b => b.needToUpdate);
-                    console.log('ab', abNeedsUpdating)
                     if(abNeedsUpdating) {
                         const mostRecentVariable = message.body.variables[message.body.variables.length - 1];
                         const output = JSON.stringify(mostRecentVariable);
@@ -152,23 +132,14 @@ export class DebugAdapter implements DebugAdapterTracker {
                             return b.breakpointId === abNeedsUpdating.breakpointId ? { ...abNeedsUpdating, needToUpdate: false } : b
                         });
                     }
-                    // this.messagingService.sendPauseMessage(message);
+
                     break;
-                // case "variables":
-                //     this.onVariablesRequest(message);
-                //     break;
-                // case DEBUG_COMMANDS.DISCONNECT:
-                //     // Triggered on stop event for debugger
-                //     if (!message.arguments.restart) {
-                //         this.debugCommunicationService.handleStopEvent();
-                //     }
-                //     break;
             }
         }
     }
 
     private onVariablesRequest(r: DebugProtocol.VariablesRequest) {
-        // console.log('got em', r);
+        return;
     }
     // A debugger error should unlock the webview
     onError() {

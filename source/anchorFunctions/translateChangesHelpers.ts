@@ -50,9 +50,9 @@ export const userAutocompletedOrCommented = (changeText: string, textLength: num
 
 export const userChangedTextBeforeStart = (newRange: Anchor, originalAnchor: Anchor, changeRange: vscode.Range, isDeleteOperation: boolean, textLength: number, rangeLength: number, anchorOnSameLine: boolean, changeHappenedOnBound: boolean) : Anchor => {
     // console.log('textLength', textLength, 'osl', originalStartOffset, 'rl', rangeLength);
-    console.log('newRange', newRange, 'changeHappenedOnBound', changeHappenedOnBound)
+    // console.log('newRange', newRange, 'changeHappenedOnBound', changeHappenedOnBound)
     const changeRangeOverlapsStart = originalAnchor.startOffset < changeRange.end.character && originalAnchor.startOffset > changeRange.start.character;
-    console.log('changeRangeOverlaps', changeRangeOverlapsStart);
+    // console.log('changeRangeOverlaps', changeRangeOverlapsStart);
     if(changeHappenedOnBound && (!isDeleteOperation || (originalAnchor.startOffset - rangeLength < 0))) {
         newRange.startOffset = originalAnchor.startOffset;
     }
@@ -88,22 +88,22 @@ export const userChangedTextBeforeEnd = (newRange: Anchor, originalAnchor: Ancho
 export const userChangedLinesBeforeStart = (newRange: Anchor, originalAnchor: Anchor, numLines: number) : Anchor => {
     newRange.startLine = originalAnchor.startLine + numLines;
     newRange.endLine = originalAnchor.endLine + numLines;
-    console.log('original Anchor in userchangedlinesbefore', originalAnchor);
+    // console.log('original Anchor in userchangedlinesbefore', originalAnchor);
     return newRange;
 }
 
 export const userChangedLinesInMiddle = (newRange: Anchor, originalAnchor: Anchor, changeRange: vscode.Range, numLines: number, anchorOnSameLine: boolean, anchorText: string, changeText: string, textLength: number, rangeLength: number, originalRange: vscode.Range) : Anchor => { 
     if(!anchorOnSameLine) {
         if(changeRange.start.line === originalAnchor.startLine) {
-            console.log('userChangedLinesInMiddleUpdateStart')
+            // console.log('userChangedLinesInMiddleUpdateStart')
             newRange = userChangedLinesInMiddleUpdateStart(newRange, originalAnchor, changeRange, numLines, anchorOnSameLine, anchorText, changeText, originalRange);
         }
         else if(changeRange.start.line === originalAnchor.endLine && changeRange.start.character >= originalAnchor.endOffset) {
-            console.log('userChangedLinesInMiddleUpdateEndUsingStart');
+            // console.log('userChangedLinesInMiddleUpdateEndUsingStart');
             newRange = userChangedLinesInMiddleUpdateEndUsingStart(newRange, originalAnchor, changeRange, numLines, changeText, anchorText);
         }
         else if(changeRange.end.line === originalAnchor.endLine && originalAnchor.endOffset >= changeRange.end.character) {
-            console.log('userChangedLinesInMiddleUpdateEndUsingEnd');
+            // console.log('userChangedLinesInMiddleUpdateEndUsingEnd');
             newRange = userChangedLinesInMiddleUpdateEndUsingEnd(newRange, changeRange, numLines, anchorText, originalAnchor, changeText, rangeLength);
         } 
         else if(createRangeFromObject(originalAnchor).contains(changeRange)) {
@@ -137,10 +137,10 @@ const userChangedLinesInMiddleUpdateStart = (newRange: Anchor, originalAnchor: A
         newRange.endOffset = newRange.endOffset;
     }
     else if(doesAnchorIncludeNewline) {
-        console.log('anchor includes newline')
+        // console.log('anchor includes newline')
         const didChangeTurnMultilineAnchorIntoOneLine: boolean = (originalAnchor.endLine + numLines) === newRange.startLine; // we have already added/subtracted lines to endLine
         if(didChangeTurnMultilineAnchorIntoOneLine) {
-            console.log('turned multi into 1')
+            // console.log('turned multi into 1')
             newRange.endOffset = changeRange.end.line === originalAnchor.endLine && changeRange.end.character < originalAnchor.endOffset ? changeRange.start.character + originalAnchor.endOffset : changeRange.start.character;
             newRange.endLine = changeRange.start.line;
         }
@@ -152,7 +152,7 @@ const userChangedLinesInMiddleUpdateStart = (newRange: Anchor, originalAnchor: A
     }
     else if(anchorOnSameLine && originalStart <= changeRange.start.character) {
 
-        console.log('anchor on same line', doesChangeTextIncludeNewLine && (originalEnd > changeRange.start.character && originalStart < changeRange.start.character));
+        // console.log('anchor on same line', doesChangeTextIncludeNewLine && (originalEnd > changeRange.start.character && originalStart < changeRange.start.character));
         // console.log('startOffset', newRange.startOffset, 'anchor text length', anchorText.length);
         // console.log('anchorLength', anchorLength, 'anchorText', anchorText);
         // console.log('relevantTextLength', relevantTextLength);
@@ -160,12 +160,12 @@ const userChangedLinesInMiddleUpdateStart = (newRange: Anchor, originalAnchor: A
         newRange.endLine = originalEnd > changeRange.start.character && doesChangeTextIncludeNewLine ? newRange.endLine + numLines : newRange.endLine;
     }
     else if(doesChangeTextIncludeNewLine && doesAnchorIncludeNewline && newRange.endLine === changeRange.start.line) {
-        console.log('update last line')
+        // console.log('update last line')
         const lastStr: string = anchorText.substring(anchorText.lastIndexOf('\n')) + 1;
         newRange.endOffset = lastStr.substring(lastStr.length - changeRange.start.character).length;
     }
     else if(doesChangeTextIncludeNewLine && anchorOnSameLine && changeRange.start.character <= originalStart) {
-        console.log('moving start to new line')
+        // console.log('moving start to new line')
         newRange.startOffset = relevantTextLength + (originalStart - changeRange.start.character);
         newRange.endOffset = newRange.startOffset + anchorLength;
         newRange.endLine = newRange.endLine + numLines;
@@ -203,14 +203,14 @@ const userChangedLinesInMiddleUpdateEndUsingEnd = (newRange: Anchor, changeRange
         const addedTextCount: number = changeText.includes('\n') ? changeText.substring(changeText.lastIndexOf('\n') + 1).length : changeText.length;
         const originalEndOffset: number = originalAnchor.endOffset;
         newRange.endOffset = originalAnchor.endOffset - changeRange.start.character + addedTextCount;
-        console.log('original end offset', originalEndOffset, 'new end offset', newRange.endOffset);
+        // console.log('original end offset', originalEndOffset, 'new end offset', newRange.endOffset);
         if(newRange.startLine === newRange.endLine && originalAnchor.startOffset >= changeRange.start.character) {
             newRange.startLine = originalAnchor.startLine + numLines;
             newRange.startOffset = newRange.endOffset - (originalEndOffset - originalAnchor.startOffset);
         }
     }
     newRange.endLine = originalAnchor.endLine + numLines;
-    console.log('new range', newRange);
+    // console.log('new range', newRange);
     return newRange;
 }
 
@@ -222,7 +222,7 @@ export const shrinkOrExpandBackOfRange = (newRange: Anchor, changeRange: vscode.
         changeRange.end.isAfter(originalRange.end)) {
         newRange.endLine = changeRange.start.line;
         newRange.endOffset = changeRange.start.character;
-        console.log('shirnking back of Range');
+        // console.log('shirnking back of Range');
 // Didn't originally have these checks        
     } else if(numLines && changeText.length && 
         changeRange.start.isAfter(originalRange.start) &&
@@ -232,7 +232,7 @@ export const shrinkOrExpandBackOfRange = (newRange: Anchor, changeRange: vscode.
     {
         newRange.endLine = changeRange.end.line;
         newRange.endOffset = changeRange.end.character;
-        console.log('expanding the range', newRange, changeRange)
+        // console.log('expanding the range', newRange, changeRange)
     } else {
         newRange.endLine = changeRange.start.line;
         newRange.endOffset = changeRange.start.character + newRange.endOffset;

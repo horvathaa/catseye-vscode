@@ -53,10 +53,9 @@ export const initializeAuth = async () => {
             setUser(user);
             setGitInfo(await generateGitMetaData(gitApi));
             user ? await initializeAnnotations(user) : setAnnotationList([]);
-            // user && dropAnnotations(user);
             if(user)
             try {
-                operationMessage = await setUserGithubAccount({ uid: user.uid, username: account.label});
+                operationMessage = await setUserGithubAccount({ uid: user.uid, username: account.label });
             }
             catch(e) {
                 adamiteLog.appendLine('Could not set GitHub data');

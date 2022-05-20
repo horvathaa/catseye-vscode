@@ -93,7 +93,7 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
   }
 
   const saveAnnotationsToJson = () : void => {
-    console.log('saving...');
+    // console.log('saving...');
     vscode.postMessage({
       command: 'saveAnnotationsToJson'
     });

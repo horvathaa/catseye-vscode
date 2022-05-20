@@ -62,7 +62,6 @@ export const getAnchorsInRange = (selection: vscode.Selection, annotationList: A
 export const getAnchorsInCurrentFile = (annotationList: Annotation[], currentFile?: string) : AnchorObject[] => {
 	const annos: Annotation[] = currentFile ? getAnnotationsInFile(annotationList, currentFile) : annotationList;
 	if(!currentFile) currentFile = vscode.window.activeTextEditor?.document.uri.toString();
-	console.log(currentFile, annotationList);
 	let anchors: AnchorObject[] = [];
 	annos.forEach(a => {
 		const annoAnchors = a.anchors.filter((a: AnchorObject) => a.filename === currentFile);
@@ -103,12 +102,12 @@ export const translateChanges = (
 		// console.log('changeRange', changeRange)
 		const isDeleteOperation: boolean = !textLength;
 		if(isDeleteOperation && changeRange.contains(originalRange)) {
-			console.log('userDeletedAnchor');
+			// console.log('userDeletedAnchor');
 			return userDeletedAnchor(anchorObject.parentId, anchorObject.anchorId);
 		}
 
 		if(!isDeleteOperation && changeRange.contains(originalRange)) {
-			console.log('git Operation most likely...');
+			// console.log('git Operation most likely...');
 
 		}
 
@@ -122,40 +121,31 @@ export const translateChanges = (
 		textLength = userAutocompletedOrCommented(changeText, textLength, rangeLength);
 		// user adds/removes text at or before start of anchor on same line (no new lines)
 		if(changeRange.start.character <= originalStartOffset && changeRange.start.line === originalStartLine && !diff) {
-			console.log('userChangedTextBeforeStart');
+			// console.log('userChangedTextBeforeStart');
 			newRange = userChangedTextBeforeStart(newRange, originalAnchor, changeRange, isDeleteOperation, textLength, rangeLength, startAndEndLineAreSameNoNewLine, originalAnchor.startOffset === changeRange.start.character);
 			if(originalAnchor.startOffset === changeRange.start.character) changeOccurredInRange = true;
 		}
 
 		// user adds/removes text at or before the end offset (no new lines)
 		else if(changeRange.end.line === originalEndLine && (changeRange.end.character <= originalEndOffset || changeRange.start.character <= originalEndOffset) && !diff) {
-			console.log('userChangedTextBeforeEnd');
+			// console.log('userChangedTextBeforeEnd');
 			newRange = userChangedTextBeforeEnd(newRange, originalAnchor, isDeleteOperation, textLength, rangeLength, changeRange);
 			changeOccurredInRange = true;
 		}
 
-		// USER ADDED OR REMOVED LINE
-		// console.log('originalAnchorCheck', originalAnchor);
-
 		// user added lines above start of range
 		if (changeRange.start.line < originalStartLine && diff) {
-			console.log('userChangedLinesBeforeStart');
+			// console.log('userChangedLinesBeforeStart');
 			newRange = userChangedLinesBeforeStart(newRange, originalAnchor, diff);
 		}
 
-		// console.log('originalAnchorCheck', originalAnchor);
-		// user adds newline at beginning of anchor
-		// if(originalRange.contains(changeRange)) {
-		// 	newRange.startLine = originalStartLine;
-		// 	newRange.endLine = newRange.endLine + diff;
-		// }
-		// else 
+
 		if((changeRange.start.line === originalStartLine) && 
 			diff && 
 			(changeRange.start.character === originalStartOffset) && 
 			(originalEndLine === originalStartLine)
 		) {
-			console.log('newLineAtStartOffset');
+			// console.log('newLineAtStartOffset');
 			newRange.startLine = changeRange.end.line + diff;
 			newRange.endLine = changeRange.end.line + diff;
 			newRange.startOffset = changeText.substring(changeText.lastIndexOf('\n') + 1).length + (originalStartOffset - changeRange.start.character);
@@ -169,7 +159,7 @@ export const translateChanges = (
 			changeRange.end.isBeforeOrEqual(originalRange.end)
 		) {
 			changeOccurredInRange = true;
-			console.log('userChangedLinesInMiddle');
+			// console.log('userChangedLinesInMiddle');
 			newRange = userChangedLinesInMiddle(newRange, originalAnchor, changeRange, diff, startAndEndLineAreSameNewLine, anchorText, changeText, textLength, rangeLength, originalRange);
 		}
 		else if(changeRange.start.line >= originalStartLine && 
@@ -177,7 +167,7 @@ export const translateChanges = (
 				changeRange.end.line >= originalEndLine && 
 				diff) 
 			{
-			console.log('shrinkOrExpandBackOfRange');
+			// console.log('shrinkOrExpandBackOfRange');
 			newRange = shrinkOrExpandBackOfRange(newRange, changeRange, diff, changeText, anchorText, rangeLength, originalAnchor, originalRange);
 		}
 		else if(changeRange.end.line >= originalStartLine && 
@@ -185,7 +175,7 @@ export const translateChanges = (
 				changeRange.start.line <= originalEndLine && 
 				diff) 
 			{
-			console.log('shrinkOrExpandFrontOfRange');
+			// console.log('shrinkOrExpandFrontOfRange');
 			// just pass in original start and original end here or osomething i dont even wanna deal with changing everything
 			newRange = shrinkOrExpandFrontOfRange(newRange, changeRange, diff, changeText, anchorText, rangeLength, originalStartLine, originalStartOffset);
 		}
@@ -288,7 +278,7 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 				text.setDecorations(annotationDecorations, decorationOptions);
 			}
 			catch (error) {
-				console.log('couldnt highlight', error);
+				console.error('Couldn\'t highlight: ', error);
 			}
 			if(invalidRanges.length) {
 				const invalidIds: string[] = invalidRanges.map(r => r.id);
@@ -297,7 +287,6 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 				setOutOfDateAnnotationList(ood);
 			}
 			if(vscode.workspace.workspaceFolders) {
-				// console.log('hi', newAnnotationList);
 				view?.updateDisplay(newAnnotationList);
 			}
 			

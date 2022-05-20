@@ -1,10 +1,6 @@
 import { Webview } from "vscode";
-
-// import { VSCODE_MESSAGES_TO_WEBVIEW } from "../view/constants";
-// import { DeviceSelectionService } from "./deviceSelectionService";
 export class MessagingService {
     private currentWebviewTarget: Webview | undefined;
-    // private deviceSelectionService: DeviceSelectionService;
 
     constructor(currentWebviewTarget: Webview | undefined) {
         this.currentWebviewTarget = currentWebviewTarget;
@@ -13,26 +9,19 @@ export class MessagingService {
         this.currentWebviewTarget = webview;
     }
 
-    // Send a message to webview if it exists
+    // Send a message to webview if it exists - refactor into our message sending protocol
     public sendMessageToWebview(command: string, stateToSend: Object) {
         if (this.currentWebviewTarget) {
             this.currentWebviewTarget.postMessage({
                 command,
-                // active_device: this.deviceSelectionService.getCurrentActiveDevice(),
                 state: { ...stateToSend },
             });
         }
     }
     public sendStartMessage(e: any) {
-        console.log('e - send start', e)
-        // this.currentWebviewTarget?.postMessage({
-        //     command: VSCODE_MESSAGES_TO_WEBVIEW.RUN_DEVICE,
-        // });
+        return;
     }
     public sendPauseMessage(e: any) {
-        console.log('e - send pause', e);
-        // this.currentWebviewTarget?.postMessage({
-        //     command: VSCODE_MESSAGES_TO_WEBVIEW.PAUSE_DEVICE,
-        // });
+        return;
     }
 }

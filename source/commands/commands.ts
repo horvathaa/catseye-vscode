@@ -322,8 +322,6 @@ export const addNewSelectedAnnotation = async () : Promise<void> => {
 }
 
 export const navigateSelectedAnnotations = (direction: string) : void => {
-	// addNewHighlight(true);
-	console.log('selectedAnnotationsNavigations', selectedAnnotationsNavigations);
 	let lastVisited: number = selectedAnnotationsNavigations.findIndex(a => a.lastVisited);
 	if(lastVisited === -1) {
 		const id: string = selectedAnnotationsNavigations[0].id;
@@ -368,21 +366,9 @@ export const navigateSelectedAnnotations = (direction: string) : void => {
 		}
 		viewHelper.handleScrollInEditor(id, anchorId);
 	}
-	// const newIdx: number = direction === 'forward' ? 
-	// 					lastVisited + 1 < selectedAnnotationsNavigations.length ? 
-	// 					lastVisited + 1 : 
-	// 					0 :
-	// 					lastVisited - 1 >= 0 ?
-	// 					lastVisited - 1 :
-	// 					selectedAnnotationsNavigations.length - 1;
-	// // console.log('newIdx', newIdx);
-	// const id: string = selectedAnnotationsNavigations[newIdx].id;
-	
 
-	// selectedAnnotationsNavigations[lastVisited].lastVisited = false;
-	// selectedAnnotationsNavigations[newIdx].lastVisited = true;
 }
-// anchor.addHighlightsToEditor(annotationList, textEdit);
+
 export const showAnnoInWebview = (id: string) => {
 	if(view?._panel?.visible) {
 		view?.scrollToAnnotation(id);

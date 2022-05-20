@@ -60,3 +60,20 @@ export const signInWithGithubCredential = async (oauth: string) : Promise<fireba
     const { user } = await firebase.auth().signInWithCredential(credential);
 	return user;
 }
+
+export const dropAnnotations = async (user: firebase.User) => {
+	const db: firebase.firestore.Firestore = firebase.firestore();
+	const annotationsRef: firebase.firestore.CollectionReference = db.collection(DB_COLLECTIONS.VSCODE_ANNOTATIONS);
+	const docs: firebase.firestore.QuerySnapshot = await annotationsRef
+														.where('authorId', '==', user.uid)
+														.where('deleted', '==', false)
+														.where('outOfDate', '==', false)
+														.where('projectName', '==', 'task-repo')
+														.get();
+	docs.forEach(d => {
+		console.log('d', d);
+		d.ref.update({ deleted: true });
+	});
+
+	return;
+} 

@@ -15,7 +15,7 @@ export default class ViewLoader {
       adamiteLog.appendLine(`localResourceRoots: ${vscode.Uri.file(path.join(extensionPath, "dist"))}`);
       this._panel = vscode.window.createWebviewPanel(
         "adamite",
-        "Adamite",
+        "Catseye",
         vscode.ViewColumn.Beside,
         {
           enableScripts: true,
@@ -25,7 +25,7 @@ export default class ViewLoader {
           ]
         }
       );
-      this._panel.iconPath = vscode.Uri.file(path.join(extensionPath, 'source/constants/Adamite.png')); 
+      // this._panel.iconPath = vscode.Uri.file(path.join(extensionPath, 'source/constants/Adamite.png')); 
       this._panel.webview.html = this.getWebviewContent(annotationList);
     }
   }
@@ -41,7 +41,6 @@ export default class ViewLoader {
     const username = JSON.stringify(gitInfo.author);
     const currentFile = JSON.stringify(activeEditor?.document.uri.toString());
     const currentProject = JSON.stringify(getProjectName(activeEditor?.document.uri.toString()));
-    console.log('reactAppUri', reactAppUri);
     let webviewContent = `<!DOCTYPE html>
       <html lang="en">
       <head>
@@ -71,7 +70,6 @@ export default class ViewLoader {
       </body>
     </html>`
 
-    console.log('webviewContent', webviewContent);
     adamiteLog.appendLine(`Webview content: ${webviewContent}`);
     
     return webviewContent;

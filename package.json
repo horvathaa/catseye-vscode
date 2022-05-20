@@ -3,7 +3,7 @@
   
   "name": "adamite",
   "displayName": "Adamite",
-  "description": "Annotate your code for lightweight commenting, sharing notes with collaborators, and integrating with your web-based annotations!",
+  "description": "Annotate your code for lightweight information tracking, and for sharing notes with collaborators!",
   "author": {
     "name": "Amber Horvath",
     "email": "ahorvath@andrew.cmu.edu"
@@ -144,6 +144,8 @@
     "@types/vscode": "^1.57.0",
     "@typescript-eslint/eslint-plugin": "^4.26.0",
     "@typescript-eslint/parser": "^4.26.0",
+    "@vscode/debugadapter": "^1.55.1",
+    "@vscode/debugprotocol": "^1.55.1",
     "eslint": "^7.27.0",
     "glob": "^7.1.7",
     "mocha": "^8.4.0",

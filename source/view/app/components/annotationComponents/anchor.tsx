@@ -104,14 +104,15 @@ const Anchor: React.FC<Props> = ({ html, anchorId, anchorPreview, visiblePath, s
                         <Syntax html={originalCode} /> 
                         {collapseExpandOriginalCode()} 
                     </React.Fragment>
-                ) : (
-                    <React.Fragment>
-                        <Syntax html={html} anchorPreview={anchorPreview} collapsed={collapsed} /> 
-                        {collapseExpandOriginalCode()} 
-                    </React.Fragment>
-                )
+                ) 
+                : (
+                        <React.Fragment>
+                            <Syntax html={html} anchorPreview={anchorPreview} collapsed={collapsed} /> 
+                            {collapseExpandOriginalCode()} 
+                        </React.Fragment>
+                    )
                 
-            }
+                }
             </div>
             
         </div>

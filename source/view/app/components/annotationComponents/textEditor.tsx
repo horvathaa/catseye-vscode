@@ -64,6 +64,12 @@ const TextEditor: React.FC<Props> = ({ content, submissionHandler, cancelHandler
         }
     }
 
+    const handleEnter = (e: React.KeyboardEvent) : void => {
+        if((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            submissionHandler(text, "private", willBePinned);
+        }
+    }
+
     const handleSubmission = (shareWith: string) => {
         if(text.hasOwnProperty('comment')) {
             cancelHandler();
@@ -78,6 +84,7 @@ const TextEditor: React.FC<Props> = ({ content, submissionHandler, cancelHandler
                 autoFocus
                 value={typeof text === 'string' ? text : text.hasOwnProperty('replyContent') ? text.replyContent : text.hasOwnProperty('comment') ? text.comment : ""} 
                 onChange={updateAnnotationContent}
+                onKeyDown={handleEnter}
                 onClick={(e: React.SyntheticEvent) => e.stopPropagation()}
             />
             <div className={styles['bottomRow']}>

@@ -30,7 +30,7 @@ export const handleAdamiteWebviewLaunch = () : void => {
     if(vscode.workspace.workspaceFolders)
         view?.updateDisplay(annotationList, currFilename, getProjectName(vscode.window.activeTextEditor?.document.uri.fsPath));
     const annoFiles: string[] = getAllAnnotationFilenames(annotationList);
-    console.log('annoFiles', annoFiles);
+    // console.log('annoFiles', annoFiles);
     vscode.window.visibleTextEditors.forEach((v: vscode.TextEditor) => {
         if(annoFiles.includes(v.document.uri.toString())) {
             addHighlightsToEditor(annotationList, v); 
@@ -68,7 +68,7 @@ export const handleSnapshotCode = (id: string, anchorId: string) : void => {
             anchorId: anchor.anchorId,
             deleted: false
         }];
-        console.log('newSnapshots', newSnapshots);
+
         const newAnno: Annotation = buildAnnotation({ ...anno, codeSnapshots: newSnapshots, needToUpdate: true });
         setAnnotationList(annotationList.filter(anno => anno.id !== id).concat([newAnno]));
     }
@@ -238,5 +238,5 @@ export const handleSaveAnnotationsToJson = () : void => {
 }
 
 export const handleShowKeyboardShortcuts = () : void => {
-    console.log('todo... not even sure if this is possible');
+    return;
 }

@@ -314,7 +314,7 @@ export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[
 			// visiblePath: a.visiblePath ? a.visiblePath : "",
 			// anchorText: a.anchorText ? a.anchorText : "",
 			annotation: a.annotation ? a.annotation : "",
-			anchors: a.anchors ? a.anchors : [{ }],
+			anchors: a.anchors ? a.anchors : [],
 			// anchor: {
 			// 	startLine: a.startLine ? a.startLine : 0,
 			// 	endLine: a.endLine ? a.endLine : 0,

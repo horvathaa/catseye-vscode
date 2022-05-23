@@ -1,3 +1,9 @@
+/*
+ *
+ * muiSplitButton.tsx
+ * Split button used when creating a new annotation.
+ *
+ */
 import * as React from 'react';
 import Button from '@mui/material/Button';
 import ButtonGroup from '@mui/material/ButtonGroup';

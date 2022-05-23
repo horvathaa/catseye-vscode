@@ -1,3 +1,9 @@
+/*
+ * 
+ * searchbar.tsx
+ * Component that Handles finding annotations that match a user's given query.
+ *
+ */
 import * as React from 'react';
 import { Annotation, Reply } from '../../../../constants/constants';
 import { BiSearch } from 'react-icons/bi';
@@ -17,15 +23,11 @@ const SearchBar: React.FC<Props> = ({ annotations, getSearchedAnnotations }) => 
     // const link = ['url']
 
     const onChange = (value: string) => {
-        // now, with the filtered array of rows, we can send this back to dashboard and it can send these annotations to the card view
-        // or to the table view
+        // now, with the filtered array of annotations
         // this solution is adapted from here: https://stackoverflow.com/questions/8517089/js-search-in-object-values
         const filtered: Annotation[] = annotations ? annotations.filter((anno) => {
-            // const links = anno.anchors.map(a => a.visiblePath);
-            // row.values are the annotation properties that we search on 
-            // including author, childAnchor, content, createdTimestamp, id, type, and url
-            // for making this approach work with both card view and table view, we could abstract
-            // this into a list of properties to search on and access the values within the annotation object
+            //  we search on 
+            // including author, anchors, annotation, createdTimestamp, file path, and replies
             return Object.keys(anno).some(function (key) {
                 if (fields.includes(key)) {
                     return anno['annotation'] !== undefined ? anno['annotation'].toLowerCase().includes(value.toLowerCase()) : false

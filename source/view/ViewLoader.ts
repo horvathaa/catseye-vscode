@@ -3,6 +3,7 @@
  * ViewLoader.ts
  * Intermediary class between VS Code's Webview API, our extension, and our bootstrapped React implementation 
  * For more information, check this Medium article out: https://medium.com/younited-tech-blog/reactception-extending-vs-code-extension-with-webviews-and-react-12be2a5898fd
+ *
  */
 import * as vscode from "vscode";
 import * as path from "path";
@@ -85,6 +86,7 @@ export default class ViewLoader {
   }
 
   // methods our extension can call to interface with the webview...
+  // example usage: view.init() --> will create webview
   
   public init() {
     if(this._panel && this._panel.webview) {

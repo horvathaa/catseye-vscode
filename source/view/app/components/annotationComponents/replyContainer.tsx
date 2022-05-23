@@ -1,7 +1,14 @@
+/*
+ *
+ * replyContainer.tsx
+ * Component which contains all reply-related content, including textEditor to create a new reply,
+ * and the list of replies the user has already made
+ *
+ */
 import * as React from 'react';
-import { Reply as ReactReply } from './reply';
+import { Reply as ReactReply } from './reply'; // reply component
 import { collapseExpandToggle } from '../../utils/viewUtilsTsx';
-import { Reply } from '../../../../constants/constants';
+import { Reply } from '../../../../constants/constants'; // reply data model
 
 interface Props {
     replying: boolean;

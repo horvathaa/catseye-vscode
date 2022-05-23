@@ -1,3 +1,9 @@
+/*
+ *
+ * authorOperationButtons.tsx
+ * Component which contains buttons an annotation author can see on their annotation to edit or delete the annotation.
+ *
+ */
 import * as React from 'react';
 import { AiOutlineEdit } from 'react-icons/ai';
 import { BsTrash } from 'react-icons/bs';
@@ -7,7 +13,7 @@ import { Tooltip } from '@material-ui/core';
 interface Props {
     editAnnotation: () => void
     deleteAnnotation: (e: React.SyntheticEvent) => void
-  }
+}
   
 const AuthorOperationButtons: React.FC<Props> = ({ editAnnotation = () => {}, deleteAnnotation = () => {} }) => {
     return (

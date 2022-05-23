@@ -1,3 +1,9 @@
+/*
+ * 
+ * textEditor.tsx
+ * Basic text editor component used for creating and editing annotation contents, along with replies and snapshots.
+ * Split button is used for annotation creation support, while regular "submit" button is used for replies and snapshots.
+ */
 import * as React from "react";
 import SplitButton from './muiSplitButton';
 import styles from '../../styles/annotation.module.css';
@@ -18,11 +24,6 @@ const TextEditor: React.FC<Props> = ({ content, submissionHandler, cancelHandler
     const [willBePinned, setWillBePinned] = React.useState<boolean>(false);
 
     const theme = createTheme({
-        // palette: {
-        //     primary: {
-        //         main: '#1e1e1e' 
-        //     }
-        // },
         typography: {
             allVariants: {
                 fontSize: 12,

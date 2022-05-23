@@ -1,8 +1,17 @@
+/*
+ * 
+ * index.tsx
+ * Main file that actually defines and renders the Adamite webview panel.
+ * Note in webpack.config.js that this is the file pointed at for entry into the extension.
+ *
+ */
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import AdamitePanel from "./adamite";
 import { Annotation } from '../../constants/constants';
+
 declare global {
+  // data that we want to pass from the extension into the webview
   interface Window {
     acquireVsCodeApi(): any;
     data: Annotation[];
@@ -18,6 +27,7 @@ declare global {
 
 const vscode = window.acquireVsCodeApi();
 
+// methods to recreate/re-render the webview
 window.addEventListener('message', event => {
   const message = event.data;
   if(message.command === 'init') {
@@ -35,6 +45,7 @@ window.addEventListener('message', event => {
   }
 });
 
+// render the panel
 ReactDOM.render(
   <AdamitePanel vscode={vscode} window={window} showLogIn={false}  />,
   document.getElementById("root")

@@ -1,3 +1,9 @@
+/*
+ * 
+ * annotation.tsx
+ * Main annotation component and associated functionality/listeners.
+ * Components the annotation renders are in annotationComponents/
+ */
 import * as React from "react";
 import cn from 'classnames';
 import { buildAnnotation } from '../utils/viewUtils';
@@ -40,11 +46,6 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
           }
         }
         break;
-      // case 'addTerminalMessage':
-      //   if(anno.selected) {
-      //     updateOutputs(message.payload.content);
-      //   }
-      //   break;
     }
   }
 
@@ -56,11 +57,9 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
   }, []);
 
   React.useEffect(() => {
-    // if(JSON.stringify(anno) !== JSON.stringify(annotation)) {
       const newAnno: Annotation = buildAnnotation(annotation);
       setAnno(newAnno);
       annoRef.current = newAnno;
-    // }
   }, [annotation]);
 
   const scrollInEditor = (id: string) : void => {
@@ -92,10 +91,6 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
       command: 'addAnchor',
       annoId: anno.id
     });
-  }
-
-  const cancelAnnotation = () : void => {
-    setEdit(false);
   }
 
   const deleteAnnotation = (e: React.SyntheticEvent) : void => {
@@ -220,6 +215,10 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
     setEdit(false);
   }
 
+  const cancelAnnotation = () : void => {
+    setEdit(false);
+  }
+
   return (
       <React.Fragment>
           <div key={'annotation-container'+annotation.id} className={styles['Pad']}  >
@@ -277,7 +276,6 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
                   cancelReply={() => setReplying(false)}
                   deleteReply={deleteReply}
                 />
-                  
               </li>
             </div>
       </React.Fragment>

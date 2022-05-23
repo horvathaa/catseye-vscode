@@ -1,4 +1,10 @@
-// d
+/*
+ *
+ * viewHelper.ts
+ * Functions for handling when something happens in the adamite webview panel.
+ * These are called in commands.ts in the listener we create when we create ViewLoader.
+ *
+ */
 import * as vscode from 'vscode';
 import firebase from 'firebase';
 import { Annotation, AnchorObject, Reply, Snapshot } from '../constants/constants';
@@ -20,9 +26,8 @@ import { user,
 import { initializeAnnotations, handleSaveCloseEvent, saveAnnotations, removeOutOfDateAnnotations, buildAnnotation, sortAnnotationsByLocation, getProjectName, getShikiCodeHighlighting, getAllAnnotationFilenames, createAnchorObject } from '../utils/utils';
 import { addHighlightsToEditor, createAnchorFromRange, createRangeFromAnchorObject, createRangesFromAnnotation, updateAnchorInAnchorObject } from '../anchorFunctions/anchor';
 import { v4 as uuidv4 } from 'uuid';
-// let gitDiff = require('git-diff');
-// import Anchor from '../view/app/components/annotationComponents/anchor';
 
+// Opens and reloads the webview -- this is invoked when the user uses the "Adamite: Launch Adamite" command (ctrl/cmd + shift + A).
 export const handleAdamiteWebviewLaunch = () : void => {
     const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
     view?._panel?.reveal();
@@ -30,7 +35,6 @@ export const handleAdamiteWebviewLaunch = () : void => {
     if(vscode.workspace.workspaceFolders)
         view?.updateDisplay(annotationList, currFilename, getProjectName(vscode.window.activeTextEditor?.document.uri.fsPath));
     const annoFiles: string[] = getAllAnnotationFilenames(annotationList);
-    // console.log('annoFiles', annoFiles);
     vscode.window.visibleTextEditors.forEach((v: vscode.TextEditor) => {
         if(annoFiles.includes(v.document.uri.toString())) {
             addHighlightsToEditor(annotationList, v); 
@@ -38,11 +42,13 @@ export const handleAdamiteWebviewLaunch = () : void => {
     });
 }
 
+// Called when the user copies text from the Adamite panel
 export const handleCopyText = (text: string) : void => {
     vscode.env.clipboard.writeText(text);
 	setStoredCopyText(text);
 }
 
+// Update the annotation with a new snapshot of code on the extension side
 export const handleSnapshotCode = (id: string, anchorId: string) : void => {
     const anno: Annotation | undefined = annotationList.find(anno => anno.id === id);
     const anchor: AnchorObject | undefined = anno?.anchors.find(a => a.anchorId === anchorId);
@@ -74,10 +80,15 @@ export const handleSnapshotCode = (id: string, anchorId: string) : void => {
     }
 }
 
+// Add a new anchor to the annotation by looking at what is currently selected in the editor
+// then creating a new anchor object and appending that to the annotation  
 export const handleAddAnchor = async (id: string) : Promise<void> => {
     const anno: Annotation | undefined = annotationList.find(anno => anno.id === id);
     let currentSelection: vscode.Selection | undefined = vscode.window.activeTextEditor?.selection;
-    if(!currentSelection) {
+    // if we couldn't get a selection using activeTextEditor, try using first visibleTextEditor (which is usually the same as activeTextEditor)
+    // have to do this because sometimes selecting the webview in order to click the "add anchor" button
+    // takes away focus from the user's editor in which they selected text to add as an anchor
+    if(!currentSelection) { 
         currentSelection = vscode.window.visibleTextEditors[0].selection;
     }
     if(anno && currentSelection && !currentSelection.start.isEqual(currentSelection.end)) {
@@ -89,7 +100,6 @@ export const handleAddAnchor = async (id: string) : Promise<void> => {
         setAnnotationList(annotationList.filter(anno => anno.id !== id).concat([newAnno]));
         const textEditorToHighlight: vscode.TextEditor = vscode.window.activeTextEditor ? vscode.window.activeTextEditor : vscode.window.visibleTextEditors[0];
         if(newAnchor && textEditorToHighlight) addHighlightsToEditor(annotationList, textEditorToHighlight)
-        // const anchor: AnchorObject = createAnchorFromRange(new vscode.Range(currentSelection.start, currentSelection.end));
     }
     else if(anno) {
         vscode.window.showInformationMessage('Select the code you want to add as an anchor!');
@@ -97,6 +107,7 @@ export const handleAddAnchor = async (id: string) : Promise<void> => {
     }
 }
 
+// Navigate to the selected anchor's location
 export const handleScrollInEditor = (id: string, anchorId: string) : void => {
     const anno: Annotation | undefined = annotationList.find(anno => anno.id === id);
     const anchorObj: AnchorObject | undefined = anno?.anchors.find(a => a.anchorId === anchorId);
@@ -115,6 +126,8 @@ export const handleScrollInEditor = (id: string, anchorId: string) : void => {
     }
 }
 
+// Export annotation content above first anchor by inserting a new line and appending the content of the annotation
+// then running VS Code's "comment" command in order to turn the text into a code comment
 export const handleExportAnnotationAsComment = async (annoId: string) : Promise<void> => {
     const anno: Annotation = annotationList.filter(a => a.id === annoId)[0];
     if(!anno) return;
@@ -133,6 +146,8 @@ export const handleExportAnnotationAsComment = async (annoId: string) : Promise<
     if(didInsert) vscode.commands.executeCommand('editor.action.commentLine')
 }
 
+// Takes the temporary annotation created in commands -> createAnnotation and finishes it with
+// the content the user added and whether or not the annotation will be pinned
 export const handleCreateAnnotation = (annotationContent: string, willBePinned: boolean) : void => {
     if(!tempAnno) return;
     getShikiCodeHighlighting(tempAnno.anchors[0].filename.toString(), tempAnno.anchors[0].anchorText).then(html => {
@@ -154,6 +169,10 @@ export const handleCreateAnnotation = (annotationContent: string, willBePinned: 
     });
 }
 
+// Generic function called when the user has either added content to their annotation or edited it
+// the key is the field of the annotation model we want to update and value is what we will put in
+// that field. When key is an array of strings, the user has edited their annotation so we update the annotation
+// content and the sharing setting.
 export const handleUpdateAnnotation = (id: string, key: string | string[], value: any) : void => {
     if(key === 'replies' || key === 'codeSnapshots') {
         value.forEach((obj: Reply | Snapshot) => {
@@ -182,13 +201,23 @@ export const handleUpdateAnnotation = (id: string, key: string | string[], value
     view?.updateDisplay(updatedList);
 }
 
+// Removes the annotation from the list, updates the annotation list in the webview, and removes the corresponding highlight
 export const handleDeleteAnnotation = (id: string) : void => {
     const updatedAnno = buildAnnotation({ ...annotationList.filter(a => a.id === id)[0], deleted: true, needToUpdate: true });
     const updatedList = annotationList.filter(a => a.id !== id).concat([updatedAnno]);
     saveAnnotations(updatedList, ""); // bad - that should point to JSON but we are also not using that rn so whatever
     const annotationFiles: string[] = getAllAnnotationFilenames([updatedAnno]);
     const visible : vscode.TextEditor = vscode.window.visibleTextEditors.filter((v: vscode.TextEditor) => annotationFiles.includes(v.document.uri.toString()))[0];
-    visible ? setAnnotationList(sortAnnotationsByLocation(removeOutOfDateAnnotations(updatedList), visible?.document.uri.toString())) : setAnnotationList(removeOutOfDateAnnotations(updatedList));
+    visible ? 
+        setAnnotationList(
+            sortAnnotationsByLocation(
+                removeOutOfDateAnnotations(updatedList), 
+                visible?.document.uri.toString()
+            )
+        ) : 
+        setAnnotationList(
+            removeOutOfDateAnnotations(updatedList)
+        );
     view?.updateDisplay(annotationList);
     if(visible) {
         addHighlightsToEditor(annotationList, visible);
@@ -198,12 +227,16 @@ export const handleDeleteAnnotation = (id: string) : void => {
     }
 }
 
+// called when user decides not to create the annotation the started making
 export const handleCancelAnnotation = () : void => {
     // reset temp object and re-render
     setTempAnno(null);
     view?.updateDisplay(removeOutOfDateAnnotations(annotationList));
 }
 
+// NOT USED ANYMORE 
+// Previously was called  when the user signed in to the adamite pane,
+// since we moved to the GitHub auth, this isn't used anymore
 export const handleSignInWithEmailAndPassword = async (email: string, password: string) : Promise<void> => {
     try {
         const { user } = await firebase.auth().signInWithEmailAndPassword(email, password);
@@ -215,6 +248,7 @@ export const handleSignInWithEmailAndPassword = async (email: string, password: 
     }
 }
 
+// called when the webview pane is closed - data clean up
 export const handleOnDidDispose = () : void => {
     handleSaveCloseEvent(annotationList);
     setView(undefined);
@@ -224,19 +258,19 @@ export const handleOnDidDispose = () : void => {
     });
 }
 
+// Event handler for when the webview changes states (visible to not visible)
 export const handleOnDidChangeViewState = () : void => {
-        // known bug : will default to 0 annotations until a new window is made active again when the panel is dragged sigh
-        // for now will do but should find a better solution (may consider switching to having vs code handle the state when 
-        // panel is not active)
     user ? view?.reload(gitInfo.author, user.uid) : view?.init();
 }
 
+// exports annotations to a JSON file when selected from the sandwich menu
 export const handleSaveAnnotationsToJson = () : void => {
     if(vscode.workspace.workspaceFolders) {
         saveAnnotations(annotationList.concat(outOfDateAnnotations).concat(deletedAnnotations), vscode.workspace.workspaceFolders[0].uri.path + '/output.json', true);
     }
 }
 
+// stub for adding this function later
 export const handleShowKeyboardShortcuts = () : void => {
     return;
 }

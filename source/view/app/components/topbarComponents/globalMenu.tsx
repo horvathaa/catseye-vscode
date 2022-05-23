@@ -1,3 +1,9 @@
+/*
+ * 
+ * globalMenu.tsx
+ * Sandwich menu component that handles application-wide operations.
+ *
+ */
 import styles from '../../styles/topbar.module.css';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -27,6 +33,8 @@ const GlobalMenu: React.FC<Props> = ({
     };
     const computedValue: string = getComputedStyle(document.body).getPropertyValue('--vscode-editor-background');
     const foreground: string = getComputedStyle(document.body).getPropertyValue('--vscode-button-foreground');
+    
+    // https://mui.com/material-ui/customization/theming/
     const theme = createTheme({
         palette: {
             primary: {
@@ -69,41 +77,43 @@ const GlobalMenu: React.FC<Props> = ({
             }
         }
     });
-    return (<>
-        <ThemeProvider theme={theme}>
-            <Button
-                id={'global-action-button'}
-                aria-controls={open ? 'basic-menu' : undefined}
-                aria-haspopup="true"
-                aria-expanded={open ? 'true' : undefined}
-                onClick={handleClick}
-            >
-                <VscMenu style={{ color: 'white', width: '20px', height: '20px' }} className={styles['profileMenu']} />
-            </Button>
-            <Menu
-                id={'global-action-menu'}
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleClose}
-                MenuListProps={{
-                    'aria-labelledby': 'annotation-action-button'
-                }}
-            >
-                <MenuItem 
-                    href=""
-                    onClick={(e: React.MouseEvent<HTMLAnchorElement>) => { e.stopPropagation(); handleClose(e); saveAnnotationsToJson(); }}
+    return (
+        <>
+            <ThemeProvider theme={theme}>
+                <Button
+                    id={'global-action-button'}
+                    aria-controls={open ? 'basic-menu' : undefined}
+                    aria-haspopup="true"
+                    aria-expanded={open ? 'true' : undefined}
+                    onClick={handleClick}
                 >
-                    Save Annotations to JSON
-                </MenuItem>
-                {/* <MenuItem 
-                    href=""
-                    onClick={(e: React.MouseEvent<HTMLAnchorElement>) => { e.stopPropagation();  handleClose(e); showKeyboardShortcuts(); }}
+                    <VscMenu style={{ color: 'white', width: '20px', height: '20px' }} className={styles['profileMenu']} />
+                </Button>
+                <Menu
+                    id={'global-action-menu'}
+                    anchorEl={anchorEl}
+                    open={open}
+                    onClose={handleClose}
+                    MenuListProps={{
+                        'aria-labelledby': 'annotation-action-button'
+                    }}
                 >
-                    Show Keyboard Shortcuts
-                </MenuItem> */}
-            </Menu>
-        </ThemeProvider>
-    </>)
+                    <MenuItem 
+                        href=""
+                        onClick={(e: React.MouseEvent<HTMLAnchorElement>) => { e.stopPropagation(); handleClose(e); saveAnnotationsToJson(); }}
+                    >
+                        Save Annotations to JSON
+                    </MenuItem>
+                    {/* <MenuItem 
+                        href=""
+                        onClick={(e: React.MouseEvent<HTMLAnchorElement>) => { e.stopPropagation();  handleClose(e); showKeyboardShortcuts(); }}
+                    >
+                        Show Keyboard Shortcuts
+                    </MenuItem> */}
+                </Menu>
+            </ThemeProvider>
+        </>
+    )
 };
 
 export default GlobalMenu;

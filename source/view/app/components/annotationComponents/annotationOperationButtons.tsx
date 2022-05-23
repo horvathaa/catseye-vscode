@@ -1,3 +1,11 @@
+/*
+ *
+ * annotationOperationButtons.tsx
+ * Component which contains buttons any user of the annotation can see on an annotation.
+ * Includes replies, adding anchors, pinning, and exporting as comment. When the webview panel is narrow
+ * buttons will show up as a dropdown menu. 
+ *
+ */
 import * as React from 'react';
 import AuthorOperationButtons from './authorOperationButtons';
 import { VscComment, VscFileSymlinkFile, VscPin, VscPinned, VscMenu } from 'react-icons/vsc';
@@ -16,7 +24,6 @@ interface Props {
     editAnnotation: () => void;
     exportAnnotationAsComment: () => void;
     deleteAnnotation: (e: React.SyntheticEvent) => void;
-    // snapshotCode: (e: React.SyntheticEvent, id: string) => void;
     pinAnnotation: () => void;
     addAnchor: () => void;
     pinned: boolean;
@@ -30,7 +37,6 @@ const AnnotationOperationButtons: React.FC<Props> = ({
         exportAnnotationAsComment, 
         editAnnotation, 
         deleteAnnotation, 
-        // snapshotCode, 
         pinAnnotation,
         addAnchor,
         pinned 

@@ -1,3 +1,9 @@
+/*
+ * 
+ * newAnnotation.tsx
+ * Component that's rendered when the user is authoring a new annotation.
+ *
+ */
 import * as React from "react";
 import annoStyles from '../styles/annotation.module.css';
 import TextEditor from "./annotationComponents/textEditor";

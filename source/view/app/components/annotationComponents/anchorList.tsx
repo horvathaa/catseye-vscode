@@ -1,3 +1,9 @@
+/*
+ *
+ * anchorList.tsx
+ * Component which renders all of the annotation's anchors.
+ *
+ */
 import * as React from "react";
 import cn from 'classnames';
 import styles from '../../styles/annotation.module.css';

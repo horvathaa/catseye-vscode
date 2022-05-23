@@ -1,7 +1,14 @@
+/*
+ * 
+ * viewUtilsTsx.tsx
+ * Random functions the webview can access for common render activities.
+ *
+ */
 import { VscChevronDown, VscChevronRight } from 'react-icons/vsc';
 import * as React from 'react';
 import styles from '../styles/annotation.module.css';
 
+// toggle button used for expanding and collapsing replies, snapshots, etc.
 export const collapseExpandToggle = (showing: boolean, obj: any[], callback: (bool: boolean) => void, subject: string) :  React.ReactElement<any> => {
 	const plural: string = subject === 'reply' ? 'replies' : subject + 's';
     const subjectString: string = showing ? `Hide ${obj.length} ${obj.length === 1 ? subject : plural}` :

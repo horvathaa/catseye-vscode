@@ -1,3 +1,10 @@
+/*
+ *
+ * reply.tsx
+ * Component which contains all reply-related content, including textEditor to create a new reply,
+ * and the list of replies the user has already made
+ *
+ */
 import * as React from 'react';
 import UserProfile from './userProfile';
 import AuthorOperationButtons from './authorOperationButtons';
@@ -87,5 +94,3 @@ export const Reply : React.FC<Props> = ({ id = undefined, replyContent = undefin
         </div>
     )
 }
-
-// export const Reply;

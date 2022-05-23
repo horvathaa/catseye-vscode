@@ -1,50 +1,74 @@
+/*
+ * 
+ * anchor.ts
+ * Functions that relate to the main code anchor functionalities
+ *
+ */
+
 import * as vscode from 'vscode';
 import { Annotation, AnchorObject, Anchor } from '../constants/constants';
-import { sortAnnotationsByLocation, getProjectName, getVisiblePath, getGithubUrl, getAnnotationsInFile, getAllAnnotationFilenames, getAnnotationsWithStableGitUrl, getAllAnnotationStableGitUrls, getAnnotationsNotInFile } from '../utils/utils';
-import { annotationDecorations, setOutOfDateAnnotationList, view, annotationList, setAnnotationList, activeEditor } from '../extension';
-import { userDeletedAnchor, userAutocompletedOrCommented, userChangedTextBeforeStart, userChangedTextBeforeEnd, userChangedLinesBeforeStart, userChangedLinesInMiddle, shrinkOrExpandBackOfRange, shrinkOrExpandFrontOfRange } from './translateChangesHelpers';
+import { sortAnnotationsByLocation, 
+		getProjectName, 
+		getVisiblePath, 
+		getGithubUrl, 
+		getAnnotationsInFile, 
+		getAllAnnotationFilenames, 
+		getAnnotationsWithStableGitUrl, 
+		getAllAnnotationStableGitUrls, 
+		getAnnotationsNotInFile
+} from '../utils/utils';
+import { annotationDecorations, 
+		setOutOfDateAnnotationList, 
+		view, 
+		annotationList, 
+		setAnnotationList  
+} from '../extension';
+import { userDeletedAnchor, 
+	userAutocompletedOrCommented, 
+	userChangedTextBeforeStart, 
+	userChangedTextBeforeEnd, 
+	userChangedLinesBeforeStart, 
+	userChangedLinesInMiddle, 
+	shrinkOrExpandBackOfRange, 
+	shrinkOrExpandFrontOfRange 
+} from './translateChangesHelpers';
 
-
-export function getIndicesOf(searchStr: string, str: string, caseSensitive: boolean) {
-    var searchStrLen = searchStr.length;
-    if (searchStrLen == 0) {
-        return [];
-    }
-    var startIndex = 0, index, indices = [];
-    if (!caseSensitive) {
-        str = str.toLowerCase();
-        searchStr = searchStr.toLowerCase();
-    }
-    while ((index = str.indexOf(searchStr, startIndex)) > -1) {
-        indices.push(index);
-        startIndex = index + searchStrLen;
-    }
-    return indices;
-}
-
+// Used for finding new anchor point given copy/paste operation
+// Given offsetData generated at the time of copying (offset being where the anchor is relative to the beginning of the user's selection) 
+// and the pasted range's starting point, find new placement for the annotation 
 export const computeRangeFromOffset = (range: vscode.Range, offsetData: {[key: string] : any}) : Anchor => {
 	const newAnchor = {
-		startLine: range?.start.line + offsetData.startLine,
-		startOffset: range?.start.character + offsetData.startOffset, 
-		endLine: range?.start.line + offsetData.endLine,
-		endOffset: range?.end.character + offsetData.endOffset,
+		startLine: range.start.line + offsetData.startLine,
+		startOffset: range.start.character + offsetData.startOffset, 
+		endLine: range.start.line + offsetData.endLine,
+		endOffset: range.end.character + offsetData.endOffset,
 	}
 
 	return newAnchor;
 }
 
+// Helper function to take an anchor object (Adamite's representation of an anchor + its metadata) and create a VS Code range object
+// from the anchor point
 export const createRangeFromAnchorObject = (anchor: AnchorObject) : vscode.Range => {
 	return createRangeFromObject(anchor.anchor);
 }
 
+// Helper function to take anchor and transform into VS Code range
+export function createRangeFromObject(obj: Anchor) : vscode.Range {
+	return new vscode.Range(obj.startLine, obj.startOffset, obj.endLine, obj.endOffset);
+}
+
+// Helper function to create an anchor given a VS Code range object
 export const createAnchorFromRange = (range: vscode.Range) : Anchor => {
 	return { startLine: range.start.line, startOffset: range.start.character, endLine: range.end.line, endOffset: range.end.character };
 }
 
+// Helper function to create an anchor given VS Code position objects
 export const createAnchorFromPositions = (startPosition: vscode.Position, endPosition: vscode.Position) : Anchor => {
 	return { startLine: startPosition.line, startOffset: startPosition.character, endLine: endPosition.line, endOffset: endPosition.character };
 }
 
+// Helper function to update an anchor in the anchor object given the annotation ID, anchor ID, and a new anchor object
 export const updateAnchorInAnchorObject = (id: string, annoId: string, anchor: Anchor) : AnchorObject[] => {
 	const anno: Annotation | undefined = annotationList.find(a => a.id === annoId);
 	const anchorObject: AnchorObject | undefined = anno?.anchors.find((a: AnchorObject) => a.anchorId === id);
@@ -52,6 +76,7 @@ export const updateAnchorInAnchorObject = (id: string, annoId: string, anchor: A
 	return []; // this sucks
 }
 
+// Helper function that takes a VS Code selection and finds any anchor points that exist in that select
 export const getAnchorsInRange = (selection: vscode.Selection, annotationList: Annotation[]) : {[key: string] : any}[] => {
 	const anchorsInSelection :  {[key: string] : any}[] = annotationList.flatMap(a => a.anchors).map((a: AnchorObject) => { 
 		return { anchor: a, range: createRangeFromAnchorObject(a) } 
@@ -59,6 +84,8 @@ export const getAnchorsInRange = (selection: vscode.Selection, annotationList: A
 	return anchorsInSelection;
 }
 
+// Helper function to find any anchors that exist in the current file
+// Notes: currentFile is optional to make calling the method easier 
 export const getAnchorsInCurrentFile = (annotationList: Annotation[], currentFile?: string) : AnchorObject[] => {
 	const annos: Annotation[] = currentFile ? getAnnotationsInFile(annotationList, currentFile) : annotationList;
 	if(!currentFile) currentFile = vscode.window.activeTextEditor?.document.uri.toString();
@@ -70,47 +97,47 @@ export const getAnchorsInCurrentFile = (annotationList: Annotation[], currentFil
 	return anchors;
 }
 
-
+// The meat and potatoes of keeping anchor points up to date
+// Gets called on every keystroke for files that contain annotations
+// Uses a series of methods to, given the details VS Code gave us about the edit operation performed,
+// determine how to update our internal representation of each anchor
+// Most likely has bugs since it is difficult to know how to update anchor points since
+// there are many many ways to change a file and these events sometimes happen in batch (e.g., when someone uses a prettifier to clean their whole file)
 export const translateChanges = (
-		// originalAnnotation: Annotation,
-		anchorObject: AnchorObject,
-		changeRange: vscode.Range, 
-		textLength: number, 
-		diff: number, 
-		rangeLength: number, 
-		doc: vscode.TextDocument, 
-		changeText: string,
-		)
-	: AnchorObject | null => {
+		anchorObject: AnchorObject, // the anchor object that will be updated
+		changeRange: vscode.Range, // the range that encapsulates the edit the user made
+		textLength: number, // how many characters were inserted (0 if deleting)
+		diff: number, // how many lines were inserted or removed 
+		rangeLength: number, // in case of delete, how many characters were removed
+		doc: vscode.TextDocument, // the document that was updated
+		changeText: string, // a copy of the text the user inserted
+	)
+	: AnchorObject | null => { // null if the anchor is removed
 		const originalStartLine = anchorObject.anchor.startLine, originalEndLine = anchorObject.anchor.endLine, originalStartOffset = anchorObject.anchor.startOffset, originalEndOffset = anchorObject.anchor.endOffset;
 		let newRange = { startLine: originalStartLine, endLine: originalEndLine, startOffset: originalStartOffset, endOffset: originalEndOffset };	
-		// let originalAnchor = { ...newRange };
-		// console.log("STARTING TRANSLATE CHANGES CALL");
-		// console.log('originalAnchor', newRange);
 		let originalAnchor = newRange;
-		// console.log('originalAnchor at beginning of translate changes', originalAnchor);
 		const { anchorText } = anchorObject;
 		let newAnchorText = anchorText;
 		const startAndEndLineAreSameNoNewLine = originalStartLine === changeRange.start.line && originalEndLine === changeRange.end.line && !diff;
 		const startAndEndLineAreSameNewLine = originalStartLine === changeRange.start.line && originalEndLine === changeRange.end.line && (diff > 0 || diff < 0);
 		const originalRange = new vscode.Range(new vscode.Position(originalStartLine, originalStartOffset), new vscode.Position(originalEndLine, originalEndOffset));
-		// const changeRange = new vscode.Range(new vscode.Position(startLine, startOffset), new vscode.Position(endLine, endOffset)); 
-		// user deleted the anchor
 
-		// const editor = vscode.window.activeTextEditor;
-
-		// console.log('changeRange', changeRange)
 		const isDeleteOperation: boolean = !textLength;
+		
+		// user deleted the code that contained the original anchor point
 		if(isDeleteOperation && changeRange.contains(originalRange)) {
 			// console.log('userDeletedAnchor');
 			return userDeletedAnchor(anchorObject.parentId, anchorObject.anchorId);
 		}
 
+		// user added a whole bunch of text that somehow contains the original anchor point
+		// usually happens when a very large change occurs, such as a git checkout or pull operation 
 		if(!isDeleteOperation && changeRange.contains(originalRange)) {
 			// console.log('git Operation most likely...');
 
 		}
 
+		// if the user made a modification after the end point of our anchor, our anchor is not affected and we return
 		if(changeRange.start.isAfter(originalRange.end)) {
 			return anchorObject;
 		}
@@ -139,7 +166,8 @@ export const translateChanges = (
 			newRange = userChangedLinesBeforeStart(newRange, originalAnchor, diff);
 		}
 
-
+		// user added new line at the front of our anchor point
+		// anchor point should move down
 		if((changeRange.start.line === originalStartLine) && 
 			diff && 
 			(changeRange.start.character === originalStartOffset) && 
@@ -151,6 +179,7 @@ export const translateChanges = (
 			newRange.startOffset = changeText.substring(changeText.lastIndexOf('\n') + 1).length + (originalStartOffset - changeRange.start.character);
 			newRange.endOffset = newRange.startOffset + (originalEndOffset - originalStartOffset);
 		}
+		
 		// user added/removed line in middle of the anchor -- we are not including end offset
 		else if(changeRange.start.line >= originalStartLine && 
 			changeRange.end.line <= originalEndLine && 
@@ -162,6 +191,8 @@ export const translateChanges = (
 			// console.log('userChangedLinesInMiddle');
 			newRange = userChangedLinesInMiddle(newRange, originalAnchor, changeRange, diff, startAndEndLineAreSameNewLine, anchorText, changeText, textLength, rangeLength, originalRange);
 		}
+		
+		// user's edit started in the middle of our anchor point but (possibly) ends past the point our anchor ends
 		else if(changeRange.start.line >= originalStartLine && 
 				changeRange.start.line <= originalEndLine && 
 				changeRange.end.line >= originalEndLine && 
@@ -170,16 +201,18 @@ export const translateChanges = (
 			// console.log('shrinkOrExpandBackOfRange');
 			newRange = shrinkOrExpandBackOfRange(newRange, changeRange, diff, changeText, anchorText, rangeLength, originalAnchor, originalRange);
 		}
+		
+		// user's edit started before our anchor point but ends in the middle of our anchor point
 		else if(changeRange.end.line >= originalStartLine && 
 				changeRange.end.line <= originalEndLine && 
 				changeRange.start.line <= originalEndLine && 
 				diff) 
 			{
 			// console.log('shrinkOrExpandFrontOfRange');
-			// just pass in original start and original end here or osomething i dont even wanna deal with changing everything
 			newRange = shrinkOrExpandFrontOfRange(newRange, changeRange, diff, changeText, anchorText, rangeLength, originalStartLine, originalStartOffset);
 		}
 
+		// shrink end of anchor if it is just white space
 		if(newRange.endOffset === 0 || doc.getText(new vscode.Range(newRange.endLine, 0, newRange.endLine, newRange.endOffset)).replace(/\s/g, '').length === 0) {
 			// may want to do this until we hit a line with text (e.g., while loop instead of just doing this check once)
 			newRange.endLine = newRange.endLine - 1;
@@ -191,10 +224,12 @@ export const translateChanges = (
 			changeOccurredInRange = true;
 		}
 
+		// update anchor text
 		if(changeOccurredInRange) {
 			newAnchorText = doc.getText(createRangeFromObject(newRange));
 		}
 
+		// update anchor object
 		const newAnchor: AnchorObject = {
 			...anchorObject, anchorText: newAnchorText, anchor: newRange
 		}
@@ -203,14 +238,12 @@ export const translateChanges = (
 
 	}
 
+// Helper function to transform all anchors into an array of VS Code ranges
 export function createRangesFromAnnotation(annotation: Annotation) : vscode.Range[] {
 	return annotation.anchors.flatMap((a: AnchorObject) => createRangeFromAnchorObject(a));
 }
 
-export function createRangeFromObject(obj: Anchor) : vscode.Range {
-	return new vscode.Range(obj.startLine, obj.startOffset, obj.endLine, obj.endOffset);
-}
-
+// Function to make VS Code decoration objects (the highlights that appear in the editor) with our metadata added
 const createDecorationOptions = (ranges: { [key: string] : any }[], annotationList: Annotation[]) : vscode.DecorationOptions[] => {
 	return ranges.map(r => {
 		let markdownArr = new Array<vscode.MarkdownString>();
@@ -229,14 +262,15 @@ const createDecorationOptions = (ranges: { [key: string] : any }[], annotationLi
 	});
 }
 
+// Function to actually decorate each file with our annotation highlights
 export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode.TextEditor | undefined = undefined) : void => {
 	const filenames = getAllAnnotationFilenames(annotationList);
 	const githubUrls = getAllAnnotationStableGitUrls(annotationList)
 	const projectName = getProjectName(text?.document.uri.toString());
 	const textUrl = text ? getGithubUrl(getVisiblePath(projectName, text?.document.uri.fsPath), projectName, true) : "";
 	const visibleEditors = vscode.window.visibleTextEditors.filter((t: vscode.TextEditor) => filenames.includes(t.document.uri.toString()) || githubUrls.includes(textUrl));
+	
 	// we have one specific doc we want to highlight
-
 	if(annotationList.length && text && (filenames.includes(text.document.uri.toString()) || githubUrls.includes(textUrl))) {
 		let r: AnchorObject[] = annotationList.flatMap(a => a.anchors).filter(a => a.filename === text.document.uri.toString());
 		let ranges = r
@@ -355,403 +389,3 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 		text?.setDecorations(annotationDecorations, []);
 	}
 }
-
-const generateLineMetadata = (h: {[key: string]: any}) : {[key: string]: any}[] => {
-	let linesAdded: {[key: string] : any}[] = [];
-	let linesRemoved: {[key: string] : any}[] = [];
-	let addRanges: {[key: string] : any}[] = [];
-	let removeRanges: {[key: string] : any}[] = [];
-	h.lines.forEach((l: string, index: number) => {
-		const numLinesAddedAbove: number = h.lines.slice(0, index)
-					.filter((s: string) => s[0] === '+').length + (h.newStartLine - h.oldStartLine);
-		const numLinesRemovedAbove: number =  h.lines.slice(0, index)
-				.filter((s: string) => s[0] === '-').length - (h.newStartLine - h.oldStartLine);
-		const startLine = l[0] === '+' ? h.newStartLine : h.oldStartLine;
-		const char = l[0] === '+' ? '-' : '+';
-		const originalLineNumber: number = startLine + index - h.lines.slice(0, index)
-				.filter((s: string) => s[0] === char).length;
-		if(index - 1 >= 0 && h.lines[index - 1][0] === '+' && l[0] !== '+' && l[0] !== '-') {
-			const localizedEndLine = h.newStartLine + (index - 1) - h.lines.slice(0, index - 1)
-				.filter((s: string) => s[0] === '-').length
-			console.log('addRanges', addRanges);
-			let range = addRanges.filter((r: {[key: string]: any}) => !r.complete)[0] ? addRanges.filter((r: {[key: string]: any}) => !r.complete)[0] : { start: localizedEndLine, end: localizedEndLine, complete: true, hasCorrespondingRange: false };
-			console.log('range???', range);
-			range = { ...range, end: localizedEndLine, complete: true };
-			addRanges = addRanges.filter((r: {[key: string]: any}) => r.complete).concat([range]);
-		}
-		else if(index - 1 >= 0 && h.lines[index - 1][0] === '-' && l[0] !== '+' && l[0] !== '-') {
-			const localizedEndLine = h.oldStartLine + (index - 1) - h.lines.slice(0, index - 1)
-			.filter((s: string) => s[0] === '+').length
-			let range = removeRanges.filter((r: {[key: string]: any}) => !r.complete)[0] ? removeRanges.filter((r: {[key: string]: any}) => !r.complete)[0] : { start: localizedEndLine, end: localizedEndLine, complete: true, hasCorrespondingRange: false };
-			console.log('range???', range);
-			range = { ...range, end: localizedEndLine, complete: true };
-			removeRanges = removeRanges.filter((r: {[key: string]: any}) => r.complete).concat([range]);
-		}
-		else if(l[0] === '+') {
-			if(index - 1 >= 0 && h.lines[index - 1][0] !== '-' && h.lines[index - 1][0] !== '+') addRanges.push({ start: originalLineNumber, end: -1, complete: false, hasCorrespondingRange: false });
-			if(index - 1 >= 0 && h.lines[index - 1][0] === '-') {
-				console.log('in here');
-				let range = removeRanges.filter((r: {[key: string]: any}) => !r.complete)[0];
-				const localizedEndLine = h.oldStartLine + (index - 1) - h.lines.slice(0, index - 1)
-					.filter((s: string) => s[0] === '+').length
-				range = { ...range, end: localizedEndLine, complete: true, hasCorrespondingRange: true };
-				removeRanges = removeRanges.filter((r: {[key: string]: any}) => r.complete).concat([range]);
-				console.log('remove range', range);
-				addRanges.push({ start: originalLineNumber, end: -1, complete: false, hasCorrespondingRange: true });
-			}
-			
-			linesAdded.push(
-				{ 
-					line: l, 
-					offsetInArray: index, 
-					numLinesAddedAbove,
-					numLinesRemovedAbove, 
-					originalLineNumber,
-					// translatedLineNumber: 
-				} 
-			);
-
-		}
-
-		else if(l[0] === '-') {
-			if(index - 1 >= 0 && h.lines[index - 1][0] !== '-') removeRanges.push({ start: originalLineNumber, end: -1, complete: false, hasCorrespondingRange: false });
-			// if(index - 1 >= 0 && h.lines[index - 1][0] === '+') {
-			// 	let range = addRanges.filter((r: {[key: string]: any}) => !r.complete)[0];
-			// 	range = { ...range, end: originalLineNumber, complete: true, hasCorrespondingRange: true };
-			// 	addRanges = addRanges.filter((r: {[key: string]: any}) => r.complete).concat([range]);
-			// }
-			
-			linesRemoved.push(
-				{ 
-					line: l, 
-					offsetInArray: index, 
-					numLinesAddedAbove,
-					numLinesRemovedAbove, 
-					originalLineNumber,
-					// translatedLineNumber: 
-				} 
-			);
-		}
-	})
-
-	console.log('linesadded', linesAdded, 'linesRemoved', linesRemoved, 'addRanges', addRanges, 'removeRanges', removeRanges);
-	return linesAdded;
-	
-}
-
-
-
-// // - is old, + is new - our old is origin/HEAD, our new is the user's local branch
-// export const updateAnchorsUsingDiffData = (diffData: {[key: string]: any}, annotations: Annotation[]) : void => {
-// 	// console.log('diffData in anchorts', diffData)
-// 	// const filename: string = annotations[0].filename.toString();
-// 	// let linesAddedInChunk
-// 	diffData[0].hunks?.forEach((h: {[key: string]: any}) => {
-// 		console.log('h', h);
-// 		generateLineMetadata(h);
-		
-		// const hunkRange: vscode.Range = new vscode.Range(new vscode.Position(h.newStartLine, 0), new vscode.Position(h.newStartLine + h.newLineCount + 1, 0));
-		// console.log('hunkRange', hunkRange);
-		// console.log('annotations', annotations);
-		
-		// const annosAffectedByChange: Annotation[] = annotations.filter(a => createRangesFromAnnotation(a).contains(hunkRange))
-		// need to also add/subtract diff for annos that have changes that were made above the start of their anchor
-		// console.log('annos', annosAffectedByChange);
-		// annotations.forEach((a: Annotation) => {
-		// 	// user replaced original line
-		// 	console.log('a before change', a);
-		// 	let startLine: number = a.startLine;
-		// 	let endLine: number = a.endLine; 
-		// 	let startOffset: number = a.startOffset;
-		// 	let endOffset: number = a.endOffset;
-		// 	const relevantLinesAdded: {[key: string]: any}[] = h.lines
-		// 														.map((l: string, index: number) => { 
-		// 															if(l[0] === '+') 
-		// 															return { 
-		// 																line: l, 
-		// 																offsetInArray: index, 
-		// 																numLinesAddedAbove: 
-		// 																	h.lines.slice(0, index)
-		// 																			.filter((s: string) => s[0] === '+')
-		// 																			.length, 
-		// 																numLinesRemovedAbove: 
-		// 																	h.lines.slice(0, index)
-		// 																			.filter((s: string) => s[0] === '-').length, 
-		// 																originalLineNumber: 
-		// 																	h.newStartLine + index - h.lines.slice(0, index)
-		// 																									.filter((s: string) => s[0] === '-').length 
-		// 																} 
-		// 														})
-		// 														.filter((l: {[key: string]: any} | undefined) => l !== undefined );
-		// 	const relevantLinesRemoved: {[key: string]: any}[] = h.lines
-		// 														    .map((l: string, index: number) => { 
-		// 															  if(l[0] === '-') {
-		// 																const numLinesAddedAbove: number = h.lines.slice(0, index)
-		// 																										.filter((s: string) => s[0] === '+').length + (h.newStartLine - h.oldStartLine);
-		// 																const numLinesRemovedAbove: number =  h.lines.slice(0, index)
-		// 																										.filter((s: string) => s[0] === '-').length - (h.newStartLine - h.oldStartLine);
-		// 																return { 
-		// 																	line: l, 
-		// 																	offsetInArray: index, 
-		// 																	numLinesAddedAbove,
-		// 																	numLinesRemovedAbove, 
-		// 																	originalLineNumber: h.oldStartLine + index - h.lines.slice(0, index)
-		// 																														  .filter((s: string) => s[0] === '+').length,
-		// 																	// translatedLineNumber: 
-		// 																  } 
-		// 															  }
-																	  
-		// 															})
-		// 															.filter((l: {[key: string]: any} | undefined) => l !== undefined );
-		// 	const linesAddedInAnchorRange = relevantLinesAdded.filter((l) => {
-		// 		// console.log('l', l, 'a', a);
-		// 		return (a.startLine < l.originalLineNumber) && (a.endLine > l.originalLineNumber)
-		// 	});
-		// 	const linesRemovedInAnchorRange = relevantLinesRemoved.filter((l) => (a.startLine < h.newStartLine + l.offsetInArray) && (a.endLine > h.newLineCount + l.offsetInArray));
-		// 	// let linesAddedHunk: number = relevantLinesAdded.length;
-		// 	// let linesRemovedHunk: number = relevantLinesRemoved.length;
-
-		// 	console.log('linesAddedInAnchorRange', linesAddedInAnchorRange);
-		// 	console.log('linesRemoved', linesRemovedInAnchorRange);
-		// 	console.log('relevantLinesAdded', relevantLinesAdded, 'relevantLinesRemoved', relevantLinesRemoved)
-		// 	const rangeStart: number = h.newStartLine // + rangeStartOffset;
-		// 	const rangeEnd: number = h.newStartLine // + rangeEndOffset;
-		// 	console.log('rangeStart', rangeStart, 'rangeEnd', rangeEnd);
-
-		// 	if(a.startLine < rangeStart && a.startLine < rangeEnd && a.endLine < rangeStart && a.endLine < rangeEnd) {
-		// 		console.log('a is above changes and wont be affected');
-		// 		return;
-// 		// 	}
-
-// 			// else if(h.oldStartLine === h.newStartLine && h.oldLineCount === h.newLineCount) {
-// 			// 	// if the 
-// 			// 	// changed line is the start or end line, in which case we may need to change the offsets
-// 			// 	console.log('old start old end new start new end all equal');
-// 			// 	const startOrEndLines: {[key: string]: any}[] = relevantLinesRemoved.filter((l: {[key: string]: any}) => {
-// 			// 		if(l.offsetInArray + h.oldStartLine === a.startLine || l.offsetInArray + h.oldStartLine === a.endLine) {
-// 			// 			return { ...l, updateStart: l.offsetInArray + h.oldStartLine === a.startLine };
-// 			// 		}
-// 			// 	});
-// 			// 	if(startOrEndLines.length) {
-// 			// 		let offsetDiff = startOrEndLines[0].line.length - h.lines[startOrEndLines[0].offsetInArray + 1].length;
-// 			// 		if(startOrEndLines[0].updateStart) {
-// 			// 			const computedOffset: number = a.startOffset + offsetDiff >= 0 ? a.startOffset + offsetDiff : 0;
-// 			// 			startOffset = computedOffset
-// 			// 		} else {
-// 			// 			const computedOffset: number = a.endOffset + offsetDiff >= 0 ? a.endOffset + offsetDiff : 0;
-// 			// 			endOffset = computedOffset;
-// 			// 		}
-// 			// 	}
-
-// 			// }
-// 			// // user added lines
-// 			// else if(h.newLineCount > h.oldLineCount) {
-// 			// 	console.log('new line count greater than old');
-// 			// 	const diff = (h.newStartLine - h.oldStartLine) + (linesAddedHunk - linesRemovedHunk);
-// 			// 	const innerAnchorDiff = (h.newStartLine - h.oldStartLine) + (linesAddedInAnchorRange.length - linesRemovedInAnchorRange.length) 
-// 			// 	console.log('diff', diff, 'linesadded', linesAddedHunk, 'linesRemoved', linesRemovedHunk);
-// 			// 	if(a.startLine > rangeStart && a.startLine > rangeEnd) {
-// 			// 		console.log('change happened above anchor');
-// 			// 		startLine = a.startLine - diff;
-// 			// 		endLine = a.endLine - diff;
-// 			// 	}
-// 			// 	else if (rangeStart < a.startLine && rangeEnd > a.endLine) {
-// 			// 		console.log("RANGE START RANGE END!!!!!!!!!!!!!")
-// 			// 		const rangeOfChange = [(h.newLineCount - h.oldLineCount) + h.newLineStart - linesRemovedHunk, h.newLineCount + h.newLineStart - linesRemovedHunk]; // 17
-// 			// 		const addedLines: number[] = relevantLinesAdded.map((a: {[key: string]: any}) => h.newStartLine - linesRemovedHunk + a.offsetInArray);
-// 			// 		console.log('addedLines??', addedLines);
-// 			// 		let startLineIndex: {[key: string]: any} = { key: "", index: -1, lineNumber: -1 };
-// 			// 		let endLineIndex: {[key: string]: any} = { key: "", index: -1, lineNumber: -1 };
-// 			// 		let addedChunks: {[key: string]: any};
-// 			// 		if(addedLines.length) {
-// 			// 			addedChunks = { 'section 1': [] };
-// 			// 			let i = 1;
-// 			// 			addedLines.forEach((line, index) => {
-// 			// 				if(index && (line - 1) !== addedLines[index - 1]) {
-// 			// 					i++;
-// 			// 					addedChunks['section ' + i] = [];
-// 			// 				}
-// 			// 				addedChunks['section ' + i].push(line);
-// 			// 			});
-// 			// 			console.log('addedChunks', addedChunks);
-// 			// 			if(addedLines.includes(a.startLine)) {
-// 			// 				for(let key in addedChunks) {
-// 			// 					if(addedChunks[key].includes(a.startLine)) {
-// 			// 						startLineIndex = { index: addedChunks[key].indexOf(a.startLine), key, lineNumber: a.startLine };
-// 			// 					}
-// 			// 				}
-// 			// 			}
-// 			// 			if(addedLines.includes(a.endLine)) {
-// 			// 				for(let key in addedChunks) {
-// 			// 					if(addedChunks[key].includes(a.endLine)) {
-// 			// 						endLineIndex = { index: addedChunks[key].indexOf(a.endLine), key, lineNumber: a.endLine };
-// 			// 					}
-// 			// 				}
-// 			// 			}
-// 			// 		}
-// 			// 		const removedLines: number[] = relevantLinesRemoved.map((a: {[key: string]: any}) => h.newStartLine - linesRemovedHunk + a.offsetInArray);
-// 			// 		console.log('removedLines??', removedLines);
-// 			// 		let removedChunks: {[key: string]: any};
-// 			// 		if(removedLines.length) {
-// 			// 			removedChunks = { 'section 1': [] };
-// 			// 			let i = 1;
-// 			// 			removedLines.forEach((line, index) => {
-// 			// 				if(index && (line - 1) !== removedLines[index - 1]) {
-// 			// 					i++;
-// 			// 					removedChunks['section ' + i] = [];
-// 			// 				}
-// 			// 				removedChunks['section ' + i].push(line);
-// 			// 			});
-// 			// 			console.log('removedChunks', removedChunks);
-// 			// 			console.log('startLineIndex', startLineIndex, 'endLineIndex', endLineIndex);
-// 			// 			if(startLineIndex.index !== -1 && removedChunks[startLineIndex.key] && removedChunks[startLineIndex.key].length) {
-// 			// 				startLine = removedChunks[startLineIndex.key][startLineIndex.index];
-// 			// 				console.log('START LINE!!!!!!!!!!!!!!!', startLine);
-// 			// 			}
-// 			// 		}
-					
-// 			// 		if(a.startLine >= rangeOfChange[0] && a.endLine <= rangeOfChange[1]) {
-// 			// 			console.log('anno is only in new change -- mark as outOfDate or something and dont update anchor');
-// 			// 			return;
-// 			// 		}
-// 			// 	}
-// 			// 	else{
-// 			// 		console.log('change happened within anchor - inner diff', innerAnchorDiff);
-// 			// 		endLine = a.endLine - innerAnchorDiff;
-// 			// 	}
-// 			// }
-// 			// else if(h.oldLineCount > h.newLineCount) {
-// 			// 	console.log('old line count greater than new')
-
-// 			// 	// const rangeOfChange: vscode.Range = new vscode.Range()
-// 			// 	const innerAnchorDiff = (h.newStartLine - h.oldStartLine) + (linesAddedInAnchorRange.length - linesRemovedInAnchorRange.length) 
-// 			// 	const diff = (h.newStartLine - h.oldStartLine) + (linesAddedHunk - linesRemovedHunk);
-// 			// 	console.log('diff', diff, 'linesadded', linesAddedHunk, 'linesRemoved', linesRemovedHunk);
-// 			// 	if(a.startLine > rangeStart && a.startLine > rangeEnd) {
-// 			// 		startLine = a.startLine + diff;
-// 			// 		endLine = a.endLine + diff; 
-// 			// 	}
-// 			// 	// change encompasses range
-// 			// 	else if (rangeStart < a.startLine && rangeEnd > a.endLine) {
-// 			// 		// console.log('range includes anchor')
-// 			// 		// let diffAboveAnchor = 0;
-// 			// 		// let diffWithinAnchor = 0;
-// 			// 		// for(let chunk in removedChunks) {
-// 			// 		// 	const normalizedLineArray = removedChunks[chunk].map((n: number) => n + (h.newStartLine - h.oldStartLine))
-// 			// 		// 	if(normalizedLineArray.includes(a.startLine)) {
-// 			// 		// 		startLine = normalizedLineArray.filter((n: number) => n - (h.newStartLine - h.oldStartLine) === a.startLine)[0] - (h.newStartLine - h.oldStartLine);
-// 			// 		// 		if(chunk !== 'section 1') {
-// 			// 		// 			let chunkNum = parseInt(chunk[chunk.length - 1]);
-// 			// 		// 			while(chunkNum !== 1) {
-// 			// 		// 				startLine += removedChunks['section ' + chunkNum].length - addedChunks['section ' + chunkNum] ? addedChunks['section ' + chunkNum].length : 0;
-// 			// 		// 				chunkNum--;
-// 			// 		// 			}
-// 			// 		// 		}
-// 			// 		// 		console.log('wow... Code', startLine);
-// 			// 		// 	}
-// 			// 		// }
-// 			// 		// removedChunks.forEach((l: {[key: string]: any}) => { // 43 - 58 [newStartLine, newStartLine + newLineCount + (oldLineCount-newLineCount) - (oldStartLine - newStartLine)]
-// 			// 		// 	const normalizedLineNumber = l.offsetInArray + (h.oldLineCount - h.newLineCount) + h.newStartLine - linesRemovedHunk;
-// 			// 		// 	console.log('NORMALLLL', normalizedLineNumber);
-// 			// 		// 	if(normalizedLineNumber > a.startLine) 	diffAboveAnchor++;
-// 			// 		// 	else if(a.startLine < normalizedLineNumber && a.endLine > normalizedLineNumber) diffWithinAnchor++;
-// 			// 		// });
-// 			// 		// console.log('diffAbove', diffAboveAnchor,'difWithin', diffWithinAnchor);
-// 			// 		// startLine = a.startLine + diffAboveAnchor;
-// 			// 		// endLine = a.endLine + diffAboveAnchor + diffWithinAnchor;
-
-// 			// 	}
-// 			// 	else {
-// 			// 		endLine = a.endLine + innerAnchorDiff;
-// 			// 	}
-				
-// 			// }
-// 			// else {
-// 			// 	console.log('uh oh', h);
-// 			// }
-// 			console.log('newStartLine', startLine, 'newEndLine', endLine, 'newStartOffset', startOffset, 'newEndOffset', endOffset);
-// 		})
-// 	});
-// }
-
-
-
-
-// // const addedLines: number[] = relevantLinesAdded.map((a: {[key: string]: any}) => h.newStartLine - linesRemovedHunk + a.offsetInArray);
-// // console.log('addedLines??', addedLines);
-// // let startLineIndex: {[key: string]: any} = { key: "", index: -1, lineNumber: -1 };
-// // let endLineIndex: {[key: string]: any} = { key: "", index: -1, lineNumber: -1 };
-// // let addedChunks: {[key: string]: any} = {};
-// // if(addedLines.length) {
-// // 	addedChunks = { 'section 1': [] };
-// // 	let i = 1;
-// // 	addedLines.forEach((line, index) => {
-// // 		if(index && (line - 1) !== addedLines[index - 1]) {
-// // 			i++;
-// // 			addedChunks['section ' + i] = [];
-// // 		}
-// // 		addedChunks['section ' + i].push(line);
-// // 	});
-// // }
-
-// // const removedLines: number[] = relevantLinesRemoved.map((a: {[key: string]: any}) => h.newStartLine - linesRemovedHunk + a.offsetInArray);
-// // console.log('removedLines??', removedLines);
-// // let removedChunks: {[key: string]: any} = {};
-// // if(removedLines.length) {
-// // 	removedChunks = { 'section 1': [] };
-// // 	let i = 1;
-// // 	removedLines.forEach((line, index) => {
-// // 		if(index && (line - 1) !== removedLines[index - 1]) {
-// // 			i++;
-// // 			removedChunks['section ' + i] = [];
-// // 		}
-// // 		removedChunks['section ' + i].push(line);
-// // 	});
-// // 	console.log('removedChunks', removedChunks);
-
-// // }
-// // console.log('in here')
-// // console.log('cond1', h.oldStartLine === h.newStartLine && h.oldLineCount === h.newLineCount, 'cond2', h.newLineCount > h.oldLineCount, 'cond3', h.oldLineCount > h.newLineCount)
-
-// // const rangeStartOffset: number = linesAddedHunk && linesRemovedHunk ? Math.min(relevantLinesAdded[0].offsetInArray, relevantLinesRemoved[0].offsetInArray) : linesAddedHunk ? relevantLinesAdded[0].offsetInArray : relevantLinesRemoved[0].offsetInArray;
-// // // const rangeEndOffset: number = linesAddedHunk && linesRemovedHunk ? Math.max(relevantLinesAdded[linesAddedHunk - 1].offsetInArray, relevantLinesRemoved[linesRemovedHunk - 1].offsetInArray) : linesAddedHunk ? relevantLinesAdded[linesAddedHunk - 1].offsetInArray : relevantLinesRemoved[linesRemovedHunk - 1].offsetInArray
-
-// // const relevantLinesAdded: {[key: string]: any}[] = h.lines
-// // 																.map((l: string, index: number) => { 
-// // 																	if(l[0] === '+') 
-// // 																	return { 
-// // 																		line: l, 
-// // 																		offsetInArray: index, 
-// // 																		numLinesAddedAbove: 
-// // 																			h.lines.slice(0, index)
-// // 																					.filter((s: string) => s[0] === '+')
-// // 																					.length, 
-// // 																		numLinesRemovedAbove: 
-// // 																			h.lines.slice(0, index)
-// // 																					.filter((s: string) => s[0] === '-').length, 
-// // 																		originalLineNumber: 
-// // 																			h.newStartLine + index - h.lines.slice(0, index)
-// // 																											.filter((s: string) => s[0] === '-').length 
-// // 																		} 
-// // 																})
-// // 																.filter((l: {[key: string]: any} | undefined) => l !== undefined );
-// // 			const relevantLinesRemoved: {[key: string]: any}[] = h.lines
-// // 																    .map((l: string, index: number) => { 
-// // 																	  if(l[0] === '-') {
-// // 																		const numLinesAddedAbove: number = h.lines.slice(0, index)
-// // 																												.filter((s: string) => s[0] === '+').length + (h.newStartLine - h.oldStartLine);
-// // 																		const numLinesRemovedAbove: number =  h.lines.slice(0, index)
-// // 																												.filter((s: string) => s[0] === '-').length - (h.newStartLine - h.oldStartLine);
-// // 																		return { 
-// // 																			line: l, 
-// // 																			offsetInArray: index, 
-// // 																			numLinesAddedAbove,
-// // 																			numLinesRemovedAbove, 
-// // 																			originalLineNumber: h.oldStartLine + index - h.lines.slice(0, index)
-// // 																																  .filter((s: string) => s[0] === '+').length,
-// // 																			translatedLineNumber: 
-// // 																		  } 
-// // 																	  }
-																	  
-// // 																	})
-// // 																	.filter((l: {[key: string]: any} | undefined) => l !== undefined );

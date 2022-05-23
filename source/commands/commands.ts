@@ -1,3 +1,10 @@
+/*
+ * 
+ * commands.ts
+ * Commands that the VS Code extension runs
+ *
+ */
+
 import { gitInfo, 
 		annotationList, 
 		view, 
@@ -9,12 +16,9 @@ import { gitInfo,
 		copiedAnnotations, 
 		setStoredCopyText, 
 		adamiteLog,
-		setGitInfo, 
-		gitApi,
 		selectedAnnotationsNavigations, 
 		setSelectedAnnotationsNavigations,
-		tempAnno} 
-from "../extension";
+} from "../extension";
 import { AnchorObject, Annotation } from '../constants/constants';
 import * as anchor from '../anchorFunctions/anchor';
 import * as vscode from 'vscode';
@@ -24,6 +28,7 @@ import * as viewHelper from '../viewHelper/viewHelper';
 import { v4 as uuidv4 } from 'uuid';
 import { initializeAuth } from '../authHelper/authHelper';
 
+// on launch, create auth session and sign in to FireStore
 export const init = async () => {
 	adamiteLog.appendLine("Calling init");
 	await initializeAuth();
@@ -33,6 +38,7 @@ export const init = async () => {
 	}
 }
 
+// Creates Adamite side panel and sets up its listeners
 export const createView = async (context: vscode.ExtensionContext) => {
 	if(vscode.workspace.workspaceFolders) {
 		if(view) {
@@ -111,6 +117,7 @@ export const createView = async (context: vscode.ExtensionContext) => {
 				}
 			});
 
+			// since we launched Adamite, show highlights in editor
 			anchor.addHighlightsToEditor(annotationList, vscode.window.activeTextEditor);
 			newView._panel?.onDidDispose((e: void) => {
 				viewHelper.handleOnDidDispose();
@@ -123,6 +130,7 @@ export const createView = async (context: vscode.ExtensionContext) => {
 	}
 }
 
+// user has expressed they want to annotate something - get Adamite side panel init'ed for that operation
 export const createNewAnnotation = async () => {
     const { activeTextEditor } = vscode.window;
     if (!activeTextEditor) {
@@ -131,13 +139,13 @@ export const createNewAnnotation = async () => {
     }
     if(!view) {
 		await vscode.commands.executeCommand('adamite.launch');
-		// console.log('creating view');
 	}
 	else if(!view?._panel?.visible) {
 		view?._panel?.reveal(vscode.ViewColumn.Beside);
-		// console.log('revealing view');
-	} 
+	}
+
     const text = activeTextEditor.document.getText(activeTextEditor.selection);
+	// annotating open script tag close script tag breaks the extension :-(
 	if(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi.test(text)) {
 		vscode.window.showInformationMessage("Cannot annotate full script tag!");
         return;
@@ -188,19 +196,16 @@ export const createNewAnnotation = async () => {
     });
 }
 
+// Allow user to create file-level annotation
 export const createFileAnnotation = async (context: vscode.Uri) : Promise<void> => {
-
+	
 	if(!view) {
 		await vscode.commands.executeCommand('adamite.launch');
-		// console.log('creating view');
 	}
 	else if(!view?._panel?.visible) {
 		view?._panel?.reveal(vscode.ViewColumn.Beside);
-		// console.log('revealing view');
 	} 
 	const newAnnoId: string = uuidv4();
-    // const r = new vscode.Range(activeTextEditor.selection.start, activeTextEditor.selection.end);
-    // utils.getShikiCodeHighlighting(activeTextEditor.document.uri.toString(), text).then((html: string) => {
 	const projectName: string = utils.getProjectName(context.fsPath);
 	const programmingLang: string = context.toString().split('.')[context.toString().split('.').length - 1];
 	const visiblePath: string = vscode.workspace.workspaceFolders ? 
@@ -241,10 +246,9 @@ export const createFileAnnotation = async (context: vscode.Uri) : Promise<void> 
 	};
 	setTempAnno(utils.buildAnnotation(temp));
 	view?.createNewAnno(visiblePath, annotationList);
-    // });
-
 }
 
+// create highlight annotation
 export const addNewHighlight = (selected?: boolean) : string | Promise<string> => {
 	const { activeTextEditor } = vscode.window;
     if (!activeTextEditor) {
@@ -267,7 +271,6 @@ export const addNewHighlight = (selected?: boolean) : string | Promise<string> =
 	const projectName: string = utils.getProjectName(activeTextEditor.document.uri.fsPath);
 	// Get the branch and commit 
 	const newAnnoId: string = uuidv4();
-	// console.log('is this undefined???', activeTextEditor.document.uri.toString().split('.'));
 	const programmingLang: string = activeTextEditor.document.uri.toString().split('.')[activeTextEditor.document.uri.toString().split('.').length - 1];
 	const visiblePath: string = vscode.workspace.workspaceFolders ? 
 		utils.getVisiblePath(projectName, activeTextEditor.document.uri.fsPath) : activeTextEditor.document.uri.fsPath;
@@ -307,20 +310,19 @@ export const addNewHighlight = (selected?: boolean) : string | Promise<string> =
 			needToUpdate: true
 		};
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp)]));
-		// const textEdit = vscode.window.visibleTextEditors?.filter(doc => doc.document.uri.toString() === temp?.filename)[0];
-		// setAnnotationList(utils.sortAnnotationsByLocation(annotationList, textEdit.document.uri.toString()));
-		// adamiteLog.appendLine('calling viewloader');
 		view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList));
 		anchor.addHighlightsToEditor(annotationList, activeTextEditor);
 		return newAnnoId;
 	});
 }
 
+// create and pin an annotation immediately
 export const addNewSelectedAnnotation = async () : Promise<void> => {
 	const id: string = await addNewHighlight(true);
 	if(id !== "") setSelectedAnnotationsNavigations([...selectedAnnotationsNavigations, { id, anchorId: annotationList.find(a => a.id === id)?.anchors[0].anchorId, lastVisited: false}]);
 }
 
+// Code for flipping between each selected annotation and its location in the file system
 export const navigateSelectedAnnotations = (direction: string) : void => {
 	let lastVisited: number = selectedAnnotationsNavigations.findIndex(a => a.lastVisited);
 	if(lastVisited === -1) {
@@ -369,6 +371,7 @@ export const navigateSelectedAnnotations = (direction: string) : void => {
 
 }
 
+// code that is run when user clicks on "show annotation" in hover over text
 export const showAnnoInWebview = (id: string) => {
 	if(view?._panel?.visible) {
 		view?.scrollToAnnotation(id);
@@ -379,6 +382,7 @@ export const showAnnoInWebview = (id: string) => {
 	}
 }
 
+// captures metadata at time of copy to help recreate the annotation later when pasted
 export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
     const annotationsInEditor = utils.getAnnotationsInFile(annotationList, textEditor.document.uri.toString());
 	const anchorsInRange = anchor.getAnchorsInRange(textEditor.selection, annotationsInEditor);
@@ -408,7 +412,7 @@ export const overriddenClipboardCopyAction = (textEditor: vscode.TextEditor, edi
 	setStoredCopyText(copiedText);
 }
 
-// probs should merge this with copy - only difference is removing the selection
+// Same as copy but for cut - captures metadata to recreate the annotation
 export const overriddenClipboardCutAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
 	const annotationsInEditor = utils.getAnnotationsInFile(annotationList, textEditor.document.uri.toString());
 	const anchorsInRange = anchor.getAnchorsInRange(textEditor.selection, annotationsInEditor);
@@ -441,12 +445,14 @@ export const overriddenClipboardCutAction = (textEditor: vscode.TextEditor, edit
 	setStoredCopyText(copiedText);
 }
 
+// NOT USING CURRENTLY
 export const overriddenFindAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
 	console.log('finding...', textEditor, args, edit);
 	vscode.commands.executeCommand('editor.action.startFindReplaceAction')
 	// vscode.commands.getCommands().then((value: string[]) => utils.writeConsoleLogToFile(value))
 }
 
+// NOT USING CURRENTLY
 export const overridenRevealDefinitionAction = (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit, args: any[]) => {
 	console.log('this is what we are doing');
 	vscode.commands.executeCommand('editor.action.showReferences');

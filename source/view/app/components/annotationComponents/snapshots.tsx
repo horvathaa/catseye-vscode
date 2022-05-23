@@ -1,3 +1,10 @@
+/*
+ * 
+ * snapshots.tsx
+ * Components for showcasing versions of code.
+ * Would like to add diff support. 
+ * 
+ */
 import * as React from 'react';
 import { AnchorObject, Snapshot as SnapshotInterface } from '../../../../constants/constants';
 import { Syntax } from './anchor';
@@ -19,10 +26,6 @@ interface SnapshotProps {
 
 export const Snapshot: React.FC<SnapshotProps> = ({ snapshot, currentCode, githubUsername, deleteHandler, submissionHandler }) => {
     const [editing, setEditing] = React.useState<boolean>(false);
-    // console.log('snapshot', snapshot)
-    // const files = snapshot.diff ? parseDiff(snapshot.diff) : [];
-    // console.log('files', files);
-    // console.log('snapshot', snapshot, 'currentCode', currentCode);
     return (
         <div className={styles['replyContainer']}>
             <div className={styles['topRow']}>

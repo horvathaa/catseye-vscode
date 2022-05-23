@@ -1,3 +1,11 @@
+/*
+ * 
+ * Adamite Terminal Link Provider
+ * Used to connect into the user's terminal for capturing code output
+ * Not currently used as it is very limited (can only capture one line and require overriding default clickable link behavior)
+ *
+ */
+
 import { view } from '../extension';
 import { CancellationToken, TerminalLinkContext, TerminalLinkProvider, ProviderResult, TerminalLink } from 'vscode';
 

@@ -1,3 +1,9 @@
+/*
+ * 
+ * topBar.tsx
+ * Component at the top of the Adamite panel -- includes search bar and sandwich menu
+ *
+ */
 import * as React from 'react';
 import { Annotation } from '../../../constants/constants';
 import SearchBar from './topbarComponents/searchbar';

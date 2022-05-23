@@ -1,3 +1,10 @@
+/*
+ * 
+ * utils.ts
+ * Various functions to perform nitty-gritty tasks
+ *
+ */
+
 import firebase from '../firebase/firebase';
 import { Annotation, AnchorObject, Anchor, Snapshot, stringToShikiThemes } from '../constants/constants';
 import { computeRangeFromOffset, createAnchorFromRange } from '../anchorFunctions/anchor';
@@ -22,6 +29,7 @@ const arraysEqual = (a1: any[], a2: any[]) : boolean => {
 	return a1.length === a2.length && a1.every((o, idx) => objectsEqual(o, a2[idx]));
 }
 
+// on sign-in, get and sort user's annotations into memory
 export const initializeAnnotations = async (user: firebase.User) : Promise<void> => {
 	const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
 	const annotations: Annotation [] = sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename);
@@ -68,10 +76,8 @@ export const getAnnotationsNotInFile = (annotationList: Annotation[], filename: 
 
 export const getAllAnnotationFilenames = (annotationList: Annotation[]) : string[] => {
 	const flatMapReturn = annotationList.flatMap(a => {
-		// console.log('a', a);
 		return a.anchors?.map(a => a.filename) 
 	});
-	// console.log('flatMapReturn', flatMapReturn);
 	return [ ... new Set(flatMapReturn) ];
 }
 
@@ -212,11 +218,12 @@ const getShikiTheme = (pl: string) : string => {
 	return theme;
 }
 
+// We use Shiki to style the user's code to look like VS Code 
+// This function prepares the string, gets the appropriate color theme for Shiki, and styles the code
 export const getShikiCodeHighlighting = async (filename: string, anchorText: string): Promise<string> => {
 	const regexMatch: RegExpMatchArray | null = filename.match(/\.[0-9a-z]+$/i);
 	const pl: string = regexMatch ? regexMatch[0].replace(".", "") : "js";
 	const highlighter: any = await shiki.getHighlighter({ theme: getShikiTheme(pl) });
-	// console.log('anchorText', anchorText, 'highlighter',  highlighter, 'pl', pl)
 	try {
 		const html: string = highlighter.codeToHtml(anchorText, pl);
 		const insertionPoint = html.indexOf('style');
@@ -231,6 +238,7 @@ export const getShikiCodeHighlighting = async (filename: string, anchorText: str
 
 }
 
+// We need to update the Shiki-generated HTML when the user makes an edit to annotated code
 const updateAnchorHtml = async (anno: Annotation, doc: vscode.TextDocument) : Promise<Annotation> => {
 	const updatedAnchors: AnchorObject[] = await Promise.all(anno.anchors.map(async (a: AnchorObject) => {
 		if(a.filename === doc.uri.toString()) {
@@ -266,11 +274,12 @@ export const getAllAnnotationsWithAnchorInFile = (annotationList: Annotation[], 
 	})
 }
 
+// Called by event handler when user saves or closes a file - saves annotations that have been changed to FireStore 
 export const handleSaveCloseEvent = async (annotationList: Annotation[], filePath: string = "", currentFile: string = "all", doc : vscode.TextDocument | undefined = undefined) : Promise<void> => {
 	const annosToSave: Annotation[] = annotationList.concat(outOfDateAnnotations, deletedAnnotations);
 	const annotationsInCurrentFile = currentFile !== "all" ? getAllAnnotationsWithAnchorInFile(annotationList, currentFile) : annotationList;
 	if(doc && vscode.workspace.workspaceFolders) {
-		let newList = await updateHtml(annotationsInCurrentFile, doc); // probably don't need to call this this much... maybe save for just "need to update" annos in translate change handler...
+		let newList = await updateHtml(annotationsInCurrentFile, doc);
 		// console.log('newList', newList);
 		const ids: string[] = newList.map(a => a.id);
 		const visibleAnnotations: Annotation[] = currentFile === 'all' ? newList : annotationList.filter(a => !ids.includes(a.id)).concat(newList);
@@ -306,53 +315,36 @@ const translateSnapshotStandard = (snapshots: any[]) : Snapshot[] => {
 	})
 }
 
+// convers annotation class items into regular JavaScript objects for saving to FireStore
 export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[key: string] : any}[] => {
 	return annotationList.map(a => { 
 		return {
 			id: a.id ? a.id : uuidv4(),
-			// filename: a.filename ? a.filename : "",
-			// visiblePath: a.visiblePath ? a.visiblePath : "",
-			// anchorText: a.anchorText ? a.anchorText : "",
 			annotation: a.annotation ? a.annotation : "",
 			anchors: a.anchors ? a.anchors : [],
-			// anchor: {
-			// 	startLine: a.startLine ? a.startLine : 0,
-			// 	endLine: a.endLine ? a.endLine : 0,
-			// 	startOffset: a.startOffset ? a.startOffset : 0,
-			// 	endOffset: a.endOffset ? a.endOffset : 0
-			// },
-			// html: a.html ? a.html : "",
 			authorId: a.authorId ? a.authorId : "",
 			createdTimestamp: a.createdTimestamp ? a.createdTimestamp : new Date().getTime(),
-			// programmingLang: a.programmingLang ? a.programmingLang : "",
 			deleted: a.deleted !== undefined ? a.deleted : true,
 			outOfDate: a.outOfDate !== undefined ? a.outOfDate : false,
 			gitRepo: a.gitRepo ? a.gitRepo : "",
 			gitBranch: a.gitBranch ? a.gitBranch : "",
 			gitCommit: a.gitCommit ? a.gitCommit : "",
-			// gitUrl: a.gitUrl ? a.gitUrl : "",
-			// stableGitUrl: a.stableGitUrl ? a.stableGitUrl : "",
-			// anchorPreview: a.anchorPreview ? a.anchorPreview : "",
 			projectName: a.projectName ? a.projectName : "",
 			githubUsername: a.githubUsername ? a.githubUsername : "",
 			replies: a.replies ? a.replies : [],
 			outputs: a.outputs ? a.outputs : [],
-			// originalCode: a.originalCode ? a.originalCode : "",
 			codeSnapshots: a.codeSnapshots ? a.codeSnapshots.length > 0 && a.codeSnapshots[0].hasOwnProperty('diff') ? a.codeSnapshots : translateSnapshotStandard(a.codeSnapshots) : [],
 			sharedWith: a.sharedWith ? a.sharedWith : "private",
 			selected: a.selected ? a.selected : false
 	}});
 }
 
+// Save annotations to FireStore and (optionally) save to JSON
 export const saveAnnotations = async (annotationList: Annotation[], filePath: string, requestedFromUi?: boolean) : Promise<void> => {
-	if(requestedFromUi) {
-		writeToFile(makeObjectListFromAnnotations(annotationList), annotationList, filePath);
-	}
 	if(user) {
 		fbSaveAnnotations(annotationList);
 	}
-	else if (vscode.workspace.workspaceFolders) {
-		// console.log('writing to file')
+	if(requestedFromUi || !user) {
 		writeToFile(makeObjectListFromAnnotations(annotationList), annotationList, filePath);
 	}
 }
@@ -368,7 +360,6 @@ const writeToFile = async (serializedObjects: { [key: string] : any }[], annotat
 		})
 	}
 	catch {
-		// console.log('file does not exist');
 		const wsEdit = new vscode.WorkspaceEdit();
 		wsEdit.createFile(uri)
 		vscode.workspace.applyEdit(wsEdit).then((value: boolean) => {
@@ -390,7 +381,6 @@ export const getGithubUrl = (visiblePath: string, projectName: string, returnSta
 	if(!gitInfo[projectName]?.repo || gitInfo[projectName]?.repo === "") return "";
 	const baseUrl: string = gitInfo[projectName].repo.split('.git')[0];
 	const endUrl: string = visiblePath.includes('\\') ? visiblePath.split(projectName)[1]?.replace(/\\/g, '/') : visiblePath.split(projectName)[1]; // '\\' : '\/';
-	// console.log('wheehoo', baseUrl + "/tree/" + gitInfo[projectName].commit + endUrl)
 	return gitInfo[projectName].commit === 'localChange' || returnStable ? baseUrl + "/tree/main" + endUrl :  baseUrl + "/tree/" + gitInfo[projectName].commit + endUrl;
 }
 
@@ -416,44 +406,21 @@ export const updateAnnotationCommit = (commit: string, branch: string, repo: str
 	});
 }
 
+// on launch, using Git API, get metadata about each annotation, the commit it corresponds to, and more
 export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] : any}> => {
 	await gitApi.repositories?.forEach(async (r: any) => {
-		
 		const currentProjectName: string = getProjectName(r?.rootUri?.path);
-		// const branch = await r?.diff()
-		// console.log(branch);
 		r?.state?.onDidChange(async () => {
-			// console.log('r', r);
-			// console.log('calling on did change', r.state, 'gitInfo', gitInfo);
 			const currentProjectName: string = getProjectName(r?.rootUri?.path);
 			if(!gitInfo[currentProjectName] && r) {
 				gitInfo[currentProjectName] = {
 					repo: r?.state?.remotes[0]?.fetchUrl ? r?.state?.remotes[0]?.fetchUrl : r?.state?.remotes[0]?.pushUrl ? r?.state?.remotes[0]?.pushUrl : "",
 					branch: r?.state?.HEAD?.name ? r?.state?.HEAD?.name : "",
 					commit: r?.state?.HEAD?.commit ? r?.state?.HEAD?.commit : "",
-					// changes: await r?.diffBetween('origin/HEAD', r?.state?.HEAD?.name),
 					modifiedAnnotations: []
 				}
 			}
-			// const diffs = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch);
-			// // if(diffs.length > 0 && diffs.length !== gitInfo[currentProjectName].changes.length) {
-			// 	gitInfo[currentProjectName] = { ...gitInfo[currentProjectName], changes: diffs };
-				// diffs.forEach(async (diff: {[key: string]: any}) => {
-				// 	console.log('diff', diff);
-				// 	const path: string = '.' + diff.uri.path.split(currentProjectName)[1];
-				// 	let diffWithMain = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch, path);
-				// 	// console.log('diffWithMain', diffWithMain);
-				// 	const diffData = parse(diffWithMain);
-				// 	// console.log('diffData', diffData);
-				// 	const annotationsInFile: Annotation[] = annotationList.filter(a => '.' + a.filename.toString().split(currentProjectName)[1] === path)
-				// 	if(diffData.length && annotationsInFile.length)
-				// 	// updateAnchorsUsingDiffData(diffData, annotationsInFile);
-				// }) 
-			// }
-			// let diffWithMain = await r?.diffBetween('origin/HEAD', gitInfo[currentProjectName].branch, './source/anchorFunctions/anchor.ts')
-			// console.log('diff', diffs)
-			// console.log( 'dwm', diffWithMain);
-			// console.log('gitInfo', gitInfo);
+
 			if(gitInfo.hasOwnProperty(currentProjectName) && (gitInfo[currentProjectName]?.commit !== r.state.HEAD.commit || gitInfo[currentProjectName]?.branch !== r.state.HEAD.name)) {
 				gitInfo[currentProjectName].commit = r.state.HEAD.commit;
 				gitInfo[currentProjectName].branch = r.state.HEAD.name;
@@ -464,11 +431,10 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 			repo: r?.state?.remotes[0]?.fetchUrl ? r?.state?.remotes[0]?.fetchUrl : r?.state?.remotes[0]?.pushUrl ? r?.state?.remotes[0]?.pushUrl : "",
 			branch: r?.state?.HEAD?.name ? r?.state?.HEAD?.name : "",
 			commit: r?.state?.HEAD?.commit ? r?.state?.HEAD?.commit : "",
-			// changes: await r?.diffBetween('origin/HEAD', r?.state?.HEAD?.name),
 			modifiedAnnotations: []
 		}
 	});
-	adamiteLog.appendLine("huh?: " + gitApi.repositories[0]?.state?.remotes[0]?.fetchUrl)
+
 	return gitInfo;
 }
 
@@ -491,7 +457,6 @@ export const getProjectName = (filename?: string | undefined) : string => {
 }
 
 const translateAnnotationAnchorStandard = (annoInfo: any) : {[ key: string ] : any } => {
-
 	return {
 		id: annoInfo.id,
 		annotation: annoInfo.annotation,
@@ -534,6 +499,7 @@ const translateAnnotationAnchorStandard = (annoInfo: any) : {[ key: string ] : a
 	}
 }
 
+// Helper function for making annotation class objects from other standards
 export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefined) : Annotation => {
 	let annoObj = null
 	if(annoInfo.hasOwnProperty('anchor') || annoInfo.hasOwnProperty('anchorText')) {
@@ -542,7 +508,6 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 	else {
 		annoObj = annoInfo;
 	}
-
 
 	return new Annotation(
 		annoObj['id'], 
@@ -566,6 +531,7 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 	)
 }
 
+// helper function for creating anchor objects from other standards
 export const createAnchorObject = async (annoId: string, range: vscode.Range) : Promise<AnchorObject | undefined> => {
 	const textEditor: vscode.TextEditor = vscode.window.activeTextEditor ? vscode.window.activeTextEditor : vscode.window.visibleTextEditors[0];
 	if(textEditor) {

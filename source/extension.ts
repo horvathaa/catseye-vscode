@@ -1,7 +1,13 @@
+/*
+ *
+ * extension.ts
+ * The "main" file of the extension 
+ * Where all global variables are created and initialized and where all of the extension contribution points are defined.
+ *
+ */
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-
 import firebase from './firebase/firebase';
 import { Annotation, ChangeEvent } from './constants/constants';
 import * as commands from './commands/commands';
@@ -9,9 +15,6 @@ import * as eventHandlers from './listeners/listeners';
 import * as utils from './utils/utils';
 import * as debug from './debug/debug';
 import ViewLoader from './view/ViewLoader';
-// console.log('window activeColorTheme', vscode.window.activeColorTheme);
-// console.log('config', vscode.workspace.getConfiguration('workbench', vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri))
-// import { AdamiteTerminalLinkProvider } from './adamiteTerminalLinkProvider/adamiteTerminalLinkProvider';
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
 export const gitApi = gitExtension?.getAPI(1);
 export let gitInfo: {[key: string] : any} = {};
@@ -28,7 +31,6 @@ export let user: firebase.User | null = null;
 export let tempAnno: Annotation | null = null;
 export let activeEditor = vscode.window.activeTextEditor;
 export let currentColorTheme: string = vscode.workspace.getConfiguration('workbench', vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri).colorTheme;
-// console.log('currentColorTheme', currentColorTheme);
 export let adamiteLog = vscode.window.createOutputChannel("Adamite");
 export let changes: ChangeEvent[] = [];
 export let numChangeEventsCompleted = 0;
@@ -117,8 +119,9 @@ export const setChangeEvents = (newChangeEvents: ChangeEvent[]) : void => {
 export const incrementNumChangeEventsCompleted = () : void => {
 	numChangeEventsCompleted++;
 }
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
+
+// this method is called when the extension is activated
+// the extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 	adamiteLog.appendLine('Starting activate');
 	// initialize authentication and listeners for annotations
@@ -130,7 +133,6 @@ export function activate(context: vscode.ExtensionContext) {
 	
 	let didChangeVisibleListenerDisposable = vscode.window.onDidChangeVisibleTextEditors(eventHandlers.handleChangeVisibleTextEditors);
 	let didChangeActiveEditorListenerDisposable = vscode.window.onDidChangeActiveTextEditor(eventHandlers.handleChangeActiveTextEditor);
-	let didChangeTextEditorSelection = vscode.window.onDidChangeTextEditorSelection(eventHandlers.handleDidChangeTextEditorSelection);
 	let didChangeActiveColorTheme = vscode.window.onDidChangeActiveColorTheme(eventHandlers.handleDidChangeActiveColorTheme);
 
 	let didSaveListenerDisposable = vscode.workspace.onDidSaveTextDocument(eventHandlers.handleDidSaveDidClose);
@@ -158,20 +160,12 @@ export function activate(context: vscode.ExtensionContext) {
 
 	vscode.commands.executeCommand('setContext', 'adamite.showAnchorMenuOptions', true);
 
-
-	/*************************************************************************************/
-	/**************************************** PROVIDERS *********************************/
-	/*************************************************************************************/
-
-	// let terminalLinkProviderDisposable = vscode.window.registerTerminalLinkProvider(new AdamiteTerminalLinkProvider());
-
 	/*************************************************************************************/
 	/**************************************** DISPOSABLES ********************************/
 	/*************************************************************************************/
 
 	context.subscriptions.push(didChangeVisibleListenerDisposable);
 	context.subscriptions.push(didChangeActiveEditorListenerDisposable);
-	context.subscriptions.push(didChangeTextEditorSelection);
 	context.subscriptions.push(didChangeActiveColorTheme);
 	context.subscriptions.push(didSaveListenerDisposable);
 	context.subscriptions.push(didCloseListenerDisposable);
@@ -188,8 +182,6 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(scrollDisposable);
 	// context.subscriptions.push(copyDisposable);
 	// context.subscriptions.push(cutDisposable);
-	
-	// context.subscriptions.push(terminalLinkProviderDisposable);
 	
 }
 

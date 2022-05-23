@@ -1,3 +1,10 @@
+/*
+ * 
+ * firebase/index.ts
+ * Hub for exporting all FireStore-related stuff
+ *
+ */
+
 import firebase from './firebase';
 require("firebase/functions")
 

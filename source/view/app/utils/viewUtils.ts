@@ -1,3 +1,11 @@
+/*
+ * 
+ * viewUtils.ts
+ * Random functions the webview can access for random data finagling tasks
+ * We need to use this as opposed to the regular utils.ts file since the webview
+ * uses it's own tsconfig and building strategy.
+ *
+ */
 import * as vscode from 'vscode';
 import { Annotation } from '../../../constants/constants';
 

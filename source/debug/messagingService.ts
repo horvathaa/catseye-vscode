@@ -1,3 +1,10 @@
+/*
+ * 
+ * messagingService.ts
+ * Class to facilitate communication between debugAdapter and the Adamite panel
+ *
+ */
+
 import { Webview } from "vscode";
 export class MessagingService {
     private currentWebviewTarget: Webview | undefined;

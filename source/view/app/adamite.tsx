@@ -1,5 +1,11 @@
+/*
+ * 
+ * adamite.tsx
+ * React component for the webview panel as a whole. Note that, if you want to debug any of these .tsx files
+ * You need to use the command "Developer: Open Webview Developer Tools" (available in command prompt (ctrl/cmd + shift + p))
+ *
+ */
 import * as React from "react";
-// import { useEffect } from "react"; // -- may bring back for prop bugs
 import { useState } from "react";
 import { Annotation } from "../../constants/constants";
 import ReactAnnotation from "./components/annotation";
@@ -9,8 +15,7 @@ import LogIn from './components/login';
 import styles from './styles/adamite.module.css';
 import annoStyles from './styles/annotation.module.css';
 import TopBar from "./components/topbar";
-// import { areListsTheSame } from './viewUtils';
-// import { annotationList } from '../../extension';
+
 
 interface Props {
   vscode: any;
@@ -31,8 +36,10 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
   const [searchedAnnotations, setSearchedAnnotations] = useState<Annotation[]>([])
   const [currentProject, setCurrentProject] = useState(window.currentProject ? window.currentProject : "");
   const [currentFile, setCurrentFile] = useState(window.currentFile ? window.currentFile : "");
-  // console.log('window', window);
   
+  // incoming messages are created and sent by ViewLoader.ts 
+  // e.g., ViewLoader's function "public createNewAnno" sends the "newAnno" message 
+  // which this listener receives and handles
   const handleIncomingMessages = (e: MessageEvent<any>) => {
     const message = e.data;
     switch(message.command) {
@@ -75,6 +82,24 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
     }
   }
 
+  React.useEffect(() => {
+    window.addEventListener('message', handleIncomingMessages);
+    window.document.addEventListener('keydown', handleCopyText);
+    return () => {
+      window.removeEventListener('message', handleIncomingMessages);
+      window.document.removeEventListener('keydown', handleCopyText);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if(!showLogIn && (!userName || !uid) && username && userId) {
+      setUsername(username);
+      setUserId(userId);
+    }
+  }, []);
+
+  // Webview's do not share clipboard data with the main extension
+  // so we need to do this manually :-/
   const handleCopyText = (e: Event) : void => {
     const keyboardEvent = (e as KeyboardEvent);
     if(window && (keyboardEvent.code === 'KeyC' || keyboardEvent.code === 'KeyX') && keyboardEvent.ctrlKey) {
@@ -106,22 +131,6 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
     });
     return;
   }
-
-  React.useEffect(() => {
-    window.addEventListener('message', handleIncomingMessages);
-    window.document.addEventListener('keydown', handleCopyText);
-    return () => {
-      window.removeEventListener('message', handleIncomingMessages);
-      window.document.removeEventListener('keydown', handleCopyText);
-    }
-  }, []);
-
-  React.useEffect(() => {
-    if(!showLogIn && (!userName || !uid) && username && userId) {
-      setUsername(username);
-      setUserId(userId);
-    }
-  }, []);
 
   const notifyDone = () : void => {
     setShowNewAnnotation(false);

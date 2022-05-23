@@ -1,25 +1,28 @@
+/*
+ * 
+ * debuggerAdapterTrackerFactory.ts
+ * Required class for creating debugAdapter
+ *
+ */
 import {
     DebugAdapterTracker,
     DebugAdapterTrackerFactory,
     DebugSession,
     ProviderResult,
 } from "vscode";
-// import { DebuggerCommunicationService } from "../service/debuggerCommunicationService";
 import { MessagingService } from "./messagingService";
 import { DebugAdapter } from "./debugAdapter";
 
 export class DebugAdapterFactory implements DebugAdapterTrackerFactory {
     private debugSession: DebugSession;
     private messagingService: MessagingService;
-    // private debugCommunicationService: DebuggerCommunicationService;
+
     constructor(
         debugSession: DebugSession,
-        messagingService: MessagingService,
-        // debugCommunicationService: DebuggerCommunicationService
+        messagingService: MessagingService
     ) {
         this.debugSession = debugSession;
         this.messagingService = messagingService;
-        // this.debugCommunicationService = debugCommunicationService;
     }
     public createDebugAdapterTracker(
         session: DebugSession

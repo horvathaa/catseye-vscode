@@ -1,3 +1,10 @@
+/*
+ * 
+ * annotationList.tsx
+ * Component that takes annotations and segments them into each list we currently support 
+ * including pinned, current file, current project, other projects -> projects.
+ *
+ */
 import styles from '../styles/adamite.module.css';
 import { Annotation } from '../../../constants/constants';
 import { getAllAnnotationFilenames }  from '../utils/viewUtils';
@@ -29,7 +36,6 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
 
     const showHideCluster = (e: any) => {
         const div = e.target.nextElementSibling ? e.target.nextElementSibling : e.target.parentNode.nextElementSibling;
-        // console.log('div', div, 'e.target', e.target);
         if(div.classList.contains(styles['showing'])) {
             div.classList.remove(styles['showing']);
             div.classList.add(styles['hiding']);
@@ -40,6 +46,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
         }
     }
 
+    // create "Other Projects" list and the nested lists shown underneath
     const createProjectsClusters = (otherProjects: {[key: string] : any}) : React.ReactElement => {
         let projects: React.ReactElement[] = [];
         const iterable = Object.keys(otherProjects).sort().reduce((obj: {[key: string]: any}, k: string) => {
@@ -83,6 +90,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
         )
     }
 
+    // create all clusters
     const createClusters = () : React.ReactElement<any>[] => {
         let output : { [key: string] : any } = {
             'Pinned': [],
@@ -102,7 +110,9 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
                 output['Current Project'].push(a);
             }
             else {
-                output['Other Projects'][a.projectName] = output['Other Projects'].hasOwnProperty(a.projectName) ? [...output['Other Projects'][a.projectName], a] : [a];
+                output['Other Projects'][a.projectName] = output['Other Projects'].hasOwnProperty(a.projectName) ? 
+                    [...output['Other Projects'][a.projectName], a] : 
+                    [a];
             }
         });
         const jsx : React.ReactElement[] = [];

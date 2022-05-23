@@ -1,3 +1,9 @@
+/*
+ *
+ * outputs.tsx
+ * No longer used - this component used to house content the user selected from the terminal
+ *
+ */
 import * as React from 'react';
 import { Syntax } from './anchor';
 import { formatTimestamp } from '../../utils/viewUtils';

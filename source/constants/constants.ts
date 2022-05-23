@@ -83,12 +83,20 @@ export interface AnchorObject {
 	parentId: string
 }
 
+export interface Timer {
+	startTime: number,
+	endTime: number
+} 
+
 export interface ChangeEvent {
-    startTime: number,
-    endTime: number,
-    changes: vscode.TextDocumentContentChangeEvent[],
-    isComment: boolean,
-    complete: boolean
+    time: number,
+	textAdded: string,
+	commit: string,
+	branch: string,
+	file: string,
+    line: string,
+	charactersAdded: number,
+	charactersRemoved: number
 }
 
 export interface Snapshot {

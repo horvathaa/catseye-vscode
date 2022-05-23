@@ -6,11 +6,12 @@
  */
 
 import * as vscode from 'vscode';
-import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, deletedAnnotations, setDeletedAnnotationList, setInsertSpaces, changes, setChangeEvents, incrementNumChangeEventsCompleted, numChangeEventsCompleted, setCurrentColorTheme } from '../extension';
+import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, deletedAnnotations, setDeletedAnnotationList, setInsertSpaces, changes, setChangeEvents, incrementNumChangeEventsCompleted, numChangeEventsCompleted, setCurrentColorTheme, gitInfo } from '../extension';
 import * as anchor from '../anchorFunctions/anchor';
 import * as utils from '../utils/utils';
-import { Annotation, AnchorObject, ChangeEvent } from '../constants/constants';
-
+import { Annotation, AnchorObject, ChangeEvent, Timer } from '../constants/constants';
+let timeSinceLastEdit: number = -1;
+let tempChanges: any[] = [];
 // Update our internal representation of the color theme so Shiki (our package for code formatting) uses appropriate colors 
 export const handleDidChangeActiveColorTheme = (colorTheme: vscode.ColorTheme) => {
     // give editor time to update...
@@ -61,8 +62,52 @@ export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
     if(vscode.workspace.workspaceFolders) utils.handleSaveCloseEvent(annotationList, vscode.workspace.workspaceFolders[0].uri.path + '/test.json', TextDocument.uri.toString(), TextDocument);
 }
 
+const logChanges = (e: vscode.TextDocumentChangeEvent) : void => {
+    let currentTime = new Date().getTime();
+    const projectName: string = utils.getProjectName(e.document.uri.toString());
+    if(timeSinceLastEdit === -1 || (currentTime - timeSinceLastEdit) <= 2000) {
+        timeSinceLastEdit = currentTime;
+        tempChanges.push(
+            {
+                text: e.contentChanges.map(c => c.text !== '' ? c.text : `Delete: removed ${c.rangeLength} characters`).join(' '),
+                file: e.document.fileName,
+                lines: e.contentChanges.map(c => c.range.start.line !== c.range.end.line ? c.range.start.line + ' to ' + c.range.end.line : `${c.range.start.line}` ).join(' '),
+                characterChanges: e.contentChanges.flatMap(c => { return { added: c.text.length, removed: c.rangeLength }})
+            }
+        )
+        // console.log('pushing to tempChanges', tempChanges);
+
+    }
+    else if((currentTime - timeSinceLastEdit) >= 2000) {
+        timeSinceLastEdit = -1;
+        const characterData = tempChanges.flatMap(a => a.characterChanges);
+        setChangeEvents([...changes, {
+            time: currentTime,
+            textAdded: tempChanges.map(t => t.text).join(''),
+            commit: gitInfo[projectName].commit,
+            branch: gitInfo[projectName].branch,
+            file: [ ... new Set(tempChanges.map(t => t.file))].join('; '),
+            line: [ ... new Set(tempChanges.map(t => t.lines))].join('; '),
+            charactersAdded: characterData.reduce((accumulator, t) => accumulator + t.added, 0),
+            charactersRemoved: characterData.reduce((accumulator, t) => accumulator + t.removed, 0)
+        }]);
+        tempChanges = [];
+    }
+
+
+}
+
 // When user edits a document, update corresponding annotations
 export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) => {
+    console.log('e', e);
+
+    logChanges(e);
+    const hs = vscode.extensions.getExtension('draivin.hscopes')?.exports;
+    console.log(hs.getScopeAt(e.document, new vscode.Position(106, 20)))
+    console.log('hs', hs);
+    
+
+    // const token: scopeInfo.Token = hs?.getScopeAt(e.document, new vscode.Position(98, 10));
     const currentAnnotations = utils.getAllAnnotationsWithAnchorInFile(annotationList, e.document.uri.toString());
     const couldBeUndoOrPaste = utils.getAllAnnotationsWithAnchorInFile(deletedAnnotations, e.document.uri.toString()).length > 0 || copiedAnnotations.length > 0;
     if(!currentAnnotations.length && !tempAnno && !couldBeUndoOrPaste) { return } // no annotations could possibly be affected by this change

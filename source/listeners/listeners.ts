@@ -67,6 +67,7 @@ const logChanges = (e: vscode.TextDocumentChangeEvent) : void => {
     const projectName: string = utils.getProjectName(e.document.uri.toString());
     if(timeSinceLastEdit === -1 || (currentTime - timeSinceLastEdit) <= 2000) {
         timeSinceLastEdit = currentTime;
+
         tempChanges.push(
             {
                 text: e.contentChanges.map(c => c.text !== '' ? c.text : `Delete: removed ${c.rangeLength} characters`).join(' '),
@@ -103,8 +104,9 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
 
     logChanges(e);
     const hs = vscode.extensions.getExtension('draivin.hscopes')?.exports;
-    console.log(hs.getScopeAt(e.document, new vscode.Position(106, 20)))
-    console.log('hs', hs);
+    console.log(hs.getScopeAt(e.document, new vscode.Position(116, 20)))
+    console.log('getting scope for ' + e.document.getText(new vscode.Range(new vscode.Position(116, 0), new vscode.Position(116, 20))))
+    // console.log('hs-grammar', hs.getGrammar());
     
 
     // const token: scopeInfo.Token = hs?.getScopeAt(e.document, new vscode.Position(98, 10));

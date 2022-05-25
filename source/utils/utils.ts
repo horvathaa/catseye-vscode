@@ -283,7 +283,9 @@ export const handleSaveCloseEvent = async (annotationList: Annotation[], filePat
 		// console.log('newList', newList);
 		const ids: string[] = newList.map(a => a.id);
 		const visibleAnnotations: Annotation[] = currentFile === 'all' ? newList : annotationList.filter(a => !ids.includes(a.id)).concat(newList);
+		console.log('before set', visibleAnnotations);
 		setAnnotationList(visibleAnnotations);
+		// console.log('after', visibleAnnotations)
 		view?.updateDisplay(visibleAnnotations);
 		if(annosToSave.some((a: Annotation) => a.needToUpdate)) {
 			lastSavedAnnotations = annosToSave;
@@ -381,7 +383,9 @@ export const getGithubUrl = (visiblePath: string, projectName: string, returnSta
 	if(!gitInfo[projectName]?.repo || gitInfo[projectName]?.repo === "") return "";
 	const baseUrl: string = gitInfo[projectName].repo.split('.git')[0];
 	const endUrl: string = visiblePath.includes('\\') ? visiblePath.split(projectName)[1]?.replace(/\\/g, '/') : visiblePath.split(projectName)[1]; // '\\' : '\/';
-	return gitInfo[projectName].commit === 'localChange' || returnStable ? baseUrl + "/tree/main" + endUrl :  baseUrl + "/tree/" + gitInfo[projectName].commit + endUrl;
+	return gitInfo[projectName].commit === 'localChange' || returnStable ? 
+		baseUrl + "/tree/" + gitInfo[projectName].nameOfPrimaryBranch + endUrl : 
+		baseUrl + "/tree/" + gitInfo[projectName].commit + endUrl;
 }
 
 
@@ -409,6 +413,7 @@ export const updateAnnotationCommit = (commit: string, branch: string, repo: str
 // on launch, using Git API, get metadata about each annotation, the commit it corresponds to, and more
 export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] : any}> => {
 	await gitApi.repositories?.forEach(async (r: any) => {
+		console.log('r', r);
 		const currentProjectName: string = getProjectName(r?.rootUri?.path);
 		r?.state?.onDidChange(async () => {
 			const currentProjectName: string = getProjectName(r?.rootUri?.path);
@@ -427,11 +432,14 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 				updateAnnotationCommit(r.state.HEAD.commit, r.state.HEAD.name, r?.state?.remotes[0]?.fetchUrl);
 			}
 		});
+		const branchNames = r.state.refs.map((ref: {[key: string]: any}) => ref.name)
+		const nameOfPrimaryBranch = branchNames.includes('main') ? 'main' : branchNames.includes('master') ? 'master' : ''; 
 		gitInfo[currentProjectName] = {
 			repo: r?.state?.remotes[0]?.fetchUrl ? r?.state?.remotes[0]?.fetchUrl : r?.state?.remotes[0]?.pushUrl ? r?.state?.remotes[0]?.pushUrl : "",
 			branch: r?.state?.HEAD?.name ? r?.state?.HEAD?.name : "",
 			commit: r?.state?.HEAD?.commit ? r?.state?.HEAD?.commit : "",
-			modifiedAnnotations: []
+			modifiedAnnotations: [],
+			nameOfPrimaryBranch
 		}
 	});
 

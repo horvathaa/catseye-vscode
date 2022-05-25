@@ -38,7 +38,8 @@ export const handleChangeVisibleTextEditors = (textEditors: vscode.TextEditor[])
 
     if(!annotationsToHighlight.length) return;
     if(view) { 
-        anchor.addHighlightsToEditor(annotationsToHighlight);
+        console.log('annotationsToHighlight', annotationsToHighlight);
+        textEditors.forEach(t => anchor.addHighlightsToEditor(annotationsToHighlight, t))
     }
 }
 
@@ -48,7 +49,9 @@ export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | und
         if(TextEditor) {
             if(TextEditor.options?.tabSize) setTabSize(TextEditor.options.tabSize);
             if(TextEditor.options?.insertSpaces) setInsertSpaces(TextEditor.options.insertSpaces);
+            console.log('annotationList before set', annotationList);
             setAnnotationList(utils.sortAnnotationsByLocation(annotationList, TextEditor.document.uri.toString())); // mark these annos as out of date
+            console.log('list after', annotationList);
             const currentProject: string = utils.getProjectName(TextEditor.document.uri.fsPath);
             if(user && vscode.workspace.workspaceFolders)
             view?.updateDisplay(undefined, TextEditor.document.uri.toString(), currentProject);
@@ -100,12 +103,12 @@ const logChanges = (e: vscode.TextDocumentChangeEvent) : void => {
 
 // When user edits a document, update corresponding annotations
 export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) => {
-    console.log('e', e);
+    // console.log('e', e);
 
     logChanges(e);
-    const hs = vscode.extensions.getExtension('draivin.hscopes')?.exports;
-    console.log(hs.getScopeAt(e.document, new vscode.Position(116, 20)))
-    console.log('getting scope for ' + e.document.getText(new vscode.Range(new vscode.Position(116, 0), new vscode.Position(116, 20))))
+    // const hs = vscode.extensions.getExtension('draivin.hscopes')?.exports;
+    // console.log(hs.getScopeAt(e.document, new vscode.Position(116, 20)))
+    // console.log('getting scope for ' + e.document.getText(new vscode.Range(new vscode.Position(116, 0), new vscode.Position(116, 20))))
     // console.log('hs-grammar', hs.getGrammar());
     
 

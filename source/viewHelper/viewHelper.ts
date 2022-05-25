@@ -37,6 +37,7 @@ export const handleAdamiteWebviewLaunch = () : void => {
     const annoFiles: string[] = getAllAnnotationFilenames(annotationList);
     vscode.window.visibleTextEditors.forEach((v: vscode.TextEditor) => {
         if(annoFiles.includes(v.document.uri.toString())) {
+            console.log('webview launch', annotationList);
             addHighlightsToEditor(annotationList, v); 
         }
     });
@@ -161,7 +162,7 @@ export const handleCreateAnnotation = (annotationContent: string, willBePinned: 
             setTempAnno(null);
             setAnnotationList(sortAnnotationsByLocation(annotationList, text?.document.uri.toString()));
             view?.updateDisplay(annotationList);
-            addHighlightsToEditor(annotationList, text);
+            if(text) addHighlightsToEditor(annotationList, text);
             if(willBePinned) {
                 setSelectedAnnotationsNavigations([...selectedAnnotationsNavigations, { id: newAnno.id, lastVisited: false, anchorId: newAnno.anchors[0].anchorId } ]);
             }

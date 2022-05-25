@@ -158,3 +158,17 @@ export enum DEBUG_COMMANDS {
     CONTINUE = "continue",
     DISCONNECT = "disconnect",
 }
+
+export interface GitRepoInfo {
+	repo: string,
+	branch: string,
+	commit: string,
+	modifiedAnnotations: Annotation[],
+	nameOfPrimaryBranch: string
+}
+
+
+// export interface GitInfo {
+// 	author: string,
+// 	[key: string]: GitRepoInfo
+// }

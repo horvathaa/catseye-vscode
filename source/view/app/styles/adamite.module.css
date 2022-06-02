@@ -17,7 +17,7 @@
     padding-left: 8px;
     padding-top: 4px;
     padding-bottom: 4px;
-    color: var( --vscode-button-foreground);
+    color: var(--vscode-activityBar-foreground);
     border-radius: 8px;
     margin-top: 4px;
 }

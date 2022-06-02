@@ -1,7 +1,7 @@
 # Adamite in VS Code
 
 Description:
-- This extension was made to allow developers to store and annotate selected peices of code. Other users can view and act upon annotations you have made.
+- This extension was made to allow developers to store and annotate selected pieces of code. Other users can view and act upon annotations you have made.
 
 Important checks:
 - Make sure to have the latest version of VS Code to test extension

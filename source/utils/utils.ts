@@ -8,7 +8,7 @@
 import firebase from '../firebase/firebase';
 import { Annotation, AnchorObject, Anchor, Snapshot, stringToShikiThemes } from '../constants/constants';
 import { computeRangeFromOffset, createAnchorFromRange } from '../anchorFunctions/anchor';
-import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations, adamiteLog, setSelectedAnnotationsNavigations, currentColorTheme } from '../extension';
+import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations, adamiteLog, setSelectedAnnotationsNavigations, currentColorTheme, activeEditor } from '../extension';
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
 import { getAnnotationsOnSignIn } from '../firebase/functions/functions';
@@ -32,8 +32,8 @@ const arraysEqual = (a1: any[], a2: any[]) : boolean => {
 // on sign-in, get and sort user's annotations into memory
 export const initializeAnnotations = async (user: firebase.User) : Promise<void> => {
 	const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
-	const annotations: Annotation [] = sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename);
-	setAnnotationList(sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename));
+	const annotations: Annotation [] = sortAnnotationsByLocation(await getAnnotationsOnSignIn(user));
+	setAnnotationList(sortAnnotationsByLocation(await getAnnotationsOnSignIn(user)));
 	const selectedAnnotations: Annotation[] = annotations.filter(a => a.selected);
 	setSelectedAnnotationsNavigations(
 		selectedAnnotations.length ? 
@@ -176,18 +176,12 @@ const sortAnchorsByLocation = (anchors: AnchorObject[]) : AnchorObject[] => {
 	});
 }
 
-export const sortAnnotationsByLocation = (annotationList: Annotation[], filename: string | undefined) : Annotation[] => {
+export const sortAnnotationsByLocation = (annotationList: Annotation[]) : Annotation[] => {
 	const sortedAnchors: string[] = sortAnchorsByLocation(annotationList.flatMap(a => a.anchors)).map(a => a.parentId);
 	annotationList.sort((a: Annotation, b: Annotation) => {
 		return sortedAnchors.indexOf(b.id) - sortedAnchors.indexOf(a.id);
 	});
-	// annotationList.sort((a: Annotation, b: Annotation) => {
-	// 	// if a is the same as the filename and b isn't OR if a and b are both pointing at the same file, keep the order
-	// 	// else move annotation b before a
-	// 	let order: number = -1;
-	// 	if(filename) order = (a.filename === filename && b.filename !== filename) || (a.filename === b.filename && a.filename === filename) ? -1 : 1;
-	// 	return order;
-	// })
+
 	return annotationList;
 }
 
@@ -267,6 +261,13 @@ const updateHtml = async (annos: Annotation[], doc: vscode.TextDocument) : Promi
 
 }
 
+export const getAllAnnotationsWithGitUrlInFile = (annotationList: Annotation[], currentUrl: string) : Annotation[] => {
+	return annotationList.filter((a: Annotation) => {
+		const urls: string[] = a.anchors.map(a => a.stableGitUrl);
+		return urls.includes(currentUrl)
+	});
+}
+
 export const getAllAnnotationsWithAnchorInFile = (annotationList: Annotation[], currentFile: string) : Annotation[] => {
 	return annotationList.filter((a: Annotation) => {
 		const filesThisAnnotationIsIn: string[] = a.anchors.map(a => a.filename);
@@ -283,7 +284,7 @@ export const handleSaveCloseEvent = async (annotationList: Annotation[], filePat
 		// console.log('newList', newList);
 		const ids: string[] = newList.map(a => a.id);
 		const visibleAnnotations: Annotation[] = currentFile === 'all' ? newList : annotationList.filter(a => !ids.includes(a.id)).concat(newList);
-		console.log('before set', visibleAnnotations);
+		// console.log('before set', visibleAnnotations);
 		setAnnotationList(visibleAnnotations);
 		// console.log('after', visibleAnnotations)
 		view?.updateDisplay(visibleAnnotations);
@@ -379,10 +380,18 @@ const writeToFile = async (serializedObjects: { [key: string] : any }[], annotat
 	}
 }
 
-export const getGithubUrl = (visiblePath: string, projectName: string, returnStable: boolean) : string => {
+export const getStableGitHubUrl = (fsPath: string) : string => {
+	const projectName = getProjectName(fsPath);
+	const visPath = getVisiblePath(getProjectName(fsPath), fsPath);
+	return getGithubUrl(visPath, projectName, true);
+}
+
+export const getGithubUrl = (visiblePath: string | undefined, projectName: string, returnStable: boolean) : string => {
+	const visPath = !visiblePath ? getVisiblePath(projectName, activeEditor?.document.uri.fsPath) : visiblePath;
 	if(!gitInfo[projectName]?.repo || gitInfo[projectName]?.repo === "") return "";
 	const baseUrl: string = gitInfo[projectName].repo.split('.git')[0];
-	const endUrl: string = visiblePath.includes('\\') ? visiblePath.split(projectName)[1]?.replace(/\\/g, '/') : visiblePath.split(projectName)[1]; // '\\' : '\/';
+	const endUrl: string = visPath.includes('\\') ? visPath.split(projectName)[1]?.replace(/\\/g, '/') : visPath.split(projectName)[1]; // '\\' : '\/';
+	console.log('endUrl', endUrl, 'visPath', visPath);
 	return gitInfo[projectName].commit === 'localChange' || returnStable ? 
 		baseUrl + "/tree/" + gitInfo[projectName].nameOfPrimaryBranch + endUrl : 
 		baseUrl + "/tree/" + gitInfo[projectName].commit + endUrl;
@@ -393,6 +402,7 @@ export const getGithubUrl = (visiblePath: string, projectName: string, returnSta
 export const getVisiblePath = (projectName: string, workspacePath: string | undefined) : string => {
 	if(projectName && workspacePath) {
 		const path: string = workspacePath.substring(workspacePath.indexOf(projectName));
+		console.log('path', path);
 		if(path) return path;
 	}
 	else if(workspacePath) {
@@ -441,6 +451,7 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 			modifiedAnnotations: [],
 			nameOfPrimaryBranch
 		}
+		console.log('gitInfo', gitInfo);
 	});
 
 	return gitInfo;
@@ -448,17 +459,26 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 
 
 export const getProjectName = (filename?: string | undefined) : string => {
-	if(vscode.workspace.workspaceFolders && filename) {
-		const slash: string = filename.includes('\\') ? '\\' : '\/';
-		if(vscode.workspace.workspaceFolders.length > 1) {
+	if(vscode.workspace.workspaceFolders) {
+		if(vscode.workspace.workspaceFolders.length > 1 && filename) {
+			const slash: string = filename.includes('\\') ? '\\' : '\/';
 			const candidateProjects: string[] = vscode.workspace.workspaceFolders.map((f: vscode.WorkspaceFolder) => f.name);
 			return candidateProjects.filter((name: string) => filename.includes(name))[0] ? 
-			candidateProjects.filter((name: string) => filename.includes(name))[0] : 
-			filename.split(slash)[filename.split(slash).length - 1] ? filename.split(slash)[filename.split(slash).length - 1] :
-			filename;
+				candidateProjects.filter((name: string) => filename.includes(name))[0] : 
+				filename.split(slash)[filename.split(slash).length - 1] ? filename.split(slash)[filename.split(slash).length - 1] :
+				filename;
+			
 		}
 		else if(vscode.workspace.workspaceFolders.length === 1) {
 			return vscode.workspace.workspaceFolders[0].name;
+		}
+		else if(!filename) {
+			const fsPath: string = vscode.window.activeTextEditor ? 
+				vscode.window.activeTextEditor.document.uri.fsPath : 
+				vscode.window.visibleTextEditors[0].document.uri.fsPath;
+			const candidateProjects: string[] = vscode.workspace.workspaceFolders.map((f: vscode.WorkspaceFolder) => f.name);
+			const match = candidateProjects.find(project => fsPath.includes(project));
+			return match ? match : "";
 		}
 	}
 	return "";

@@ -83,10 +83,8 @@ export interface AnchorObject {
 	parentId: string
 }
 
-export interface Timer {
-	startTime: number,
-	endTime: number
-} 
+
+
 
 export interface ChangeEvent {
     time: number,

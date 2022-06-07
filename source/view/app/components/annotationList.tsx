@@ -7,7 +7,10 @@
  */
 import styles from '../styles/adamite.module.css';
 import { Annotation } from '../../../constants/constants';
-import { getAllAnnotationFilenames }  from '../utils/viewUtils';
+import { 
+    // getAllAnnotationFilenames, 
+    getAllAnnotationStableGitUrls 
+}  from '../utils/viewUtils';
 import ReactAnnotation from '../components/annotation';
 import * as React from 'react';
 
@@ -23,7 +26,7 @@ interface AnnoListProps {
   }
   
 const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, currentFile, currentProject, username, userId }) => {
- 
+    console.log('currentFile in webview', currentFile);
     React.useEffect(() => {
         if(annotations.length) {
             createClusters();
@@ -99,7 +102,8 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
             'Other Projects': {}
         };
         annotations.forEach((a: Annotation) => {
-            const annoFiles = getAllAnnotationFilenames([a]);
+            // const annoFiles = getAllAnnotationFilenames([a]);
+            const annoFiles = getAllAnnotationStableGitUrls(a);
             if(a.selected) {
                 output['Pinned'].push(a);
             }

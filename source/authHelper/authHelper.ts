@@ -16,7 +16,7 @@ const SCOPES = ['read:user', 'user:email', 'repo'];
 
 // Called on VS Code launch
 export const initializeAuth = async () => {
-    let session;
+    let session: vscode.AuthenticationSession | undefined;
     const authSessionOptions: vscode.AuthenticationGetSessionOptions = {
         clearSessionPreference: false,
         createIfNone: true

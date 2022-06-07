@@ -133,3 +133,8 @@ export const getAllAnnotationFilenames = (annotationList: Annotation[]) : string
 	return allFiles;
 	// return [ ... new Set (annotationList.flatMap(a => a.anchors.map(a => a.filename))) ];
 }
+
+export const getAllAnnotationStableGitUrls = (annotationList: Annotation[] | Annotation) : string[] => {
+	return Array.isArray(annotationList) ? [ ... new Set (annotationList.flatMap(a => a.anchors.map(a => a.stableGitUrl))) ] :
+		[ ... new Set (annotationList.anchors.map(a => a.stableGitUrl))]
+}

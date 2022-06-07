@@ -246,6 +246,7 @@ export function createRangesFromAnnotation(annotation: Annotation) : vscode.Rang
 
 // Function to make VS Code decoration objects (the highlights that appear in the editor) with our metadata added
 const createDecorationOptions = (ranges: AnnotationRange[], annotationList: Annotation[]) : vscode.DecorationOptions[] => {
+	// console.log('annotationList', annotationList, 'ranges', ranges);
 	return ranges.map(r => {
 		let markdownArr = new Array<vscode.MarkdownString>();
 		markdownArr.push(new vscode.MarkdownString(annotationList.find((a) => a.id === r.annotationId)?.annotation));
@@ -293,24 +294,28 @@ const validateRanges = (ranges: AnnotationRange[], text: vscode.TextEditor) : [A
 
 // Function to actually decorate each file with our annotation highlights
 export const addHighlightsToEditor = (annotationsToHighlight: Annotation[], text: vscode.TextEditor) : void => {
-	console.log('annotationList??', annotationList);
 	const filenames = getAllAnnotationFilenames(annotationsToHighlight);
 	const githubUrls = getAllAnnotationStableGitUrls(annotationsToHighlight)
 	const projectName = getProjectName(text?.document.uri.toString());
+	// console.log('projectName', projectName);
+	const visPath = getVisiblePath(projectName, text.document.uri.fsPath);
+	// console.log('visPath', visPath);
 	const textUrl = text ? getGithubUrl(getVisiblePath(projectName, text.document.uri.fsPath), projectName, true) : "";
-	
+	// console.log('textUrl', textUrl, 'text', text);
 	// we have one specific doc we want to highlight
-	if(annotationList.length && text && (filenames.includes(text.document.uri.toString()) || githubUrls.includes(textUrl))) {
+	if(annotationsToHighlight.length && text && (filenames.includes(text.document.uri.toString()) || githubUrls.includes(textUrl))) {
 		let anchors: AnchorObject[] = annotationsToHighlight
 			.flatMap(a => a.anchors)
 			// .filter(a => a.filename === text.document.uri.toString());
 			.filter(a => a.stableGitUrl === textUrl);
+		// console.log('anchors', anchors);
 		// console.log('gitInfo', gitInfo, 'anchors', anchors, 'githubUrls', githubUrls, 'textUrl', textUrl, 'text', text);
 		let ranges: AnnotationRange[] = anchors
 			.map(a => { return { annotationId: a.parentId, anchorText: a.anchorText, url: a.stableGitUrl, filename: a.filename, range: createRangeFromAnchorObject(a)}})
 			// .filter(r => r.filename === text.document.uri.toString())
 			.filter(r => r.url === textUrl)
 			.map(a => { return { annotationId: a.annotationId, anchorText: a.anchorText, range: a.range }});
+		// console.log('ranges', ranges);
 		if(ranges.length) {
 			const [validRanges, invalidRanges] = validateRanges(ranges, text);
 			const validIds: string[] = validRanges.map(r => r.annotationId);
@@ -318,14 +323,11 @@ export const addHighlightsToEditor = (annotationsToHighlight: Annotation[], text
 			valid.forEach((a: Annotation) => a.outOfDate = false);
 			// bring back annotations that are not in the file
 			const newAnnotationList : Annotation[] = sortAnnotationsByLocation(
-				valid.concat(getAnnotationsNotInFile(annotationList, text.document.uri.toString())), 
-				text.document.uri.toString()
+				valid.concat(getAnnotationsNotInFile(annotationList, text.document.uri.toString()))
 			);
-			console.log('lol wut', newAnnotationList);
-
 			setAnnotationList(newAnnotationList);
 			try {
-				const decorationOptions: vscode.DecorationOptions[] = createDecorationOptions(validRanges, annotationList);
+				const decorationOptions: vscode.DecorationOptions[] = createDecorationOptions(validRanges, newAnnotationList);
 				text.setDecorations(annotationDecorations, decorationOptions);
 			}
 			catch (error) {

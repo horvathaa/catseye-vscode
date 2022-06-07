@@ -119,7 +119,7 @@ export const createView = async (context: vscode.ExtensionContext) => {
 
 			// since we launched Adamite, show highlights in editor
 			if(vscode.window.activeTextEditor) {
-				console.log('launch + active', annotationList);
+				// console.log('launch + active', annotationList);
 				anchor.addHighlightsToEditor(annotationList, vscode.window.activeTextEditor);
 			}
 			else {

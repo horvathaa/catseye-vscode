@@ -160,7 +160,7 @@ export const handleCreateAnnotation = (annotationContent: string, willBePinned: 
             setAnnotationList(annotationList.concat([newAnno]));
             const text = vscode.window.visibleTextEditors?.find(doc => doc.document.uri.toString() === tempAnno?.anchors[0].filename);
             setTempAnno(null);
-            setAnnotationList(sortAnnotationsByLocation(annotationList, text?.document.uri.toString()));
+            setAnnotationList(sortAnnotationsByLocation(annotationList));
             view?.updateDisplay(annotationList);
             if(text) addHighlightsToEditor(annotationList, text);
             if(willBePinned) {
@@ -212,8 +212,7 @@ export const handleDeleteAnnotation = (id: string) : void => {
     visible ? 
         setAnnotationList(
             sortAnnotationsByLocation(
-                removeOutOfDateAnnotations(updatedList), 
-                visible?.document.uri.toString()
+                removeOutOfDateAnnotations(updatedList)
             )
         ) : 
         setAnnotationList(

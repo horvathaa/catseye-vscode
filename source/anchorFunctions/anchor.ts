@@ -315,17 +315,20 @@ export const addHighlightsToEditor = (annotationsToHighlight: Annotation[], text
 			// .filter(r => r.filename === text.document.uri.toString())
 			.filter(r => r.url === textUrl)
 			.map(a => { return { annotationId: a.annotationId, anchorText: a.anchorText, range: a.range }});
-		// console.log('ranges', ranges);
+		console.log('ranges', ranges);
 		if(ranges.length) {
+			const updatedIds: string[] = ranges.map(r => r.annotationId);
 			const [validRanges, invalidRanges] = validateRanges(ranges, text);
 			const validIds: string[] = validRanges.map(r => r.annotationId);
 			const valid: Annotation[] = annotationsToHighlight.filter((a: Annotation) => validIds.includes(a.id));
 			valid.forEach((a: Annotation) => a.outOfDate = false);
 			// bring back annotations that are not in the file
 			const newAnnotationList : Annotation[] = sortAnnotationsByLocation(
-				valid.concat(getAnnotationsNotInFile(annotationList, text.document.uri.toString()))
+				valid.concat(annotationList.filter(a => !updatedIds.includes(a.id)))
 			);
+			console.log('list before', annotationList);
 			setAnnotationList(newAnnotationList);
+			console.log('list after', annotationList);
 			try {
 				const decorationOptions: vscode.DecorationOptions[] = createDecorationOptions(validRanges, newAnnotationList);
 				text.setDecorations(annotationDecorations, decorationOptions);

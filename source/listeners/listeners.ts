@@ -23,7 +23,7 @@ export const handleDidChangeActiveColorTheme = (colorTheme: vscode.ColorTheme) =
 }
 
 // Listens for a change in visible editors so we can highlight correct anchors for all visible files
-export const handleChangeVisibleTextEditors = (textEditors: vscode.TextEditor[]) => {
+export const handleChangeVisibleTextEditors = (textEditors: readonly vscode.TextEditor[]) => {
     const textEditorFileNames = textEditors.map(t => t.document.uri.toString());
     const textEditorProjectFileNames =  vscode.window.activeTextEditor ? 
         textEditors.map(t => utils.getStableGitHubUrl(t.document.uri.fsPath)) : []

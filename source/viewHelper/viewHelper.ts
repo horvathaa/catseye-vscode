@@ -108,13 +108,33 @@ export const handleAddAnchor = async (id: string) : Promise<void> => {
     }
 }
 
+const getLocalPathFromGitHubUrl = (url: string) : string => {
+    const gitProjects = Object.keys(gitInfo).filter(g => g !== 'author'); // if the user does not have the workspace open, i don't think this will work
+    console.log('gitProjects', gitProjects);
+    const match = gitProjects.find(g => url.includes(g));
+    console.log('match', match);
+    if(!match) return url;
+    console.log('split', url.split(match))
+    const urlSplit = url.split(match)[1];
+    const cleanString = urlSplit.split('/tree/' + gitInfo[match].nameOfPrimaryBranch + '/')[1];
+    const finalString = match.concat('/', cleanString);
+    console.log('losing it', cleanString, finalString);
+    console.log('urlSplit', urlSplit);
+    const matchingDoc = vscode.workspace.textDocuments.find(document => document.uri.path.includes(finalString));
+    console.log('matchingDoc', matchingDoc, 'text docs', vscode.workspace.textDocuments);
+    if(!matchingDoc) return url;
+    return matchingDoc.uri.toString();
+}
+
 // Navigate to the selected anchor's location
 export const handleScrollInEditor = (id: string, anchorId: string) : void => {
-    const anno: Annotation | undefined = annotationList.find(anno => anno.id === id);
+    const anno: Annotation | undefined = annotationList.find(anno => anno.id === id); 
     const anchorObj: AnchorObject | undefined = anno?.anchors.find(a => a.anchorId === anchorId);
     if(anno && anchorObj) {
         const range = createRangeFromAnchorObject(anchorObj);
-        const text = vscode.window.visibleTextEditors?.find(doc => doc.document.uri.toString() === anchorObj.filename);
+        console.log('whee');
+        getLocalPathFromGitHubUrl(anchorObj.stableGitUrl);
+        const text = vscode.window.visibleTextEditors?.find(doc => doc.document.uri.toString() === anchorObj.filename); // maybe switch to textDocuments
         if(!text) {
             vscode.workspace.openTextDocument(vscode.Uri.parse(anchorObj.filename.toString()))
             .then((doc: vscode.TextDocument) => {

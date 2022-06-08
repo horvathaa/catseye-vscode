@@ -103,6 +103,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, 
         };
         annotations.forEach((a: Annotation) => {
             // const annoFiles = getAllAnnotationFilenames([a]);
+            console.log('currentProject', currentProject);
             const annoFiles = getAllAnnotationStableGitUrls(a);
             if(a.selected) {
                 output['Pinned'].push(a);

@@ -51,6 +51,7 @@ export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | und
             // console.log('list after', annotationList);
             const currentProject: string = utils.getProjectName(TextEditor.document.uri.fsPath);
             const gitUrl: string = utils.getGithubUrl(TextEditor.document.uri.fsPath, currentProject, true);
+            console.log('changing active text editor');
             if(user && vscode.workspace.workspaceFolders)
             view?.updateDisplay(undefined, gitUrl, currentProject);
         }

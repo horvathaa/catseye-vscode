@@ -287,6 +287,7 @@ export const handleSaveCloseEvent = async (annotationList: Annotation[], filePat
 		// console.log('before set', visibleAnnotations);
 		setAnnotationList(visibleAnnotations);
 		// console.log('after', visibleAnnotations)
+		console.log('about to update display -- handleSaveClose');
 		view?.updateDisplay(visibleAnnotations);
 		if(annosToSave.some((a: Annotation) => a.needToUpdate)) {
 			lastSavedAnnotations = annosToSave;
@@ -386,11 +387,29 @@ export const getStableGitHubUrl = (fsPath: string) : string => {
 	return getGithubUrl(visPath, projectName, true);
 }
 
+const getEndUrl = (visiblePath: string, projectName: string) : string => {
+	let endUrl: string = "";
+	const firstIndex: number = visiblePath.indexOf(projectName); // this should be 0
+	// projectname appears multiple times in the string
+	if(firstIndex !== -1 && firstIndex !== visiblePath.lastIndexOf(projectName)) {
+		// may just be able to do this everytime instead of the else
+		endUrl = visiblePath.includes('\\') ? 
+			visiblePath.substring(firstIndex + projectName.length).replace(/\\/g, '/') : 
+			visiblePath.substring(firstIndex + projectName.length)
+	}
+	else {
+		endUrl = visiblePath.includes('\\') ? 
+			visiblePath.split(projectName)[1]?.replace(/\\/g, '/') : 
+			visiblePath.split(projectName)[1]; // '\\' : '\/';
+	}
+	return endUrl;
+}
+
 export const getGithubUrl = (visiblePath: string | undefined, projectName: string, returnStable: boolean) : string => {
 	const visPath = !visiblePath ? getVisiblePath(projectName, activeEditor?.document.uri.fsPath) : visiblePath;
 	if(!gitInfo[projectName]?.repo || gitInfo[projectName]?.repo === "") return "";
 	const baseUrl: string = gitInfo[projectName].repo.split('.git')[0];
-	const endUrl: string = visPath.includes('\\') ? visPath.split(projectName)[1]?.replace(/\\/g, '/') : visPath.split(projectName)[1]; // '\\' : '\/';
+	const endUrl = getEndUrl(visPath, projectName);
 	console.log('endUrl', endUrl, 'visPath', visPath);
 	return gitInfo[projectName].commit === 'localChange' || returnStable ? 
 		baseUrl + "/tree/" + gitInfo[projectName].nameOfPrimaryBranch + endUrl : 
@@ -443,7 +462,7 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 			}
 		});
 		const branchNames = r.state.refs.map((ref: {[key: string]: any}) => ref.name)
-		const nameOfPrimaryBranch = branchNames.includes('main') ? 'main' : branchNames.includes('master') ? 'master' : ''; 
+		const nameOfPrimaryBranch = branchNames.includes('main') ? 'main' : branchNames.includes('master') ? 'master' : ''; // are there other common primary branch names? or another way of determining what this is lol
 		gitInfo[currentProjectName] = {
 			repo: r?.state?.remotes[0]?.fetchUrl ? r?.state?.remotes[0]?.fetchUrl : r?.state?.remotes[0]?.pushUrl ? r?.state?.remotes[0]?.pushUrl : "",
 			branch: r?.state?.HEAD?.name ? r?.state?.HEAD?.name : "",

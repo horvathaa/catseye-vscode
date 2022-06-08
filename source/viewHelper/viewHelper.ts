@@ -23,8 +23,28 @@ import { user,
         outOfDateAnnotations,
         deletedAnnotations
 } from '../extension';
-import { initializeAnnotations, handleSaveCloseEvent, saveAnnotations, removeOutOfDateAnnotations, buildAnnotation, sortAnnotationsByLocation, getProjectName, getShikiCodeHighlighting, getAllAnnotationFilenames, createAnchorObject } from '../utils/utils';
-import { addHighlightsToEditor, createAnchorFromRange, createRangeFromAnchorObject, createRangesFromAnnotation, updateAnchorInAnchorObject } from '../anchorFunctions/anchor';
+import { 
+    initializeAnnotations, 
+    handleSaveCloseEvent, 
+    saveAnnotations, 
+    removeOutOfDateAnnotations, 
+    buildAnnotation, 
+    sortAnnotationsByLocation, 
+    getProjectName, 
+    getShikiCodeHighlighting, 
+    getAllAnnotationFilenames, 
+    createAnchorObject, 
+    getAllAnnotationStableGitUrls,
+    getGithubUrl,
+    getStableGitHubUrl
+} from '../utils/utils';
+import { 
+    addHighlightsToEditor, 
+    createAnchorFromRange, 
+    createRangeFromAnchorObject, 
+    createRangesFromAnnotation, 
+    updateAnchorInAnchorObject 
+} from '../anchorFunctions/anchor';
 import { v4 as uuidv4 } from 'uuid';
 
 // Opens and reloads the webview -- this is invoked when the user uses the "Adamite: Launch Adamite" command (ctrl/cmd + shift + A).
@@ -34,10 +54,12 @@ export const handleAdamiteWebviewLaunch = () : void => {
     if(user) view?.reload(gitInfo.author, user.uid);
     if(vscode.workspace.workspaceFolders)
         view?.updateDisplay(annotationList, currFilename, getProjectName(vscode.window.activeTextEditor?.document.uri.fsPath));
-    const annoFiles: string[] = getAllAnnotationFilenames(annotationList);
+    // const annoFiles: string[] = getAllAnnotationFilenames(annotationList);
+    const annoUrls: string[] = getAllAnnotationStableGitUrls(annotationList);
     vscode.window.visibleTextEditors.forEach((v: vscode.TextEditor) => {
-        if(annoFiles.includes(v.document.uri.toString())) {
-            console.log('webview launch', annotationList);
+        if(annoUrls.includes(getStableGitHubUrl(v.document.uri.fsPath))) {
+        // if(annoFiles.includes(v.document.uri.toString())) {
+            // console.log('webview launch', annotationList);
             addHighlightsToEditor(annotationList, v); 
         }
     });

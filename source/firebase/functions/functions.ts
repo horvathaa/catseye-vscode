@@ -6,7 +6,7 @@
  */
 
 import { Annotation } from '../../constants/constants';
-import { user } from '../../extension';
+import { currentGitHubCommit, user } from '../../extension';
 import { getListFromSnapshots, makeObjectListFromAnnotations, buildAnnotation } from '../../utils/utils';
 import firebase from '../firebase';
 import { DB_COLLECTIONS } from '..';
@@ -30,8 +30,12 @@ export const saveAnnotations = (annotationList: Annotation[]) : void => {
 export const getAnnotationsOnSignIn = async (user: firebase.User, currentGitProject: string) : Promise<Annotation[]> => {
 	const userAnnotationDocs: firebase.firestore.QuerySnapshot = await getUserAnnotations(user.uid);
 	const collaboratorAnnotationDocs: firebase.firestore.QuerySnapshot = await getAnnotationsByProject(currentGitProject, user.uid);
-	if(!userAnnotationDocs || userAnnotationDocs.empty) return []
-	const dataAnnotations = getListFromSnapshots(userAnnotationDocs);
+	console.log('collabo', collaboratorAnnotationDocs, getListFromSnapshots(collaboratorAnnotationDocs));
+	if(
+		(!userAnnotationDocs || userAnnotationDocs.empty) && 
+		(!collaboratorAnnotationDocs || collaboratorAnnotationDocs.empty)
+	) return []
+	const dataAnnotations = getListFromSnapshots(userAnnotationDocs).concat(getListFromSnapshots(collaboratorAnnotationDocs));
 	const annotations: Annotation[] = dataAnnotations && dataAnnotations.length ? dataAnnotations.map((a: any) => {
 		return buildAnnotation( { ...a, needToUpdate: false } );
 	}) : [];
@@ -70,8 +74,9 @@ export const getAnnotationsByProject = (gitRepo: string, uid: string) : Promise<
 	return annotationsRef
 		.where('gitRepo', '==', gitRepo)
 		.where('authorId', '!=', uid)
-		.where('shareWith', '==', 'public')
-		.get()
+		.where('sharedWith', '==', 'group')
+		.where('gitCommit', '==', currentGitHubCommit)
+		.get();
 }
 
 export const getUserAnnotations = (uid: string) : Promise<firebase.firestore.QuerySnapshot> => {

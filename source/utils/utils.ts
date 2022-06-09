@@ -8,11 +8,29 @@
 import firebase from '../firebase/firebase';
 import { Annotation, AnchorObject, Anchor, Snapshot, stringToShikiThemes } from '../constants/constants';
 import { computeRangeFromOffset, createAnchorFromRange } from '../anchorFunctions/anchor';
-import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations, adamiteLog, setSelectedAnnotationsNavigations, currentColorTheme, activeEditor, setcurrentGitHubProject, setCurrentColorTheme, currentGitHubProject } from '../extension';
+import { gitInfo, 
+	user, 
+	storedCopyText, 
+	annotationList, 
+	view, 
+	setAnnotationList, 
+	outOfDateAnnotations, 
+	deletedAnnotations, 
+	adamiteLog, 
+	setSelectedAnnotationsNavigations, 
+	currentColorTheme, 
+	activeEditor, 
+	setCurrentGitHubProject, 
+	setCurrentColorTheme, 
+	currentGitHubProject, 
+	setCurrentGitHubCommit, 
+	currentGitHubCommit
+} from '../extension';
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
 import { getAnnotationsOnSignIn } from '../firebase/functions/functions';
 import { saveAnnotations as fbSaveAnnotations } from '../firebase/functions/functions';
+import { BiMessageAltCheck } from 'react-icons/bi';
 let { parse } = require('what-the-diff');
 var shiki = require('shiki');
 
@@ -287,7 +305,7 @@ export const handleSaveCloseEvent = async (annotationList: Annotation[], filePat
 		// console.log('before set', visibleAnnotations);
 		setAnnotationList(visibleAnnotations);
 		// console.log('after', visibleAnnotations)
-		console.log('about to update display -- handleSaveClose');
+		// console.log('about to update display -- handleSaveClose');
 		view?.updateDisplay(visibleAnnotations);
 		if(annosToSave.some((a: Annotation) => a.needToUpdate)) {
 			lastSavedAnnotations = annosToSave;
@@ -410,7 +428,7 @@ export const getGithubUrl = (visiblePath: string | undefined, projectName: strin
 	if(!gitInfo[projectName]?.repo || gitInfo[projectName]?.repo === "") return "";
 	const baseUrl: string = gitInfo[projectName].repo.split('.git')[0];
 	const endUrl = getEndUrl(visPath, projectName);
-	console.log('endUrl', endUrl, 'visPath', visPath);
+	// console.log('endUrl', endUrl, 'visPath', visPath);
 	return gitInfo[projectName].commit === 'localChange' || returnStable ? 
 		baseUrl + "/tree/" + gitInfo[projectName].nameOfPrimaryBranch + endUrl : 
 		baseUrl + "/tree/" + gitInfo[projectName].commit + endUrl;
@@ -421,7 +439,7 @@ export const getGithubUrl = (visiblePath: string | undefined, projectName: strin
 export const getVisiblePath = (projectName: string, workspacePath: string | undefined) : string => {
 	if(projectName && workspacePath) {
 		const path: string = workspacePath.substring(workspacePath.indexOf(projectName));
-		console.log('path', path);
+		// console.log('path', path);
 		if(path) return path;
 	}
 	else if(workspacePath) {
@@ -439,22 +457,38 @@ export const updateAnnotationCommit = (commit: string, branch: string, repo: str
 	});
 }
 
+const findMostLikelyRepository = (gitApi: any) : string => {
+	const repositoryUrls = gitApi.repositories.map((r: any) => r.state.remotes[0].fetchUrl);
+	const currentProjectName = getProjectName(vscode.window.visibleTextEditors[0].document.fileName); // not great since the user may have a totally unrelated file currently open
+	// but most likely we won't need to use this since workspace folder should be sufficient
+	return vscode.workspace.name ? 
+		repositoryUrls.find((r: string) => vscode.workspace.name && r.includes(vscode.workspace.name)) :
+		repositoryUrls.find((r: string) => r.includes(currentProjectName));
+}
+
+export const updateCurrentGitHubCommit = (gitApi: any) : void => {
+	if(gitApi.repositories && gitApi.repositories.length === 1) {
+		setCurrentGitHubCommit(gitApi.repositories[0].state.HEAD.commit);
+	}
+	else {
+		const match = findMostLikelyRepository(gitApi);
+		const matchCommit = gitApi.repositories.find((r: any) => r.state.remotes[0].fetchUrl === match)?.state.HEAD.commit;
+		setCurrentGitHubCommit(matchCommit);
+	}
+	console.log('new commit', currentGitHubCommit);
+}
+
 // TODO: is there a type def for the gitApi?? Or VS Code APIs in general?
 export const updateCurrentGitHubProject = (gitApi: any) : void => {
 	// probably most common case
 	if(gitApi.repositories && gitApi.repositories.length === 1) {
-		setcurrentGitHubProject(gitApi.repositories[0].state.remotes[0].fetchUrl);
+		setCurrentGitHubProject(gitApi.repositories[0].state.remotes[0].fetchUrl);
 	}
 	else {
-		const repositoryUrls = gitApi.repositories.map((r: any) => r.state.remotes[0].fetchUrl);
-		const currentProjectName = getProjectName(vscode.window.visibleTextEditors[0].document.fileName); // not great since the user may have a totally unrelated file currently open
-		// but most likely we won't need to use this since workspace folder should be sufficient
-		const match =  vscode.workspace.name ? 
-			repositoryUrls.find((r: string) => vscode.workspace.name && r.includes(vscode.workspace.name)) :
-			repositoryUrls.find((r: string) => r.includes(currentProjectName));
+		const match = findMostLikelyRepository(gitApi);
 		match ?
-			setcurrentGitHubProject(match) :
-			setcurrentGitHubProject("");
+			setCurrentGitHubProject(match) :
+			setCurrentGitHubProject("");
 	}
 	console.log('new curr github project', currentGitHubProject);
 }
@@ -493,6 +527,7 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 	});
 
 	updateCurrentGitHubProject(gitApi);
+	updateCurrentGitHubCommit(gitApi);
 
 	return gitInfo;
 }

@@ -200,13 +200,14 @@ export const handleExportAnnotationAsComment = async (annoId: string) : Promise<
 
 // Takes the temporary annotation created in commands -> createAnnotation and finishes it with
 // the content the user added and whether or not the annotation will be pinned
-export const handleCreateAnnotation = (annotationContent: string, willBePinned: boolean) : void => {
+export const handleCreateAnnotation = (annotationContent: string, shareWith: string, willBePinned: boolean) : void => {
     if(!tempAnno) return;
     getShikiCodeHighlighting(tempAnno.anchors[0].filename.toString(), tempAnno.anchors[0].anchorText).then(html => {
         if(tempAnno) {
             let newAnno = tempAnno;
             newAnno.annotation = annotationContent;
             newAnno.selected = willBePinned;
+            newAnno.sharedWith = shareWith;
             newAnno.anchors[0].html = html;
             setAnnotationList(annotationList.concat([newAnno]));
             const text = vscode.window.visibleTextEditors?.find(doc => doc.document.uri.toString() === tempAnno?.anchors[0].filename);

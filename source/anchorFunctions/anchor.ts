@@ -343,7 +343,7 @@ export const addHighlightsToEditor = (annotationsToHighlight: Annotation[], text
 				setOutOfDateAnnotationList(ood);
 			}
 			if(vscode.workspace.workspaceFolders) {
-				console.log('about to update after highlighting');
+				// console.log('about to update after highlighting');
 				view?.updateDisplay(newAnnotationList);
 			}
 			

@@ -34,6 +34,7 @@ export let activeEditor = vscode.window.activeTextEditor;
 export let currentColorTheme: string = vscode.workspace.getConfiguration('workbench', vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri).colorTheme;
 export let adamiteLog = vscode.window.createOutputChannel("Adamite");
 export let currentGitHubProject: string = ""; // also need to add call to update this when user switches projects
+export let currentGitHubCommit: string = "";
 export let changes: ChangeEvent[] = [];
 export let numChangeEventsCompleted = 0;
 
@@ -100,8 +101,12 @@ export const setCurrentColorTheme = (newCurrentColorTheme: string) : void => {
 	currentColorTheme = newCurrentColorTheme;
 }
 
-export const setcurrentGitHubProject = (newcurrentGitHubProject: string) : void => {
-	currentGitHubProject = newcurrentGitHubProject;
+export const setCurrentGitHubProject = (newCurrentGitHubProject: string) : void => {
+	currentGitHubProject = newCurrentGitHubProject;
+}
+
+export const setCurrentGitHubCommit = (newCurrentGitHubCommit: string) : void => {
+	currentGitHubCommit = newCurrentGitHubCommit;
 }
 
 export const setDeletedAnnotationList = (newDeletedAnnotationList: Annotation[]) : void => {

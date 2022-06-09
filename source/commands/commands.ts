@@ -85,8 +85,8 @@ export const createView = async (context: vscode.ExtensionContext) => {
 						break;
 					}
 					case 'createAnnotation': {
-						const { anno, willBePinned } = message;
-						viewHelper.handleCreateAnnotation(anno, willBePinned);
+						const { anno, shareWith, willBePinned } = message;
+						viewHelper.handleCreateAnnotation(anno, shareWith, willBePinned);
 						break;
 					}
 					case 'updateAnnotation': {

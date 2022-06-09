@@ -423,7 +423,6 @@ export const updateAnnotationCommit = (commit: string, branch: string, repo: str
 // on launch, using Git API, get metadata about each annotation, the commit it corresponds to, and more
 export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] : any}> => {
 	await gitApi.repositories?.forEach(async (r: any) => {
-		console.log('r', r);
 		const currentProjectName: string = getProjectName(r?.rootUri?.path);
 		r?.state?.onDidChange(async () => {
 			const currentProjectName: string = getProjectName(r?.rootUri?.path);

@@ -8,7 +8,7 @@
 import firebase from '../firebase/firebase';
 import { Annotation, AnchorObject, Anchor, Snapshot, stringToShikiThemes } from '../constants/constants';
 import { computeRangeFromOffset, createAnchorFromRange } from '../anchorFunctions/anchor';
-import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations, adamiteLog, setSelectedAnnotationsNavigations, currentColorTheme, activeEditor } from '../extension';
+import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations, adamiteLog, setSelectedAnnotationsNavigations, currentColorTheme, activeEditor, setcurrentGitHubProject, setCurrentColorTheme, currentGitHubProject } from '../extension';
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
 import { getAnnotationsOnSignIn } from '../firebase/functions/functions';
@@ -32,8 +32,8 @@ const arraysEqual = (a1: any[], a2: any[]) : boolean => {
 // on sign-in, get and sort user's annotations into memory
 export const initializeAnnotations = async (user: firebase.User) : Promise<void> => {
 	const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
-	const annotations: Annotation [] = sortAnnotationsByLocation(await getAnnotationsOnSignIn(user));
-	setAnnotationList(sortAnnotationsByLocation(await getAnnotationsOnSignIn(user)));
+	const annotations: Annotation [] = sortAnnotationsByLocation(await getAnnotationsOnSignIn(user, currentGitHubProject));
+	setAnnotationList(annotations);
 	const selectedAnnotations: Annotation[] = annotations.filter(a => a.selected);
 	setSelectedAnnotationsNavigations(
 		selectedAnnotations.length ? 
@@ -439,6 +439,26 @@ export const updateAnnotationCommit = (commit: string, branch: string, repo: str
 	});
 }
 
+// TODO: is there a type def for the gitApi?? Or VS Code APIs in general?
+export const updateCurrentGitHubProject = (gitApi: any) : void => {
+	// probably most common case
+	if(gitApi.repositories && gitApi.repositories.length === 1) {
+		setcurrentGitHubProject(gitApi.repositories[0].state.remotes[0].fetchUrl);
+	}
+	else {
+		const repositoryUrls = gitApi.repositories.map((r: any) => r.state.remotes[0].fetchUrl);
+		const currentProjectName = getProjectName(vscode.window.visibleTextEditors[0].document.fileName); // not great since the user may have a totally unrelated file currently open
+		// but most likely we won't need to use this since workspace folder should be sufficient
+		const match =  vscode.workspace.name ? 
+			repositoryUrls.find((r: string) => vscode.workspace.name && r.includes(vscode.workspace.name)) :
+			repositoryUrls.find((r: string) => r.includes(currentProjectName));
+		match ?
+			setcurrentGitHubProject(match) :
+			setcurrentGitHubProject("");
+	}
+	console.log('new curr github project', currentGitHubProject);
+}
+
 // on launch, using Git API, get metadata about each annotation, the commit it corresponds to, and more
 export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] : any}> => {
 	await gitApi.repositories?.forEach(async (r: any) => {
@@ -472,6 +492,8 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 		}
 		console.log('gitInfo', gitInfo);
 	});
+
+	updateCurrentGitHubProject(gitApi);
 
 	return gitInfo;
 }

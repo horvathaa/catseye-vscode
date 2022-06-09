@@ -8,7 +8,7 @@
 import * as vscode from 'vscode';
 import { gitInfo, gitApi, setAnnotationList, setGitInfo, setUser, adamiteLog } from '../extension';
 import { initializeAnnotations, generateGitMetaData } from '../utils/utils';
-import { fbSignInWithEmailAndPassword, getUserGithubData, fbSignOut, signInWithGithubCredential, setUserGithubAccount, dropAnnotations } from '../firebase/functions/functions';
+import { fbSignInWithEmailAndPassword, getUserGithubData, fbSignOut, signInWithGithubCredential, setUserGithubAccount } from '../firebase/functions/functions';
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname).includes('\\') ? path.resolve(__dirname, '..\\..\\.env.local') : path.resolve(__dirname, '..\/..\/.env.local') });
 

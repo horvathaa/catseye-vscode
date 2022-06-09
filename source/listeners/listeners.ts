@@ -25,14 +25,14 @@ export const handleDidChangeActiveColorTheme = (colorTheme: vscode.ColorTheme) =
 // Listens for a change in visible editors so we can highlight correct anchors for all visible files
 export const handleChangeVisibleTextEditors = (textEditors: readonly vscode.TextEditor[]) => {
     const textEditorFileNames = textEditors.map(t => t.document.uri.toString());
-    const textEditorProjectFileNames =  vscode.window.activeTextEditor ? 
-        textEditors.map(t => utils.getStableGitHubUrl(t.document.uri.fsPath)) : []
+    const textEditorProjectFileNames = textEditors.map(t => utils.getStableGitHubUrl(t.document.uri.fsPath));
+    console.log('textEditorProjectFileNames', textEditorProjectFileNames);
     const annotationsToHighlight = annotationList.filter(a => { 
         const filenames = utils.getAllAnnotationFilenames([a]);
         const gitUrls = utils.getAllAnnotationStableGitUrls([a]);
         return textEditorProjectFileNames.some(t => gitUrls.includes(t)) || textEditorFileNames.some(t => filenames.includes(t));
     });
-
+    console.log('annotationsToHighlight', annotationsToHighlight)
     if(!annotationsToHighlight.length) return;
     if(view) { 
         console.log('annotationsToHighlight', annotationsToHighlight);
@@ -51,6 +51,7 @@ export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | und
             // console.log('list after', annotationList);
             const currentProject: string = utils.getProjectName(TextEditor.document.uri.fsPath);
             const gitUrl: string = utils.getGithubUrl(TextEditor.document.uri.fsPath, currentProject, true);
+            console.log('changing active text editor');
             if(user && vscode.workspace.workspaceFolders)
             view?.updateDisplay(undefined, gitUrl, currentProject);
         }

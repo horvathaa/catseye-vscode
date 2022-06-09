@@ -182,7 +182,6 @@
     "what-the-diff": "^0.6.0"
   },
   "extensionDependencies": [
-    "vscode.git",
-    "draivin.hscopes"
+    "vscode.git"
   ]
 }

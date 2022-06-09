@@ -23,8 +23,28 @@ import { user,
         outOfDateAnnotations,
         deletedAnnotations
 } from '../extension';
-import { initializeAnnotations, handleSaveCloseEvent, saveAnnotations, removeOutOfDateAnnotations, buildAnnotation, sortAnnotationsByLocation, getProjectName, getShikiCodeHighlighting, getAllAnnotationFilenames, createAnchorObject } from '../utils/utils';
-import { addHighlightsToEditor, createAnchorFromRange, createRangeFromAnchorObject, createRangesFromAnnotation, updateAnchorInAnchorObject } from '../anchorFunctions/anchor';
+import { 
+    initializeAnnotations, 
+    handleSaveCloseEvent, 
+    saveAnnotations, 
+    removeOutOfDateAnnotations, 
+    buildAnnotation, 
+    sortAnnotationsByLocation, 
+    getProjectName, 
+    getShikiCodeHighlighting, 
+    getAllAnnotationFilenames, 
+    createAnchorObject, 
+    getAllAnnotationStableGitUrls,
+    getGithubUrl,
+    getStableGitHubUrl
+} from '../utils/utils';
+import { 
+    addHighlightsToEditor, 
+    createAnchorFromRange, 
+    createRangeFromAnchorObject, 
+    createRangesFromAnnotation, 
+    updateAnchorInAnchorObject 
+} from '../anchorFunctions/anchor';
 import { v4 as uuidv4 } from 'uuid';
 
 // Opens and reloads the webview -- this is invoked when the user uses the "Adamite: Launch Adamite" command (ctrl/cmd + shift + A).
@@ -34,10 +54,12 @@ export const handleAdamiteWebviewLaunch = () : void => {
     if(user) view?.reload(gitInfo.author, user.uid);
     if(vscode.workspace.workspaceFolders)
         view?.updateDisplay(annotationList, currFilename, getProjectName(vscode.window.activeTextEditor?.document.uri.fsPath));
-    const annoFiles: string[] = getAllAnnotationFilenames(annotationList);
+    // const annoFiles: string[] = getAllAnnotationFilenames(annotationList);
+    const annoUrls: string[] = getAllAnnotationStableGitUrls(annotationList);
     vscode.window.visibleTextEditors.forEach((v: vscode.TextEditor) => {
-        if(annoFiles.includes(v.document.uri.toString())) {
-            console.log('webview launch', annotationList);
+        if(annoUrls.includes(getStableGitHubUrl(v.document.uri.fsPath))) {
+        // if(annoFiles.includes(v.document.uri.toString())) {
+            // console.log('webview launch', annotationList);
             addHighlightsToEditor(annotationList, v); 
         }
     });
@@ -108,7 +130,7 @@ export const handleAddAnchor = async (id: string) : Promise<void> => {
     }
 }
 
-const getLocalPathFromGitHubUrl = (url: string) : string => {
+const getLocalPathFromGitHubUrl = async (url: string) : Promise<string> => {
     const gitProjects = Object.keys(gitInfo).filter(g => g !== 'author'); // if the user does not have the workspace open, i don't think this will work
     console.log('gitProjects', gitProjects);
     const match = gitProjects.find(g => url.includes(g));
@@ -117,29 +139,38 @@ const getLocalPathFromGitHubUrl = (url: string) : string => {
     console.log('split', url.split(match))
     const urlSplit = url.split(match)[1];
     const cleanString = urlSplit.split('/tree/' + gitInfo[match].nameOfPrimaryBranch + '/')[1];
-    const finalString = match.concat('/', cleanString);
-    console.log('losing it', cleanString, finalString);
-    console.log('urlSplit', urlSplit);
-    const matchingDoc = vscode.workspace.textDocuments.find(document => document.uri.path.includes(finalString));
-    console.log('matchingDoc', matchingDoc, 'text docs', vscode.workspace.textDocuments);
-    if(!matchingDoc) return url;
-    return matchingDoc.uri.toString();
+    // const relativePath = match.concat('/', cleanString);
+    const files = await vscode.workspace.findFiles(cleanString);
+    console.log('files', files);
+    return files[0].toString();
 }
 
 // Navigate to the selected anchor's location
-export const handleScrollInEditor = (id: string, anchorId: string) : void => {
+export const handleScrollInEditor = async (id: string, anchorId: string) : Promise<void> => {
     const anno: Annotation | undefined = annotationList.find(anno => anno.id === id); 
     const anchorObj: AnchorObject | undefined = anno?.anchors.find(a => a.anchorId === anchorId);
     if(anno && anchorObj) {
         const range = createRangeFromAnchorObject(anchorObj);
         console.log('whee');
-        getLocalPathFromGitHubUrl(anchorObj.stableGitUrl);
-        const text = vscode.window.visibleTextEditors?.find(doc => doc.document.uri.toString() === anchorObj.filename); // maybe switch to textDocuments
+        const uri = await getLocalPathFromGitHubUrl(anchorObj.stableGitUrl); // this only works if the user has the specified github project open in vs code :-/ 
+        // not sure if there's a better way though since we have no way of knowing if they even have other projects cloned
+        // should probably just ingest annotations at the project-level anyways
+        console.log('return', uri);
+        const text = vscode.window.visibleTextEditors?.find(doc => doc.document.uri.toString() === uri); // maybe switch to textDocuments
         if(!text) {
-            vscode.workspace.openTextDocument(vscode.Uri.parse(anchorObj.filename.toString()))
-            .then((doc: vscode.TextDocument) => {
-                vscode.window.showTextDocument(doc, { preserveFocus: true, preview: true, selection: range, viewColumn: view?._panel?.viewColumn === vscode.ViewColumn.One ? vscode.ViewColumn.Two : vscode.ViewColumn.One });
-            });
+            try {
+                vscode.workspace.openTextDocument(vscode.Uri.parse(uri))
+                .then((doc: vscode.TextDocument) => {
+                    vscode.window.showTextDocument(doc, { preserveFocus: true, preview: true, selection: range, viewColumn: view?._panel?.viewColumn === vscode.ViewColumn.One ? vscode.ViewColumn.Two : vscode.ViewColumn.One });
+                })
+            }
+            // fallback
+            catch {
+                vscode.workspace.openTextDocument(vscode.Uri.parse(anchorObj.filename))
+                .then((doc: vscode.TextDocument) => {
+                    vscode.window.showTextDocument(doc, { preserveFocus: true, preview: true, selection: range, viewColumn: view?._panel?.viewColumn === vscode.ViewColumn.One ? vscode.ViewColumn.Two : vscode.ViewColumn.One });
+                })
+            }
         }
         else {
             text.revealRange(range, 1);

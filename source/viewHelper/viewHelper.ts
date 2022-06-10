@@ -162,6 +162,7 @@ export const handleScrollInEditor = async (id: string, anchorId: string) : Promi
                 vscode.workspace.openTextDocument(vscode.Uri.parse(uri))
                 .then((doc: vscode.TextDocument) => {
                     vscode.window.showTextDocument(doc, { preserveFocus: true, preview: true, selection: range, viewColumn: view?._panel?.viewColumn === vscode.ViewColumn.One ? vscode.ViewColumn.Two : vscode.ViewColumn.One });
+                    view?.updateDisplay(annotationList, anchorObj.stableGitUrl);
                 })
             }
             // fallback
@@ -169,6 +170,7 @@ export const handleScrollInEditor = async (id: string, anchorId: string) : Promi
                 vscode.workspace.openTextDocument(vscode.Uri.parse(anchorObj.filename))
                 .then((doc: vscode.TextDocument) => {
                     vscode.window.showTextDocument(doc, { preserveFocus: true, preview: true, selection: range, viewColumn: view?._panel?.viewColumn === vscode.ViewColumn.One ? vscode.ViewColumn.Two : vscode.ViewColumn.One });
+                    view?.updateDisplay(annotationList, anchorObj.filename);
                 })
             }
         }

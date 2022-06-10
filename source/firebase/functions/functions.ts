@@ -18,8 +18,6 @@ const annotationsRef: firebase.firestore.CollectionReference = db.collection(DB_
 export const saveAnnotations = (annotationList: Annotation[]) : void => {
     const serializedObjects: {[key: string] : any}[] = makeObjectListFromAnnotations(annotationList);
 	if(user) {
-		const db = firebase.firestore();
-		const annotationsRef = db.collection(DB_COLLECTIONS.VSCODE_ANNOTATIONS);
 		serializedObjects.forEach((a: {[key: string] : any}) => {
 			annotationsRef.doc(a.id).set(a)
 		});
@@ -34,7 +32,7 @@ export const getAnnotationsOnSignIn = async (user: firebase.User, currentGitProj
 	if(
 		(!userAnnotationDocs || userAnnotationDocs.empty) && 
 		(!collaboratorAnnotationDocs || collaboratorAnnotationDocs.empty)
-	) return []
+	) return [];
 	const dataAnnotations = getListFromSnapshots(userAnnotationDocs).concat(getListFromSnapshots(collaboratorAnnotationDocs));
 	const annotations: Annotation[] = dataAnnotations && dataAnnotations.length ? dataAnnotations.map((a: any) => {
 		return buildAnnotation( { ...a, needToUpdate: false } );

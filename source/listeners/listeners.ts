@@ -6,7 +6,7 @@
  */
 
 import * as vscode from 'vscode';
-import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, deletedAnnotations, setDeletedAnnotationList, setInsertSpaces, changes, setChangeEvents, incrementNumChangeEventsCompleted, numChangeEventsCompleted, setCurrentColorTheme, gitInfo } from '../extension';
+import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, deletedAnnotations, setDeletedAnnotationList, setInsertSpaces, changes, setChangeEvents, incrementNumChangeEventsCompleted, numChangeEventsCompleted, setCurrentColorTheme, gitInfo, currentGitHubProject, gitApi } from '../extension';
 import * as anchor from '../anchorFunctions/anchor';
 import * as utils from '../utils/utils';
 import { Annotation, AnchorObject, ChangeEvent, 
@@ -26,16 +26,19 @@ export const handleDidChangeActiveColorTheme = (colorTheme: vscode.ColorTheme) =
 export const handleChangeVisibleTextEditors = (textEditors: readonly vscode.TextEditor[]) => {
     const textEditorFileNames = textEditors.map(t => t.document.uri.toString());
     const textEditorProjectFileNames = textEditors.map(t => utils.getStableGitHubUrl(t.document.uri.fsPath));
-    console.log('textEditorProjectFileNames', textEditorProjectFileNames);
+    // console.log('textEditorProjectFileNames', textEditorProjectFileNames);
     const annotationsToHighlight = annotationList.filter(a => { 
         const filenames = utils.getAllAnnotationFilenames([a]);
         const gitUrls = utils.getAllAnnotationStableGitUrls([a]);
-        return textEditorProjectFileNames.some(t => gitUrls.includes(t)) || textEditorFileNames.some(t => filenames.includes(t));
+        return textEditorProjectFileNames.some(
+            t => gitUrls.includes(t)) || 
+            textEditorFileNames.some(t => filenames.includes(t)
+        );
     });
-    console.log('annotationsToHighlight', annotationsToHighlight)
+    // console.log('annotationsToHighlight', annotationsToHighlight)
     if(!annotationsToHighlight.length) return;
     if(view) { 
-        console.log('annotationsToHighlight', annotationsToHighlight);
+        // console.log('annotationsToHighlight', annotationsToHighlight);
         textEditors.forEach(t => anchor.addHighlightsToEditor(annotationsToHighlight, t))
     }
 }
@@ -49,11 +52,18 @@ export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | und
             // console.log('annotationList before set', annotationList);
             setAnnotationList(utils.sortAnnotationsByLocation(annotationList)); // mark these annos as out of date
             // console.log('list after', annotationList);
+            // console.log('TextEditor', TextEditor);
             const currentProject: string = utils.getProjectName(TextEditor.document.uri.fsPath);
             const gitUrl: string = utils.getGithubUrl(TextEditor.document.uri.fsPath, currentProject, true);
+            // console.log('gitUrl', gitUrl, 'currentGitHubProject', currentGitHubProject);
+            if(currentGitHubProject !== gitInfo[currentProject].repo) {
+                console.log('switched projects');
+                utils.updateCurrentGitHubProject(gitApi);
+                utils.updateCurrentGitHubCommit(gitApi);
+            }
             // console.log('changing active text editor');
             if(user && vscode.workspace.workspaceFolders)
-            view?.updateDisplay(undefined, gitUrl, currentProject);
+                view?.updateDisplay(undefined, gitUrl, currentProject);
         }
     }
     setActiveEditor(TextEditor);
@@ -69,7 +79,6 @@ const logChanges = (e: vscode.TextDocumentChangeEvent) : void => {
     const projectName: string = utils.getProjectName(e.document.uri.toString());
     if(timeSinceLastEdit === -1 || (currentTime - timeSinceLastEdit) <= 2000) {
         timeSinceLastEdit = currentTime;
-
         tempChanges.push(
             {
                 text: e.contentChanges.map(c => c.text !== '' ? c.text : `Delete: removed ${c.rangeLength} characters`).join(' '),
@@ -116,9 +125,9 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
     // const annos = utils.getAllAnnotationStableGitUrls(annotationList).filter(a => a.includes(utils.getGithubUrl(undefined, utils.getProjectName(), true)));
     // console.log('wtf', annos);
     const stableGitPath = utils.getStableGitHubUrl(e.document.uri.fsPath);
-    console.log('lol?', stableGitPath);
+    // console.log('lol?', stableGitPath);
     const annos = utils.getAllAnnotationsWithGitUrlInFile(annotationList, stableGitPath);
-    console.log('mehhh', annos);
+    // console.log('mehhh', annos);
     const currentAnnotations = utils.getAllAnnotationsWithAnchorInFile(annotationList, e.document.uri.toString());
     const couldBeUndoOrPaste = utils.getAllAnnotationsWithAnchorInFile(deletedAnnotations, e.document.uri.toString()).length > 0 || copiedAnnotations.length > 0;
     if(!currentAnnotations.length && !tempAnno && !couldBeUndoOrPaste) { return } // no annotations could possibly be affected by this change

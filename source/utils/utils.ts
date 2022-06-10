@@ -459,11 +459,16 @@ export const updateAnnotationCommit = (commit: string, branch: string, repo: str
 
 const findMostLikelyRepository = (gitApi: any) : string => {
 	const repositoryUrls = gitApi.repositories.map((r: any) => r.state.remotes[0].fetchUrl);
-	const currentProjectName = getProjectName(vscode.window.visibleTextEditors[0].document.fileName); // not great since the user may have a totally unrelated file currently open
-	// but most likely we won't need to use this since workspace folder should be sufficient
-	return vscode.workspace.name ? 
+	const currentProjectName = getProjectName(vscode.window.activeTextEditor?.document.fileName);
+	
+	return vscode.workspace.name && !vscode.workspace.name.includes('(Workspace)') ? 
 		repositoryUrls.find((r: string) => vscode.workspace.name && r.includes(vscode.workspace.name)) :
-		repositoryUrls.find((r: string) => r.includes(currentProjectName));
+		repositoryUrls.find((r: string) => {
+			const splitUrl = r.split('/');
+			const end = splitUrl[splitUrl.length - 1];
+			const name = end.split('.git')[0];
+			return currentProjectName === name;
+		});
 }
 
 export const updateCurrentGitHubCommit = (gitApi: any) : void => {
@@ -475,7 +480,7 @@ export const updateCurrentGitHubCommit = (gitApi: any) : void => {
 		const matchCommit = gitApi.repositories.find((r: any) => r.state.remotes[0].fetchUrl === match)?.state.HEAD.commit;
 		setCurrentGitHubCommit(matchCommit);
 	}
-	console.log('new commit', currentGitHubCommit);
+
 }
 
 // TODO: is there a type def for the gitApi?? Or VS Code APIs in general?
@@ -486,6 +491,7 @@ export const updateCurrentGitHubProject = (gitApi: any) : void => {
 	}
 	else {
 		const match = findMostLikelyRepository(gitApi);
+		// console.log('match', match);
 		match ?
 			setCurrentGitHubProject(match) :
 			setCurrentGitHubProject("");
@@ -523,7 +529,7 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 			modifiedAnnotations: [],
 			nameOfPrimaryBranch
 		}
-		console.log('gitInfo', gitInfo);
+
 	});
 
 	updateCurrentGitHubProject(gitApi);

@@ -24,11 +24,16 @@ export const saveAnnotations = (annotationList: Annotation[]) : void => {
     }
 }
 
+export const saveOutOfDateAnnotations = (annotationIds: string[]) : void => {
+	annotationIds.forEach((id: string) => {
+		annotationsRef.doc(id).update({ outOfDate: true })
+	});
+}
+
 // Given user, pull in all of their not-deleted annotations
 export const getAnnotationsOnSignIn = async (user: firebase.User, currentGitProject: string) : Promise<Annotation[]> => {
 	const userAnnotationDocs: firebase.firestore.QuerySnapshot = await getUserAnnotations(user.uid);
 	const collaboratorAnnotationDocs: firebase.firestore.QuerySnapshot = await getAnnotationsByProject(currentGitProject, user.uid);
-	console.log('collabo', collaboratorAnnotationDocs, getListFromSnapshots(collaboratorAnnotationDocs));
 	if(
 		(!userAnnotationDocs || userAnnotationDocs.empty) && 
 		(!collaboratorAnnotationDocs || collaboratorAnnotationDocs.empty)

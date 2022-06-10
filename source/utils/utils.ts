@@ -92,6 +92,13 @@ export const getAnnotationsNotInFile = (annotationList: Annotation[], filename: 
 	})
 }
 
+export const getAnnotationsNotWithGitUrl = (annotationList: Annotation[], gitUrl: string) : Annotation[] => {
+	return annotationList.filter(a => {
+		const annoUrls = getAllAnnotationStableGitUrls([a])
+		return !annoUrls.includes(gitUrl);
+	})
+}
+
 export const getAllAnnotationFilenames = (annotationList: Annotation[]) : string[] => {
 	const flatMapReturn = annotationList.flatMap(a => {
 		return a.anchors?.map(a => a.filename) 
@@ -296,7 +303,7 @@ export const getAllAnnotationsWithAnchorInFile = (annotationList: Annotation[], 
 // Called by event handler when user saves or closes a file - saves annotations that have been changed to FireStore 
 export const handleSaveCloseEvent = async (annotationList: Annotation[], filePath: string = "", currentFile: string = "all", doc : vscode.TextDocument | undefined = undefined) : Promise<void> => {
 	const annosToSave: Annotation[] = annotationList.concat(outOfDateAnnotations, deletedAnnotations);
-	const annotationsInCurrentFile = currentFile !== "all" ? getAllAnnotationsWithAnchorInFile(annotationList, currentFile) : annotationList;
+	const annotationsInCurrentFile = currentFile !== "all" ? getAllAnnotationsWithGitUrlInFile(annotationList, currentFile) : annotationList;
 	if(doc && vscode.workspace.workspaceFolders) {
 		let newList = await updateHtml(annotationsInCurrentFile, doc);
 		// console.log('newList', newList);
@@ -458,7 +465,10 @@ export const updateAnnotationCommit = (commit: string, branch: string, repo: str
 }
 
 const findMostLikelyRepository = (gitApi: any) : string => {
-	const repositoryUrls = gitApi.repositories.map((r: any) => r.state.remotes[0].fetchUrl);
+	const repositoryUrls = gitApi.repositories.map((r: any) => r?.state?.remotes[0]?.fetchUrl);
+	if(!repositoryUrls || repositoryUrls.includes(undefined)) {
+		return "";
+	}
 	const currentProjectName = getProjectName(vscode.window.activeTextEditor?.document.fileName);
 	
 	return vscode.workspace.name && !vscode.workspace.name.includes('(Workspace)') ? 
@@ -475,9 +485,12 @@ export const updateCurrentGitHubCommit = (gitApi: any) : void => {
 	if(gitApi.repositories && gitApi.repositories.length === 1) {
 		setCurrentGitHubCommit(gitApi.repositories[0].state.HEAD.commit);
 	}
+	else if(vscode.window.activeTextEditor && gitInfo[getProjectName()]) {
+		setCurrentGitHubCommit(gitInfo[getProjectName()].commit);
+	}
 	else {
 		const match = findMostLikelyRepository(gitApi);
-		const matchCommit = gitApi.repositories.find((r: any) => r.state.remotes[0].fetchUrl === match)?.state.HEAD.commit;
+		const matchCommit = gitApi.repositories.find((r: any) => r?.state?.remotes[0]?.fetchUrl === match)?.state.HEAD.commit;
 		setCurrentGitHubCommit(matchCommit);
 	}
 
@@ -489,6 +502,9 @@ export const updateCurrentGitHubProject = (gitApi: any) : void => {
 	if(gitApi.repositories && gitApi.repositories.length === 1) {
 		setCurrentGitHubProject(gitApi.repositories[0].state.remotes[0].fetchUrl);
 	}
+	else if(vscode.window.activeTextEditor && gitInfo[getProjectName()]) {
+		setCurrentGitHubProject(gitInfo[getProjectName()].repo);
+	}
 	else {
 		const match = findMostLikelyRepository(gitApi);
 		// console.log('match', match);
@@ -496,7 +512,7 @@ export const updateCurrentGitHubProject = (gitApi: any) : void => {
 			setCurrentGitHubProject(match) :
 			setCurrentGitHubProject("");
 	}
-	console.log('new curr github project', currentGitHubProject);
+
 }
 
 // on launch, using Git API, get metadata about each annotation, the commit it corresponds to, and more
@@ -534,6 +550,8 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 
 	updateCurrentGitHubProject(gitApi);
 	updateCurrentGitHubCommit(gitApi);
+
+	console.log('currentGitHubUrl', currentGitHubProject)
 
 	return gitInfo;
 }
@@ -610,12 +628,13 @@ const translateAnnotationAnchorStandard = (annoInfo: any) : {[ key: string ] : a
 
 // Helper function for making annotation class objects from other standards
 export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefined) : Annotation => {
-	let annoObj = null
+	let annoObj = null;
 	if(annoInfo.hasOwnProperty('anchor') || annoInfo.hasOwnProperty('anchorText')) {
 		annoObj = translateAnnotationAnchorStandard(annoInfo)
 	}
 	else {
-		annoObj = annoInfo;
+		annoObj = 
+		annoInfo;
 	}
 
 	return new Annotation(

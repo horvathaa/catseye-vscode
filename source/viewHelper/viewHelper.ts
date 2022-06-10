@@ -132,16 +132,12 @@ export const handleAddAnchor = async (id: string) : Promise<void> => {
 
 const getLocalPathFromGitHubUrl = async (url: string) : Promise<string> => {
     const gitProjects = Object.keys(gitInfo).filter(g => g !== 'author'); // if the user does not have the workspace open, i don't think this will work
-    console.log('gitProjects', gitProjects);
     const match = gitProjects.find(g => url.includes(g));
-    console.log('match', match);
     if(!match) return url;
-    console.log('split', url.split(match))
     const urlSplit = url.split(match)[1];
     const cleanString = urlSplit.split('/tree/' + gitInfo[match].nameOfPrimaryBranch + '/')[1];
     // const relativePath = match.concat('/', cleanString);
     const files = await vscode.workspace.findFiles(cleanString);
-    console.log('files', files);
     return files[0].toString();
 }
 
@@ -151,11 +147,10 @@ export const handleScrollInEditor = async (id: string, anchorId: string) : Promi
     const anchorObj: AnchorObject | undefined = anno?.anchors.find(a => a.anchorId === anchorId);
     if(anno && anchorObj) {
         const range = createRangeFromAnchorObject(anchorObj);
-        console.log('whee');
         const uri = await getLocalPathFromGitHubUrl(anchorObj.stableGitUrl); // this only works if the user has the specified github project open in vs code :-/ 
         // not sure if there's a better way though since we have no way of knowing if they even have other projects cloned
         // should probably just ingest annotations at the project-level anyways
-        console.log('return', uri);
+
         const text = vscode.window.visibleTextEditors?.find(doc => doc.document.uri.toString() === uri); // maybe switch to textDocuments
         if(!text) {
             try {

@@ -15,7 +15,8 @@ import { sortAnnotationsByLocation,
 		getAllAnnotationFilenames, 
 		getAnnotationsWithStableGitUrl, 
 		getAllAnnotationStableGitUrls, 
-		getAnnotationsNotInFile
+		getAnnotationsNotInFile,
+		handleSaveCloseEvent
 } from '../utils/utils';
 import { annotationDecorations, 
 		setOutOfDateAnnotationList, 
@@ -33,6 +34,7 @@ import { userDeletedAnchor,
 	shrinkOrExpandBackOfRange, 
 	shrinkOrExpandFrontOfRange 
 } from './translateChangesHelpers';
+import { saveAnnotations, saveOutOfDateAnnotations } from '../firebase/functions/functions';
 
 // Used for finding new anchor point given copy/paste operation
 // Given offsetData generated at the time of copying (offset being where the anchor is relative to the beginning of the user's selection) 
@@ -297,22 +299,13 @@ export const addHighlightsToEditor = (annotationsToHighlight: Annotation[], text
 	const filenames = getAllAnnotationFilenames(annotationsToHighlight);
 	const githubUrls = getAllAnnotationStableGitUrls(annotationsToHighlight)
 	const projectName = getProjectName(text?.document.uri.toString());
-	// console.log('projectName', projectName);
-	const visPath = getVisiblePath(projectName, text.document.uri.fsPath);
-	// console.log('visPath', visPath);
 	const textUrl = text ? getGithubUrl(getVisiblePath(projectName, text.document.uri.fsPath), projectName, true) : "";
-	// console.log('textUrl', textUrl, 'text', text);
-	// we have one specific doc we want to highlight
 	if(annotationsToHighlight.length && text && (filenames.includes(text.document.uri.toString()) || githubUrls.includes(textUrl))) {
 		let anchors: AnchorObject[] = annotationsToHighlight
 			.flatMap(a => a.anchors)
-			// .filter(a => a.filename === text.document.uri.toString());
 			.filter(a => a.stableGitUrl === textUrl);
-		// console.log('anchors', anchors);
-		// console.log('gitInfo', gitInfo, 'anchors', anchors, 'githubUrls', githubUrls, 'textUrl', textUrl, 'text', text);
 		let ranges: AnnotationRange[] = anchors
 			.map(a => { return { annotationId: a.parentId, anchorText: a.anchorText, url: a.stableGitUrl, filename: a.filename, range: createRangeFromAnchorObject(a)}})
-			// .filter(r => r.filename === text.document.uri.toString())
 			.filter(r => r.url === textUrl)
 			.map(a => { return { annotationId: a.annotationId, anchorText: a.anchorText, range: a.range }});
 
@@ -326,6 +319,7 @@ export const addHighlightsToEditor = (annotationsToHighlight: Annotation[], text
 			const newAnnotationList : Annotation[] = sortAnnotationsByLocation(
 				valid.concat(annotationList.filter(a => !updatedIds.includes(a.id)))
 			);
+
 			setAnnotationList(newAnnotationList);
 
 			try {
@@ -335,14 +329,12 @@ export const addHighlightsToEditor = (annotationsToHighlight: Annotation[], text
 			catch (error) {
 				console.error('Couldn\'t highlight: ', error);
 			}
+
 			if(invalidRanges.length) {
 				const invalidIds: string[] = invalidRanges.map(r => r.annotationId);
-				const ood: Annotation[] = annotationList.filter((a: Annotation) => invalidIds.includes(a.id))
-				ood.forEach((a: Annotation) => { a.outOfDate = true; a.needToUpdate = true });
-				setOutOfDateAnnotationList(ood);
+				saveOutOfDateAnnotations(invalidIds);
 			}
 			if(vscode.workspace.workspaceFolders) {
-				// console.log('about to update after highlighting');
 				view?.updateDisplay(newAnnotationList);
 			}
 			

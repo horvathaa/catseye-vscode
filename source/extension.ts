@@ -5,6 +5,7 @@
  * Where all global variables are created and initialized and where all of the extension contribution points are defined.
  *
  */
+
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
@@ -17,7 +18,7 @@ import * as debug from './debug/debug';
 import ViewLoader from './view/ViewLoader';
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
 export const gitApi = gitExtension?.getAPI(1);
-console.log('gitApi', gitApi);
+// console.log('gitApi', gitApi);
 export let gitInfo: {[key: string] : any} = {};
 export let annotationList: Annotation[] = [];
 export let copiedAnnotations:  {[key: string] : any }[] = [];

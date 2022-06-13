@@ -157,7 +157,6 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
                         // (a: AnchorObject) => a.filename === e.document.uri.toString()
                         (a: AnchorObject) => a.stableGitUrl === stableGitPath
                     );
-                    console.log('anchorsToTranslate', anchorsToTranslate);
                     const translate =  anchorsToTranslate.map((a: AnchorObject) => anchor.translateChanges(a, change.range, 
                         change.text.length, diff, change.rangeLength, e.document, change.text));
                     const translatedAnchors = utils.removeNulls(
@@ -166,11 +165,9 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
                     const needToUpdate = translatedAnchors.some(
                         (t) => {
                             const anchor = anchorsToTranslate.find((o: AnchorObject) => t.anchorId === o.anchorId);
-                            console.log('old anchor', anchor, 'new anchor', t.anchor);
                             return !utils.objectsEqual(anchor.anchor, t.anchor);
                         }
                     )
-                    console.log('needToUpdate', needToUpdate);
                     return utils.buildAnnotation({ ...a, needToUpdate, anchors: [...translatedAnchors, ...anchorsNotToTranslate] })
                 })
             );

@@ -147,27 +147,23 @@ export const handleScrollInEditor = async (id: string, anchorId: string) : Promi
     const anchorObj: AnchorObject | undefined = anno?.anchors.find(a => a.anchorId === anchorId);
     if(anno && anchorObj) {
         const range = createRangeFromAnchorObject(anchorObj);
-        const uri = await getLocalPathFromGitHubUrl(anchorObj.stableGitUrl); // this only works if the user has the specified github project open in vs code :-/ 
-        // not sure if there's a better way though since we have no way of knowing if they even have other projects cloned
-        // should probably just ingest annotations at the project-level anyways
-
-        const text = vscode.window.visibleTextEditors?.find(doc => doc.document.uri.toString() === uri); // maybe switch to textDocuments
+        const text = vscode.window.visibleTextEditors?.find(doc => doc.document.uri.toString() === anchorObj.filename); // maybe switch to textDocuments
         if(!text) {
-            try {
+            vscode.workspace.openTextDocument(vscode.Uri.parse(anchorObj.filename))
+            .then((doc: vscode.TextDocument) => {
+                vscode.window.showTextDocument(doc, { preserveFocus: true, preview: true, selection: range, viewColumn: view?._panel?.viewColumn === vscode.ViewColumn.One ? vscode.ViewColumn.Two : vscode.ViewColumn.One });
+                view?.updateDisplay(annotationList, anchorObj.filename);
+            }, 
+            async (reason: any) => {
+                console.error('rejected', reason);
+                const uri = await getLocalPathFromGitHubUrl(anchorObj.stableGitUrl); // this only works if the user has the specified github project open in vs code :-/ 
                 vscode.workspace.openTextDocument(vscode.Uri.parse(uri))
                 .then((doc: vscode.TextDocument) => {
                     vscode.window.showTextDocument(doc, { preserveFocus: true, preview: true, selection: range, viewColumn: view?._panel?.viewColumn === vscode.ViewColumn.One ? vscode.ViewColumn.Two : vscode.ViewColumn.One });
                     view?.updateDisplay(annotationList, anchorObj.stableGitUrl);
-                })
-            }
+                });
+            })
             // fallback
-            catch {
-                vscode.workspace.openTextDocument(vscode.Uri.parse(anchorObj.filename))
-                .then((doc: vscode.TextDocument) => {
-                    vscode.window.showTextDocument(doc, { preserveFocus: true, preview: true, selection: range, viewColumn: view?._panel?.viewColumn === vscode.ViewColumn.One ? vscode.ViewColumn.Two : vscode.ViewColumn.One });
-                    view?.updateDisplay(annotationList, anchorObj.filename);
-                })
-            }
         }
         else {
             text.revealRange(range, 1);

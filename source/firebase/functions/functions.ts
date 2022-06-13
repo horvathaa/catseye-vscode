@@ -6,34 +6,39 @@
  */
 
 import { Annotation } from '../../constants/constants';
-import { user } from '../../extension';
+import { currentGitHubCommit, user } from '../../extension';
 import { getListFromSnapshots, makeObjectListFromAnnotations, buildAnnotation } from '../../utils/utils';
 import firebase from '../firebase';
 import { DB_COLLECTIONS } from '..';
+
+const db: firebase.firestore.Firestore = firebase.firestore();
+const annotationsRef: firebase.firestore.CollectionReference = db.collection(DB_COLLECTIONS.VSCODE_ANNOTATIONS);
 
 // Save annotations to FireStore
 export const saveAnnotations = (annotationList: Annotation[]) : void => {
     const serializedObjects: {[key: string] : any}[] = makeObjectListFromAnnotations(annotationList);
 	if(user) {
-		const db = firebase.firestore();
-		const annotationsRef = db.collection(DB_COLLECTIONS.VSCODE_ANNOTATIONS);
 		serializedObjects.forEach((a: {[key: string] : any}) => {
 			annotationsRef.doc(a.id).set(a)
 		});
     }
 }
 
+export const saveOutOfDateAnnotations = (annotationIds: string[]) : void => {
+	annotationIds.forEach((id: string) => {
+		annotationsRef.doc(id).update({ outOfDate: true })
+	});
+}
+
 // Given user, pull in all of their not-deleted annotations
-export const getAnnotationsOnSignIn = async (user: firebase.User) : Promise<Annotation[]> => {
-	const db: firebase.firestore.Firestore = firebase.firestore();
-	const annotationsRef: firebase.firestore.CollectionReference = db.collection(DB_COLLECTIONS.VSCODE_ANNOTATIONS);
-	const docs: firebase.firestore.QuerySnapshot = await annotationsRef
-														.where('authorId', '==', user.uid)
-														.where('deleted', '==', false)
-														.where('outOfDate', '==', false)
-														.get();
-	if(!docs || docs.empty) return []
-	const dataAnnotations = getListFromSnapshots(docs);
+export const getAnnotationsOnSignIn = async (user: firebase.User, currentGitProject: string) : Promise<Annotation[]> => {
+	const userAnnotationDocs: firebase.firestore.QuerySnapshot = await getUserAnnotations(user.uid);
+	const collaboratorAnnotationDocs: firebase.firestore.QuerySnapshot = await getAnnotationsByProject(currentGitProject, user.uid);
+	if(
+		(!userAnnotationDocs || userAnnotationDocs.empty) && 
+		(!collaboratorAnnotationDocs || collaboratorAnnotationDocs.empty)
+	) return [];
+	const dataAnnotations = getListFromSnapshots(userAnnotationDocs).concat(getListFromSnapshots(collaboratorAnnotationDocs));
 	const annotations: Annotation[] = dataAnnotations && dataAnnotations.length ? dataAnnotations.map((a: any) => {
 		return buildAnnotation( { ...a, needToUpdate: false } );
 	}) : [];
@@ -67,20 +72,20 @@ export const signInWithGithubCredential = async (oauth: string) : Promise<fireba
 	return user;
 }
 
-// Mass delete annotations -- should only be used for testing and clean up and not in the actual extension
-export const dropAnnotations = async (user: firebase.User) => {
-	const db: firebase.firestore.Firestore = firebase.firestore();
-	const annotationsRef: firebase.firestore.CollectionReference = db.collection(DB_COLLECTIONS.VSCODE_ANNOTATIONS);
-	const docs: firebase.firestore.QuerySnapshot = await annotationsRef
-														.where('authorId', '==', user.uid)
-														.where('deleted', '==', false)
-														.where('outOfDate', '==', false)
-														.where('projectName', '==', 'task-repo')
-														.get();
-	docs.forEach(d => {
-		console.log('d', d);
-		d.ref.update({ deleted: true });
-	});
+// gitRepo is URL for project where annotation was made
+export const getAnnotationsByProject = (gitRepo: string, uid: string) : Promise<firebase.firestore.QuerySnapshot> => {
+	return annotationsRef
+		.where('gitRepo', '==', gitRepo)
+		.where('authorId', '!=', uid)
+		.where('sharedWith', '==', 'group')
+		.where('gitCommit', '==', currentGitHubCommit)
+		.get();
+}
 
-	return;
-} 
+export const getUserAnnotations = (uid: string) : Promise<firebase.firestore.QuerySnapshot> => {
+	return annotationsRef
+		.where('authorId', '==', uid)
+		.where('deleted', '==', false)
+		.where('outOfDate', '==', false)
+		.get();
+}

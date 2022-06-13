@@ -8,11 +8,29 @@
 import firebase from '../firebase/firebase';
 import { Annotation, AnchorObject, Anchor, Snapshot, stringToShikiThemes } from '../constants/constants';
 import { computeRangeFromOffset, createAnchorFromRange } from '../anchorFunctions/anchor';
-import { gitInfo, user, storedCopyText, annotationList, view, setAnnotationList, outOfDateAnnotations, deletedAnnotations, adamiteLog, setSelectedAnnotationsNavigations, currentColorTheme } from '../extension';
+import { gitInfo, 
+	user, 
+	storedCopyText, 
+	annotationList, 
+	view, 
+	setAnnotationList, 
+	outOfDateAnnotations, 
+	deletedAnnotations, 
+	adamiteLog, 
+	setSelectedAnnotationsNavigations, 
+	currentColorTheme, 
+	activeEditor, 
+	setCurrentGitHubProject, 
+	setCurrentColorTheme, 
+	currentGitHubProject, 
+	setCurrentGitHubCommit, 
+	currentGitHubCommit
+} from '../extension';
 import * as vscode from 'vscode';
 import { v4 as uuidv4 } from 'uuid';
 import { getAnnotationsOnSignIn } from '../firebase/functions/functions';
 import { saveAnnotations as fbSaveAnnotations } from '../firebase/functions/functions';
+import { BiMessageAltCheck } from 'react-icons/bi';
 let { parse } = require('what-the-diff');
 var shiki = require('shiki');
 
@@ -32,8 +50,8 @@ const arraysEqual = (a1: any[], a2: any[]) : boolean => {
 // on sign-in, get and sort user's annotations into memory
 export const initializeAnnotations = async (user: firebase.User) : Promise<void> => {
 	const currFilename: string | undefined = vscode.window.activeTextEditor?.document.uri.path.toString();
-	const annotations: Annotation [] = sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename);
-	setAnnotationList(sortAnnotationsByLocation(await getAnnotationsOnSignIn(user), currFilename));
+	const annotations: Annotation [] = sortAnnotationsByLocation(await getAnnotationsOnSignIn(user, currentGitHubProject));
+	setAnnotationList(annotations);
 	const selectedAnnotations: Annotation[] = annotations.filter(a => a.selected);
 	setSelectedAnnotationsNavigations(
 		selectedAnnotations.length ? 
@@ -71,6 +89,13 @@ export const getAnnotationsNotInFile = (annotationList: Annotation[], filename: 
 	return annotationList.filter(a => {
 		const annoFiles = getAllAnnotationFilenames([a])
 		return !annoFiles.includes(filename);
+	})
+}
+
+export const getAnnotationsNotWithGitUrl = (annotationList: Annotation[], gitUrl: string) : Annotation[] => {
+	return annotationList.filter(a => {
+		const annoUrls = getAllAnnotationStableGitUrls([a])
+		return !annoUrls.includes(gitUrl);
 	})
 }
 
@@ -176,18 +201,12 @@ const sortAnchorsByLocation = (anchors: AnchorObject[]) : AnchorObject[] => {
 	});
 }
 
-export const sortAnnotationsByLocation = (annotationList: Annotation[], filename: string | undefined) : Annotation[] => {
+export const sortAnnotationsByLocation = (annotationList: Annotation[]) : Annotation[] => {
 	const sortedAnchors: string[] = sortAnchorsByLocation(annotationList.flatMap(a => a.anchors)).map(a => a.parentId);
 	annotationList.sort((a: Annotation, b: Annotation) => {
 		return sortedAnchors.indexOf(b.id) - sortedAnchors.indexOf(a.id);
 	});
-	// annotationList.sort((a: Annotation, b: Annotation) => {
-	// 	// if a is the same as the filename and b isn't OR if a and b are both pointing at the same file, keep the order
-	// 	// else move annotation b before a
-	// 	let order: number = -1;
-	// 	if(filename) order = (a.filename === filename && b.filename !== filename) || (a.filename === b.filename && a.filename === filename) ? -1 : 1;
-	// 	return order;
-	// })
+
 	return annotationList;
 }
 
@@ -267,6 +286,13 @@ const updateHtml = async (annos: Annotation[], doc: vscode.TextDocument) : Promi
 
 }
 
+export const getAllAnnotationsWithGitUrlInFile = (annotationList: Annotation[], currentUrl: string) : Annotation[] => {
+	return annotationList.filter((a: Annotation) => {
+		const urls: string[] = a.anchors.map(a => a.stableGitUrl);
+		return urls.includes(currentUrl)
+	});
+}
+
 export const getAllAnnotationsWithAnchorInFile = (annotationList: Annotation[], currentFile: string) : Annotation[] => {
 	return annotationList.filter((a: Annotation) => {
 		const filesThisAnnotationIsIn: string[] = a.anchors.map(a => a.filename);
@@ -277,13 +303,16 @@ export const getAllAnnotationsWithAnchorInFile = (annotationList: Annotation[], 
 // Called by event handler when user saves or closes a file - saves annotations that have been changed to FireStore 
 export const handleSaveCloseEvent = async (annotationList: Annotation[], filePath: string = "", currentFile: string = "all", doc : vscode.TextDocument | undefined = undefined) : Promise<void> => {
 	const annosToSave: Annotation[] = annotationList.concat(outOfDateAnnotations, deletedAnnotations);
-	const annotationsInCurrentFile = currentFile !== "all" ? getAllAnnotationsWithAnchorInFile(annotationList, currentFile) : annotationList;
+	const annotationsInCurrentFile = currentFile !== "all" ? getAllAnnotationsWithGitUrlInFile(annotationList, currentFile) : annotationList;
 	if(doc && vscode.workspace.workspaceFolders) {
 		let newList = await updateHtml(annotationsInCurrentFile, doc);
 		// console.log('newList', newList);
 		const ids: string[] = newList.map(a => a.id);
 		const visibleAnnotations: Annotation[] = currentFile === 'all' ? newList : annotationList.filter(a => !ids.includes(a.id)).concat(newList);
+		// console.log('before set', visibleAnnotations);
 		setAnnotationList(visibleAnnotations);
+		// console.log('after', visibleAnnotations)
+		// console.log('about to update display -- handleSaveClose');
 		view?.updateDisplay(visibleAnnotations);
 		if(annosToSave.some((a: Annotation) => a.needToUpdate)) {
 			lastSavedAnnotations = annosToSave;
@@ -377,11 +406,39 @@ const writeToFile = async (serializedObjects: { [key: string] : any }[], annotat
 	}
 }
 
-export const getGithubUrl = (visiblePath: string, projectName: string, returnStable: boolean) : string => {
+export const getStableGitHubUrl = (fsPath: string) : string => {
+	const projectName = getProjectName(fsPath);
+	const visPath = getVisiblePath(getProjectName(fsPath), fsPath);
+	return getGithubUrl(visPath, projectName, true);
+}
+
+const getEndUrl = (visiblePath: string, projectName: string) : string => {
+	let endUrl: string = "";
+	const firstIndex: number = visiblePath.indexOf(projectName); // this should be 0
+	// projectname appears multiple times in the string
+	if(firstIndex !== -1 && firstIndex !== visiblePath.lastIndexOf(projectName)) {
+		// may just be able to do this everytime instead of the else
+		endUrl = visiblePath.includes('\\') ? 
+			visiblePath.substring(firstIndex + projectName.length).replace(/\\/g, '/') : 
+			visiblePath.substring(firstIndex + projectName.length)
+	}
+	else {
+		endUrl = visiblePath.includes('\\') ? 
+			visiblePath.split(projectName)[1]?.replace(/\\/g, '/') : 
+			visiblePath.split(projectName)[1]; // '\\' : '\/';
+	}
+	return endUrl;
+}
+
+export const getGithubUrl = (visiblePath: string | undefined, projectName: string, returnStable: boolean) : string => {
+	const visPath = !visiblePath ? getVisiblePath(projectName, activeEditor?.document.uri.fsPath) : visiblePath;
 	if(!gitInfo[projectName]?.repo || gitInfo[projectName]?.repo === "") return "";
 	const baseUrl: string = gitInfo[projectName].repo.split('.git')[0];
-	const endUrl: string = visiblePath.includes('\\') ? visiblePath.split(projectName)[1]?.replace(/\\/g, '/') : visiblePath.split(projectName)[1]; // '\\' : '\/';
-	return gitInfo[projectName].commit === 'localChange' || returnStable ? baseUrl + "/tree/main" + endUrl :  baseUrl + "/tree/" + gitInfo[projectName].commit + endUrl;
+	const endUrl = getEndUrl(visPath, projectName);
+	// console.log('endUrl', endUrl, 'visPath', visPath);
+	return gitInfo[projectName].commit === 'localChange' || returnStable ? 
+		baseUrl + "/tree/" + gitInfo[projectName].nameOfPrimaryBranch + endUrl : 
+		baseUrl + "/tree/" + gitInfo[projectName].commit + endUrl;
 }
 
 
@@ -389,6 +446,7 @@ export const getGithubUrl = (visiblePath: string, projectName: string, returnSta
 export const getVisiblePath = (projectName: string, workspacePath: string | undefined) : string => {
 	if(projectName && workspacePath) {
 		const path: string = workspacePath.substring(workspacePath.indexOf(projectName));
+		// console.log('path', path);
 		if(path) return path;
 	}
 	else if(workspacePath) {
@@ -404,6 +462,57 @@ export const updateAnnotationCommit = (commit: string, branch: string, repo: str
 			a.gitBranch = branch;
 		}
 	});
+}
+
+const findMostLikelyRepository = (gitApi: any) : string => {
+	const repositoryUrls = gitApi.repositories.map((r: any) => r?.state?.remotes[0]?.fetchUrl);
+	if(!repositoryUrls || repositoryUrls.includes(undefined)) {
+		return "";
+	}
+	const currentProjectName = getProjectName(vscode.window.activeTextEditor?.document.fileName);
+	
+	return vscode.workspace.name && !vscode.workspace.name.includes('(Workspace)') ? 
+		repositoryUrls.find((r: string) => vscode.workspace.name && r.includes(vscode.workspace.name)) :
+		repositoryUrls.find((r: string) => {
+			const splitUrl = r.split('/');
+			const end = splitUrl[splitUrl.length - 1];
+			const name = end.split('.git')[0];
+			return currentProjectName === name;
+		});
+}
+
+export const updateCurrentGitHubCommit = (gitApi: any) : void => {
+	if(gitApi.repositories && gitApi.repositories.length === 1) {
+		setCurrentGitHubCommit(gitApi.repositories[0].state.HEAD.commit);
+	}
+	else if(vscode.window.activeTextEditor && gitInfo[getProjectName()]) {
+		setCurrentGitHubCommit(gitInfo[getProjectName()].commit);
+	}
+	else {
+		const match = findMostLikelyRepository(gitApi);
+		const matchCommit = gitApi.repositories.find((r: any) => r?.state?.remotes[0]?.fetchUrl === match)?.state.HEAD.commit;
+		setCurrentGitHubCommit(matchCommit);
+	}
+
+}
+
+// TODO: is there a type def for the gitApi?? Or VS Code APIs in general?
+export const updateCurrentGitHubProject = (gitApi: any) : void => {
+	// probably most common case
+	if(gitApi.repositories && gitApi.repositories.length === 1) {
+		setCurrentGitHubProject(gitApi.repositories[0].state.remotes[0].fetchUrl);
+	}
+	else if(vscode.window.activeTextEditor && gitInfo[getProjectName()]) {
+		setCurrentGitHubProject(gitInfo[getProjectName()].repo);
+	}
+	else {
+		const match = findMostLikelyRepository(gitApi);
+		// console.log('match', match);
+		match ?
+			setCurrentGitHubProject(match) :
+			setCurrentGitHubProject("");
+	}
+
 }
 
 // on launch, using Git API, get metadata about each annotation, the commit it corresponds to, and more
@@ -427,30 +536,48 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 				updateAnnotationCommit(r.state.HEAD.commit, r.state.HEAD.name, r?.state?.remotes[0]?.fetchUrl);
 			}
 		});
+		const branchNames = r.state.refs.map((ref: {[key: string]: any}) => ref.name)
+		const nameOfPrimaryBranch = branchNames.includes('main') ? 'main' : branchNames.includes('master') ? 'master' : ''; // are there other common primary branch names? or another way of determining what this is lol
 		gitInfo[currentProjectName] = {
 			repo: r?.state?.remotes[0]?.fetchUrl ? r?.state?.remotes[0]?.fetchUrl : r?.state?.remotes[0]?.pushUrl ? r?.state?.remotes[0]?.pushUrl : "",
 			branch: r?.state?.HEAD?.name ? r?.state?.HEAD?.name : "",
 			commit: r?.state?.HEAD?.commit ? r?.state?.HEAD?.commit : "",
-			modifiedAnnotations: []
+			modifiedAnnotations: [],
+			nameOfPrimaryBranch
 		}
+
 	});
+
+	updateCurrentGitHubProject(gitApi);
+	updateCurrentGitHubCommit(gitApi);
+
+	console.log('currentGitHubUrl', currentGitHubProject)
 
 	return gitInfo;
 }
 
 
 export const getProjectName = (filename?: string | undefined) : string => {
-	if(vscode.workspace.workspaceFolders && filename) {
-		const slash: string = filename.includes('\\') ? '\\' : '\/';
-		if(vscode.workspace.workspaceFolders.length > 1) {
+	if(vscode.workspace.workspaceFolders) {
+		if(vscode.workspace.workspaceFolders.length > 1 && filename) {
+			const slash: string = filename.includes('\\') ? '\\' : '\/';
 			const candidateProjects: string[] = vscode.workspace.workspaceFolders.map((f: vscode.WorkspaceFolder) => f.name);
 			return candidateProjects.filter((name: string) => filename.includes(name))[0] ? 
-			candidateProjects.filter((name: string) => filename.includes(name))[0] : 
-			filename.split(slash)[filename.split(slash).length - 1] ? filename.split(slash)[filename.split(slash).length - 1] :
-			filename;
+				candidateProjects.filter((name: string) => filename.includes(name))[0] : 
+				filename.split(slash)[filename.split(slash).length - 1] ? filename.split(slash)[filename.split(slash).length - 1] :
+				filename;
+			
 		}
 		else if(vscode.workspace.workspaceFolders.length === 1) {
 			return vscode.workspace.workspaceFolders[0].name;
+		}
+		else if(!filename) {
+			const fsPath: string = vscode.window.activeTextEditor ? 
+				vscode.window.activeTextEditor.document.uri.fsPath : 
+				vscode.window.visibleTextEditors[0].document.uri.fsPath;
+			const candidateProjects: string[] = vscode.workspace.workspaceFolders.map((f: vscode.WorkspaceFolder) => f.name);
+			const match = candidateProjects.find(project => fsPath.includes(project));
+			return match ? match : "";
 		}
 	}
 	return "";
@@ -501,12 +628,13 @@ const translateAnnotationAnchorStandard = (annoInfo: any) : {[ key: string ] : a
 
 // Helper function for making annotation class objects from other standards
 export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefined) : Annotation => {
-	let annoObj = null
+	let annoObj = null;
 	if(annoInfo.hasOwnProperty('anchor') || annoInfo.hasOwnProperty('anchorText')) {
 		annoObj = translateAnnotationAnchorStandard(annoInfo)
 	}
 	else {
-		annoObj = annoInfo;
+		annoObj = 
+		annoInfo;
 	}
 
 	return new Annotation(

@@ -34,6 +34,7 @@ const NewAnnotation: React.FC<Props> = ({ selection, vscode, notifyDone = () => 
         vscode.postMessage({
               command: 'createAnnotation',
               anno: annoContent,
+              shareWith,
               willBePinned
         });
     }

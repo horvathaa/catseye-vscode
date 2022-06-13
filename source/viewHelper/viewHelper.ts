@@ -23,8 +23,28 @@ import { user,
         outOfDateAnnotations,
         deletedAnnotations
 } from '../extension';
-import { initializeAnnotations, handleSaveCloseEvent, saveAnnotations, removeOutOfDateAnnotations, buildAnnotation, sortAnnotationsByLocation, getProjectName, getShikiCodeHighlighting, getAllAnnotationFilenames, createAnchorObject } from '../utils/utils';
-import { addHighlightsToEditor, createAnchorFromRange, createRangeFromAnchorObject, createRangesFromAnnotation, updateAnchorInAnchorObject } from '../anchorFunctions/anchor';
+import { 
+    initializeAnnotations, 
+    handleSaveCloseEvent, 
+    saveAnnotations, 
+    removeOutOfDateAnnotations, 
+    buildAnnotation, 
+    sortAnnotationsByLocation, 
+    getProjectName, 
+    getShikiCodeHighlighting, 
+    getAllAnnotationFilenames, 
+    createAnchorObject, 
+    getAllAnnotationStableGitUrls,
+    getGithubUrl,
+    getStableGitHubUrl
+} from '../utils/utils';
+import { 
+    addHighlightsToEditor, 
+    createAnchorFromRange, 
+    createRangeFromAnchorObject, 
+    createRangesFromAnnotation, 
+    updateAnchorInAnchorObject 
+} from '../anchorFunctions/anchor';
 import { v4 as uuidv4 } from 'uuid';
 
 // Opens and reloads the webview -- this is invoked when the user uses the "Adamite: Launch Adamite" command (ctrl/cmd + shift + A).
@@ -34,9 +54,12 @@ export const handleAdamiteWebviewLaunch = () : void => {
     if(user) view?.reload(gitInfo.author, user.uid);
     if(vscode.workspace.workspaceFolders)
         view?.updateDisplay(annotationList, currFilename, getProjectName(vscode.window.activeTextEditor?.document.uri.fsPath));
-    const annoFiles: string[] = getAllAnnotationFilenames(annotationList);
+    // const annoFiles: string[] = getAllAnnotationFilenames(annotationList);
+    const annoUrls: string[] = getAllAnnotationStableGitUrls(annotationList);
     vscode.window.visibleTextEditors.forEach((v: vscode.TextEditor) => {
-        if(annoFiles.includes(v.document.uri.toString())) {
+        if(annoUrls.includes(getStableGitHubUrl(v.document.uri.fsPath))) {
+        // if(annoFiles.includes(v.document.uri.toString())) {
+            // console.log('webview launch', annotationList);
             addHighlightsToEditor(annotationList, v); 
         }
     });
@@ -107,18 +130,40 @@ export const handleAddAnchor = async (id: string) : Promise<void> => {
     }
 }
 
+const getLocalPathFromGitHubUrl = async (url: string) : Promise<string> => {
+    const gitProjects = Object.keys(gitInfo).filter(g => g !== 'author'); // if the user does not have the workspace open, i don't think this will work
+    const match = gitProjects.find(g => url.includes(g));
+    if(!match) return url;
+    const urlSplit = url.split(match)[1];
+    const cleanString = urlSplit.split('/tree/' + gitInfo[match].nameOfPrimaryBranch + '/')[1];
+    // const relativePath = match.concat('/', cleanString);
+    const files = await vscode.workspace.findFiles(cleanString);
+    return files[0].toString();
+}
+
 // Navigate to the selected anchor's location
-export const handleScrollInEditor = (id: string, anchorId: string) : void => {
-    const anno: Annotation | undefined = annotationList.find(anno => anno.id === id);
+export const handleScrollInEditor = async (id: string, anchorId: string) : Promise<void> => {
+    const anno: Annotation | undefined = annotationList.find(anno => anno.id === id); 
     const anchorObj: AnchorObject | undefined = anno?.anchors.find(a => a.anchorId === anchorId);
     if(anno && anchorObj) {
         const range = createRangeFromAnchorObject(anchorObj);
-        const text = vscode.window.visibleTextEditors?.find(doc => doc.document.uri.toString() === anchorObj.filename);
+        const text = vscode.window.visibleTextEditors?.find(doc => doc.document.uri.toString() === anchorObj.filename); // maybe switch to textDocuments
         if(!text) {
-            vscode.workspace.openTextDocument(vscode.Uri.parse(anchorObj.filename.toString()))
+            vscode.workspace.openTextDocument(vscode.Uri.parse(anchorObj.filename))
             .then((doc: vscode.TextDocument) => {
                 vscode.window.showTextDocument(doc, { preserveFocus: true, preview: true, selection: range, viewColumn: view?._panel?.viewColumn === vscode.ViewColumn.One ? vscode.ViewColumn.Two : vscode.ViewColumn.One });
-            });
+                view?.updateDisplay(annotationList, anchorObj.filename);
+            }, 
+            async (reason: any) => {
+                console.error('rejected', reason);
+                const uri = await getLocalPathFromGitHubUrl(anchorObj.stableGitUrl); // this only works if the user has the specified github project open in vs code :-/ 
+                vscode.workspace.openTextDocument(vscode.Uri.parse(uri))
+                .then((doc: vscode.TextDocument) => {
+                    vscode.window.showTextDocument(doc, { preserveFocus: true, preview: true, selection: range, viewColumn: view?._panel?.viewColumn === vscode.ViewColumn.One ? vscode.ViewColumn.Two : vscode.ViewColumn.One });
+                    view?.updateDisplay(annotationList, anchorObj.stableGitUrl);
+                });
+            })
+            // fallback
         }
         else {
             text.revealRange(range, 1);
@@ -148,20 +193,21 @@ export const handleExportAnnotationAsComment = async (annoId: string) : Promise<
 
 // Takes the temporary annotation created in commands -> createAnnotation and finishes it with
 // the content the user added and whether or not the annotation will be pinned
-export const handleCreateAnnotation = (annotationContent: string, willBePinned: boolean) : void => {
+export const handleCreateAnnotation = (annotationContent: string, shareWith: string, willBePinned: boolean) : void => {
     if(!tempAnno) return;
     getShikiCodeHighlighting(tempAnno.anchors[0].filename.toString(), tempAnno.anchors[0].anchorText).then(html => {
         if(tempAnno) {
             let newAnno = tempAnno;
             newAnno.annotation = annotationContent;
             newAnno.selected = willBePinned;
+            newAnno.sharedWith = shareWith;
             newAnno.anchors[0].html = html;
             setAnnotationList(annotationList.concat([newAnno]));
             const text = vscode.window.visibleTextEditors?.find(doc => doc.document.uri.toString() === tempAnno?.anchors[0].filename);
             setTempAnno(null);
-            setAnnotationList(sortAnnotationsByLocation(annotationList, text?.document.uri.toString()));
+            setAnnotationList(sortAnnotationsByLocation(annotationList));
             view?.updateDisplay(annotationList);
-            addHighlightsToEditor(annotationList, text);
+            if(text) addHighlightsToEditor(annotationList, text);
             if(willBePinned) {
                 setSelectedAnnotationsNavigations([...selectedAnnotationsNavigations, { id: newAnno.id, lastVisited: false, anchorId: newAnno.anchors[0].anchorId } ]);
             }
@@ -211,8 +257,7 @@ export const handleDeleteAnnotation = (id: string) : void => {
     visible ? 
         setAnnotationList(
             sortAnnotationsByLocation(
-                removeOutOfDateAnnotations(updatedList), 
-                visible?.document.uri.toString()
+                removeOutOfDateAnnotations(updatedList)
             )
         ) : 
         setAnnotationList(

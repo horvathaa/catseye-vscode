@@ -15,13 +15,15 @@ import { sortAnnotationsByLocation,
 		getAllAnnotationFilenames, 
 		getAnnotationsWithStableGitUrl, 
 		getAllAnnotationStableGitUrls, 
-		getAnnotationsNotInFile
+		getAnnotationsNotInFile,
+		handleSaveCloseEvent
 } from '../utils/utils';
 import { annotationDecorations, 
 		setOutOfDateAnnotationList, 
 		view, 
 		annotationList, 
-		setAnnotationList  
+		setAnnotationList,  
+		gitInfo
 } from '../extension';
 import { userDeletedAnchor, 
 	userAutocompletedOrCommented, 
@@ -32,6 +34,7 @@ import { userDeletedAnchor,
 	shrinkOrExpandBackOfRange, 
 	shrinkOrExpandFrontOfRange 
 } from './translateChangesHelpers';
+import { saveAnnotations, saveOutOfDateAnnotations } from '../firebase/functions/functions';
 
 // Used for finding new anchor point given copy/paste operation
 // Given offsetData generated at the time of copying (offset being where the anchor is relative to the beginning of the user's selection) 
@@ -244,12 +247,13 @@ export function createRangesFromAnnotation(annotation: Annotation) : vscode.Rang
 }
 
 // Function to make VS Code decoration objects (the highlights that appear in the editor) with our metadata added
-const createDecorationOptions = (ranges: { [key: string] : any }[], annotationList: Annotation[]) : vscode.DecorationOptions[] => {
+const createDecorationOptions = (ranges: AnnotationRange[], annotationList: Annotation[]) : vscode.DecorationOptions[] => {
+	// console.log('annotationList', annotationList, 'ranges', ranges);
 	return ranges.map(r => {
 		let markdownArr = new Array<vscode.MarkdownString>();
-		markdownArr.push(new vscode.MarkdownString(annotationList.find((a) => a.id === r.id)?.annotation));
+		markdownArr.push(new vscode.MarkdownString(annotationList.find((a) => a.id === r.annotationId)?.annotation));
 		const showAnnoInWebviewCommand = vscode.Uri.parse(
-			`command:adamite.showAnnoInWebview?${encodeURIComponent(JSON.stringify(r.id))}`
+			`command:adamite.showAnnoInWebview?${encodeURIComponent(JSON.stringify(r.annotationId))}`
 		);
 		let showAnnoInWebviewLink: vscode.MarkdownString = new vscode.MarkdownString();
 		showAnnoInWebviewLink.isTrusted = true;
@@ -262,63 +266,73 @@ const createDecorationOptions = (ranges: { [key: string] : any }[], annotationLi
 	});
 }
 
-// Function to actually decorate each file with our annotation highlights
-export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode.TextEditor | undefined = undefined) : void => {
-	const filenames = getAllAnnotationFilenames(annotationList);
-	const githubUrls = getAllAnnotationStableGitUrls(annotationList)
-	const projectName = getProjectName(text?.document.uri.toString());
-	const textUrl = text ? getGithubUrl(getVisiblePath(projectName, text?.document.uri.fsPath), projectName, true) : "";
-	const visibleEditors = vscode.window.visibleTextEditors.filter((t: vscode.TextEditor) => filenames.includes(t.document.uri.toString()) || githubUrls.includes(textUrl));
-	
-	// we have one specific doc we want to highlight
-	if(annotationList.length && text && (filenames.includes(text.document.uri.toString()) || githubUrls.includes(textUrl))) {
-		let r: AnchorObject[] = annotationList.flatMap(a => a.anchors).filter(a => a.filename === text.document.uri.toString());
-		let ranges = r
-			.map(a => { return { id: a.parentId, anchorText: a.anchorText, filename: a.filename, range: createRangeFromAnchorObject(a)}})
-			.filter(r => r.filename === text?.document.uri.toString())
-			.map(a => { return { id: a.id, anchorText: a.anchorText, range: a.range }});
-		if(ranges.length) {
-			const validRanges: {[key: string]: any}[] = [], invalidRanges: {[key: string]: any}[] = [];
-			ranges.forEach((r: {[key: string ] : any}) => {
-				const validRange: vscode.Range = text.document.validateRange(r.range);
-				// range is already clean
-				if(validRange.isEqual(r.range)) {
-					r.range = validRange;
-					validRanges.push(r);
-				}
-				// valid range is equivalent to original range so update range
-				else if((text.document.getText(validRange) === (r.anchorText) && r.anchorText !== '')) {
-					r.range = validRange;
-					validRanges.push(r);
-				}
-				// valid range is not similar so we are screwed
-				else {
-					invalidRanges.push(r);
-				}
-			});
+interface AnnotationRange {
+	annotationId: string,
+	anchorText: string,
+	range: vscode.Range
+}
 
-			const validIds: string[] = validRanges.map(r => r.id);
-			const valid: Annotation[] = annotationList.filter((a: Annotation) => validIds.includes(a.id));
+const validateRanges = (ranges: AnnotationRange[], text: vscode.TextEditor) : [AnnotationRange[], AnnotationRange[]] => {
+	const validRanges: AnnotationRange[] = [], invalidRanges: AnnotationRange[] = [];
+	ranges.forEach((r: AnnotationRange) => {
+		const validRange: vscode.Range = text.document.validateRange(r.range);
+		// range is already clean
+		if(validRange.isEqual(r.range)) {
+			r.range = validRange;
+			validRanges.push(r);
+		}
+		// valid range is equivalent to original range so update range
+		else if((text.document.getText(validRange) === (r.anchorText) && r.anchorText !== '')) {
+			r.range = validRange;
+			validRanges.push(r);
+		}
+		// valid range is not similar so we are screwed
+		else {
+			invalidRanges.push(r);
+		}
+	});
+	return [validRanges, invalidRanges];
+}
+
+// Function to actually decorate each file with our annotation highlights
+export const addHighlightsToEditor = (annotationsToHighlight: Annotation[], text: vscode.TextEditor) : void => {
+	const filenames = getAllAnnotationFilenames(annotationsToHighlight);
+	const githubUrls = getAllAnnotationStableGitUrls(annotationsToHighlight)
+	const projectName = getProjectName(text?.document.uri.toString());
+	const textUrl = text ? getGithubUrl(getVisiblePath(projectName, text.document.uri.fsPath), projectName, true) : "";
+	if(annotationsToHighlight.length && text && (filenames.includes(text.document.uri.toString()) || githubUrls.includes(textUrl))) {
+		let anchors: AnchorObject[] = annotationsToHighlight
+			.flatMap(a => a.anchors)
+			.filter(a => a.stableGitUrl === textUrl);
+		let ranges: AnnotationRange[] = anchors
+			.map(a => { return { annotationId: a.parentId, anchorText: a.anchorText, url: a.stableGitUrl, filename: a.filename, range: createRangeFromAnchorObject(a)}})
+			.filter(r => r.url === textUrl)
+			.map(a => { return { annotationId: a.annotationId, anchorText: a.anchorText, range: a.range }});
+
+		if(ranges.length) {
+			const updatedIds: string[] = ranges.map(r => r.annotationId);
+			const [validRanges, invalidRanges] = validateRanges(ranges, text);
+			const validIds: string[] = validRanges.map(r => r.annotationId);
+			const valid: Annotation[] = annotationsToHighlight.filter((a: Annotation) => validIds.includes(a.id));
 			valid.forEach((a: Annotation) => a.outOfDate = false);
 			// bring back annotations that are not in the file
 			const newAnnotationList : Annotation[] = sortAnnotationsByLocation(
-				valid.concat(getAnnotationsNotInFile(annotationList, text.document.uri.toString())), 
-				text.document.uri.toString()
+				valid.concat(annotationList.filter(a => !updatedIds.includes(a.id)))
 			);
 
 			setAnnotationList(newAnnotationList);
+
 			try {
-				const decorationOptions: vscode.DecorationOptions[] = createDecorationOptions(validRanges, annotationList);
+				const decorationOptions: vscode.DecorationOptions[] = createDecorationOptions(validRanges, newAnnotationList);
 				text.setDecorations(annotationDecorations, decorationOptions);
 			}
 			catch (error) {
 				console.error('Couldn\'t highlight: ', error);
 			}
+
 			if(invalidRanges.length) {
-				const invalidIds: string[] = invalidRanges.map(r => r.id);
-				const ood: Annotation[] = annotationList.filter((a: Annotation) => invalidIds.includes(a.id))
-				ood.forEach((a: Annotation) => { a.outOfDate = true; a.needToUpdate = true });
-				setOutOfDateAnnotationList(ood);
+				const invalidIds: string[] = invalidRanges.map(r => r.annotationId);
+				saveOutOfDateAnnotations(invalidIds);
 			}
 			if(vscode.workspace.workspaceFolders) {
 				view?.updateDisplay(newAnnotationList);
@@ -327,64 +341,9 @@ export const addHighlightsToEditor = (annotationList: Annotation[], text: vscode
 		} 
 	}
 
-	// we want to highlight anything relevant -- probably should do validity check here too
-	// maybe extract validity check into a separate function
-	else if(!text && visibleEditors.length && annotationList.length) {
-		// console.log('in else if');
-		const filesToHighlight: {[key: string]: any} = {};
-		const visFileNames: string[] = visibleEditors.map((t: vscode.TextEditor) => t.document.uri.toString());
-		const highlighted: string[] = [];
-		visFileNames.forEach((key: string) => {
-			const annotationsInCurrentFile = getAnnotationsInFile(annotationList, key);
-			const annoRangeObjs: {[key: string]: any}[] = annotationsInCurrentFile
-				.flatMap((a: Annotation) => { 
-					highlighted.push(a.id);
-					return a.anchors.filter(a => a.filename === key).flatMap(a => { return { id: a.parentId, range: createRangeFromAnchorObject(a) }})
-				})
-			filesToHighlight[key] = createDecorationOptions(annoRangeObjs, annotationList);
-		});
-		visibleEditors.forEach((v: vscode.TextEditor) => {
-			v.setDecorations(annotationDecorations, filesToHighlight[v.document.uri.toString()]);
-		});
-	// }
-
-	// else if(!visibleEditors.length && text && vscode.window.visibleTextEditors.length) {
-		// may have a weird filename change on hand?
-		if(highlighted.length !== annotationList.length) {
-			const annotationsToHighlight = annotationList.filter(a => !highlighted.includes(a.id))
-			const filesToHighlight2: {[key: string]: any} = {};
-			const projectLevelAnnotationFiles: string[] = getAllAnnotationStableGitUrls(annotationsToHighlight);
-			const projectLevelFileNames : string[] = vscode.window.visibleTextEditors.map((te: vscode.TextEditor) => {
-				// console.log('doc', te.document.uri.fsPath, 'proj', getProjectName(te.document.uri.toString()))
-				const projectName: string = getProjectName(te.document.uri.toString())
-				return getGithubUrl(getVisiblePath(projectName, te.document.uri.fsPath), projectName, true);
-			});
-
-			// console.log('projectLevelAnnotationFiles', projectLevelAnnotationFiles)
-			// it's a p rare situation where we actually need this highlighting so be conservative in invoking it
-			// thru more robust checks
-			if(!projectLevelFileNames || !projectLevelFileNames.length || !projectLevelFileNames.some(s => s.includes('github.com'))) {
-				return;
-			}
-			projectLevelFileNames.forEach((filename: string) => {
-				if(projectLevelAnnotationFiles.includes(filename)) {
-					const annotationsWithStableUrl = getAnnotationsWithStableGitUrl(annotationsToHighlight, filename);
-					const annoRangeObjs: {[key: string]: any}[] = annotationsWithStableUrl
-						.flatMap((a: Annotation) => { return a.anchors.flatMap(a => { return { id: a.parentId, range: createRangeFromAnchorObject(a) }}) });
-						filesToHighlight2[filename] = createDecorationOptions(annoRangeObjs, annotationsWithStableUrl); 
-				}
-			});
-			vscode.window.visibleTextEditors.forEach((te: vscode.TextEditor) => {
-				const projectName: string = getProjectName(te.document.uri.toString())
-				const url = getGithubUrl(getVisiblePath(projectName, te.document.uri.fsPath), projectName, true)
-				te.setDecorations(annotationDecorations, filesToHighlight2[url])
-			});
-		}
-	}
-
 	// nothing
 	else {
-		// console.log('nothing to highlight');
+		console.log('nothing to highlight -- updating anyways');
 		view?.updateDisplay(annotationList); // update that list is empty ? 
 		text?.setDecorations(annotationDecorations, []);
 	}

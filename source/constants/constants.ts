@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+// import * as vscode from 'vscode';
 export class Annotation {
 	id: string;
 	annotation: string;
@@ -83,12 +83,18 @@ export interface AnchorObject {
 	parentId: string
 }
 
+
+
+
 export interface ChangeEvent {
-    startTime: number,
-    endTime: number,
-    changes: vscode.TextDocumentContentChangeEvent[],
-    isComment: boolean,
-    complete: boolean
+    time: number,
+	textAdded: string,
+	commit: string,
+	branch: string,
+	file: string,
+    line: string,
+	charactersAdded: number,
+	charactersRemoved: number
 }
 
 export interface Snapshot {
@@ -150,3 +156,17 @@ export enum DEBUG_COMMANDS {
     CONTINUE = "continue",
     DISCONNECT = "disconnect",
 }
+
+export interface GitRepoInfo {
+	repo: string,
+	branch: string,
+	commit: string,
+	modifiedAnnotations: Annotation[],
+	nameOfPrimaryBranch: string
+}
+
+
+// export interface GitInfo {
+// 	author: string,
+// 	[key: string]: GitRepoInfo
+// }

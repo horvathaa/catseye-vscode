@@ -85,8 +85,8 @@ export const createView = async (context: vscode.ExtensionContext) => {
 						break;
 					}
 					case 'createAnnotation': {
-						const { anno, willBePinned } = message;
-						viewHelper.handleCreateAnnotation(anno, willBePinned);
+						const { anno, shareWith, willBePinned } = message;
+						viewHelper.handleCreateAnnotation(anno, shareWith, willBePinned);
 						break;
 					}
 					case 'updateAnnotation': {
@@ -118,7 +118,14 @@ export const createView = async (context: vscode.ExtensionContext) => {
 			});
 
 			// since we launched Adamite, show highlights in editor
-			anchor.addHighlightsToEditor(annotationList, vscode.window.activeTextEditor);
+			if(vscode.window.activeTextEditor) {
+				// console.log('launch + active', annotationList);
+				anchor.addHighlightsToEditor(annotationList, vscode.window.activeTextEditor);
+			}
+			else {
+				console.log('no active text', annotationList);
+				vscode.window.visibleTextEditors.forEach(t => anchor.addHighlightsToEditor(annotationList, t));
+			}
 			newView._panel?.onDidDispose((e: void) => {
 				viewHelper.handleOnDidDispose();
 			}, null, context.subscriptions);

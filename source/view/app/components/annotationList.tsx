@@ -26,7 +26,7 @@ interface AnnoListProps {
   }
   
 const AnnotationList: React.FC<AnnoListProps> = ({ annotations, vscode, window, currentFile, currentProject, username, userId }) => {
-    console.log('currentFile in webview', currentFile);
+    // console.log('currentFile in webview', currentFile);
     React.useEffect(() => {
         if(annotations.length) {
             createClusters();

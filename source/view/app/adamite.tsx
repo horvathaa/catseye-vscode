@@ -50,6 +50,8 @@ const AdamitePanel: React.FC<Props> = ({ vscode, window, showLogIn, username, us
         if(message.payload.annotationList) setAnnotations(message.payload.annotationList);
         if(message.payload.currentFile) setCurrentFile(message.payload.currentFile)
         if(message.payload.currentProject) setCurrentProject(message.payload.currentProject)
+        if(message.payload.currentUser) setUserId(message.payload.currentUser);
+        console.log('message', message);
         return;
       case 'newAnno':
         setSelection(message.payload.selection);

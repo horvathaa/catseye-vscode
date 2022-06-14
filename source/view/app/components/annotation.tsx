@@ -62,6 +62,10 @@ const ReactAnnotation: React.FC<Props> = ({ annotation, vscode, window, username
       annoRef.current = newAnno;
   }, [annotation]);
 
+  React.useEffect(() => {
+    
+  }, [userId])
+
   const scrollInEditor = (id: string) : void => {
     vscode.postMessage({
       command: 'scrollInEditor',

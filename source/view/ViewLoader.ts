@@ -126,14 +126,20 @@ export default class ViewLoader {
     }
   }
 
-  public updateDisplay(annotationList: Annotation[] | undefined, currentFile: string | undefined = undefined, currentProject: string | undefined = undefined) {
+  public updateDisplay(
+    annotationList: Annotation[] | undefined, 
+    currentFile: string | undefined = undefined, 
+    currentProject: string | undefined = undefined,
+    currentUser: string | undefined = undefined
+    ) {
       if(this._panel && this._panel.webview) {
         this._panel.webview.postMessage({
           command: 'update',
           payload: {
             annotationList,
             currentFile,
-            currentProject
+            currentProject,
+            currentUser
           }
         })
       }

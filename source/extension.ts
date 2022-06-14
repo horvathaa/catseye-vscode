@@ -43,15 +43,17 @@ export const annotationDecorations = vscode.window.createTextEditorDecorationTyp
 	// borderWidth: '0.25px',
 	// borderStyle: 'solid',
 	overviewRulerLane: vscode.OverviewRulerLane.Right,
-	border: '0.15px solid rgba(217, 234, 247, .25)',
+	
 	light: {
 		// this color will be used in light color themes
 		// borderColor: 'darkblue',
+		border: '0.15px solid rgba(0, 0, 0, .25)',
 		overviewRulerColor: 'darkgreen',
 	},
 	dark: {
 		// this color will be used in dark color themes
 		// borderColor: ,
+		border: '0.15px solid rgba(217, 234, 247, .25)',
 		overviewRulerColor: 'lightgreen',
 	},
 	rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed

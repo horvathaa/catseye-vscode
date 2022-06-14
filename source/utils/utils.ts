@@ -551,8 +551,6 @@ export const generateGitMetaData = async (gitApi: any) : Promise<{[key: string] 
 	updateCurrentGitHubProject(gitApi);
 	updateCurrentGitHubCommit(gitApi);
 
-	console.log('currentGitHubUrl', currentGitHubProject)
-
 	return gitInfo;
 }
 

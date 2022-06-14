@@ -6,7 +6,7 @@
  */
 
 import * as vscode from 'vscode';
-import { gitInfo, gitApi, setAnnotationList, setGitInfo, setUser, adamiteLog } from '../extension';
+import { gitInfo, gitApi, setAnnotationList, setGitInfo, setUser, adamiteLog, view, annotationList } from '../extension';
 import { initializeAnnotations, generateGitMetaData } from '../utils/utils';
 import { fbSignInWithEmailAndPassword, getUserGithubData, fbSignOut, signInWithGithubCredential, setUserGithubAccount } from '../firebase/functions/functions';
 const path = require('path');
@@ -66,15 +66,20 @@ export const initializeAuth = async () => {
             adamiteLog.appendLine("Signed in to Firebase with GitHub auth credentials");
             setUser(user);
             setGitInfo(await generateGitMetaData(gitApi));
-            user ? await initializeAnnotations(user) : setAnnotationList([]);
-            if(user)
-            try {
-                operationMessage = await setUserGithubAccount({ uid: user.uid, username: account.label });
+            if(user) {
+                await initializeAnnotations(user);
+                view && view._panel?.visible && view.updateDisplay(annotationList, undefined, undefined, user.uid);
             }
-            catch(e) {
-                adamiteLog.appendLine('Could not set GitHub data');
-                console.error(e);
+            else {
+                setAnnotationList([]);
             }
+            // try {
+            //     operationMessage = await setUserGithubAccount({ uid: user.uid, username: account.label });
+            // }
+            // catch(e) {
+            //     adamiteLog.appendLine('Could not set GitHub data');
+            //     console.error(e);
+            // }
         } catch(e) {
             adamiteLog.appendLine('Could not sign in to Firebase with GitHub data');
             console.error(e);

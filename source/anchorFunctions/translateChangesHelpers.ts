@@ -112,17 +112,17 @@ export const userChangedLinesInMiddle = (newRange: Anchor, originalAnchor: Ancho
     if(!anchorOnSameLine) {
         // change happened at the beginning of the anchor
         if(changeRange.start.line === originalAnchor.startLine) {
-            console.log('userChangedLinesInMiddleUpdateStart')
+            // console.log('userChangedLinesInMiddleUpdateStart')
             newRange = userChangedLinesInMiddleUpdateStart(newRange, originalAnchor, changeRange, numLines, anchorOnSameLine, anchorText, changeText, originalRange);
         }
         // change started at the end of the anchor
         else if(changeRange.start.line === originalAnchor.endLine && changeRange.start.character >= originalAnchor.endOffset) {
-            console.log('userChangedLinesInMiddleUpdateEndUsingStart');
+            // console.log('userChangedLinesInMiddleUpdateEndUsingStart');
             newRange = userChangedLinesInMiddleUpdateEndUsingStart(newRange, originalAnchor, changeRange, numLines, changeText, anchorText);
         }
         // change ended at the end of the anchor
         else if(changeRange.end.line === originalAnchor.endLine && originalAnchor.endOffset >= changeRange.end.character) {
-            console.log('userChangedLinesInMiddleUpdateEndUsingEnd');
+            // console.log('userChangedLinesInMiddleUpdateEndUsingEnd');
             newRange = userChangedLinesInMiddleUpdateEndUsingEnd(newRange, changeRange, numLines, anchorText, originalAnchor, changeText, rangeLength);
         } 
         // our anchor fully encapsulates the change range but does not fit those other scenarios

@@ -191,7 +191,7 @@ export const translateChanges = (
 			changeRange.end.isBeforeOrEqual(originalRange.end)
 		) {
 			changeOccurredInRange = true;
-			console.log('userChangedLinesInMiddle');
+			// console.log('userChangedLinesInMiddle');
 			newRange = userChangedLinesInMiddle(newRange, originalAnchor, changeRange, diff, startAndEndLineAreSameNewLine, anchorText, changeText, textLength, rangeLength, originalRange);
 		}
 		
@@ -201,7 +201,7 @@ export const translateChanges = (
 				changeRange.end.line >= originalEndLine && 
 				diff) 
 			{
-			console.log('shrinkOrExpandBackOfRange');
+			// console.log('shrinkOrExpandBackOfRange');
 			newRange = shrinkOrExpandBackOfRange(newRange, changeRange, diff, changeText, anchorText, rangeLength, originalAnchor, originalRange);
 		}
 		
@@ -211,7 +211,7 @@ export const translateChanges = (
 				changeRange.start.line <= originalEndLine && 
 				diff) 
 			{
-			console.log('shrinkOrExpandFrontOfRange');
+			// console.log('shrinkOrExpandFrontOfRange');
 			newRange = shrinkOrExpandFrontOfRange(newRange, changeRange, diff, changeText, anchorText, rangeLength, originalStartLine, originalStartOffset);
 		}
 
@@ -236,7 +236,6 @@ export const translateChanges = (
 		const newAnchor: AnchorObject = {
 			...anchorObject, anchorText: newAnchorText, anchor: newRange
 		}
-		console.log('newAnchor', newAnchor);
 
 		return newAnchor
 

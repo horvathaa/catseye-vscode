@@ -191,7 +191,7 @@ export const translateChanges = (
 			changeRange.end.isBeforeOrEqual(originalRange.end)
 		) {
 			changeOccurredInRange = true;
-			// console.log('userChangedLinesInMiddle');
+			console.log('userChangedLinesInMiddle');
 			newRange = userChangedLinesInMiddle(newRange, originalAnchor, changeRange, diff, startAndEndLineAreSameNewLine, anchorText, changeText, textLength, rangeLength, originalRange);
 		}
 		
@@ -201,7 +201,7 @@ export const translateChanges = (
 				changeRange.end.line >= originalEndLine && 
 				diff) 
 			{
-			// console.log('shrinkOrExpandBackOfRange');
+			console.log('shrinkOrExpandBackOfRange');
 			newRange = shrinkOrExpandBackOfRange(newRange, changeRange, diff, changeText, anchorText, rangeLength, originalAnchor, originalRange);
 		}
 		
@@ -211,7 +211,7 @@ export const translateChanges = (
 				changeRange.start.line <= originalEndLine && 
 				diff) 
 			{
-			// console.log('shrinkOrExpandFrontOfRange');
+			console.log('shrinkOrExpandFrontOfRange');
 			newRange = shrinkOrExpandFrontOfRange(newRange, changeRange, diff, changeText, anchorText, rangeLength, originalStartLine, originalStartOffset);
 		}
 
@@ -236,6 +236,7 @@ export const translateChanges = (
 		const newAnchor: AnchorObject = {
 			...anchorObject, anchorText: newAnchorText, anchor: newRange
 		}
+		console.log('newAnchor', newAnchor);
 
 		return newAnchor
 
@@ -297,9 +298,10 @@ const validateRanges = (ranges: AnnotationRange[], text: vscode.TextEditor) : [A
 // Function to actually decorate each file with our annotation highlights
 export const addHighlightsToEditor = (annotationsToHighlight: Annotation[], text: vscode.TextEditor) : void => {
 	const filenames = getAllAnnotationFilenames(annotationsToHighlight);
-	const githubUrls = getAllAnnotationStableGitUrls(annotationsToHighlight)
+	const githubUrls = getAllAnnotationStableGitUrls(annotationsToHighlight);
 	const projectName = getProjectName(text?.document.uri.toString());
 	const textUrl = text ? getGithubUrl(getVisiblePath(projectName, text.document.uri.fsPath), projectName, true) : "";
+	// console.log('annotationsToHighlight', annotationsToHighlight);
 	if(annotationsToHighlight.length && text && (filenames.includes(text.document.uri.toString()) || githubUrls.includes(textUrl))) {
 		let anchors: AnchorObject[] = annotationsToHighlight
 			.flatMap(a => a.anchors)

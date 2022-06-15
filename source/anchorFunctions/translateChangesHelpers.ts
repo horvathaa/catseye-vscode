@@ -112,17 +112,17 @@ export const userChangedLinesInMiddle = (newRange: Anchor, originalAnchor: Ancho
     if(!anchorOnSameLine) {
         // change happened at the beginning of the anchor
         if(changeRange.start.line === originalAnchor.startLine) {
-            // console.log('userChangedLinesInMiddleUpdateStart')
+            console.log('userChangedLinesInMiddleUpdateStart')
             newRange = userChangedLinesInMiddleUpdateStart(newRange, originalAnchor, changeRange, numLines, anchorOnSameLine, anchorText, changeText, originalRange);
         }
         // change started at the end of the anchor
         else if(changeRange.start.line === originalAnchor.endLine && changeRange.start.character >= originalAnchor.endOffset) {
-            // console.log('userChangedLinesInMiddleUpdateEndUsingStart');
+            console.log('userChangedLinesInMiddleUpdateEndUsingStart');
             newRange = userChangedLinesInMiddleUpdateEndUsingStart(newRange, originalAnchor, changeRange, numLines, changeText, anchorText);
         }
         // change ended at the end of the anchor
         else if(changeRange.end.line === originalAnchor.endLine && originalAnchor.endOffset >= changeRange.end.character) {
-            // console.log('userChangedLinesInMiddleUpdateEndUsingEnd');
+            console.log('userChangedLinesInMiddleUpdateEndUsingEnd');
             newRange = userChangedLinesInMiddleUpdateEndUsingEnd(newRange, changeRange, numLines, anchorText, originalAnchor, changeText, rangeLength);
         } 
         // our anchor fully encapsulates the change range but does not fit those other scenarios
@@ -191,11 +191,20 @@ const userChangedLinesInMiddleUpdateStart = (newRange: Anchor, originalAnchor: A
 
 const userChangedLinesInMiddleUpdateEndUsingStart = (newRange: Anchor, originalAnchor: Anchor, changeRange: vscode.Range, numLines: number, changeText: string, anchorText: string) : Anchor => {
     if(numLines > 0) {
-        const relevantTextLength = changeText.includes('\n') ? changeText.substring(changeText.lastIndexOf('\n') + 1).length : changeText.length; // originally had textLength - may need to swap with computed textlength
+        const relevantTextLength = changeText.includes('\n') ? 
+            changeText.substring(changeText.lastIndexOf('\n') + 1).length : 
+            changeText.length; // originally had textLength - may need to swap with computed textlength
         // console.log('relevantTextLength', relevantTextLength, 'original text length', changeText.length);
         const pointAtWhichAnchorIsSplit: number = originalAnchor.endOffset - changeRange.start.character;
-        newRange.endOffset = anchorText.includes('\n') ? 
-                                anchorText.substring(anchorText.lastIndexOf('\n')).length - anchorText.substring(anchorText.lastIndexOf('\n') + 1, anchorText.lastIndexOf('\n') + 1 + changeRange.start.character).length - 1 + relevantTextLength - 1: 
+        const originalPositionEqualToEnd = new vscode.Position(originalAnchor.endLine, originalAnchor.endOffset).isEqual(changeRange.end);
+        newRange.endOffset = originalPositionEqualToEnd ? changeRange.end.character :
+                                anchorText.includes('\n') ? 
+                                anchorText.substring(
+                                    anchorText.lastIndexOf('\n')
+                                ).length - 
+                                anchorText.substring(
+                                    anchorText.lastIndexOf('\n') + 1, anchorText.lastIndexOf('\n') + 1 + changeRange.start.character
+                                ).length - 1 + relevantTextLength - 1 : 
                                 pointAtWhichAnchorIsSplit + relevantTextLength - 1;
         // console.log('newRange.endOffset', newRange.endOffset);
     }
@@ -233,13 +242,12 @@ const userChangedLinesInMiddleUpdateEndUsingEnd = (newRange: Anchor, changeRange
 export const shrinkOrExpandBackOfRange = (newRange: Anchor, changeRange: vscode.Range, numLines: number, changeText: string, anchorText: string, rangeLength: number, originalAnchor: Anchor, originalRange: vscode.Range) : Anchor => {
     if(numLines && !changeText.length && 
         (changeRange.start.isAfter(originalRange.start)) &&
-        (changeRange.start.isBefore(originalRange.end))&&
+        (changeRange.start.isBefore(originalRange.end)) &&
         changeRange.end.isAfter(originalRange.end)) {
         newRange.endLine = changeRange.start.line;
-        newRange.endOffset = changeRange.start.character;
-        // console.log('shirnking back of Range');
-// Didn't originally have these checks        
-    } else if(numLines && changeText.length && 
+        newRange.endOffset = changeRange.start.character;    
+    } 
+    else if(numLines && changeText.length && 
         changeRange.start.isAfter(originalRange.start) &&
         changeRange.start.isBefore(originalRange.end) &&
         changeRange.end.isAfter(originalRange.end)
@@ -247,8 +255,13 @@ export const shrinkOrExpandBackOfRange = (newRange: Anchor, changeRange: vscode.
     {
         newRange.endLine = changeRange.end.line;
         newRange.endOffset = changeRange.end.character;
-        // console.log('expanding the range', newRange, changeRange)
-    } else {
+    } 
+    else if (numLines && !changeText.length && changeRange.start.isEqual(originalRange.end)) {
+        newRange.endLine = originalRange.end.line;
+        newRange.endOffset = originalRange.end.character;
+    } 
+    
+    else {
         newRange.endLine = changeRange.start.line;
         newRange.endOffset = changeRange.start.character + newRange.endOffset;
     }

@@ -74,11 +74,12 @@ export const signInWithGithubCredential = async (oauth: string) : Promise<fireba
 
 // gitRepo is URL for project where annotation was made
 export const getAnnotationsByProject = (gitRepo: string, uid: string) : Promise<firebase.firestore.QuerySnapshot> => {
+	console.log('gitRepo', gitRepo, 'uid', uid, 'currentGitHubCommit', currentGitHubCommit);
 	return annotationsRef
 		.where('gitRepo', '==', gitRepo)
 		.where('authorId', '!=', uid)
 		.where('sharedWith', '==', 'group')
-		.where('gitCommit', '==', currentGitHubCommit)
+		.where('gitCommit', '==', currentGitHubCommit ? currentGitHubCommit : '')
 		.get();
 }
 

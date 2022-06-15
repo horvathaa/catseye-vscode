@@ -297,9 +297,10 @@ const validateRanges = (ranges: AnnotationRange[], text: vscode.TextEditor) : [A
 // Function to actually decorate each file with our annotation highlights
 export const addHighlightsToEditor = (annotationsToHighlight: Annotation[], text: vscode.TextEditor) : void => {
 	const filenames = getAllAnnotationFilenames(annotationsToHighlight);
-	const githubUrls = getAllAnnotationStableGitUrls(annotationsToHighlight)
+	const githubUrls = getAllAnnotationStableGitUrls(annotationsToHighlight);
 	const projectName = getProjectName(text?.document.uri.toString());
 	const textUrl = text ? getGithubUrl(getVisiblePath(projectName, text.document.uri.fsPath), projectName, true) : "";
+	// console.log('annotationsToHighlight', annotationsToHighlight);
 	if(annotationsToHighlight.length && text && (filenames.includes(text.document.uri.toString()) || githubUrls.includes(textUrl))) {
 		let anchors: AnchorObject[] = annotationsToHighlight
 			.flatMap(a => a.anchors)

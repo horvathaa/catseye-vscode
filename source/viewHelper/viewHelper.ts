@@ -58,8 +58,6 @@ export const handleAdamiteWebviewLaunch = () : void => {
     const annoUrls: string[] = getAllAnnotationStableGitUrls(annotationList);
     vscode.window.visibleTextEditors.forEach((v: vscode.TextEditor) => {
         if(annoUrls.includes(getStableGitHubUrl(v.document.uri.fsPath))) {
-        // if(annoFiles.includes(v.document.uri.toString())) {
-            // console.log('webview launch', annotationList);
             addHighlightsToEditor(annotationList, v); 
         }
     });

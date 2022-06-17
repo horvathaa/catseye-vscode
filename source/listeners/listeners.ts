@@ -50,11 +50,12 @@ export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | und
             setAnnotationList(utils.sortAnnotationsByLocation(annotationList)); 
             const currentProject: string = utils.getProjectName(TextEditor.document.uri.fsPath);
             const gitUrl: string = utils.getGithubUrl(TextEditor.document.uri.fsPath, currentProject, true);
+
             if(gitInfo[currentProject] && currentGitHubProject !== gitInfo[currentProject].repo) {
                 utils.updateCurrentGitHubProject(gitApi);
                 utils.updateCurrentGitHubCommit(gitApi);
             }
-            // console.log('changing active text editor');
+
             if(user && vscode.workspace.workspaceFolders)
                 view?.updateDisplay(undefined, gitUrl, currentProject);
         }
@@ -108,7 +109,6 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
 
     // logChanges(e);
     if(e.document.fileName.includes('extension-output-')) return; // this listener also gets triggered when the output pane updates???? for some reason????
-
     const stableGitPath = utils.getStableGitHubUrl(e.document.uri.fsPath);
 
     // const currentAnnotations = utils.getAllAnnotationsWithAnchorInFile(annotationList, e.document.uri.toString());
@@ -184,9 +184,11 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
         const notUpdatedAnnotations: Annotation[] = utils.getAnnotationsNotWithGitUrl(annotationList, stableGitPath);
         const newAnnotationList: Annotation[] = translatedAnnotations.concat(notUpdatedAnnotations, rangeAdjustedAnnotations);
         
-        // highlight changed annotations
+        // highlight changed annotations FF---
         if(vscode.window.activeTextEditor && view)  {
             anchor.addHighlightsToEditor(newAnnotationList, vscode.window.activeTextEditor);
+            // console.log('updating in translatechange listener', newAnnotationList.find(a => a.id === 'e9dc0917-30ea-43c6-bba5-d7f95b4f432c'));
+            // view.updateDisplay(newAnnotationList, stableGitPath);
         }
         else {
             setAnnotationList(utils.sortAnnotationsByLocation(newAnnotationList));

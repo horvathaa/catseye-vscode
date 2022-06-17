@@ -305,14 +305,16 @@ export const handleSaveCloseEvent = async (annotationList: Annotation[], filePat
 	const annosToSave: Annotation[] = annotationList.concat(outOfDateAnnotations, deletedAnnotations);
 	const annotationsInCurrentFile = currentFile !== "all" ? getAllAnnotationsWithGitUrlInFile(annotationList, currentFile) : annotationList;
 	if(doc && vscode.workspace.workspaceFolders) {
+		console.log('curr file', annotationsInCurrentFile);
 		let newList = await updateHtml(annotationsInCurrentFile, doc);
+		console.log('newList', newList);
 		// console.log('newList', newList);
 		const ids: string[] = newList.map(a => a.id);
 		const visibleAnnotations: Annotation[] = currentFile === 'all' ? newList : annotationList.filter(a => !ids.includes(a.id)).concat(newList);
 		// console.log('before set', visibleAnnotations);
 		setAnnotationList(visibleAnnotations);
 		// console.log('after', visibleAnnotations)
-		// console.log('about to update display -- handleSaveClose');
+		console.log('about to update display -- handleSaveClose');
 		view?.updateDisplay(visibleAnnotations);
 		if(annosToSave.some((a: Annotation) => a.needToUpdate)) {
 			lastSavedAnnotations = annosToSave;
@@ -324,6 +326,7 @@ export const handleSaveCloseEvent = async (annotationList: Annotation[], filePat
 	}
 	else if(annotationsInCurrentFile.length && vscode.workspace.workspaceFolders && !arraysEqual(annosToSave, lastSavedAnnotations)) {
 		lastSavedAnnotations = annosToSave;
+		
 		saveAnnotations(annosToSave.filter(a => a.needToUpdate), filePath);
 	}
 }

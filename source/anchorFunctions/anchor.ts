@@ -335,9 +335,10 @@ export const addHighlightsToEditor = (annotationsToHighlight: Annotation[], text
 				const invalidIds: string[] = invalidRanges.map(r => r.annotationId);
 				saveOutOfDateAnnotations(invalidIds);
 			}
-			if(vscode.workspace.workspaceFolders) {
-				view?.updateDisplay(newAnnotationList);
-			}
+			// if(vscode.workspace.workspaceFolders) {
+			// 	console.log('updating', newAnnotationList);
+			// 	view?.updateDisplay(newAnnotationList);
+			// }
 			
 		} 
 	}

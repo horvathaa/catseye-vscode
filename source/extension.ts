@@ -60,6 +60,25 @@ export const annotationDecorations = vscode.window.createTextEditorDecorationTyp
 	
 });
 
+export const floatingDecorations = vscode.window.createTextEditorDecorationType({
+	backgroundColor: undefined,
+	opacity: undefined,
+	isWholeLine: undefined,
+	gutterIconPath: undefined,
+	gutterIconSize: undefined,
+	overviewRulerLane: vscode.OverviewRulerLane.Center,
+	overviewRulerColor: undefined,
+	after: {
+		backgroundColor: 'white',
+		color: 'black',
+		contentText: "TEST!!!",
+		fontWeight: 'normal',
+		fontStyle: 'normal',
+		// Pull the decoration out of the document flow if we want to be scrollable
+		textDecoration: `none;''  position: absolute;'`,
+	},
+})
+
 export const setActiveEditor = (newActiveEditor: vscode.TextEditor | undefined) : void => {
 	activeEditor = newActiveEditor;
 }
@@ -147,6 +166,7 @@ export function activate(context: vscode.ExtensionContext) {
 	
 	let didChangeVisibleListenerDisposable = vscode.window.onDidChangeVisibleTextEditors(eventHandlers.handleChangeVisibleTextEditors);
 	let didChangeActiveEditorListenerDisposable = vscode.window.onDidChangeActiveTextEditor(eventHandlers.handleChangeActiveTextEditor);
+	let didChangeTextEditorSelectionDisposable = vscode.window.onDidChangeTextEditorSelection(eventHandlers.handleDidChangeTextEditorSelection);
 	let didChangeActiveColorTheme = vscode.window.onDidChangeActiveColorTheme(eventHandlers.handleDidChangeActiveColorTheme);
 
 	let didSaveListenerDisposable = vscode.workspace.onDidSaveTextDocument(eventHandlers.handleDidSaveDidClose);
@@ -180,6 +200,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(didChangeVisibleListenerDisposable);
 	context.subscriptions.push(didChangeActiveEditorListenerDisposable);
+	context.subscriptions.push(didChangeTextEditorSelectionDisposable);
 	context.subscriptions.push(didChangeActiveColorTheme);
 	context.subscriptions.push(didSaveListenerDisposable);
 	context.subscriptions.push(didCloseListenerDisposable);

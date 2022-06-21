@@ -15,6 +15,8 @@ import * as commands from './commands/commands';
 import * as eventHandlers from './listeners/listeners';
 import * as utils from './utils/utils';
 import * as debug from './debug/debug';
+// import { HoverController } from './hovers/hoverController';
+// import * as path from 'path';
 import ViewLoader from './view/ViewLoader';
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
 export const gitApi = gitExtension?.getAPI(1);
@@ -38,6 +40,8 @@ export let currentGitHubProject: string = ""; // also need to add call to update
 export let currentGitHubCommit: string = "";
 export let changes: ChangeEvent[] = [];
 export let numChangeEventsCompleted = 0;
+
+// export const hoverController = new HoverController();
 
 export const annotationDecorations = vscode.window.createTextEditorDecorationType({
 	// borderWidth: '0.25px',
@@ -64,19 +68,28 @@ export const floatingDecorations = vscode.window.createTextEditorDecorationType(
 	backgroundColor: undefined,
 	opacity: undefined,
 	isWholeLine: undefined,
-	gutterIconPath: undefined,
+	// gutterIconPath: vscode.Uri.file(path.join(, 'source/constants/Adamite.png')),
 	gutterIconSize: undefined,
 	overviewRulerLane: vscode.OverviewRulerLane.Center,
 	overviewRulerColor: undefined,
 	after: {
-		backgroundColor: 'white',
-		color: 'black',
-		contentText: "TEST!!!",
+		// backgroundColor: 'white',
+		// color: 'black',
+		contentText: "🍀",
 		fontWeight: 'normal',
 		fontStyle: 'normal',
 		// Pull the decoration out of the document flow if we want to be scrollable
 		textDecoration: `none;''  position: absolute;'`,
 	},
+	// before: {
+	// 	backgroundColor: 'white',
+	// 	color: 'black',
+	// 	contentText: "BEFORETEST!!!",
+	// 	fontWeight: 'normal',
+	// 	fontStyle: 'normal',
+	// 	// Pull the decoration out of the document flow if we want to be scrollable
+	// 	textDecoration: `none;''  position: absolute;'`,
+	// }
 })
 
 export const setActiveEditor = (newActiveEditor: vscode.TextEditor | undefined) : void => {
@@ -157,6 +170,7 @@ export const incrementNumChangeEventsCompleted = () : void => {
 // the extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 	adamiteLog.appendLine('Starting activate');
+
 	// initialize authentication and listeners for annotations
 	commands.init();
 
@@ -215,8 +229,12 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(navigateForwardSelectedDisposable);
 	context.subscriptions.push(navigateBackSelectedDisposable);
 	context.subscriptions.push(scrollDisposable);
+	
 	// context.subscriptions.push(copyDisposable);
 	// context.subscriptions.push(cutDisposable);
+
+	// context.subscriptions.push(hoverController);
+	// vscode.languages.registerHoverProvider("*", { provideHover(document, position, token) hoverController });
 	
 }
 

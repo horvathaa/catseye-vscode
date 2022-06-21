@@ -6,7 +6,7 @@
  */
 
 import * as vscode from 'vscode';
-import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, deletedAnnotations, setDeletedAnnotationList, setInsertSpaces, changes, setChangeEvents, incrementNumChangeEventsCompleted, numChangeEventsCompleted, setCurrentColorTheme, gitInfo, currentGitHubProject, gitApi, floatingDecorations } from '../extension';
+import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, deletedAnnotations, setDeletedAnnotationList, setInsertSpaces, changes, setChangeEvents, incrementNumChangeEventsCompleted, numChangeEventsCompleted, setCurrentColorTheme, gitInfo, currentGitHubProject, gitApi, floatingDecorations, } from '../extension';
 import * as anchor from '../anchorFunctions/anchor';
 import * as utils from '../utils/utils';
 import { Annotation, AnchorObject, ChangeEvent, 
@@ -197,13 +197,22 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
 }
 
 
-export const handleDidChangeTextEditorSelection = (e: vscode.TextEditorSelectionChangeEvent) : void => {
+export const handleDidChangeTextEditorSelection = async (e: vscode.TextEditorSelectionChangeEvent) : Promise<void> => {
     const { selections, textEditor } = e;
     const activeSelection = selections[0];
     if(activeSelection.start.isEqual(activeSelection.end)) {
         textEditor.setDecorations(floatingDecorations, []);
         return
     }
-    textEditor.setDecorations(floatingDecorations, selections);
+    // const range = textEditor.document.lineAt(activeSelection.start).range;
+
+    // const hover = await hoverController.provideAnnotationCreationHover(textEditor.document, activeSelection.end);
+    // console.log('hover', hover);
+    let createAnnotationWebviewLink: vscode.MarkdownString = new vscode.MarkdownString();
+    createAnnotationWebviewLink.isTrusted = true;
+    const create = vscode.Uri.parse(`command:adamite.addAnnotation`);
+    createAnnotationWebviewLink.appendMarkdown(`[Create Annotation](${create})`);
+    const decOpts: vscode.DecorationOptions[] = [{ range: selections[0], hoverMessage: createAnnotationWebviewLink }]
+    textEditor.setDecorations(floatingDecorations, decOpts);
     return;
 }

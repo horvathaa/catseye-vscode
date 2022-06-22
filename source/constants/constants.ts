@@ -1,3 +1,5 @@
+import ts = require("typescript");
+
 // import * as vscode from 'vscode';
 export class Annotation {
 	id: string;
@@ -163,6 +165,11 @@ export interface GitRepoInfo {
 	commit: string,
 	modifiedAnnotations: Annotation[],
 	nameOfPrimaryBranch: string
+}
+
+export interface TsFile {
+	localFileName: string,
+	tsSourceFile: ts.SourceFile
 }
 
 

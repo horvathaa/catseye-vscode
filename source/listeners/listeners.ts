@@ -6,12 +6,14 @@
  */
 
 import * as vscode from 'vscode';
-import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, deletedAnnotations, setDeletedAnnotationList, setInsertSpaces, changes, setChangeEvents, incrementNumChangeEventsCompleted, numChangeEventsCompleted, setCurrentColorTheme, gitInfo, currentGitHubProject, gitApi, floatingDecorations, } from '../extension';
+import { annotationList, copiedAnnotations, tempAnno, setTempAnno, setTabSize, user, view, setActiveEditor, setAnnotationList, deletedAnnotations, setDeletedAnnotationList, setInsertSpaces, changes, setChangeEvents, incrementNumChangeEventsCompleted, numChangeEventsCompleted, setCurrentColorTheme, gitInfo, currentGitHubProject, gitApi, floatingDecorations, tsFiles, setTsFiles, } from '../extension';
 import * as anchor from '../anchorFunctions/anchor';
 import * as utils from '../utils/utils';
-import { Annotation, AnchorObject, ChangeEvent, 
+import * as ts from 'typescript';
+import { Annotation, AnchorObject, ChangeEvent, TsFile, 
     // Timer 
 } from '../constants/constants';
+import { AutoFixNormalSharp, FilterRounded } from '@mui/icons-material';
 let timeSinceLastEdit: number = -1;
 let tempChanges: any[] = [];
 // Update our internal representation of the color theme so Shiki (our package for code formatting) uses appropriate colors 
@@ -54,6 +56,15 @@ export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | und
             if(gitInfo[currentProject] && currentGitHubProject !== gitInfo[currentProject].repo) {
                 utils.updateCurrentGitHubProject(gitApi);
                 utils.updateCurrentGitHubCommit(gitApi);
+            }
+            console.log(TextEditor.document.languageId)
+            if(TextEditor.document.languageId === 'typescript') {
+                // console.log(TextEditor)
+                // const tsSourceFile = ts.createSourceFile(TextEditor.document.fileName, '', ts.ScriptTarget.Latest);
+                // console.log('vscode filename', TextEditor.document.fileName, 'ts filename', tsSourceFile.fileName)
+                // !tsFiles.includes(tsSourceFile) && setTsFiles([ ... tsFiles, tsSourceFile ]);
+                !tsFiles.map(t => t.localFileName).includes(TextEditor.document.fileName) && setTsFiles([ ... tsFiles, { localFileName: TextEditor.document.fileName, tsSourceFile: ts.createSourceFile(TextEditor.document.fileName, TextEditor.document.getText(), ts.ScriptTarget.Latest) } ]);
+                console.log(tsFiles);  
             }
 
             if(user && vscode.workspace.workspaceFolders)
@@ -196,10 +207,74 @@ export const handleDidChangeTextDocument = (e: vscode.TextDocumentChangeEvent) =
     }
 }
 
+interface NodeData {
+    node: ts.Node,
+    range: vscode.Range,
+    indices: number[],
+
+}
+
+function getNodes(node: ts.Node) {
+    const nodes: ts.Node[] = [];
+    ts.forEachChild(node, cbNode => {
+        nodes.push(cbNode);
+    });
+    return nodes;
+}
+
+function nodeToRange(node: ts.Node, code: string) : vscode.Range {
+    return new vscode.Range(posToLine(code, node.pos), posToLine(code, node.end));
+}
+
+function posToLine(scode: string, pos: number) {
+    const code = scode.slice(0, pos).split('\n');
+    return new vscode.Position(code.length - 1, code[code.length - 1].length);
+}
+
+// function getChildren(parent: NodeData, tsSource: TsFile): NodeData[] {
+//     const childNodes = parent.indices.reduce((childs, index) => {
+//         console.log('parent', parent);
+//         console.log('childs', childs);
+//         console.log('childs at index', childs[index]);
+//       return getNodes(childs[index]);
+//     }, getNodes(tsSource.tsSourceFile));
+//     return childNodes.map((node, index) => {
+//       return {
+//         indices: parent.indices.concat([index]),
+//         node: node,
+//         range: nodeToRange(node, tsSource.tsSourceFile.text),
+//       };
+//     });
+//   }
 
 export const handleDidChangeTextEditorSelection = async (e: vscode.TextEditorSelectionChangeEvent) : Promise<void> => {
     const { selections, textEditor } = e;
     const activeSelection = selections[0];
+    const tsSource = tsFiles.find(f => f.localFileName === textEditor.document.fileName);
+    if(tsSource) {
+        const nodes = getNodes(tsSource.tsSourceFile);
+        const nodeData = nodes.map((n, i) => { 
+            return { node: n, indices: [i], range: nodeToRange(n, tsSource.tsSourceFile.text), children: getNodes(n) } 
+        })
+        const parent = nodeData.find(r => r.range.contains(activeSelection));
+        if(parent) {
+            let root: ts.Node[] = parent.children;
+            let path: ts.Node[] = [];
+            do {
+                let candidates = root.filter((c: ts.Node) => {
+                    let range = nodeToRange(c, tsSource.tsSourceFile.text);
+                    return range.contains(activeSelection)
+                });
+                let candidateNodes: any[] = []
+                candidates.forEach((c: any) => candidateNodes.push(getNodes(c)))
+                let flat: ts.Node[] = [].concat(...candidateNodes);
+                path = path.concat(...flat);
+                root = flat;
+            } while(root.length);
+            console.log('path to selection', path);
+        }
+
+    }
     if(activeSelection.start.isEqual(activeSelection.end)) {
         textEditor.setDecorations(floatingDecorations, []);
         return

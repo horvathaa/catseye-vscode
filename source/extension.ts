@@ -9,8 +9,9 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as ts from 'typescript';
 import firebase from './firebase/firebase';
-import { Annotation, ChangeEvent } from './constants/constants';
+import { Annotation, ChangeEvent, TsFile } from './constants/constants';
 import * as commands from './commands/commands';
 import * as eventHandlers from './listeners/listeners';
 import * as utils from './utils/utils';
@@ -40,6 +41,7 @@ export let currentGitHubProject: string = ""; // also need to add call to update
 export let currentGitHubCommit: string = "";
 export let changes: ChangeEvent[] = [];
 export let numChangeEventsCompleted = 0;
+export let tsFiles: TsFile[] = [];
 
 // export const hoverController = new HoverController();
 
@@ -156,6 +158,10 @@ export const setOutOfDateAnnotationList = (newOutOfDateAnnotationList: Annotatio
 
 export const setSelectedAnnotationsNavigations = (newSelectedAnnotationsNavigationList: {[key: string] : any }[]) => {
 	selectedAnnotationsNavigations = newSelectedAnnotationsNavigationList;
+}
+
+export const setTsFiles = (newTsFiles: TsFile[]) : void => {
+	tsFiles = newTsFiles;
 }
 
 export const setChangeEvents = (newChangeEvents: ChangeEvent[]) : void => {

@@ -38,7 +38,7 @@ export class Annotation {
         codeSnapshots: Snapshot[],
         sharedWith: string,
         selected: boolean,
-        needToUpdate: boolean
+        needToUpdate: boolean,
         types?: Type[]
     ) {
         this.id = id
@@ -59,6 +59,7 @@ export class Annotation {
         this.sharedWith = sharedWith
         this.selected = selected
         this.needToUpdate = needToUpdate
+        this.types = types ?? []
     }
 }
 

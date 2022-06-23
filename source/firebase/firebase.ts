@@ -1,17 +1,21 @@
 /*
- * 
+ *
  * firebase.ts
  * Required for init-ing Firebase with our config information
  * Must have .env.local for this to work locally
- * 
+ *
  */
 
-import firebase from 'firebase/app';
-import 'firebase/firestore';
-import 'firebase/auth';
+import firebase from 'firebase/app'
+import 'firebase/firestore'
+import 'firebase/auth'
 
-const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname).includes('\\') ? path.resolve(__dirname, '..\\..\\.env.local') : path.resolve(__dirname, '..\/..\/.env.local') });
+const path = require('path')
+require('dotenv').config({
+    path: path.resolve(__dirname).includes('\\')
+        ? path.resolve(__dirname, '..\\..\\.env.local')
+        : path.resolve(__dirname, '../../.env.local'),
+})
 const config = {
     apiKey: process.env.FB_API_KEY,
     authDomain: process.env.FB_AUTH_DOMAIN,
@@ -19,9 +23,9 @@ const config = {
     storageBucket: process.env.FB_STORAGE_BUCKET,
     messagingSenderId: process.env.FB_MESSAGING_SENDER_ID,
     appId: process.env.FB_APP_ID,
-    measurementId: process.env.FB_MEASUREMENT_ID 
+    measurementId: process.env.FB_MEASUREMENT_ID,
 }
 
-firebase.initializeApp(config);
+firebase.initializeApp(config)
 
-export default firebase;
+export default firebase

@@ -1,52 +1,56 @@
 /*
- * 
+ *
  * globalMenu.tsx
  * Sandwich menu component that handles application-wide operations.
  *
  */
-import styles from '../../styles/topbar.module.css';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import Button from '@mui/material/Button';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import * as React from 'react';
-import { VscMenu } from 'react-icons/vsc';
+import styles from '../../styles/topbar.module.css'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
+import Button from '@mui/material/Button'
+import { ThemeProvider, createTheme } from '@mui/material/styles'
+import * as React from 'react'
+import { VscMenu } from 'react-icons/vsc'
 
 interface Props {
-    saveAnnotationsToJson: () => void;
-    showKeyboardShortcuts: () => void;
+    saveAnnotationsToJson: () => void
+    showKeyboardShortcuts: () => void
 }
 
 const GlobalMenu: React.FC<Props> = ({
     saveAnnotationsToJson,
-    showKeyboardShortcuts
+    showKeyboardShortcuts,
 }) => {
-    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-    const open = Boolean(anchorEl);
+    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
+    const open = Boolean(anchorEl)
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-        event.stopPropagation();
-        setAnchorEl(event.currentTarget);
-    };
+        event.stopPropagation()
+        setAnchorEl(event.currentTarget)
+    }
     const handleClose = (event: React.MouseEvent<HTMLAnchorElement>) => {
-        event.stopPropagation();
-        setAnchorEl(null);
-    };
-    const computedValue: string = getComputedStyle(document.body).getPropertyValue('--vscode-editor-background');
-    const foreground: string = getComputedStyle(document.body).getPropertyValue('--vscode-button-foreground');
-    
+        event.stopPropagation()
+        setAnchorEl(null)
+    }
+    const computedValue: string = getComputedStyle(
+        document.body
+    ).getPropertyValue('--vscode-editor-background')
+    const foreground: string = getComputedStyle(document.body).getPropertyValue(
+        '--vscode-button-foreground'
+    )
+
     // https://mui.com/material-ui/customization/theming/
     const theme = createTheme({
         palette: {
             primary: {
-                main: `${computedValue}` 
-            }
+                main: `${computedValue}`,
+            },
         },
         typography: {
             allVariants: {
                 fontSize: 12,
                 color: `${foreground}`,
-                fontFamily: 'Arial'
-            }
+                fontFamily: 'Arial',
+            },
         },
         components: {
             MuiMenu: {
@@ -54,29 +58,30 @@ const GlobalMenu: React.FC<Props> = ({
                     root: {
                         borderStyle: 'solid',
                         borderWidth: '0.15em',
-                        borderColor: '#d4d4d44f'
-                    }
-                }
+                        borderColor: '#d4d4d44f',
+                    },
+                },
             },
             MuiMenuItem: {
                 styleOverrides: {
                     root: {
                         backgroundColor: 'var(--vscode-editor-background)',
                         '&:hover': {
-                            background: "var(--vscode-button-secondaryHoverBackground)",
-                        }
+                            background:
+                                'var(--vscode-button-secondaryHoverBackground)',
+                        },
                     },
-                }
+                },
             },
             MuiList: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: 'var(--vscode-editor-background)'
-                    }
-                }
-            }
-        }
-    });
+                        backgroundColor: 'var(--vscode-editor-background)',
+                    },
+                },
+            },
+        },
+    })
     return (
         <>
             <ThemeProvider theme={theme}>
@@ -87,7 +92,14 @@ const GlobalMenu: React.FC<Props> = ({
                     aria-expanded={open ? 'true' : undefined}
                     onClick={handleClick}
                 >
-                    <VscMenu style={{ color: 'white', width: '20px', height: '20px' }} className={styles['profileMenu']} />
+                    <VscMenu
+                        style={{
+                            color: 'white',
+                            width: '20px',
+                            height: '20px',
+                        }}
+                        className={styles['profileMenu']}
+                    />
                 </Button>
                 <Menu
                     id={'global-action-menu'}
@@ -95,12 +107,16 @@ const GlobalMenu: React.FC<Props> = ({
                     open={open}
                     onClose={handleClose}
                     MenuListProps={{
-                        'aria-labelledby': 'annotation-action-button'
+                        'aria-labelledby': 'annotation-action-button',
                     }}
                 >
-                    <MenuItem 
+                    <MenuItem
                         href=""
-                        onClick={(e: React.MouseEvent<HTMLAnchorElement>) => { e.stopPropagation(); handleClose(e); saveAnnotationsToJson(); }}
+                        onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                            e.stopPropagation()
+                            handleClose(e)
+                            saveAnnotationsToJson()
+                        }}
                     >
                         Save Annotations to JSON
                     </MenuItem>
@@ -114,6 +130,6 @@ const GlobalMenu: React.FC<Props> = ({
             </ThemeProvider>
         </>
     )
-};
+}
 
-export default GlobalMenu;
+export default GlobalMenu

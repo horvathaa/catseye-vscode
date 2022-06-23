@@ -533,6 +533,7 @@ export const makeObjectListFromAnnotations = (
                 : [],
             sharedWith: a.sharedWith ? a.sharedWith : 'private',
             selected: a.selected ? a.selected : false,
+            types: a.types ? a.types : [],
         }
     })
 }
@@ -878,6 +879,7 @@ const translateAnnotationAnchorStandard = (
         sharedWith: annoInfo.sharedWith,
         selected: annoInfo.selected,
         needToUpdate: annoInfo.needToUpdate ? annoInfo.needToUpdate : false,
+        types: [],
     }
 }
 
@@ -914,7 +916,8 @@ export const buildAnnotation = (
         annoObj['codeSnapshots'],
         annoObj['sharedWith'],
         annoObj['selected'],
-        annoObj['needToUpdate']
+        annoObj['needToUpdate'],
+        annoObj['types']
     )
 }
 

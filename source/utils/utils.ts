@@ -625,8 +625,10 @@ const translateAnnotationAnchorStandard = (annoInfo: any) : {[ key: string ] : a
 }
 
 // Helper function for making annotation class objects from other standards
+// Update or create an annotation
 export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined = undefined) : Annotation => {
 	let annoObj = null;
+	// If this is an old annotation, uses the old annotation standard
 	if(annoInfo.hasOwnProperty('anchor') || annoInfo.hasOwnProperty('anchorText')) {
 		annoObj = translateAnnotationAnchorStandard(annoInfo)
 	}

@@ -61,7 +61,7 @@ export class Annotation {
         this.sharedWith = sharedWith
         this.selected = selected
         this.needToUpdate = needToUpdate
-		this.types = types ?? []
+        this.types = types ?? []
     }
 }
 

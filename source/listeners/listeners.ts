@@ -58,12 +58,15 @@ export const handleChangeActiveTextEditor = (TextEditor: vscode.TextEditor | und
                 utils.updateCurrentGitHubCommit(gitApi);
             }
             console.log(TextEditor.document.languageId)
-            if(TextEditor.document.languageId === 'typescript') {
-                // console.log(TextEditor)
-                // const tsSourceFile = ts.createSourceFile(TextEditor.document.fileName, '', ts.ScriptTarget.Latest);
-                // console.log('vscode filename', TextEditor.document.fileName, 'ts filename', tsSourceFile.fileName)
-                // !tsFiles.includes(tsSourceFile) && setTsFiles([ ... tsFiles, tsSourceFile ]);
-                !tsFiles.map(t => t.localFileName).includes(TextEditor.document.fileName) && setTsFiles([ ... tsFiles, { localFileName: TextEditor.document.fileName, tsSourceFile: ts.createSourceFile(TextEditor.document.fileName, TextEditor.document.getText(), ts.ScriptTarget.Latest) } ]);
+            if(
+                ['typescript', 'javascript', 'typescriptreact', 'javascriptreact']
+                .indexOf(TextEditor.document.languageId) > -1
+            ) {
+                !tsFiles.map(t => t.localFileName).includes(TextEditor.document.fileName) && 
+                    setTsFiles(
+                        [ ... tsFiles, 
+                        { localFileName: TextEditor.document.fileName, tsSourceFile: ts.createSourceFile(TextEditor.document.fileName, TextEditor.document.getText(), ts.ScriptTarget.Latest) 
+                    } ]);
                 console.log(tsFiles);  
             }
 
@@ -231,22 +234,6 @@ function posToLine(scode: string, pos: number) {
     return new vscode.Position(code.length - 1, code[code.length - 1].length);
 }
 
-// function getChildren(parent: NodeData, tsSource: TsFile): NodeData[] {
-//     const childNodes = parent.indices.reduce((childs, index) => {
-//         console.log('parent', parent);
-//         console.log('childs', childs);
-//         console.log('childs at index', childs[index]);
-//       return getNodes(childs[index]);
-//     }, getNodes(tsSource.tsSourceFile));
-//     return childNodes.map((node, index) => {
-//       return {
-//         indices: parent.indices.concat([index]),
-//         node: node,
-//         range: nodeToRange(node, tsSource.tsSourceFile.text),
-//       };
-//     });
-//   }
-
 export const handleDidChangeTextEditorSelection = async (e: vscode.TextEditorSelectionChangeEvent) : Promise<void> => {
     const { selections, textEditor } = e;
     const activeSelection = selections[0];
@@ -272,6 +259,14 @@ export const handleDidChangeTextEditorSelection = async (e: vscode.TextEditorSel
                 root = flat;
             } while(root.length);
             console.log('path to selection', path);
+            
+            const textInNodes = path.map((t: ts.Node) => { 
+                
+                console.log(typeof(t));
+                // if(t.){
+
+                // }
+            })
         }
 
     }

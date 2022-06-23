@@ -1,68 +1,66 @@
 .AnnotationItem {
-  width: 100%;
-  display: flex;
-  position: relative;
-  /* padding: 15px 15px 5px 15px; */
-  padding: 15px 5px 5px 5px;
-  margin-bottom: 2%;
+    width: 100%;
+    display: flex;
+    position: relative;
+    /* padding: 15px 15px 5px 15px; */
+    padding: 15px 5px 5px 5px;
+    margin-bottom: 2%;
 }
 
 .AnchorListContainer {
-  border: 0.25px solid rgb(239 255 201 / 20%);
-  padding: 4px;
-  border-radius: 2px;
-  /* overflow: inherit; */
+    border: 0.25px solid rgb(239 255 201 / 20%);
+    padding: 4px;
+    border-radius: 2px;
+    /* overflow: inherit; */
 }
 
 .AnchorListButtonContainer.AnchorButtonContainer {
-  margin-right: 0.75rem;
+    margin-right: 0.75rem;
 }
 
 .AnchorListButtonContainer {
-  margin-bottom: 0.25rem;
-  /* margin-right: 0.75rem; */
+    margin-bottom: 0.25rem;
+    /* margin-right: 0.75rem; */
 }
 
 .AnnotationIconsContainer {
-  display: flex;
+    display: flex;
 }
 
-.AnnotationsOptions{
-  display: none;
-  padding: .5em;
-  cursor: pointer;
-  outline-color: transparent !important;
-  padding-top: .2em !important;
+.AnnotationsOptions {
+    display: none;
+    padding: 0.5em;
+    cursor: pointer;
+    outline-color: transparent !important;
+    padding-top: 0.2em !important;
 }
 
 @media (max-width: 360px) {
-  .AnnotationsOptions {
-    display: block !important;
-  }
-  .AnnotationIconsContainer {
-    display: none !important;
-  }
+    .AnnotationsOptions {
+        display: block !important;
+    }
+    .AnnotationIconsContainer {
+        display: none !important;
+    }
 }
 
 .bottomRow {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  flex-wrap: wrap;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
 }
 
 .Pad {
-  padding: 8px 0px;
+    padding: 8px 0px;
 }
 
 .dropdown a {
-  display: flex;
-  color: white;
-  background: var(--vscode-editor-background);
-  text-decoration: none;
+    display: flex;
+    color: white;
+    background: var(--vscode-editor-background);
+    text-decoration: none;
 }
-
-
 
 /* .dropdown button {
   background: var(--vscode-editor-background);
@@ -71,239 +69,251 @@
 } */
 
 .vertical-center {
-  background: var(--vscode-editor-background) !important;
-  padding-left: 0px !important;
-  padding-right: 0px !important;
-  color: var(--vscode-inputOption-activeForeground) !important;
-  border: none !important;
+    background: var(--vscode-editor-background) !important;
+    padding-left: 0px !important;
+    padding-right: 0px !important;
+    color: var(--vscode-inputOption-activeForeground) !important;
+    border: none !important;
 }
 
 .IconContainer {
-  width: 24px;
-  height: 24px;
-  cursor: pointer;
-  margin-left: auto;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    margin-left: auto;
 }
 
 .overflowHidden {
-  overflow: hidden;
+    overflow: hidden;
 }
 
 .profile {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
 }
 
 .profileMenu {
-  width: 14px;
-  height: 14px;
-  cursor: pointer;
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
 }
 
 .profileMenu:hover {
-  filter: brightness(1.4);
-  transition: opacity .55s ease-in-out;
-  color: white;
+    filter: brightness(1.4);
+    transition: opacity 0.55s ease-in-out;
+    color: white;
 }
 
-.AnnotationsOptions .dropdown .dropdown-toggle:focus,.dropdown-toggle:active {
-  outline: none !important;
-  box-shadow: none;
-  outline-color: none;
+.AnnotationsOptions .dropdown .dropdown-toggle:focus,
+.dropdown-toggle:active {
+    outline: none !important;
+    box-shadow: none;
+    outline-color: none;
 }
 
-.AnnotationsOptions .dropdown .btn-primary:not(:disabled):not(.disabled):active, .TitleContainer .container .row .btn-primary:not(:disabled):not(.disabled).active, .TitleContainer .container .row .show > .TitleContainer .container .row .btn-primary.dropdown-toggle {
-  color: transparent;
-  background-color: transparent;
-  border-color: transparent;
-  outline-color: none;
-} 
+.AnnotationsOptions .dropdown .btn-primary:not(:disabled):not(.disabled):active,
+.TitleContainer
+    .container
+    .row
+    .btn-primary:not(:disabled):not(.disabled).active,
+.TitleContainer
+    .container
+    .row
+    .show
+    > .TitleContainer
+    .container
+    .row
+    .btn-primary.dropdown-toggle {
+    color: transparent;
+    background-color: transparent;
+    border-color: transparent;
+    outline-color: none;
+}
 /* button:focus {
   box-shadow: none;
   outline:0;
 } */
 
-.btn-primary:not(:disabled):not(.disabled):active:focus, .btn-primary:not(:disabled):not(.disabled).active:focus, .show > .btn-primary.dropdown-toggle:focus{
-  box-shadow: none !important;
+.btn-primary:not(:disabled):not(.disabled):active:focus,
+.btn-primary:not(:disabled):not(.disabled).active:focus,
+.show > .btn-primary.dropdown-toggle:focus {
+    box-shadow: none !important;
 }
 
 .buttonRow {
-  display: flex;
-  margin-left: auto;
+    display: flex;
+    margin-left: auto;
 }
 
 .DropdownIconsWrapper {
-  display: flex;
-  margin-right: 1em;
-  position: relative;
-  cursor: pointer;
-  padding: .35em .35em .35em .35em;
-  background: #69696924;
-  border-radius: 1em;
-  justify-content: center;
-  align-items: center;
-  margin-top: 5px;
-  margin-bottom: 5px;
+    display: flex;
+    margin-right: 1em;
+    position: relative;
+    cursor: pointer;
+    padding: 0.35em 0.35em 0.35em 0.35em;
+    background: #69696924;
+    border-radius: 1em;
+    justify-content: center;
+    align-items: center;
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
 .DropdownItemOverwrite {
-  text-decoration: none;
-  color: var(--vscode-inputOption-activeForeground);
-  display: flex;
-  /* background: var(--vscode-editor-background); */
-  justify-content: space-between;
-  align-items: center;
+    text-decoration: none;
+    color: var(--vscode-inputOption-activeForeground);
+    display: flex;
+    /* background: var(--vscode-editor-background); */
+    justify-content: space-between;
+    align-items: center;
 }
 
-.DropdownIconsWrapper:hover { 
-  filter: brightness(1.4);
-  transition: cubic-bezier(1, 0, 0, 1);
+.DropdownIconsWrapper:hover {
+    filter: brightness(1.4);
+    transition: cubic-bezier(1, 0, 0, 1);
 }
 
-.DropdownIcons{
-  height: 1.25em;
-  width: 1.25em;
+.DropdownIcons {
+    height: 1.25em;
+    width: 1.25em;
 }
 
-
-.profileContainer{
-  padding: 5px;
-  margin: auto;
-  max-width: 99% !important;
-  border-radius: 50%;
-  background-color: #EBECF0;
-  text-align: center;
-  cursor: default;
+.profileContainer {
+    padding: 5px;
+    margin: auto;
+    max-width: 99% !important;
+    border-radius: 50%;
+    background-color: #ebecf0;
+    text-align: center;
+    cursor: default;
 }
 
 .selected {
-  box-shadow: 2.5px 2.5px grey;
+    box-shadow: 2.5px 2.5px grey;
 }
 
 .userProfile {
-  width: 30px;
-  height: 30px;
-  display: block;
-  text-align: center;
-  margin: auto;
-  color: #1d1e24c4;
-  cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: block;
+    text-align: center;
+    margin: auto;
+    color: #1d1e24c4;
+    cursor: pointer;
 }
 
 .OutputContainer {
-  display: block;
-  padding: 4px;
-  list-style-type: none;
-  border-top: 0.05em solid #ffffff6e;
-  overflow: auto;
+    display: block;
+    padding: 4px;
+    list-style-type: none;
+    border-top: 0.05em solid #ffffff6e;
+    overflow: auto;
 }
 
 .Output {
-  font-family: 'Courier New', Courier, monospace;
-  color: white;
-  font-size: small;
-  padding: 4px;
+    font-family: 'Courier New', Courier, monospace;
+    color: white;
+    font-size: small;
+    padding: 4px;
 }
 
 .OutputsContainer {
-  /* padding: 2px; */
-  margin: auto;
-  /* text-align: center; */
-  cursor: default;
+    /* padding: 2px; */
+    margin: auto;
+    /* text-align: center; */
+    cursor: default;
 }
 
 .userProfilePhoto {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: block;
-  text-align: center;
-  /* margin: auto; */
-  padding: .1em;
-  border: 1px solid #49a86773;
-  color: #1d1e24c4;
-  cursor: pointer;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: block;
+    text-align: center;
+    /* margin: auto; */
+    padding: 0.1em;
+    border: 1px solid #49a86773;
+    color: #1d1e24c4;
+    cursor: pointer;
 }
 
 .replyShowHide {
-  /* margin-left: auto; */
-  display: flex;
-  align-content: center;
-  justify-content: flex-start;
-  flex-direction: row;
-  align-items: stretch;
-  padding-left: 6px;
-  font-family: var(--vscode-font-family);
-  margin-bottom: 4px;
+    /* margin-left: auto; */
+    display: flex;
+    align-content: center;
+    justify-content: flex-start;
+    flex-direction: row;
+    align-items: stretch;
+    padding-left: 6px;
+    font-family: var(--vscode-font-family);
+    margin-bottom: 4px;
 }
 
 .replyShowHide .IconContainer {
-  margin-left: 0.5em;
+    margin-left: 0.5em;
 }
 
 .replyContainer {
-  display: block;
-  padding: 6px;
-  list-style-type: none;
-  border-top: 0.05em solid #ffffff6e;
+    display: block;
+    padding: 6px;
+    list-style-type: none;
+    border-top: 0.05em solid #ffffff6e;
 }
 
 .profilePhoto {
-  width: 30px !important;
-  height: 30px !important;
+    width: 30px !important;
+    height: 30px !important;
 }
 
 .usernameAndTimeContainer {
-  display: flex;
-  flex-direction: column;
-  padding-left: 4px;
+    display: flex;
+    flex-direction: column;
+    padding-left: 4px;
 }
 
 .username {
-  font-weight: 600;
-  text-decoration: none;
-  color: inherit;
-  cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
 }
 
 .userContainer {
-  display: flex;
-  padding-bottom: 6px;
+    display: flex;
+    padding-bottom: 6px;
 }
 
 .textboxContainer {
-  display: block;
-  border-radius: 8px;
-  border: 1px solid #d3d3d359;
-  padding: 8px;
-  margin-top: 4px;
-  margin-bottom: 4px;
+    display: block;
+    border-radius: 8px;
+    border: 1px solid #d3d3d359;
+    padding: 8px;
+    margin-top: 4px;
+    margin-bottom: 4px;
 }
 
-
-
 .textbox {
-  width: 95%;
-  resize: none;
-  min-height: 4em;
-  font-family: var(--vscode-font-family);
-  background-color: var(--vscode-breadcrumb-activeSelectionForeground);
+    width: 95%;
+    resize: none;
+    min-height: 4em;
+    font-family: var(--vscode-font-family);
+    background-color: var(--vscode-breadcrumb-activeSelectionForeground);
 }
 
 .topRow {
-  display: flex;
+    display: flex;
 }
 
 .snapshotContainer {
-  display: flex;
-  border: 0.25px solid rgb(239 255 201 / 20%);
-  padding-left: 6px;
-  overflow-x: scroll;
+    display: flex;
+    border: 0.25px solid rgb(239 255 201 / 20%);
+    padding-left: 6px;
+    overflow-x: scroll;
 }
 
 .outerSnapshotContainer {
-  display: block;
+    display: block;
 }
 
 .AnnotationContainer {
@@ -327,157 +337,154 @@
     /* box-shadow: none; */
 }
 
-
-
 .AnnotationContainer.inFocus {
-  transition: all 0.5s ease-in-out;
-  box-shadow:  1px 1px 8px 1px #dcdcdc;
+    transition: all 0.5s ease-in-out;
+    box-shadow: 1px 1px 8px 1px #dcdcdc;
 }
 
 .AnnotationContainer.outOfFocus {
-  transition: all 0.5s ease-in-out;
-  box-shadow: none;
+    transition: all 0.5s ease-in-out;
+    box-shadow: none;
 }
 
 .AnchorBox {
-  display: flex;
+    display: flex;
 }
 
 .overflowButtonContainer {
-  display: flex;
-  justify-content: center;
+    display: flex;
+    justify-content: center;
 }
 
 .AnchorContainer {
-  border: 0.25px solid rgb(239 255 201 / 20%);
-  padding: 2px 0px 2px 4px;
-  border-radius: 4px;
-  overflow: scroll;
-  box-shadow: none;
-  border-color: var(--vscode-badge-background);
-  transition: all 0.5s ease-in-out;
+    border: 0.25px solid rgb(239 255 201 / 20%);
+    padding: 2px 0px 2px 4px;
+    border-radius: 4px;
+    overflow: scroll;
+    box-shadow: none;
+    border-color: var(--vscode-badge-background);
+    transition: all 0.5s ease-in-out;
 }
 
 .AnchorContainer:hover {
-  box-shadow:  1px 1px 8px 1px #dcdcdc;
+    box-shadow: 1px 1px 8px 1px #dcdcdc;
 }
 
 .LocationWrapper {
-  display: flex;
+    display: flex;
 }
 
 .HTMLContainer {
-  color: white;
-  cursor: pointer;
-  overflow: inherit;
-  display: flex;
+    color: white;
+    cursor: pointer;
+    overflow: inherit;
+    display: flex;
 }
 
-
 .arrowBox {
-  display: flex;
-  align-items: center;
-  margin-left: auto;
+    display: flex;
+    align-items: center;
+    margin-left: auto;
 }
 
 .arrowBox-leftAlign {
-  display: flex;
-  align-items: center;
-  margin-right: auto;
+    display: flex;
+    align-items: center;
+    margin-right: auto;
 }
 
 .OutputHTMLContainer {
-  border: 0.25px solid rgb(239 255 201 / 20%);
-  padding: 5px;
-  border-radius: 4px;
+    border: 0.25px solid rgb(239 255 201 / 20%);
+    padding: 5px;
+    border-radius: 4px;
 }
 
 .AnchorButtonContainer {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  margin-left: auto;
-  margin-right: 0.5rem;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    margin-left: auto;
+    margin-right: 0.5rem;
 }
 
 .ContentContainer {
-  font-family: var(--vscode-font-family);
-  overflow-wrap: anywhere;
-  font-size: 1.138em;;
-  padding: 4px 6px;
+    font-family: var(--vscode-font-family);
+    overflow-wrap: anywhere;
+    font-size: 1.138em;
+    padding: 4px 6px;
 }
 
 .collapseExpandButton {
-  background-color: #cccccc29;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  padding-left: 4px;
-  cursor: pointer;
+    background-color: #cccccc29;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding-left: 4px;
+    cursor: pointer;
 }
 
 .LocationContainer {
-  font-family: var(--vscode-editor-font-family);
-  overflow-wrap: anywhere;
-  cursor: pointer;
-  padding: 4px 0px;
+    font-family: var(--vscode-editor-font-family);
+    overflow-wrap: anywhere;
+    cursor: pointer;
+    padding: 4px 0px;
 }
 
 .LocationContainer.multiLine {
-  padding: 4px 6px 0px;
+    padding: 4px 6px 0px;
 }
 
 .AnnotationContainer.vscode-light {
-  color: black;
+    color: black;
 }
 
 .AnnotationContainer.vscode-dark {
-  color: white;
+    color: white;
 }
 
 .AnnotationContainer.vscode-high-contrast {
-  color: red; /*the example says red but that seems insane - we shall try */
+    color: red; /*the example says red but that seems insane - we shall try */
 }
 
 code {
-  color: var(--vscode-editor-foreground) !important;
-  font-family: var(--vscode-editor-font-family) !important;
-  font-weight: var(--vscode-editor-font-weight) !important;
-  font-size: var(--vscode-editor-font-size) !important;
+    color: var(--vscode-editor-foreground) !important;
+    font-family: var(--vscode-editor-font-family) !important;
+    font-weight: var(--vscode-editor-font-weight) !important;
+    font-size: var(--vscode-editor-font-size) !important;
 }
 
 button.submit {
-  border-radius: 8px;
-  padding-left: 1em;
-  padding-right: 1em;
-  cursor: pointer;
-  color: white;
-  margin-top: 6px;
-  border: 1px solid transparent;
-  border-color: #7fae42;
-  background-color: var(--vscode-editor-background);
-  height: 30px;
+    border-radius: 8px;
+    padding-left: 1em;
+    padding-right: 1em;
+    cursor: pointer;
+    color: white;
+    margin-top: 6px;
+    border: 1px solid transparent;
+    border-color: #7fae42;
+    background-color: var(--vscode-editor-background);
+    height: 30px;
 }
 
 button.submit:hover {
-  filter: brightness(1.0);
-  transition: opacity .55s ease-in-out;
-  background-color: #7fae42;
+    filter: brightness(1);
+    transition: opacity 0.55s ease-in-out;
+    background-color: #7fae42;
 }
 
 button.cancel {
-  border-radius: 8px;
-  padding-left: 1em;
-  padding-right: 1em;
-  margin-left: 10px;
-  cursor: pointer;
-  color: white;
-  border: 1px solid transparent;
-  background-color: rgba(158, 158, 158, 0.651);
-  height: 30px;
-  transition: all 0.5s ease-in-out;
+    border-radius: 8px;
+    padding-left: 1em;
+    padding-right: 1em;
+    margin-left: 10px;
+    cursor: pointer;
+    color: white;
+    border: 1px solid transparent;
+    background-color: rgba(158, 158, 158, 0.651);
+    height: 30px;
+    transition: all 0.5s ease-in-out;
 }
 
 button.cancel:hover {
-  filter: brightness(1.0);
+    filter: brightness(1);
 }

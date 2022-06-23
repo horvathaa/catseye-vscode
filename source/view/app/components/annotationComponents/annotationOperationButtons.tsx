@@ -3,68 +3,78 @@
  * annotationOperationButtons.tsx
  * Component which contains buttons any user of the annotation can see on an annotation.
  * Includes replies, adding anchors, pinning, and exporting as comment. When the webview panel is narrow
- * buttons will show up as a dropdown menu. 
+ * buttons will show up as a dropdown menu.
  *
  */
-import * as React from 'react';
-import AuthorOperationButtons from './authorOperationButtons';
-import { VscComment, VscFileSymlinkFile, VscPin, VscPinned, VscMenu } from 'react-icons/vsc';
-import { BiAnchor } from 'react-icons/bi';
-import styles from '../../styles/annotation.module.css';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import Button from '@mui/material/Button';
-import { Tooltip } from '@material-ui/core';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import * as React from 'react'
+import AuthorOperationButtons from './authorOperationButtons'
+import {
+    VscComment,
+    VscFileSymlinkFile,
+    VscPin,
+    VscPinned,
+    VscMenu,
+} from 'react-icons/vsc'
+import { BiAnchor } from 'react-icons/bi'
+import styles from '../../styles/annotation.module.css'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
+import Button from '@mui/material/Button'
+import { Tooltip } from '@material-ui/core'
+import { ThemeProvider, createTheme } from '@mui/material/styles'
 interface Props {
-    annotationId: string,
-    userId: string,
-    authorId: string;
-    replyToAnnotation: () => void;
-    editAnnotation: () => void;
-    exportAnnotationAsComment: () => void;
-    deleteAnnotation: (e: React.SyntheticEvent) => void;
-    pinAnnotation: () => void;
-    addAnchor: () => void;
-    pinned: boolean;
-  }
-  
-const AnnotationOperationButtons: React.FC<Props> = ({ 
-        annotationId, 
-        userId, 
-        authorId, 
-        replyToAnnotation, 
-        exportAnnotationAsComment, 
-        editAnnotation, 
-        deleteAnnotation, 
-        pinAnnotation,
-        addAnchor,
-        pinned 
-    }) => {
-    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-    const open = Boolean(anchorEl);
+    annotationId: string
+    userId: string
+    authorId: string
+    replyToAnnotation: () => void
+    editAnnotation: () => void
+    exportAnnotationAsComment: () => void
+    deleteAnnotation: (e: React.SyntheticEvent) => void
+    pinAnnotation: () => void
+    addAnchor: () => void
+    pinned: boolean
+}
+
+const AnnotationOperationButtons: React.FC<Props> = ({
+    annotationId,
+    userId,
+    authorId,
+    replyToAnnotation,
+    exportAnnotationAsComment,
+    editAnnotation,
+    deleteAnnotation,
+    pinAnnotation,
+    addAnchor,
+    pinned,
+}) => {
+    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
+    const open = Boolean(anchorEl)
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-        event.stopPropagation();
-        setAnchorEl(event.currentTarget);
-    };
+        event.stopPropagation()
+        setAnchorEl(event.currentTarget)
+    }
     const handleClose = (event: React.MouseEvent<HTMLAnchorElement>) => {
-        event.stopPropagation();
-        setAnchorEl(null);
-    };
-    const computedValue: string = getComputedStyle(document.body).getPropertyValue('--vscode-editor-background');
-    const foreground: string = getComputedStyle(document.body).getPropertyValue('--vscode-button-foreground');
+        event.stopPropagation()
+        setAnchorEl(null)
+    }
+    const computedValue: string = getComputedStyle(
+        document.body
+    ).getPropertyValue('--vscode-editor-background')
+    const foreground: string = getComputedStyle(document.body).getPropertyValue(
+        '--vscode-button-foreground'
+    )
     const theme = createTheme({
         palette: {
             primary: {
-                main: `${computedValue}` 
-            }
+                main: `${computedValue}`,
+            },
         },
         typography: {
             allVariants: {
                 fontSize: 12,
                 color: `${foreground}`,
-                fontFamily: 'Arial'
-            }
+                fontFamily: 'Arial',
+            },
         },
         components: {
             MuiMenu: {
@@ -72,34 +82,41 @@ const AnnotationOperationButtons: React.FC<Props> = ({
                     root: {
                         borderStyle: 'solid',
                         borderWidth: '0.15em',
-                        borderColor: '#d4d4d44f'
-                    }
-                }
+                        borderColor: '#d4d4d44f',
+                    },
+                },
             },
             MuiMenuItem: {
                 styleOverrides: {
                     root: {
                         backgroundColor: 'var(--vscode-editor-background)',
                         '&:hover': {
-                            background: "var(--vscode-button-secondaryHoverBackground)",
-                        }
+                            background:
+                                'var(--vscode-button-secondaryHoverBackground)',
+                        },
                     },
-                }
+                },
             },
             MuiList: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: 'var(--vscode-editor-background)'
-                    }
-                }
-            }
-        }
-    });
-    
+                        backgroundColor: 'var(--vscode-editor-background)',
+                    },
+                },
+            },
+        },
+    })
+
     return (
         <div className={styles['buttonRow']}>
             <div className={styles['AnnotationIconsContainer']}>
-                <div onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); replyToAnnotation(); }} className={styles['DropdownItemOverwrite']}>
+                <div
+                    onClick={(e: React.SyntheticEvent) => {
+                        e.stopPropagation()
+                        replyToAnnotation()
+                    }}
+                    className={styles['DropdownItemOverwrite']}
+                >
                     <div className={styles['DropdownIconsWrapper']}>
                         <Tooltip title="Reply">
                             <div>
@@ -107,33 +124,56 @@ const AnnotationOperationButtons: React.FC<Props> = ({
                             </div>
                         </Tooltip>
                     </div>
-                </div> 
-                <div onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); exportAnnotationAsComment(); }} className={styles['DropdownItemOverwrite']}>
+                </div>
+                <div
+                    onClick={(e: React.SyntheticEvent) => {
+                        e.stopPropagation()
+                        exportAnnotationAsComment()
+                    }}
+                    className={styles['DropdownItemOverwrite']}
+                >
                     <div className={styles['DropdownIconsWrapper']}>
                         <Tooltip title="Export As Comment">
                             <div>
-                                <VscFileSymlinkFile className={styles['profileMenu']} />
+                                <VscFileSymlinkFile
+                                    className={styles['profileMenu']}
+                                />
                             </div>
                         </Tooltip>
                     </div>
                 </div>
-                <div onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); pinAnnotation(); }} className={styles['DropdownItemOverwrite']}>
+                <div
+                    onClick={(e: React.SyntheticEvent) => {
+                        e.stopPropagation()
+                        pinAnnotation()
+                    }}
+                    className={styles['DropdownItemOverwrite']}
+                >
                     <div className={styles['DropdownIconsWrapper']}>
-                        {pinned ?
+                        {pinned ? (
                             <Tooltip title="Un-pin">
                                 <div>
-                                    <VscPinned className={styles['profileMenu']} /> 
-                                </div>
-                            </Tooltip> :
-                            <Tooltip title="Pin">
-                                <div>
-                                    <VscPin className={styles['profileMenu']} /> 
+                                    <VscPinned
+                                        className={styles['profileMenu']}
+                                    />
                                 </div>
                             </Tooltip>
-                        }
+                        ) : (
+                            <Tooltip title="Pin">
+                                <div>
+                                    <VscPin className={styles['profileMenu']} />
+                                </div>
+                            </Tooltip>
+                        )}
                     </div>
                 </div>
-                <div onClick={(e: React.SyntheticEvent) => { e.stopPropagation(); addAnchor(); }} className={styles['DropdownItemOverwrite']}>
+                <div
+                    onClick={(e: React.SyntheticEvent) => {
+                        e.stopPropagation()
+                        addAnchor()
+                    }}
+                    className={styles['DropdownItemOverwrite']}
+                >
                     <div className={styles['DropdownIconsWrapper']}>
                         <Tooltip title="Add Anchor">
                             <div>
@@ -143,7 +183,12 @@ const AnnotationOperationButtons: React.FC<Props> = ({
                     </div>
                 </div>
 
-                {userId === authorId && <AuthorOperationButtons editAnnotation={editAnnotation} deleteAnnotation={deleteAnnotation} />}
+                {userId === authorId && (
+                    <AuthorOperationButtons
+                        editAnnotation={editAnnotation}
+                        deleteAnnotation={deleteAnnotation}
+                    />
+                )}
             </div>
             <div className={styles['AnnotationsOptions']}>
                 <ThemeProvider theme={theme}>
@@ -154,7 +199,10 @@ const AnnotationOperationButtons: React.FC<Props> = ({
                         aria-expanded={open ? 'true' : undefined}
                         onClick={handleClick}
                     >
-                        <VscMenu style={{ color: 'white' }} className={styles['profileMenu']} />
+                        <VscMenu
+                            style={{ color: 'white' }}
+                            className={styles['profileMenu']}
+                        />
                     </Button>
                     <Menu
                         id={annotationId + '-annotation-action-menu'}
@@ -162,44 +210,79 @@ const AnnotationOperationButtons: React.FC<Props> = ({
                         open={open}
                         onClose={handleClose}
                         MenuListProps={{
-                            'aria-labelledby': 'annotation-action-button'
+                            'aria-labelledby': 'annotation-action-button',
                         }}
                     >
-                        <MenuItem 
+                        <MenuItem
                             href=""
-                            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => { e.stopPropagation(); handleClose(e); replyToAnnotation(); }}
+                            onClick={(
+                                e: React.MouseEvent<HTMLAnchorElement>
+                            ) => {
+                                e.stopPropagation()
+                                handleClose(e)
+                                replyToAnnotation()
+                            }}
                         >
                             Reply
                         </MenuItem>
-                        <MenuItem 
+                        <MenuItem
                             href=""
-                            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => { e.stopPropagation();  handleClose(e); exportAnnotationAsComment(); }}
+                            onClick={(
+                                e: React.MouseEvent<HTMLAnchorElement>
+                            ) => {
+                                e.stopPropagation()
+                                handleClose(e)
+                                exportAnnotationAsComment()
+                            }}
                         >
                             Export as Comment
                         </MenuItem>
-                        <MenuItem 
+                        <MenuItem
                             href=""
-                            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {  e.stopPropagation; handleClose(e); addAnchor(); }}
+                            onClick={(
+                                e: React.MouseEvent<HTMLAnchorElement>
+                            ) => {
+                                e.stopPropagation
+                                handleClose(e)
+                                addAnchor()
+                            }}
                         >
                             Add Anchor
                         </MenuItem>
-                        <MenuItem 
+                        <MenuItem
                             href=""
-                            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {  handleClose(e); pinAnnotation(); }}
+                            onClick={(
+                                e: React.MouseEvent<HTMLAnchorElement>
+                            ) => {
+                                handleClose(e)
+                                pinAnnotation()
+                            }}
                         >
                             {pinned ? `Un-pin` : `Pin`}
                         </MenuItem>
                         {userId === authorId && (
-                            <div key={annotationId+'-author-menu'}>
-                                <MenuItem 
+                            <div key={annotationId + '-author-menu'}>
+                                <MenuItem
                                     href=""
-                                    onClick={(e: React.MouseEvent<HTMLAnchorElement>) => { e.stopPropagation(); handleClose(e); editAnnotation(); }}
+                                    onClick={(
+                                        e: React.MouseEvent<HTMLAnchorElement>
+                                    ) => {
+                                        e.stopPropagation()
+                                        handleClose(e)
+                                        editAnnotation()
+                                    }}
                                 >
                                     Edit
                                 </MenuItem>
-                                <MenuItem 
+                                <MenuItem
                                     href=""
-                                    onClick={(e: React.MouseEvent<HTMLAnchorElement>) => { e.stopPropagation(); handleClose(e); deleteAnnotation(e); }}
+                                    onClick={(
+                                        e: React.MouseEvent<HTMLAnchorElement>
+                                    ) => {
+                                        e.stopPropagation()
+                                        handleClose(e)
+                                        deleteAnnotation(e)
+                                    }}
                                 >
                                     Delete
                                 </MenuItem>
@@ -212,4 +295,4 @@ const AnnotationOperationButtons: React.FC<Props> = ({
     )
 }
 
-export default AnnotationOperationButtons;
+export default AnnotationOperationButtons

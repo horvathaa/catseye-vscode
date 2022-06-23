@@ -1,34 +1,48 @@
 /*
- * 
+ *
  * Adamite Terminal Link Provider
  * Used to connect into the user's terminal for capturing code output
  * Not currently used as it is very limited (can only capture one line and require overriding default clickable link behavior)
  *
  */
 
-import { view } from '../extension';
-import { CancellationToken, TerminalLinkContext, TerminalLinkProvider, ProviderResult, TerminalLink } from 'vscode';
+import { view } from '../extension'
+import {
+    CancellationToken,
+    TerminalLinkContext,
+    TerminalLinkProvider,
+    ProviderResult,
+    TerminalLink,
+} from 'vscode'
 
 interface AdamiteTerminalLink extends TerminalLink {
-    content: string;
+    content: string
 }
 
 export class AdamiteTerminalLinkProvider implements TerminalLinkProvider {
-    public provideTerminalLinks(context: TerminalLinkContext, token: CancellationToken) : ProviderResult<AdamiteTerminalLink[]> {
-        if(view) {
-            const startIndex: number = 0;
-            const lengthOfLink: number = context.line.length;
-            const tooltip: string = "Add to Selected Annotation";
-            return [{ startIndex, length: lengthOfLink, tooltip, content: context.line }];
+    public provideTerminalLinks(
+        context: TerminalLinkContext,
+        token: CancellationToken
+    ): ProviderResult<AdamiteTerminalLink[]> {
+        if (view) {
+            const startIndex: number = 0
+            const lengthOfLink: number = context.line.length
+            const tooltip: string = 'Add to Selected Annotation'
+            return [
+                {
+                    startIndex,
+                    length: lengthOfLink,
+                    tooltip,
+                    content: context.line,
+                },
+            ]
+        } else {
+            return []
         }
-        else {
-            return [];
-        }
-        
     }
 
-    public async handleTerminalLink(link: AdamiteTerminalLink) : Promise<void> {
-        view?.addTerminalMessage(link.content);
+    public async handleTerminalLink(link: AdamiteTerminalLink): Promise<void> {
+        view?.addTerminalMessage(link.content)
         // text
     }
-}   
+}

@@ -1,60 +1,87 @@
 /*
- * 
+ *
  * ViewLoader.ts
- * Intermediary class between VS Code's Webview API, our extension, and our bootstrapped React implementation 
+ * Intermediary class between VS Code's Webview API, our extension, and our bootstrapped React implementation
  * For more information, check this Medium article out: https://medium.com/younited-tech-blog/reactception-extending-vs-code-extension-with-webviews-and-react-12be2a5898fd
  *
  */
-import * as vscode from "vscode";
-import * as path from "path";
-import { Annotation } from '../constants/constants';
-import { annotationList, user, gitInfo, activeEditor, adamiteLog } from '../extension';
-import { getGithubUrl, getProjectName, getStableGitHubUrl, getVisiblePath } from "../utils/utils";
+import * as vscode from 'vscode'
+import * as path from 'path'
+import { Annotation } from '../constants/constants'
+import {
+    annotationList,
+    user,
+    gitInfo,
+    activeEditor,
+    adamiteLog,
+} from '../extension'
+import {
+    getGithubUrl,
+    getProjectName,
+    getStableGitHubUrl,
+    getVisiblePath,
+} from '../utils/utils'
 export default class ViewLoader {
-  public _panel: vscode.WebviewPanel | undefined;
-  private readonly _extensionPath: string;
+    public _panel: vscode.WebviewPanel | undefined
+    private readonly _extensionPath: string
 
-  // create the webview and point it to our compiled/bundled extension
-  constructor(fileUri: vscode.Uri, extensionPath: string) {
-    this._extensionPath = extensionPath;
-    adamiteLog.appendLine(`Creating ViewLoader at ${extensionPath}`);
-    if (annotationList) {
-      adamiteLog.appendLine(`Creating WebviewPanel`);
-      adamiteLog.appendLine(`localResourceRoots: ${vscode.Uri.file(path.join(extensionPath, "dist"))}`);
-      this._panel = vscode.window.createWebviewPanel(
-        "adamite",
-        "Adamite",
-        vscode.ViewColumn.Beside,
-        {
-          enableScripts: true,
-          retainContextWhenHidden: true,
-          localResourceRoots: [
-            vscode.Uri.file(path.join(extensionPath, "dist"))
-          ]
+    // create the webview and point it to our compiled/bundled extension
+    constructor(fileUri: vscode.Uri, extensionPath: string) {
+        this._extensionPath = extensionPath
+        adamiteLog.appendLine(`Creating ViewLoader at ${extensionPath}`)
+        if (annotationList) {
+            adamiteLog.appendLine(`Creating WebviewPanel`)
+            adamiteLog.appendLine(
+                `localResourceRoots: ${vscode.Uri.file(
+                    path.join(extensionPath, 'dist')
+                )}`
+            )
+            this._panel = vscode.window.createWebviewPanel(
+                'adamite',
+                'Adamite',
+                vscode.ViewColumn.Beside,
+                {
+                    enableScripts: true,
+                    retainContextWhenHidden: true,
+                    localResourceRoots: [
+                        vscode.Uri.file(path.join(extensionPath, 'dist')),
+                    ],
+                }
+            )
+            this._panel.iconPath = vscode.Uri.file(
+                path.join(extensionPath, 'source/constants/Adamite.png')
+            )
+            this._panel.webview.html = this.getWebviewContent(annotationList)
         }
-      );
-      this._panel.iconPath = vscode.Uri.file(path.join(extensionPath, 'source/constants/Adamite.png')); 
-      this._panel.webview.html = this.getWebviewContent(annotationList);
     }
-  }
 
-  // generate our "HTML" which will be used to load our React code
-  private getWebviewContent(annotationList: Annotation[]) : string {
-    // Local path to main script run in the webview
-    const reactAppPathOnDisk = vscode.Uri.file(
-      path.join(this._extensionPath, "dist", "configViewer.js")
-    );
-    const reactAppUri = reactAppPathOnDisk.with({ scheme: "vscode-resource" });
-    // These variables will be passed into the webview
-    const annotationJson = JSON.stringify(annotationList);
-    const userId = JSON.stringify(user?.uid);
-    const username = JSON.stringify(gitInfo.author);
-    const currentProject = JSON.stringify(getProjectName(activeEditor?.document.uri.toString()));
-    const currentFile = activeEditor ? 
-      JSON.stringify(getStableGitHubUrl(activeEditor?.document.uri.fsPath)) :
-      JSON.stringify(getStableGitHubUrl(vscode.window.visibleTextEditors[0].document.uri.fsPath));
+    // generate our "HTML" which will be used to load our React code
+    private getWebviewContent(annotationList: Annotation[]): string {
+        // Local path to main script run in the webview
+        const reactAppPathOnDisk = vscode.Uri.file(
+            path.join(this._extensionPath, 'dist', 'configViewer.js')
+        )
+        const reactAppUri = reactAppPathOnDisk.with({
+            scheme: 'vscode-resource',
+        })
+        // These variables will be passed into the webview
+        const annotationJson = JSON.stringify(annotationList)
+        const userId = JSON.stringify(user?.uid)
+        const username = JSON.stringify(gitInfo.author)
+        const currentProject = JSON.stringify(
+            getProjectName(activeEditor?.document.uri.toString())
+        )
+        const currentFile = activeEditor
+            ? JSON.stringify(
+                  getStableGitHubUrl(activeEditor?.document.uri.fsPath)
+              )
+            : JSON.stringify(
+                  getStableGitHubUrl(
+                      vscode.window.visibleTextEditors[0].document.uri.fsPath
+                  )
+              )
 
-    let webviewContent = `<!DOCTYPE html>
+        let webviewContent = `<!DOCTYPE html>
       <html lang="en">
       <head>
           <meta charset="UTF-8">
@@ -83,106 +110,111 @@ export default class ViewLoader {
       </body>
     </html>`
 
-    adamiteLog.appendLine(`Webview content: ${webviewContent}`);
-    
-    return webviewContent;
-  }
+        adamiteLog.appendLine(`Webview content: ${webviewContent}`)
 
-  // methods our extension can call to interface with the webview...
-  // example usage: view.init() --> will create webview
-  
-  public init() {
-    if(this._panel && this._panel.webview) {
-      this._panel.webview.postMessage({
-        command: 'init',
-      })
+        return webviewContent
     }
-  }
 
-  public reload(username: string, userId: string) {
-    if(this._panel && this._panel.webview) {
-      this._panel.webview.postMessage({
-        command: 'reload',
-        payload: {
-          username,
-          userId
+    // methods our extension can call to interface with the webview...
+    // example usage: view.init() --> will create webview
+
+    public init() {
+        if (this._panel && this._panel.webview) {
+            this._panel.webview.postMessage({
+                command: 'init',
+            })
         }
-      })
     }
-  }
 
-  public updateHtml(html: string, anchorText: string, anchorPreview: string, id: string) {
-    if(this._panel && this._panel.webview) {
-      this._panel.webview.postMessage({
-        command: 'newHtml',
-        payload: {
-          html,
-          anchorText,
-          anchorPreview,
-          id
+    public reload(username: string, userId: string) {
+        if (this._panel && this._panel.webview) {
+            this._panel.webview.postMessage({
+                command: 'reload',
+                payload: {
+                    username,
+                    userId,
+                },
+            })
         }
-      })
     }
-  }
 
-  public updateDisplay(
-    annotationList: Annotation[] | undefined, 
-    currentFile: string | undefined = undefined, 
-    currentProject: string | undefined = undefined,
-    currentUser: string | undefined = undefined
+    public updateHtml(
+        html: string,
+        anchorText: string,
+        anchorPreview: string,
+        id: string
     ) {
-      if(this._panel && this._panel.webview) {
-        this._panel.webview.postMessage({
-          command: 'update',
-          payload: {
-            annotationList,
-            currentFile,
-            currentProject,
-            currentUser
-          }
-        })
-      }
-  }
-
-  public createNewAnno(selection: string, annotationList: Annotation[]) {
-    if(this._panel && this._panel.webview) {
-      this._panel.webview.postMessage({
-        command: 'newAnno',
-        payload: {
-          selection,
-          annotations: annotationList
+        if (this._panel && this._panel.webview) {
+            this._panel.webview.postMessage({
+                command: 'newHtml',
+                payload: {
+                    html,
+                    anchorText,
+                    anchorPreview,
+                    id,
+                },
+            })
         }
-      })
     }
-  }
 
-  public logIn() {
-    if(this._panel && this._panel.webview) {
-      this._panel.webview.postMessage({
-        command: 'login',
-      })
-    }
-  }
-
-  public scrollToAnnotation(id: string) {
-    if(this._panel && this._panel.webview) {
-      this._panel.webview.postMessage({
-        command: 'scrollToAnno',
-        payload: {
-          id
+    public updateDisplay(
+        annotationList: Annotation[] | undefined,
+        currentFile: string | undefined = undefined,
+        currentProject: string | undefined = undefined,
+        currentUser: string | undefined = undefined
+    ) {
+        if (this._panel && this._panel.webview) {
+            this._panel.webview.postMessage({
+                command: 'update',
+                payload: {
+                    annotationList,
+                    currentFile,
+                    currentProject,
+                    currentUser,
+                },
+            })
         }
-      })
     }
-  }
 
-  public addTerminalMessage(content: string) {
-    if(this._panel && this._panel.webview) {
-      this._panel.webview.postMessage({
-        command: 'addTerminalMessage',
-        payload: {
-          content
+    public createNewAnno(selection: string, annotationList: Annotation[]) {
+        if (this._panel && this._panel.webview) {
+            this._panel.webview.postMessage({
+                command: 'newAnno',
+                payload: {
+                    selection,
+                    annotations: annotationList,
+                },
+            })
         }
-      })
     }
-  }
+
+    public logIn() {
+        if (this._panel && this._panel.webview) {
+            this._panel.webview.postMessage({
+                command: 'login',
+            })
+        }
+    }
+
+    public scrollToAnnotation(id: string) {
+        if (this._panel && this._panel.webview) {
+            this._panel.webview.postMessage({
+                command: 'scrollToAnno',
+                payload: {
+                    id,
+                },
+            })
+        }
+    }
+
+    public addTerminalMessage(content: string) {
+        if (this._panel && this._panel.webview) {
+            this._panel.webview.postMessage({
+                command: 'addTerminalMessage',
+                payload: {
+                    content,
+                },
+            })
+        }
+    }
 }

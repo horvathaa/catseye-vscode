@@ -1,91 +1,169 @@
-
 // OLD FUNCTION used to attempt to reattach annotation to anchor point given
 // large operation using diff data
 // may be worth looking into again if doing broken anchor re-attach project
-const generateLineMetadata = (h: {[key: string]: any}) : {[key: string]: any}[] => {
-	let linesAdded: {[key: string] : any}[] = [];
-	let linesRemoved: {[key: string] : any}[] = [];
-	let addRanges: {[key: string] : any}[] = [];
-	let removeRanges: {[key: string] : any}[] = [];
-	h.lines.forEach((l: string, index: number) => {
-		const numLinesAddedAbove: number = h.lines.slice(0, index)
-					.filter((s: string) => s[0] === '+').length + (h.newStartLine - h.oldStartLine);
-		const numLinesRemovedAbove: number =  h.lines.slice(0, index)
-				.filter((s: string) => s[0] === '-').length - (h.newStartLine - h.oldStartLine);
-		const startLine = l[0] === '+' ? h.newStartLine : h.oldStartLine;
-		const char = l[0] === '+' ? '-' : '+';
-		const originalLineNumber: number = startLine + index - h.lines.slice(0, index)
-				.filter((s: string) => s[0] === char).length;
-		if(index - 1 >= 0 && h.lines[index - 1][0] === '+' && l[0] !== '+' && l[0] !== '-') {
-			const localizedEndLine = h.newStartLine + (index - 1) - h.lines.slice(0, index - 1)
-				.filter((s: string) => s[0] === '-').length
-			console.log('addRanges', addRanges);
-			let range = addRanges.filter((r: {[key: string]: any}) => !r.complete)[0] ? addRanges.filter((r: {[key: string]: any}) => !r.complete)[0] : { start: localizedEndLine, end: localizedEndLine, complete: true, hasCorrespondingRange: false };
-			console.log('range???', range);
-			range = { ...range, end: localizedEndLine, complete: true };
-			addRanges = addRanges.filter((r: {[key: string]: any}) => r.complete).concat([range]);
-		}
-		else if(index - 1 >= 0 && h.lines[index - 1][0] === '-' && l[0] !== '+' && l[0] !== '-') {
-			const localizedEndLine = h.oldStartLine + (index - 1) - h.lines.slice(0, index - 1)
-			.filter((s: string) => s[0] === '+').length
-			let range = removeRanges.filter((r: {[key: string]: any}) => !r.complete)[0] ? removeRanges.filter((r: {[key: string]: any}) => !r.complete)[0] : { start: localizedEndLine, end: localizedEndLine, complete: true, hasCorrespondingRange: false };
-			console.log('range???', range);
-			range = { ...range, end: localizedEndLine, complete: true };
-			removeRanges = removeRanges.filter((r: {[key: string]: any}) => r.complete).concat([range]);
-		}
-		else if(l[0] === '+') {
-			if(index - 1 >= 0 && h.lines[index - 1][0] !== '-' && h.lines[index - 1][0] !== '+') addRanges.push({ start: originalLineNumber, end: -1, complete: false, hasCorrespondingRange: false });
-			if(index - 1 >= 0 && h.lines[index - 1][0] === '-') {
-				console.log('in here');
-				let range = removeRanges.filter((r: {[key: string]: any}) => !r.complete)[0];
-				const localizedEndLine = h.oldStartLine + (index - 1) - h.lines.slice(0, index - 1)
-					.filter((s: string) => s[0] === '+').length
-				range = { ...range, end: localizedEndLine, complete: true, hasCorrespondingRange: true };
-				removeRanges = removeRanges.filter((r: {[key: string]: any}) => r.complete).concat([range]);
-				console.log('remove range', range);
-				addRanges.push({ start: originalLineNumber, end: -1, complete: false, hasCorrespondingRange: true });
-			}
-			
-			linesAdded.push(
-				{ 
-					line: l, 
-					offsetInArray: index, 
-					numLinesAddedAbove,
-					numLinesRemovedAbove, 
-					originalLineNumber,
-					// translatedLineNumber: 
-				} 
-			);
+const generateLineMetadata = (h: {
+    [key: string]: any
+}): { [key: string]: any }[] => {
+    let linesAdded: { [key: string]: any }[] = []
+    let linesRemoved: { [key: string]: any }[] = []
+    let addRanges: { [key: string]: any }[] = []
+    let removeRanges: { [key: string]: any }[] = []
+    h.lines.forEach((l: string, index: number) => {
+        const numLinesAddedAbove: number =
+            h.lines.slice(0, index).filter((s: string) => s[0] === '+').length +
+            (h.newStartLine - h.oldStartLine)
+        const numLinesRemovedAbove: number =
+            h.lines.slice(0, index).filter((s: string) => s[0] === '-').length -
+            (h.newStartLine - h.oldStartLine)
+        const startLine = l[0] === '+' ? h.newStartLine : h.oldStartLine
+        const char = l[0] === '+' ? '-' : '+'
+        const originalLineNumber: number =
+            startLine +
+            index -
+            h.lines.slice(0, index).filter((s: string) => s[0] === char).length
+        if (
+            index - 1 >= 0 &&
+            h.lines[index - 1][0] === '+' &&
+            l[0] !== '+' &&
+            l[0] !== '-'
+        ) {
+            const localizedEndLine =
+                h.newStartLine +
+                (index - 1) -
+                h.lines.slice(0, index - 1).filter((s: string) => s[0] === '-')
+                    .length
+            console.log('addRanges', addRanges)
+            let range = addRanges.filter(
+                (r: { [key: string]: any }) => !r.complete
+            )[0]
+                ? addRanges.filter(
+                      (r: { [key: string]: any }) => !r.complete
+                  )[0]
+                : {
+                      start: localizedEndLine,
+                      end: localizedEndLine,
+                      complete: true,
+                      hasCorrespondingRange: false,
+                  }
+            console.log('range???', range)
+            range = { ...range, end: localizedEndLine, complete: true }
+            addRanges = addRanges
+                .filter((r: { [key: string]: any }) => r.complete)
+                .concat([range])
+        } else if (
+            index - 1 >= 0 &&
+            h.lines[index - 1][0] === '-' &&
+            l[0] !== '+' &&
+            l[0] !== '-'
+        ) {
+            const localizedEndLine =
+                h.oldStartLine +
+                (index - 1) -
+                h.lines.slice(0, index - 1).filter((s: string) => s[0] === '+')
+                    .length
+            let range = removeRanges.filter(
+                (r: { [key: string]: any }) => !r.complete
+            )[0]
+                ? removeRanges.filter(
+                      (r: { [key: string]: any }) => !r.complete
+                  )[0]
+                : {
+                      start: localizedEndLine,
+                      end: localizedEndLine,
+                      complete: true,
+                      hasCorrespondingRange: false,
+                  }
+            console.log('range???', range)
+            range = { ...range, end: localizedEndLine, complete: true }
+            removeRanges = removeRanges
+                .filter((r: { [key: string]: any }) => r.complete)
+                .concat([range])
+        } else if (l[0] === '+') {
+            if (
+                index - 1 >= 0 &&
+                h.lines[index - 1][0] !== '-' &&
+                h.lines[index - 1][0] !== '+'
+            )
+                addRanges.push({
+                    start: originalLineNumber,
+                    end: -1,
+                    complete: false,
+                    hasCorrespondingRange: false,
+                })
+            if (index - 1 >= 0 && h.lines[index - 1][0] === '-') {
+                console.log('in here')
+                let range = removeRanges.filter(
+                    (r: { [key: string]: any }) => !r.complete
+                )[0]
+                const localizedEndLine =
+                    h.oldStartLine +
+                    (index - 1) -
+                    h.lines
+                        .slice(0, index - 1)
+                        .filter((s: string) => s[0] === '+').length
+                range = {
+                    ...range,
+                    end: localizedEndLine,
+                    complete: true,
+                    hasCorrespondingRange: true,
+                }
+                removeRanges = removeRanges
+                    .filter((r: { [key: string]: any }) => r.complete)
+                    .concat([range])
+                console.log('remove range', range)
+                addRanges.push({
+                    start: originalLineNumber,
+                    end: -1,
+                    complete: false,
+                    hasCorrespondingRange: true,
+                })
+            }
 
-		}
+            linesAdded.push({
+                line: l,
+                offsetInArray: index,
+                numLinesAddedAbove,
+                numLinesRemovedAbove,
+                originalLineNumber,
+                // translatedLineNumber:
+            })
+        } else if (l[0] === '-') {
+            if (index - 1 >= 0 && h.lines[index - 1][0] !== '-')
+                removeRanges.push({
+                    start: originalLineNumber,
+                    end: -1,
+                    complete: false,
+                    hasCorrespondingRange: false,
+                })
+            // if(index - 1 >= 0 && h.lines[index - 1][0] === '+') {
+            // 	let range = addRanges.filter((r: {[key: string]: any}) => !r.complete)[0];
+            // 	range = { ...range, end: originalLineNumber, complete: true, hasCorrespondingRange: true };
+            // 	addRanges = addRanges.filter((r: {[key: string]: any}) => r.complete).concat([range]);
+            // }
 
-		else if(l[0] === '-') {
-			if(index - 1 >= 0 && h.lines[index - 1][0] !== '-') removeRanges.push({ start: originalLineNumber, end: -1, complete: false, hasCorrespondingRange: false });
-			// if(index - 1 >= 0 && h.lines[index - 1][0] === '+') {
-			// 	let range = addRanges.filter((r: {[key: string]: any}) => !r.complete)[0];
-			// 	range = { ...range, end: originalLineNumber, complete: true, hasCorrespondingRange: true };
-			// 	addRanges = addRanges.filter((r: {[key: string]: any}) => r.complete).concat([range]);
-			// }
-			
-			linesRemoved.push(
-				{ 
-					line: l, 
-					offsetInArray: index, 
-					numLinesAddedAbove,
-					numLinesRemovedAbove, 
-					originalLineNumber,
-					// translatedLineNumber: 
-				} 
-			);
-		}
-	})
+            linesRemoved.push({
+                line: l,
+                offsetInArray: index,
+                numLinesAddedAbove,
+                numLinesRemovedAbove,
+                originalLineNumber,
+                // translatedLineNumber:
+            })
+        }
+    })
 
-	console.log('linesadded', linesAdded, 'linesRemoved', linesRemoved, 'addRanges', addRanges, 'removeRanges', removeRanges);
-	return linesAdded;
-	
+    console.log(
+        'linesadded',
+        linesAdded,
+        'linesRemoved',
+        linesRemoved,
+        'addRanges',
+        addRanges,
+        'removeRanges',
+        removeRanges
+    )
+    return linesAdded
 }
-
-
 
 // // - is old, + is new - our old is origin/HEAD, our new is the user's local branch
 // export const updateAnchorsUsingDiffData = (diffData: {[key: string]: any}, annotations: Annotation[]) : void => {
@@ -95,82 +173,82 @@ const generateLineMetadata = (h: {[key: string]: any}) : {[key: string]: any}[] 
 // 	diffData[0].hunks?.forEach((h: {[key: string]: any}) => {
 // 		console.log('h', h);
 // 		generateLineMetadata(h);
-		
-		// const hunkRange: vscode.Range = new vscode.Range(new vscode.Position(h.newStartLine, 0), new vscode.Position(h.newStartLine + h.newLineCount + 1, 0));
-		// console.log('hunkRange', hunkRange);
-		// console.log('annotations', annotations);
-		
-		// const annosAffectedByChange: Annotation[] = annotations.filter(a => createRangesFromAnnotation(a).contains(hunkRange))
-		// need to also add/subtract diff for annos that have changes that were made above the start of their anchor
-		// console.log('annos', annosAffectedByChange);
-		// annotations.forEach((a: Annotation) => {
-		// 	// user replaced original line
-		// 	console.log('a before change', a);
-		// 	let startLine: number = a.startLine;
-		// 	let endLine: number = a.endLine; 
-		// 	let startOffset: number = a.startOffset;
-		// 	let endOffset: number = a.endOffset;
-		// 	const relevantLinesAdded: {[key: string]: any}[] = h.lines
-		// 														.map((l: string, index: number) => { 
-		// 															if(l[0] === '+') 
-		// 															return { 
-		// 																line: l, 
-		// 																offsetInArray: index, 
-		// 																numLinesAddedAbove: 
-		// 																	h.lines.slice(0, index)
-		// 																			.filter((s: string) => s[0] === '+')
-		// 																			.length, 
-		// 																numLinesRemovedAbove: 
-		// 																	h.lines.slice(0, index)
-		// 																			.filter((s: string) => s[0] === '-').length, 
-		// 																originalLineNumber: 
-		// 																	h.newStartLine + index - h.lines.slice(0, index)
-		// 																									.filter((s: string) => s[0] === '-').length 
-		// 																} 
-		// 														})
-		// 														.filter((l: {[key: string]: any} | undefined) => l !== undefined );
-		// 	const relevantLinesRemoved: {[key: string]: any}[] = h.lines
-		// 														    .map((l: string, index: number) => { 
-		// 															  if(l[0] === '-') {
-		// 																const numLinesAddedAbove: number = h.lines.slice(0, index)
-		// 																										.filter((s: string) => s[0] === '+').length + (h.newStartLine - h.oldStartLine);
-		// 																const numLinesRemovedAbove: number =  h.lines.slice(0, index)
-		// 																										.filter((s: string) => s[0] === '-').length - (h.newStartLine - h.oldStartLine);
-		// 																return { 
-		// 																	line: l, 
-		// 																	offsetInArray: index, 
-		// 																	numLinesAddedAbove,
-		// 																	numLinesRemovedAbove, 
-		// 																	originalLineNumber: h.oldStartLine + index - h.lines.slice(0, index)
-		// 																														  .filter((s: string) => s[0] === '+').length,
-		// 																	// translatedLineNumber: 
-		// 																  } 
-		// 															  }
-																	  
-		// 															})
-		// 															.filter((l: {[key: string]: any} | undefined) => l !== undefined );
-		// 	const linesAddedInAnchorRange = relevantLinesAdded.filter((l) => {
-		// 		// console.log('l', l, 'a', a);
-		// 		return (a.startLine < l.originalLineNumber) && (a.endLine > l.originalLineNumber)
-		// 	});
-		// 	const linesRemovedInAnchorRange = relevantLinesRemoved.filter((l) => (a.startLine < h.newStartLine + l.offsetInArray) && (a.endLine > h.newLineCount + l.offsetInArray));
-		// 	// let linesAddedHunk: number = relevantLinesAdded.length;
-		// 	// let linesRemovedHunk: number = relevantLinesRemoved.length;
 
-		// 	console.log('linesAddedInAnchorRange', linesAddedInAnchorRange);
-		// 	console.log('linesRemoved', linesRemovedInAnchorRange);
-		// 	console.log('relevantLinesAdded', relevantLinesAdded, 'relevantLinesRemoved', relevantLinesRemoved)
-		// 	const rangeStart: number = h.newStartLine // + rangeStartOffset;
-		// 	const rangeEnd: number = h.newStartLine // + rangeEndOffset;
-		// 	console.log('rangeStart', rangeStart, 'rangeEnd', rangeEnd);
+// const hunkRange: vscode.Range = new vscode.Range(new vscode.Position(h.newStartLine, 0), new vscode.Position(h.newStartLine + h.newLineCount + 1, 0));
+// console.log('hunkRange', hunkRange);
+// console.log('annotations', annotations);
 
-		// 	if(a.startLine < rangeStart && a.startLine < rangeEnd && a.endLine < rangeStart && a.endLine < rangeEnd) {
-		// 		console.log('a is above changes and wont be affected');
-		// 		return;
+// const annosAffectedByChange: Annotation[] = annotations.filter(a => createRangesFromAnnotation(a).contains(hunkRange))
+// need to also add/subtract diff for annos that have changes that were made above the start of their anchor
+// console.log('annos', annosAffectedByChange);
+// annotations.forEach((a: Annotation) => {
+// 	// user replaced original line
+// 	console.log('a before change', a);
+// 	let startLine: number = a.startLine;
+// 	let endLine: number = a.endLine;
+// 	let startOffset: number = a.startOffset;
+// 	let endOffset: number = a.endOffset;
+// 	const relevantLinesAdded: {[key: string]: any}[] = h.lines
+// 														.map((l: string, index: number) => {
+// 															if(l[0] === '+')
+// 															return {
+// 																line: l,
+// 																offsetInArray: index,
+// 																numLinesAddedAbove:
+// 																	h.lines.slice(0, index)
+// 																			.filter((s: string) => s[0] === '+')
+// 																			.length,
+// 																numLinesRemovedAbove:
+// 																	h.lines.slice(0, index)
+// 																			.filter((s: string) => s[0] === '-').length,
+// 																originalLineNumber:
+// 																	h.newStartLine + index - h.lines.slice(0, index)
+// 																									.filter((s: string) => s[0] === '-').length
+// 																}
+// 														})
+// 														.filter((l: {[key: string]: any} | undefined) => l !== undefined );
+// 	const relevantLinesRemoved: {[key: string]: any}[] = h.lines
+// 														    .map((l: string, index: number) => {
+// 															  if(l[0] === '-') {
+// 																const numLinesAddedAbove: number = h.lines.slice(0, index)
+// 																										.filter((s: string) => s[0] === '+').length + (h.newStartLine - h.oldStartLine);
+// 																const numLinesRemovedAbove: number =  h.lines.slice(0, index)
+// 																										.filter((s: string) => s[0] === '-').length - (h.newStartLine - h.oldStartLine);
+// 																return {
+// 																	line: l,
+// 																	offsetInArray: index,
+// 																	numLinesAddedAbove,
+// 																	numLinesRemovedAbove,
+// 																	originalLineNumber: h.oldStartLine + index - h.lines.slice(0, index)
+// 																														  .filter((s: string) => s[0] === '+').length,
+// 																	// translatedLineNumber:
+// 																  }
+// 															  }
+
+// 															})
+// 															.filter((l: {[key: string]: any} | undefined) => l !== undefined );
+// 	const linesAddedInAnchorRange = relevantLinesAdded.filter((l) => {
+// 		// console.log('l', l, 'a', a);
+// 		return (a.startLine < l.originalLineNumber) && (a.endLine > l.originalLineNumber)
+// 	});
+// 	const linesRemovedInAnchorRange = relevantLinesRemoved.filter((l) => (a.startLine < h.newStartLine + l.offsetInArray) && (a.endLine > h.newLineCount + l.offsetInArray));
+// 	// let linesAddedHunk: number = relevantLinesAdded.length;
+// 	// let linesRemovedHunk: number = relevantLinesRemoved.length;
+
+// 	console.log('linesAddedInAnchorRange', linesAddedInAnchorRange);
+// 	console.log('linesRemoved', linesRemovedInAnchorRange);
+// 	console.log('relevantLinesAdded', relevantLinesAdded, 'relevantLinesRemoved', relevantLinesRemoved)
+// 	const rangeStart: number = h.newStartLine // + rangeStartOffset;
+// 	const rangeEnd: number = h.newStartLine // + rangeEndOffset;
+// 	console.log('rangeStart', rangeStart, 'rangeEnd', rangeEnd);
+
+// 	if(a.startLine < rangeStart && a.startLine < rangeEnd && a.endLine < rangeStart && a.endLine < rangeEnd) {
+// 		console.log('a is above changes and wont be affected');
+// 		return;
 // 		// 	}
 
 // 			// else if(h.oldStartLine === h.newStartLine && h.oldLineCount === h.newLineCount) {
-// 			// 	// if the 
+// 			// 	// if the
 // 			// 	// changed line is the start or end line, in which case we may need to change the offsets
 // 			// 	console.log('old start old end new start new end all equal');
 // 			// 	const startOrEndLines: {[key: string]: any}[] = relevantLinesRemoved.filter((l: {[key: string]: any}) => {
@@ -194,7 +272,7 @@ const generateLineMetadata = (h: {[key: string]: any}) : {[key: string]: any}[] 
 // 			// else if(h.newLineCount > h.oldLineCount) {
 // 			// 	console.log('new line count greater than old');
 // 			// 	const diff = (h.newStartLine - h.oldStartLine) + (linesAddedHunk - linesRemovedHunk);
-// 			// 	const innerAnchorDiff = (h.newStartLine - h.oldStartLine) + (linesAddedInAnchorRange.length - linesRemovedInAnchorRange.length) 
+// 			// 	const innerAnchorDiff = (h.newStartLine - h.oldStartLine) + (linesAddedInAnchorRange.length - linesRemovedInAnchorRange.length)
 // 			// 	console.log('diff', diff, 'linesadded', linesAddedHunk, 'linesRemoved', linesRemovedHunk);
 // 			// 	if(a.startLine > rangeStart && a.startLine > rangeEnd) {
 // 			// 		console.log('change happened above anchor');
@@ -255,7 +333,7 @@ const generateLineMetadata = (h: {[key: string]: any}) : {[key: string]: any}[] 
 // 			// 				console.log('START LINE!!!!!!!!!!!!!!!', startLine);
 // 			// 			}
 // 			// 		}
-					
+
 // 			// 		if(a.startLine >= rangeOfChange[0] && a.endLine <= rangeOfChange[1]) {
 // 			// 			console.log('anno is only in new change -- mark as outOfDate or something and dont update anchor');
 // 			// 			return;
@@ -270,12 +348,12 @@ const generateLineMetadata = (h: {[key: string]: any}) : {[key: string]: any}[] 
 // 			// 	console.log('old line count greater than new')
 
 // 			// 	// const rangeOfChange: vscode.Range = new vscode.Range()
-// 			// 	const innerAnchorDiff = (h.newStartLine - h.oldStartLine) + (linesAddedInAnchorRange.length - linesRemovedInAnchorRange.length) 
+// 			// 	const innerAnchorDiff = (h.newStartLine - h.oldStartLine) + (linesAddedInAnchorRange.length - linesRemovedInAnchorRange.length)
 // 			// 	const diff = (h.newStartLine - h.oldStartLine) + (linesAddedHunk - linesRemovedHunk);
 // 			// 	console.log('diff', diff, 'linesadded', linesAddedHunk, 'linesRemoved', linesRemovedHunk);
 // 			// 	if(a.startLine > rangeStart && a.startLine > rangeEnd) {
 // 			// 		startLine = a.startLine + diff;
-// 			// 		endLine = a.endLine + diff; 
+// 			// 		endLine = a.endLine + diff;
 // 			// 	}
 // 			// 	// change encompasses range
 // 			// 	else if (rangeStart < a.startLine && rangeEnd > a.endLine) {
@@ -310,7 +388,7 @@ const generateLineMetadata = (h: {[key: string]: any}) : {[key: string]: any}[] 
 // 			// 	else {
 // 			// 		endLine = a.endLine + innerAnchorDiff;
 // 			// 	}
-				
+
 // 			// }
 // 			// else {
 // 			// 	console.log('uh oh', h);
@@ -319,9 +397,6 @@ const generateLineMetadata = (h: {[key: string]: any}) : {[key: string]: any}[] 
 // 		})
 // 	});
 // }
-
-
-
 
 // // const addedLines: number[] = relevantLinesAdded.map((a: {[key: string]: any}) => h.newStartLine - linesRemovedHunk + a.offsetInArray);
 // // console.log('addedLines??', addedLines);
@@ -363,41 +438,41 @@ const generateLineMetadata = (h: {[key: string]: any}) : {[key: string]: any}[] 
 // // // const rangeEndOffset: number = linesAddedHunk && linesRemovedHunk ? Math.max(relevantLinesAdded[linesAddedHunk - 1].offsetInArray, relevantLinesRemoved[linesRemovedHunk - 1].offsetInArray) : linesAddedHunk ? relevantLinesAdded[linesAddedHunk - 1].offsetInArray : relevantLinesRemoved[linesRemovedHunk - 1].offsetInArray
 
 // // const relevantLinesAdded: {[key: string]: any}[] = h.lines
-// // 																.map((l: string, index: number) => { 
-// // 																	if(l[0] === '+') 
-// // 																	return { 
-// // 																		line: l, 
-// // 																		offsetInArray: index, 
-// // 																		numLinesAddedAbove: 
+// // 																.map((l: string, index: number) => {
+// // 																	if(l[0] === '+')
+// // 																	return {
+// // 																		line: l,
+// // 																		offsetInArray: index,
+// // 																		numLinesAddedAbove:
 // // 																			h.lines.slice(0, index)
 // // 																					.filter((s: string) => s[0] === '+')
-// // 																					.length, 
-// // 																		numLinesRemovedAbove: 
+// // 																					.length,
+// // 																		numLinesRemovedAbove:
 // // 																			h.lines.slice(0, index)
-// // 																					.filter((s: string) => s[0] === '-').length, 
-// // 																		originalLineNumber: 
+// // 																					.filter((s: string) => s[0] === '-').length,
+// // 																		originalLineNumber:
 // // 																			h.newStartLine + index - h.lines.slice(0, index)
-// // 																											.filter((s: string) => s[0] === '-').length 
-// // 																		} 
+// // 																											.filter((s: string) => s[0] === '-').length
+// // 																		}
 // // 																})
 // // 																.filter((l: {[key: string]: any} | undefined) => l !== undefined );
 // // 			const relevantLinesRemoved: {[key: string]: any}[] = h.lines
-// // 																    .map((l: string, index: number) => { 
+// // 																    .map((l: string, index: number) => {
 // // 																	  if(l[0] === '-') {
 // // 																		const numLinesAddedAbove: number = h.lines.slice(0, index)
 // // 																												.filter((s: string) => s[0] === '+').length + (h.newStartLine - h.oldStartLine);
 // // 																		const numLinesRemovedAbove: number =  h.lines.slice(0, index)
 // // 																												.filter((s: string) => s[0] === '-').length - (h.newStartLine - h.oldStartLine);
-// // 																		return { 
-// // 																			line: l, 
-// // 																			offsetInArray: index, 
+// // 																		return {
+// // 																			line: l,
+// // 																			offsetInArray: index,
 // // 																			numLinesAddedAbove,
-// // 																			numLinesRemovedAbove, 
+// // 																			numLinesRemovedAbove,
 // // 																			originalLineNumber: h.oldStartLine + index - h.lines.slice(0, index)
 // // 																																  .filter((s: string) => s[0] === '+').length,
-// // 																			translatedLineNumber: 
-// // 																		  } 
+// // 																			translatedLineNumber:
+// // 																		  }
 // // 																	  }
-																	  
+
 // // 																	})
 // // 																	.filter((l: {[key: string]: any} | undefined) => l !== undefined );

@@ -4,10 +4,7 @@
         "moduleResolution": "node",
         "target": "es2019",
         "outDir": "dist",
-        "lib": [
-            "es2019",
-            "dom"
-        ],  
+        "lib": ["es2019", "dom"],
         "jsx": "react",
         "sourceMap": true,
         "skipLibCheck": true,
@@ -16,7 +13,5 @@
         "noFallthroughCasesInSwitch": true,
         "experimentalDecorators": true
     },
-    "exclude": [
-        "node_modules"
-    ]
+    "exclude": ["node_modules"]
 }

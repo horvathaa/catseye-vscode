@@ -1,5 +1,3 @@
-
-
 .SearchBarContainer {
     display: flex;
     z-index: 1;
@@ -24,7 +22,7 @@
     line-height: 1.3;
     position: relative;
     transition: 0.1s all ease-in;
-    transition: box-shadow .3s;
+    transition: box-shadow 0.3s;
     height: 35px;
     margin-right: 6px;
 }
@@ -56,22 +54,22 @@
 }
 
 .SearchBarContainer:hover {
-box-shadow: 0 1px 6px 0 rgba(32,33,36,0.28);
+    box-shadow: 0 1px 6px 0 rgba(32, 33, 36, 0.28);
 }
 
-.SearchBarContainer:focus-within{
-box-shadow: 1px 1px 8px 1px #dcdcdc;
-outline:none;
+.SearchBarContainer:focus-within {
+    box-shadow: 1px 1px 8px 1px #dcdcdc;
+    outline: none;
 }
 
 .SearchBarContainer::placeholder {
-color: rgba(var(--vscode-input-foreground), 0.8);
-opacity: 1;
--webkit-appearance: searchfield-cancel-button;
+    color: rgba(var(--vscode-input-foreground), 0.8);
+    opacity: 1;
+    -webkit-appearance: searchfield-cancel-button;
 }
 
 .SearchIconOuter {
-margin: 5px
+    margin: 5px;
 }
 
 .SearchIcon {
@@ -86,10 +84,10 @@ margin: 5px
     width: 14px;
     height: 14px;
     cursor: pointer;
-  }
-  
-  .profileMenu:hover {
+}
+
+.profileMenu:hover {
     filter: brightness(1.4);
-    transition: opacity .55s ease-in-out;
+    transition: opacity 0.55s ease-in-out;
     color: white;
-  }
+}

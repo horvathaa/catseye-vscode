@@ -1,187 +1,185 @@
 {
-  "name": "adamite",
-  "displayName": "Adamite",
-  "description": "Annotate your code for lightweight information tracking, and for sharing notes with collaborators!",
-  "author": {
-    "name": "Amber Horvath",
-    "email": "ahorvath@andrew.cmu.edu"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/horvathaa/adamite-vscode"
-  },
-  "publisher": "ahorvath",
-  "version": "0.1.6",
-  "engines": {
-    "vscode": "^1.57.0"
-  },
-  "categories": [
-    "Other"
-  ],
-  "icon": "source/constants/Adamite.png",
-  "activationEvents": [
-    "onStartupFinished"
-  ],
-  "main": "./dist/extension.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "adamite.launch",
-        "title": "Adamite: Launch Adamite"
-      },
-      {
-        "command": "adamite.addAnnotation",
-        "title": "Adamite: Create Annotation"
-      },
-      {
-        "command": "adamite.addFileAnnotation",
-        "title": "Adamite: Create File Annotation"
-      },
-      {
-        "command": "adamite.addHighlight",
-        "title": "Adamite: Create Highlight"
-      },
-      {
-        "command": "adamite.addSelectedAnnotation",
-        "title": "Adamite: Create Pinned Annotation"
-      },
-      {
-        "command": "adamite.navigateForward",
-        "title": "Adamite: Go to Next Pinned Annotation"
-      },
-      {
-        "command": "adamite.navigateBack",
-        "title": "Adamite: Go to Last Pinned Annotation"
-      }
+    "name": "adamite",
+    "displayName": "Adamite",
+    "description": "Annotate your code for lightweight information tracking, and for sharing notes with collaborators!",
+    "author": {
+        "name": "Amber Horvath",
+        "email": "ahorvath@andrew.cmu.edu"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/horvathaa/adamite-vscode"
+    },
+    "publisher": "ahorvath",
+    "version": "0.1.6",
+    "engines": {
+        "vscode": "^1.57.0"
+    },
+    "categories": [
+        "Other"
     ],
-    "keybindings": [
-      {
-        "command": "adamite.launch",
-        "key": "ctrl+shift+a",
-        "mac": "cmd+shift+a"
-      },
-      {
-        "command": "adamite.addAnnotation",
-        "key": "ctrl+alt+a",
-        "mac": "cmd+alt+a"
-      },
-      {
-        "command": "adamite.addHighlight",
-        "key": "ctrl+alt+h",
-        "mac": "cmd+alt+h"
-      },
-      {
-        "command": "adamite.addSelectedAnnotation",
-        "key": "ctrl+alt+p",
-        "mac": "cmd+alt+p"
-      },
-      {
-        "command": "adamite.navigateForward",
-        "key": "ctrl+alt+]",
-        "mac": "cmd+alt+]"
-      },
-      {
-        "command": "adamite.navigateBack",
-        "key": "ctrl+alt+[",
-        "mac": "cmd+alt+["
-      }
+    "icon": "source/constants/Adamite.png",
+    "activationEvents": [
+        "onStartupFinished"
     ],
-    "menus": {
-      "editor/context": [
-        {
-          "command": "adamite.launch",
-          "group": "2_adamite"
-        },
-        {
-          "when": "editorHasSelection",
-          "command": "adamite.addAnnotation",
-          "group": "2_adamite"
-        },
-        {
-          "when": "editorHasSelection",
-          "command": "adamite.addHighlight",
-          "group": "2_adamite"
-        },
-        {
-          "when": "editorHasSelection",
-          "command": "adamite.addSelectedAnnotation",
-          "group": "2_adamite"
+    "main": "./dist/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "adamite.launch",
+                "title": "Adamite: Launch Adamite"
+            },
+            {
+                "command": "adamite.addAnnotation",
+                "title": "Adamite: Create Annotation"
+            },
+            {
+                "command": "adamite.addFileAnnotation",
+                "title": "Adamite: Create File Annotation"
+            },
+            {
+                "command": "adamite.addHighlight",
+                "title": "Adamite: Create Highlight"
+            },
+            {
+                "command": "adamite.addSelectedAnnotation",
+                "title": "Adamite: Create Pinned Annotation"
+            },
+            {
+                "command": "adamite.navigateForward",
+                "title": "Adamite: Go to Next Pinned Annotation"
+            },
+            {
+                "command": "adamite.navigateBack",
+                "title": "Adamite: Go to Last Pinned Annotation"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "adamite.launch",
+                "key": "ctrl+shift+a",
+                "mac": "cmd+shift+a"
+            },
+            {
+                "command": "adamite.addAnnotation",
+                "key": "ctrl+alt+a",
+                "mac": "cmd+alt+a"
+            },
+            {
+                "command": "adamite.addHighlight",
+                "key": "ctrl+alt+h",
+                "mac": "cmd+alt+h"
+            },
+            {
+                "command": "adamite.addSelectedAnnotation",
+                "key": "ctrl+alt+p",
+                "mac": "cmd+alt+p"
+            },
+            {
+                "command": "adamite.navigateForward",
+                "key": "ctrl+alt+]",
+                "mac": "cmd+alt+]"
+            },
+            {
+                "command": "adamite.navigateBack",
+                "key": "ctrl+alt+[",
+                "mac": "cmd+alt+["
+            }
+        ],
+        "menus": {
+            "editor/context": [
+                {
+                    "command": "adamite.launch",
+                    "group": "2_adamite"
+                },
+                {
+                    "when": "editorHasSelection",
+                    "command": "adamite.addAnnotation",
+                    "group": "2_adamite"
+                },
+                {
+                    "when": "editorHasSelection",
+                    "command": "adamite.addHighlight",
+                    "group": "2_adamite"
+                },
+                {
+                    "when": "editorHasSelection",
+                    "command": "adamite.addSelectedAnnotation",
+                    "group": "2_adamite"
+                }
+            ],
+            "explorer/context": [
+                {
+                    "command": "adamite.addFileAnnotation",
+                    "group": "2_adamite"
+                }
+            ]
         }
-      ],
-      "explorer/context": [
-        {
-          "command": "adamite.addFileAnnotation",
-          "group": "2_adamite"
-        }
-      ]
-    }
-  },
-  "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "npm-run-all compile:*",
-    "watch": "npm-run-all -p watch:*",
-    "compile:extension": "tsc -p ./",
-    "compile:views": "webpack --mode development",
-    "watch:extension": "tsc -watch -p ./",
-    "watch:views": "webpack --watch --mode development",
-    "package": "webpack --mode production --devtool hidden-source-map",
-    "test-compile": "tsc -p ./",
-    "test-watch": "tsc -watch -p ./",
-    "pretest": "npm run test-compile && npm run lint",
-    "lint": "eslint source --ext ts",
-    "test": "node ./out/test/runTest.js"
-  },
-  "devDependencies": {
-    "@types/glob": "^7.1.3",
-    "@types/mocha": "^8.2.2",
-    "@types/node": "14.x",
-    "@types/react": "^17.0.14",
-    "@types/react-dom": "^17.0.9",
-    "@types/uniqid": "^5.3.1",
-    "@types/uuid": "^8.3.1",
-    "@types/vscode": "^1.57.0",
-    "@typescript-eslint/eslint-plugin": "^4.26.0",
-    "@typescript-eslint/parser": "^4.26.0",
-    "@vscode/debugadapter": "^1.55.1",
-    "@vscode/debugprotocol": "^1.55.1",
-    "eslint": "^7.27.0",
-    "glob": "^7.1.7",
-    "mocha": "^8.4.0",
-    "ts-loader": "^9.2.2",
-    "typescript": "^4.3.2",
-    "uniqid": "^5.3.0",
-    "vscode": "^1.1.37",
-    "vscode-test": "^1.5.2",
-    "webpack": "^5.45.1",
-    "webpack-cli": "^4.7.2"
-  },
-  "dependencies": {
-    "@emotion/react": "^11.7.0",
-    "@emotion/styled": "^11.6.0",
-    "@material-ui/core": "^4.12.3",
-    "@mui/icons-material": "^5.2.0",
-    "@mui/material": "^5.2.2",
-    "@types/react-icons": "^3.0.0",
-    "bootstrap": "^5.1.3",
-    "classnames": "^2.3.1",
-    "create-react-app": "^4.0.3",
-    "css-loader": "^6.2.0",
-    "css-modules-typescript-loader": "^4.0.1",
-    "dotenv": "^10.0.0",
-    "esnext": "^3.3.1",
-    "firebase": "^8.10.0",
-    "npm-run-all": "^4.1.5",
-    "react": "^17.0.2",
-    "react-bootstrap": "^1.6.4",
-    "react-dom": "^17.0.2",
-    "react-scripts": "^4.0.3",
-    "shiki": "^0.9.5",
-    "style-loader": "^3.2.1",
-    "uuid": "^8.3.2",
-    "vsce": "^2.6.7",
-    "what-the-diff": "^0.6.0"
-  },
-  "extensionDependencies": [
-    "vscode.git"
-  ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "npm-run-all compile:*",
+        "watch": "npm-run-all -p watch:*",
+        "compile:extension": "tsc -p ./",
+        "compile:views": "webpack --mode development",
+        "watch:extension": "tsc -watch -p ./",
+        "watch:views": "webpack --watch --mode development",
+        "package": "webpack --mode production --devtool hidden-source-map",
+        "test-compile": "tsc -p ./",
+        "test-watch": "tsc -watch -p ./",
+        "pretest": "npm run test-compile && npm run lint",
+        "lint": "eslint source --ext ts",
+        "test": "node ./out/test/runTest.js"
+    },
+    "devDependencies": {
+        "@types/glob": "^7.1.3",
+        "@types/mocha": "^8.2.2",
+        "@types/node": "14.x",
+        "@types/react": "^17.0.14",
+        "@types/react-dom": "^17.0.9",
+        "@types/uniqid": "^5.3.1",
+        "@types/uuid": "^8.3.1",
+        "@types/vscode": "^1.57.0",
+        "@vscode/debugadapter": "^1.55.1",
+        "@vscode/debugprotocol": "^1.55.1",
+        "glob": "^7.1.7",
+        "mocha": "^8.4.0",
+        "prettier": "2.7.1",
+        "ts-loader": "^9.2.2",
+        "typescript": "^4.3.2",
+        "uniqid": "^5.3.0",
+        "vscode": "^1.1.37",
+        "vscode-test": "^1.5.2",
+        "webpack": "^5.45.1",
+        "webpack-cli": "^4.7.2"
+    },
+    "dependencies": {
+        "@emotion/react": "^11.9.3",
+        "@emotion/styled": "^11.9.3",
+        "@material-ui/core": "^4.12.3",
+        "@mui/icons-material": "^5.2.0",
+        "@mui/material": "^5.8.5",
+        "@types/react-icons": "^3.0.0",
+        "bootstrap": "^5.1.3",
+        "classnames": "^2.3.1",
+        "create-react-app": "^4.0.3",
+        "css-loader": "^6.2.0",
+        "css-modules-typescript-loader": "^4.0.1",
+        "dotenv": "^10.0.0",
+        "esnext": "^3.3.1",
+        "firebase": "^8.10.0",
+        "npm-run-all": "^4.1.5",
+        "react": "^17.0.2",
+        "react-bootstrap": "^1.6.4",
+        "react-dom": "^17.0.2",
+        "react-scripts": "^4.0.3",
+        "shiki": "^0.9.5",
+        "style-loader": "^3.2.1",
+        "uuid": "^8.3.2",
+        "vsce": "^2.6.7",
+        "what-the-diff": "^0.6.0"
+    },
+    "extensionDependencies": [
+        "vscode.git"
+    ]
 }

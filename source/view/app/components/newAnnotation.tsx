@@ -1,58 +1,68 @@
 /*
- * 
+ *
  * newAnnotation.tsx
  * Component that's rendered when the user is authoring a new annotation.
  *
  */
-import * as React from "react";
-import annoStyles from '../styles/annotation.module.css';
-import TextEditor from "./annotationComponents/textEditor";
+import * as React from 'react'
+import annoStyles from '../styles/annotation.module.css'
+import TextEditor from './annotationComponents/textEditor'
 
 interface SynProps {
-    html: string;
-  }
-  
-  const Syntax: React.FC<SynProps> = ({ html }) => {
-    return ( <code dangerouslySetInnerHTML={{__html: html}}></code> );
-  }
+    html: string
+}
+
+const Syntax: React.FC<SynProps> = ({ html }) => {
+    return <code dangerouslySetInnerHTML={{ __html: html }}></code>
+}
 interface Props {
-    selection: string;
-    vscode: any;
+    selection: string
+    vscode: any
     notifyDone: () => void
 }
 
-const NewAnnotation: React.FC<Props> = ({ selection, vscode, notifyDone = () => {} }) => {
+const NewAnnotation: React.FC<Props> = ({
+    selection,
+    vscode,
+    notifyDone = () => {},
+}) => {
     const cancelAnnotation = () => {
-        notifyDone();
+        notifyDone()
         vscode.postMessage({
             command: 'cancelAnnotation',
-        });
+        })
     }
 
-    const createAnnotation = (annoContent: string, shareWith: string | undefined, willBePinned: boolean | undefined) => {
-        notifyDone();
+    const createAnnotation = (
+        annoContent: string,
+        shareWith: string | undefined,
+        willBePinned: boolean | undefined
+    ) => {
+        notifyDone()
         vscode.postMessage({
-              command: 'createAnnotation',
-              anno: annoContent,
-              shareWith,
-              willBePinned
-        });
+            command: 'createAnnotation',
+            anno: annoContent,
+            shareWith,
+            willBePinned,
+        })
     }
 
     return (
         <div className={annoStyles['Pad']}>
-            <div className={annoStyles['AnnotationContainer']} id="NewAnnotation">
+            <div
+                className={annoStyles['AnnotationContainer']}
+                id="NewAnnotation"
+            >
                 <Syntax html={selection} />
-                <TextEditor 
-                    content={""} 
-                    submissionHandler={createAnnotation} 
-                    cancelHandler={cancelAnnotation} 
+                <TextEditor
+                    content={''}
+                    submissionHandler={createAnnotation}
+                    cancelHandler={cancelAnnotation}
                     showSplitButton={true}
                 />
             </div>
         </div>
     )
-
 }
 
-export default NewAnnotation;
+export default NewAnnotation

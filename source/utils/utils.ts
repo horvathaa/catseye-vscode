@@ -364,7 +364,8 @@ export const makeObjectListFromAnnotations = (annotationList: Annotation[]) : {[
 			outputs: a.outputs ? a.outputs : [],
 			codeSnapshots: a.codeSnapshots ? a.codeSnapshots.length > 0 && a.codeSnapshots[0].hasOwnProperty('diff') ? a.codeSnapshots : translateSnapshotStandard(a.codeSnapshots) : [],
 			sharedWith: a.sharedWith ? a.sharedWith : "private",
-			selected: a.selected ? a.selected : false
+			selected: a.selected ? a.selected : false,
+			types: a.types ? a.types : []
 	}});
 }
 
@@ -620,7 +621,8 @@ const translateAnnotationAnchorStandard = (annoInfo: any) : {[ key: string ] : a
 		codeSnapshots: annoInfo.codeSnapshots,
 		sharedWith: annoInfo.sharedWith,
 		selected: annoInfo.selected,
-		needToUpdate: annoInfo.needToUpdate ? annoInfo.needToUpdate : false
+		needToUpdate: annoInfo.needToUpdate ? annoInfo.needToUpdate : false,
+		types: []
 	}
 }
 
@@ -655,7 +657,8 @@ export const buildAnnotation = (annoInfo: any, range: vscode.Range | undefined =
 		annoObj['codeSnapshots'],
 		annoObj['sharedWith'],
 		annoObj['selected'],
-		annoObj['needToUpdate']
+		annoObj['needToUpdate'],
+		annoObj['types']
 	)
 }
 

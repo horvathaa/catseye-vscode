@@ -29,7 +29,8 @@ import {
     currentGitHubProject,
     gitApi,
     tsFiles,
-    setTsFiles
+    setTsFiles,
+    floatingDecorations
 } from '../extension'
 import * as anchor from '../anchorFunctions/anchor'
 import * as utils from '../utils/utils'
@@ -428,6 +429,6 @@ export const handleDidChangeTextEditorSelection = async (e: vscode.TextEditorSel
     const create = vscode.Uri.parse(`command:adamite.addAnnotation`);
     createAnnotationWebviewLink.appendMarkdown(`[Create Annotation](${create})`);
     const decOpts: vscode.DecorationOptions[] = [{ range: selections[0], hoverMessage: createAnnotationWebviewLink }]
-    // textEditor.setDecorations(floatingDecorations, decOpts);
+    textEditor.setDecorations(floatingDecorations, decOpts);
     return;
 }

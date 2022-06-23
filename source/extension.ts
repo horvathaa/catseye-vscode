@@ -10,7 +10,11 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode'
 import firebase from './firebase/firebase'
-import { Annotation, ChangeEvent } from './constants/constants'
+import { 
+	Annotation, 
+	ChangeEvent, 
+	TsFile 
+} from './constants/constants'
 import * as commands from './commands/commands'
 import * as eventHandlers from './listeners/listeners'
 import * as utils from './utils/utils'

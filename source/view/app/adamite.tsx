@@ -15,6 +15,14 @@ import LogIn from './components/login'
 import styles from './styles/adamite.module.css'
 import annoStyles from './styles/annotation.module.css'
 import TopBar from './components/topbar'
+import Tabs from '@mui/material/Tabs'
+import Tab from '@mui/material/Tab'
+import { styled } from '@mui/material/styles'
+import {
+    foreground,
+    editorForeground,
+    editorDescForeground,
+} from './styles/generalStyles'
 
 interface Props {
     vscode: any
@@ -50,6 +58,58 @@ const AdamitePanel: React.FC<Props> = ({
     const [currentFile, setCurrentFile] = useState(
         window.currentFile ? window.currentFile : ''
     )
+    const [tabVal, setTabVal] = useState(0)
+    const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+        setTabVal(newValue)
+    }
+
+    // custom styling for tab interface
+    interface StyledTabsProps {
+        children?: React.ReactNode
+        value: number
+        onChange: (event: React.SyntheticEvent, newValue: number) => void
+    }
+
+    const StyledTabs = styled((props: StyledTabsProps) => (
+        <Tabs
+            {...props}
+            variant="fullWidth"
+            TabIndicatorProps={{
+                children: <span className="MuiTabs-indicatorSpan" />,
+            }}
+        />
+    ))({
+        '& .MuiTabs-indicator': {
+            display: 'flex',
+            justifyContent: 'center',
+            backgroundColor: 'transparent',
+        },
+        '& .MuiTabs-indicatorSpan': {
+            maxWidth: 40,
+            width: '100%',
+            backgroundColor: '#27FB6B', // green
+        },
+    })
+
+    interface StyledTabProps {
+        label: string
+    }
+
+    const StyledTab = styled((props: StyledTabProps) => (
+        <Tab disableRipple {...props} />
+    ))(({ theme }) => ({
+        textTransform: 'none',
+        fontWeight: theme.typography.fontWeightRegular,
+        fontSize: theme.typography.pxToRem(15),
+        marginRight: theme.spacing(1),
+        color: editorForeground,
+        '&.Mui-selected': {
+            color: editorDescForeground,
+        },
+        '&.Mui-focusVisible': {
+            color: foreground,
+        },
+    }))
 
     // incoming messages are created and sent by ViewLoader.ts
     // e.g., ViewLoader's function "public createNewAnno" sends the "newAnno" message
@@ -182,6 +242,8 @@ const AdamitePanel: React.FC<Props> = ({
         setShowNewAnnotation(false)
     }
 
+    console.log(tabVal)
+
     return (
         <React.Fragment>
             {showNewAnnotation ? (
@@ -192,35 +254,52 @@ const AdamitePanel: React.FC<Props> = ({
                 />
             ) : null}
             {!showLogin && (
-                <>
-                    <TopBar
-                        annotations={annotations}
-                        getSearchedAnnotations={getSearchedAnnotations}
-                        saveAnnotationsToJson={saveAnnotationsToJson}
-                        showKeyboardShortcuts={showKeyboardShortcuts}
-                    />
-                    {showSearchedAnnotations &&
-                        searchedAnnotations.map((a) => {
-                            return (
-                                <ReactAnnotation
-                                    annotation={a}
-                                    vscode={vscode}
-                                    window={window}
-                                    userId={uid}
-                                    username={userName}
-                                />
-                            )
-                        })}
-                    <AnnotationList
-                        currentFile={currentFile}
-                        currentProject={currentProject}
-                        annotations={annotations}
-                        vscode={vscode}
-                        window={window}
-                        username={userName}
-                        userId={uid}
-                    />
-                </>
+                <div>
+                    <StyledTabs value={tabVal} onChange={handleTabChange}>
+                        <StyledTab label="Anchored" />
+                        <StyledTab label="Unanchored" />
+                    </StyledTabs>
+                </div>
+                // {(tabVal === 0) ?
+                //   (<AnnotationList
+                //       currentFile={currentFile}
+                //       currentProject={currentProject}
+                //       annotations={annotations}
+                //       vscode={vscode}
+                //       window={window}
+                //       username={userName}
+                //       userId={uid}
+                //   />)
+                // : null}
+                // <>
+                //     <TopBar
+                //         annotations={annotations}
+                //         getSearchedAnnotations={getSearchedAnnotations}
+                //         saveAnnotationsToJson={saveAnnotationsToJson}
+                //         showKeyboardShortcuts={showKeyboardShortcuts}
+                //     />
+                //     {showSearchedAnnotations &&
+                //         searchedAnnotations.map((a) => {
+                //             return (
+                //                 <ReactAnnotation
+                //                     annotation={a}
+                //                     vscode={vscode}
+                //                     window={window}
+                //                     userId={uid}
+                //                     username={userName}
+                //                 />
+                //             )
+                //         })}
+                // <AnnotationList
+                //     currentFile={currentFile}
+                //     currentProject={currentProject}
+                //     annotations={annotations}
+                //     vscode={vscode}
+                //     window={window}
+                //     username={userName}
+                //     userId={uid}
+                // />
+                // </>
             )}
             {showLogin && <LogIn vscode={vscode} />}
         </React.Fragment>

@@ -22,6 +22,7 @@ import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
 import { Tooltip } from '@material-ui/core'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
+import { foreground } from '../../styles/generalStyles'
 interface Props {
     annotationId: string
     userId: string
@@ -60,9 +61,7 @@ const AnnotationOperationButtons: React.FC<Props> = ({
     const computedValue: string = getComputedStyle(
         document.body
     ).getPropertyValue('--vscode-editor-background')
-    const foreground: string = getComputedStyle(document.body).getPropertyValue(
-        '--vscode-button-foreground'
-    )
+
     const theme = createTheme({
         palette: {
             primary: {

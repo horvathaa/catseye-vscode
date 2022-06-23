@@ -11,6 +11,7 @@ import Button from '@mui/material/Button'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import * as React from 'react'
 import { VscMenu } from 'react-icons/vsc'
+import { foreground } from '../../styles/generalStyles'
 
 interface Props {
     saveAnnotationsToJson: () => void
@@ -34,9 +35,6 @@ const GlobalMenu: React.FC<Props> = ({
     const computedValue: string = getComputedStyle(
         document.body
     ).getPropertyValue('--vscode-editor-background')
-    const foreground: string = getComputedStyle(document.body).getPropertyValue(
-        '--vscode-button-foreground'
-    )
 
     // https://mui.com/material-ui/customization/theming/
     const theme = createTheme({

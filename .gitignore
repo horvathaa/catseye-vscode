@@ -26,5 +26,9 @@ dist
 # secrets
 secrets.*.js
 
+# prettier 
+.prettierrc.json
+.prettierignore
+
 # zip
 *.zip

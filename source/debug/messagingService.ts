@@ -1,19 +1,19 @@
 /*
- * 
+ *
  * messagingService.ts
  * Class to facilitate communication between debugAdapter and the Adamite panel
  *
  */
 
-import { Webview } from "vscode";
+import { Webview } from 'vscode'
 export class MessagingService {
-    private currentWebviewTarget: Webview | undefined;
+    private currentWebviewTarget: Webview | undefined
 
     constructor(currentWebviewTarget: Webview | undefined) {
-        this.currentWebviewTarget = currentWebviewTarget;
+        this.currentWebviewTarget = currentWebviewTarget
     }
     public setWebview(webview: Webview) {
-        this.currentWebviewTarget = webview;
+        this.currentWebviewTarget = webview
     }
 
     // Send a message to webview if it exists - refactor into our message sending protocol
@@ -22,13 +22,13 @@ export class MessagingService {
             this.currentWebviewTarget.postMessage({
                 command,
                 state: { ...stateToSend },
-            });
+            })
         }
     }
     public sendStartMessage(e: any) {
-        return;
+        return
     }
     public sendPauseMessage(e: any) {
-        return;
+        return
     }
 }

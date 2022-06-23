@@ -18,6 +18,7 @@ export class Annotation {
     sharedWith: string
     selected: boolean
     needToUpdate: boolean
+    types: Type[]
 
     constructor(
         id: string,
@@ -38,6 +39,7 @@ export class Annotation {
         sharedWith: string,
         selected: boolean,
         needToUpdate: boolean
+        types?: Type[]
     ) {
         this.id = id
         this.annotation = annotation
@@ -80,6 +82,13 @@ export interface AnchorObject {
     anchorId: string
     originalCode: string
     parentId: string
+}
+
+export enum Type {
+	question = "question",
+	task = "task",
+	issue = "issue",
+	proposal = "proposal"
 }
 
 export interface ChangeEvent {

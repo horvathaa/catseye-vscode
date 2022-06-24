@@ -385,29 +385,53 @@ function rangeToOffset(document: vscode.TextDocument, range: vscode.Range) : num
     return document.getText(rangeOffset).length;
 }
 
+interface Scope {
+    type: string
+    name?: string
+    isDirectParent: boolean
+}
+
+interface CatseyeIdentifier {
+    name: string
+    type: string
+    distance: number
+}
+
+interface SurroundingContext {
+    identifiers: CatseyeIdentifier[]
+    scopes: Scope[]
+}
+
 interface CodeContext {
     nodeType: string
     identifierName: string
     identifierType: string
     distanceFromRange: number
+    isDirectParent: boolean
+    originalNode: ts.Node
 }
 
-export const handleDidChangeTextEditorSelection = async (e: vscode.TextEditorSelectionChangeEvent) : Promise<void> => {
-    const { selections, textEditor } = e;
-    const activeSelection = selections[0];
-    const tsSource = tsFiles.find(f => f.localFileName === textEditor.document.fileName);
+export const handleDidChangeTextEditorSelection = async (
+    e: vscode.TextEditorSelectionChangeEvent
+) : Promise<void> => {
+    const { selections, textEditor } = e
+    const activeSelection = selections[0]
+    const tsSource = tsFiles.find(f => f.localFileName === textEditor.document.fileName)
     if(tsSource) {
-        const nodes = getNodes(tsSource.tsSourceFile);
+        const code = tsSource.tsSourceFile.text
+        const nodes = getNodes(tsSource.tsSourceFile)
+        console.log('nodes', nodes);
         const nodeData = nodes.map((n, i) => { 
-            return { node: n, indices: [i], range: nodeToRange(n, tsSource.tsSourceFile.text), children: getNodes(n) } 
+            return { node: n, indices: [i], range: nodeToRange(n, code), children: getNodes(n) } 
         })
-        const parent = nodeData.find(r => r.range.contains(activeSelection));
+        const parent = nodeData.find(r => r.range.contains(activeSelection))
+        console.log('parent', parent)
         if(parent) {
             let root: ts.Node[] = parent.children;
             let path: ts.Node[] = [];
             do {
                 let candidates = root.filter((c: ts.Node) => {
-                    let range = nodeToRange(c, tsSource.tsSourceFile.text)
+                    let range = nodeToRange(c, code)
                     return range.contains(activeSelection)
                 })
                 let candidateNodes: any[] = []
@@ -415,10 +439,12 @@ export const handleDidChangeTextEditorSelection = async (e: vscode.TextEditorSel
                 let flat: ts.Node[] = [].concat(...candidateNodes)
                 path = path.concat(...flat)
                 root = flat
-            } while(root.length);
-            console.log('path to selection', path)
+            } while(root.length)
+            // console.log('path to selection', path)
             let nodeInfo: any[] = []
-            path.forEach((node: ts.Node) => {
+            path.forEach((node: ts.Node, i: number) => {
+                let scope: Scope = { type: "", isDirectParent: false }
+                let ceIdentifier: CatseyeIdentifier = { name: "", type: "", distance: 0 }
                 let info: CodeContext = {
                     nodeType: ts.SyntaxKind[node.kind],
                     identifierName: "",
@@ -426,22 +452,57 @@ export const handleDidChangeTextEditorSelection = async (e: vscode.TextEditorSel
                     distanceFromRange: rangeToOffset(
                         textEditor.document, 
                         activeSelection
-                        ) - node.end
+                        ) - node.end,
+                    isDirectParent: nodeToRange(node, code).contains(activeSelection),
+                    originalNode: node
                 }
                 if(ts.isIdentifier(node)) {
+                    // console.log('identifier node', node)
                     info.identifierName = node.text
                     info.identifierType = ts.SyntaxKind[node.kind]
-                    
+                }
+                else if(ts.isParameter(node)) {
+                    // console.log('parameter node', node)
+                    info.identifierType = ts.SyntaxKind[node.name.kind]
+                    info.identifierName = ts.isIdentifier(node.name) ? node.name.text : ""
+                }
+                else if(ts.isExpressionStatement(node)) {
+                    // console.log('expression node', node)
+                    info.identifierName = ts.isIdentifier(node.expression) ? node.expression.text : ""
+                    info.identifierType = ts.SyntaxKind[node.expression.kind]
+                }
+                else if(ts.isArrowFunction(node)) {
+                    const prevNode = path[i-1];
+                    if(ts.isIdentifier(prevNode)) {
+                        info.identifierName = prevNode.text
+                    }
+                    else {
+                        info.identifierName = ""
+                    }
+                    info.identifierType = ts.SyntaxKind[node.kind]
+                }
+                else if(ts.isFunctionDeclaration(node)) {
+                    info.identifierType = ts.SyntaxKind[node.kind]
+                    info.identifierName = node.name?.text ? node.name?.text : "" 
+                }
+                else if(ts.isIfStatement(node) || ts.isSwitchStatement(node)) {
+                    console.log(ts.SyntaxKind[node.expression.kind])
+                    if(ts.isBinaryExpression(node.expression)) {
+                        console.log('lol left', ts.SyntaxKind[node.expression.left.kind])
+                        // info.identifierName = node.expression.left.
+                    }
                 }
                 nodeInfo.push(info)
                 // else if(ts.is)
             })
+            console.log('path to selection', path)
             console.log('nodeInfo', nodeInfo)
             console.log('kinds', path.map(n => ts.SyntaxKind[n.kind]))
-            const identifierNodes: ts.Node[] = path.filter((node: ts.Node) => { 
-                return ts.isIdentifier(node)
-            })
-            console.log('identifier', identifierNodes);
+            console.log('direct parents?', nodeInfo.filter(n => n.isDirectParent))
+            // const identifierNodes: ts.Node[] = path.filter((node: ts.Node) => { 
+            //     return ts.isIdentifier(node)
+            // })
+            // console.log('identifier', identifierNodes);
         }
 
     }

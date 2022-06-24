@@ -380,6 +380,18 @@ function posToLine(scode: string, pos: number) {
     return new vscode.Position(code.length - 1, code[code.length - 1].length);
 }
 
+function rangeToOffset(document: vscode.TextDocument, range: vscode.Range) : number {
+    const rangeOffset = new vscode.Range(0, 0, range.start.line, range.start.character);
+    return document.getText(rangeOffset).length;
+}
+
+interface CodeContext {
+    nodeType: string
+    identifierName: string
+    identifierType: string
+    distanceFromRange: number
+}
+
 export const handleDidChangeTextEditorSelection = async (e: vscode.TextEditorSelectionChangeEvent) : Promise<void> => {
     const { selections, textEditor } = e;
     const activeSelection = selections[0];
@@ -395,24 +407,41 @@ export const handleDidChangeTextEditorSelection = async (e: vscode.TextEditorSel
             let path: ts.Node[] = [];
             do {
                 let candidates = root.filter((c: ts.Node) => {
-                    let range = nodeToRange(c, tsSource.tsSourceFile.text);
+                    let range = nodeToRange(c, tsSource.tsSourceFile.text)
                     return range.contains(activeSelection)
-                });
+                })
                 let candidateNodes: any[] = []
                 candidates.forEach((c: any) => candidateNodes.push(getNodes(c)))
-                let flat: ts.Node[] = [].concat(...candidateNodes);
-                path = path.concat(...flat);
-                root = flat;
+                let flat: ts.Node[] = [].concat(...candidateNodes)
+                path = path.concat(...flat)
+                root = flat
             } while(root.length);
-            console.log('path to selection', path);
-            
-            const textInNodes = path.map((t: ts.Node) => { 
-                
-                console.log(typeof(t));
-                // if(t.){
-
-                // }
+            console.log('path to selection', path)
+            let nodeInfo: any[] = []
+            path.forEach((node: ts.Node) => {
+                let info: CodeContext = {
+                    nodeType: ts.SyntaxKind[node.kind],
+                    identifierName: "",
+                    identifierType: "",
+                    distanceFromRange: rangeToOffset(
+                        textEditor.document, 
+                        activeSelection
+                        ) - node.end
+                }
+                if(ts.isIdentifier(node)) {
+                    info.identifierName = node.text
+                    info.identifierType = ts.SyntaxKind[node.kind]
+                    
+                }
+                nodeInfo.push(info)
+                // else if(ts.is)
             })
+            console.log('nodeInfo', nodeInfo)
+            console.log('kinds', path.map(n => ts.SyntaxKind[n.kind]))
+            const identifierNodes: ts.Node[] = path.filter((node: ts.Node) => { 
+                return ts.isIdentifier(node)
+            })
+            console.log('identifier', identifierNodes);
         }
 
     }

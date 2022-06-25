@@ -50,9 +50,9 @@ const AnnotationList: React.FC<AnnoListProps> = ({
 }) => {
     const [openPinned, setOpenPinned] = useState(false)
     const [openCurrProj, setCurrProj] = useState(false)
-    const [pinnedAnno, setPinnedAnno] = useState(null)
-    const [fileAnno, setFileAnno] = useState(null)
-    const [projAnno, setProjAnno] = useState(null)
+    const [pinnedAnno, setPinnedAnno] = useState<any[]>([])
+    const [fileAnno, setFileAnno] = useState<any[]>([])
+    const [projAnno, setProjAnno] = useState<any[]>([])
 
     const handlePinClick = () => {
         setOpenPinned(!openPinned)
@@ -142,10 +142,10 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                             <PushPinIcon />
                         </ListItemIcon>
                         <ListItemText primary="Pinned" />
-                        {openPinned ? <ExpandLess /> : <ExpandMore />}
+                        {openPinned ? <ExpandMore /> : <ExpandLess /> }
                     </ListItemButton>
                     <Collapse in={openPinned} timeout="auto" unmountOnExit>
-                        {pinnedAnno !== null &&
+                        {pinnedAnno.length &&
                             pinnedAnno.map((a: Annotation) => {
                                 return (
                                     <ReactAnnotation
@@ -159,7 +159,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                                 )
                             })}
                     </Collapse>
-                    {fileAnno !== null &&
+                    {fileAnno.length &&
                         fileAnno.map((a: Annotation) => {
                             return (
                                 <ReactAnnotation
@@ -180,7 +180,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                         {openCurrProj ? <ExpandLess /> : <ExpandMore />}
                     </ListItemButton>
                     <Collapse in={openCurrProj} timeout="auto" unmountOnExit>
-                        {projAnno !== null &&
+                        {projAnno.length &&
                             projAnno.map((a: Annotation) => {
                                 return (
                                     <ReactAnnotation

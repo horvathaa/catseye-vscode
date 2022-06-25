@@ -96,6 +96,7 @@ export const setInsertSpaces = (newInsertSpaces: boolean | string): void => {
 
 export const setAnnotationList = (newAnnotationList: Annotation[]): void => {
     annotationList = newAnnotationList
+    console.log(annotationList)
 }
 
 export const setCopiedAnnotationList = (

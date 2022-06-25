@@ -20,8 +20,6 @@ import Tab from '@mui/material/Tab'
 import { styled } from '@mui/material/styles'
 import {
     vscodeTextColor,
-    editorForeground,
-    editorDescForeground,
     vscodeDisableTextColor,
     vscodeBorderColor,
 } from './styles/vscodeStyles'
@@ -89,7 +87,7 @@ const AdamitePanel: React.FC<Props> = ({
         '& .MuiTabs-indicatorSpan': {
             maxWidth: 40,
             width: '100%',
-            backgroundColor: vscodeBorderColor, // green
+            backgroundColor: vscodeBorderColor,
         },
     })
 

@@ -85,6 +85,7 @@ export interface AnchorObject {
     anchorId: string
     originalCode: string
     parentId: string
+    //add annotation field, ridding of multiple anchors
 }
 
 export enum Type {

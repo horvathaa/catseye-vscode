@@ -22,6 +22,12 @@ import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
 import { Tooltip } from '@material-ui/core'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
+import {
+    vscodeTextColor,
+    editorBackground,
+    hoverBackground,
+} from '../../styles/vscodeStyles'
+
 interface Props {
     annotationId: string
     userId: string
@@ -57,22 +63,17 @@ const AnnotationOperationButtons: React.FC<Props> = ({
         event.stopPropagation()
         setAnchorEl(null)
     }
-    const computedValue: string = getComputedStyle(
-        document.body
-    ).getPropertyValue('--vscode-editor-background')
-    const foreground: string = getComputedStyle(document.body).getPropertyValue(
-        '--vscode-button-foreground'
-    )
+
     const theme = createTheme({
         palette: {
             primary: {
-                main: `${computedValue}`,
+                main: `${editorBackground}`,
             },
         },
         typography: {
             allVariants: {
                 fontSize: 12,
-                color: `${foreground}`,
+                color: `${vscodeTextColor}`,
                 fontFamily: 'Arial',
             },
         },
@@ -89,10 +90,9 @@ const AnnotationOperationButtons: React.FC<Props> = ({
             MuiMenuItem: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: 'var(--vscode-editor-background)',
+                        backgroundColor: editorBackground,
                         '&:hover': {
-                            background:
-                                'var(--vscode-button-secondaryHoverBackground)',
+                            background: hoverBackground,
                         },
                     },
                 },
@@ -100,7 +100,7 @@ const AnnotationOperationButtons: React.FC<Props> = ({
             MuiList: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: 'var(--vscode-editor-background)',
+                        backgroundColor: editorBackground,
                     },
                 },
             },

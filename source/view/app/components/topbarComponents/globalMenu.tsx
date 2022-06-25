@@ -11,6 +11,11 @@ import Button from '@mui/material/Button'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import * as React from 'react'
 import { VscMenu } from 'react-icons/vsc'
+import {
+    editorBackground,
+    vscodeTextColor,
+    hoverBackground,
+} from '../../styles/vscodeStyles'
 
 interface Props {
     saveAnnotationsToJson: () => void
@@ -31,24 +36,18 @@ const GlobalMenu: React.FC<Props> = ({
         event.stopPropagation()
         setAnchorEl(null)
     }
-    const computedValue: string = getComputedStyle(
-        document.body
-    ).getPropertyValue('--vscode-editor-background')
-    const foreground: string = getComputedStyle(document.body).getPropertyValue(
-        '--vscode-button-foreground'
-    )
 
     // https://mui.com/material-ui/customization/theming/
     const theme = createTheme({
         palette: {
             primary: {
-                main: `${computedValue}`,
+                main: `${editorBackground}`,
             },
         },
         typography: {
             allVariants: {
                 fontSize: 12,
-                color: `${foreground}`,
+                color: `${vscodeTextColor}`,
                 fontFamily: 'Arial',
             },
         },
@@ -65,10 +64,9 @@ const GlobalMenu: React.FC<Props> = ({
             MuiMenuItem: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: 'var(--vscode-editor-background)',
+                        backgroundColor: editorBackground,
                         '&:hover': {
-                            background:
-                                'var(--vscode-button-secondaryHoverBackground)',
+                            background: hoverBackground,
                         },
                     },
                 },
@@ -76,7 +74,7 @@ const GlobalMenu: React.FC<Props> = ({
             MuiList: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: 'var(--vscode-editor-background)',
+                        backgroundColor: editorBackground,
                     },
                 },
             },

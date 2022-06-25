@@ -19,10 +19,12 @@ import Tabs from '@mui/material/Tabs'
 import Tab from '@mui/material/Tab'
 import { styled } from '@mui/material/styles'
 import {
-    foreground,
+    vscodeTextColor,
     editorForeground,
     editorDescForeground,
-} from './styles/generalStyles'
+    vscodeDisableTextColor,
+    vscodeBorderColor,
+} from './styles/vscodeStyles'
 
 interface Props {
     vscode: any
@@ -87,7 +89,7 @@ const AdamitePanel: React.FC<Props> = ({
         '& .MuiTabs-indicatorSpan': {
             maxWidth: 40,
             width: '100%',
-            backgroundColor: '#27FB6B', // green
+            backgroundColor: vscodeBorderColor, // green
         },
     })
 
@@ -102,12 +104,12 @@ const AdamitePanel: React.FC<Props> = ({
         fontWeight: theme.typography.fontWeightRegular,
         fontSize: theme.typography.pxToRem(15),
         marginRight: theme.spacing(1),
-        color: editorForeground,
+        color: vscodeDisableTextColor,
         '&.Mui-selected': {
-            color: editorDescForeground,
+            color: vscodeTextColor,
         },
         '&.Mui-focusVisible': {
-            color: foreground,
+            color: vscodeTextColor,
         },
     }))
 
@@ -129,7 +131,7 @@ const AdamitePanel: React.FC<Props> = ({
                     setCurrentProject(message.payload.currentProject)
                 if (message.payload.currentUser)
                     setUserId(message.payload.currentUser)
-                console.log('message', message)
+                // console.log('message', message)
                 return
             case 'newAnno':
                 setSelection(message.payload.selection)
@@ -242,8 +244,6 @@ const AdamitePanel: React.FC<Props> = ({
         setShowNewAnnotation(false)
     }
 
-    console.log(tabVal)
-
     return (
         <React.Fragment>
             {showNewAnnotation ? (
@@ -260,17 +260,6 @@ const AdamitePanel: React.FC<Props> = ({
                         <StyledTab label="Unanchored" />
                     </StyledTabs>
                 </div>
-                // {(tabVal === 0) ?
-                //   (<AnnotationList
-                //       currentFile={currentFile}
-                //       currentProject={currentProject}
-                //       annotations={annotations}
-                //       vscode={vscode}
-                //       window={window}
-                //       username={userName}
-                //       userId={uid}
-                //   />)
-                // : null}
                 // <>
                 //     <TopBar
                 //         annotations={annotations}
@@ -300,6 +289,19 @@ const AdamitePanel: React.FC<Props> = ({
                 //     userId={uid}
                 // />
                 // </>
+            )}
+            {tabVal === 0 ? (
+                <AnnotationList
+                    currentFile={currentFile}
+                    currentProject={currentProject}
+                    annotations={annotations}
+                    vscode={vscode}
+                    window={window}
+                    username={userName}
+                    userId={uid}
+                />
+            ) : (
+                'No annotations'
             )}
             {showLogin && <LogIn vscode={vscode} />}
         </React.Fragment>

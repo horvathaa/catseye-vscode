@@ -13,6 +13,7 @@ import {
     AnchorObject,
     Reply,
     Snapshot,
+    Type,
 } from '../../../constants/constants'
 import AnnotationOperationButtons from './annotationComponents/annotationOperationButtons'
 import AnchorList from './annotationComponents/anchorList'
@@ -21,6 +22,7 @@ import UserProfile from './annotationComponents/userProfile'
 import ReplyContainer from './annotationComponents/replyContainer'
 import Outputs from './annotationComponents/outputs'
 import Snapshots from './annotationComponents/snapshots'
+import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
 interface Props {
     annotation: Annotation
     vscode: any
@@ -262,6 +264,22 @@ const ReactAnnotation: React.FC<Props> = ({
         })
     }
 
+    const updateAnnotationTypes = (types: Type[]): void => {
+        const updatedTypes = types
+        const newAnno: Annotation = buildAnnotation({
+            ...anno,
+            type: updatedTypes,
+        })
+        setAnno(newAnno)
+        annoRef.current = newAnno
+        vscode.postMessage({
+            command: 'updateAnnotation',
+            annoId: anno.id,
+            key: 'types',
+            value: updatedTypes,
+        })
+    }
+
     const updateContent = (
         newAnnoContent: string,
         shareWith: string | undefined
@@ -300,6 +318,7 @@ const ReactAnnotation: React.FC<Props> = ({
                         [styles.AnnotationContainer]: true,
                     })}
                 >
+
                     <div className={styles['topRow']}>
                         <UserProfile
                             githubUsername={anno.githubUsername}

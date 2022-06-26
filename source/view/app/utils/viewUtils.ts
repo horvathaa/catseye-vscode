@@ -85,7 +85,8 @@ export const buildAnnotation = (
         annoObj['codeSnapshots'],
         annoObj['sharedWith'],
         annoObj['selected'],
-        annoObj['needToUpdate']
+        annoObj['needToUpdate'],
+        annoObj['types']
     )
 }
 

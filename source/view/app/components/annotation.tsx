@@ -318,7 +318,6 @@ const ReactAnnotation: React.FC<Props> = ({
                         [styles.AnnotationContainer]: true,
                     })}
                 >
-
                     <div className={styles['topRow']}>
                         <UserProfile
                             githubUsername={anno.githubUsername}

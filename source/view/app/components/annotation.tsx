@@ -23,7 +23,7 @@ import Outputs from './annotationComponents/outputs'
 import ReplyIcon from '@mui/icons-material/Reply'
 import Snapshots from './annotationComponents/snapshots'
 import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
-import { Card, CardContent, Collapse } from '@material-ui/core'
+import { Box, Card, CardContent, Collapse } from '@material-ui/core'
 import {
     editorBackground,
     iconColor,
@@ -362,9 +362,6 @@ const ReactAnnotation: React.FC<Props> = ({
     return (
         <>
             <ThemeProvider theme={theme}>
-                <Box>
-
-
                 <Card style={cardStyle}>
                     <CollapsedCardHeader
                         expanded={expanded}

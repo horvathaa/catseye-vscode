@@ -141,7 +141,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     }
 
     return (
-        <div style={{ width: 400 }}>
+        <>
             <ThemeProvider theme={theme}>
                 <List sx={{ width: '100%' }} component="div" disablePadding>
                     <ListItemButton onClick={handlePinClick}>
@@ -218,7 +218,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                     </Collapse>
                 </List>
             </ThemeProvider>
-        </div>
+        </>
     )
 }
 

@@ -9,6 +9,7 @@ import { Annotation } from '../../../constants/constants'
 import {
     // getAllAnnotationFilenames,
     getAllAnnotationStableGitUrls,
+    sortAnnotationsByLocation,
 } from '../utils/viewUtils'
 import ReactAnnotation from '../components/annotation'
 import * as React from 'react'
@@ -28,6 +29,8 @@ import {
 } from '../styles/vscodeStyles'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { useState } from 'react'
+import styles from '../styles/annotation.module.css'
+import { Typography } from '@material-ui/core'
 
 interface AnnoListProps {
     annotations: Annotation[]
@@ -49,13 +52,17 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     userId,
 }) => {
     const [openPinned, setOpenPinned] = useState(false)
+    const [openFile, setOpenFile] = useState(true)
     const [openCurrProj, setCurrProj] = useState(false)
-    const [pinnedAnno, setPinnedAnno] = useState<any[]>([])
-    const [fileAnno, setFileAnno] = useState<any[]>([])
-    const [projAnno, setProjAnno] = useState<any[]>([])
+    const [pinnedAnno, setPinnedAnno] = useState<Annotation[]>([])
+    const [fileAnno, setFileAnno] = useState<Annotation[]>([])
+    const [projAnno, setProjAnno] = useState<Annotation[]>([])
 
     const handlePinClick = () => {
         setOpenPinned(!openPinned)
+    }
+    const handleFileClick = () => {
+        setOpenFile(!openFile)
     }
     const handleCurrProjClick = () => {
         setCurrProj(!openCurrProj)
@@ -134,9 +141,9 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     }
 
     return (
-        <>
+        <div style={{ width: 400 }}>
             <ThemeProvider theme={theme}>
-                <List sx={{ width: '100%' }} component="nav">
+                <List sx={{ width: '100%' }} component="div" disablePadding>
                     <ListItemButton onClick={handlePinClick}>
                         <ListItemIcon>
                             <PushPinIcon />
@@ -159,19 +166,34 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                                 )
                             })}
                     </Collapse>
-                    {fileAnno.length > 0 &&
-                        fileAnno.map((a: Annotation) => {
-                            return (
-                                <ReactAnnotation
-                                    key={'annotationList-tsx-' + a.id}
-                                    annotation={a}
-                                    vscode={vscode}
-                                    window={window}
-                                    username={username}
-                                    userId={userId}
-                                />
-                            )
-                        })}
+                </List>
+                <List sx={{ width: '100%' }} component="div" disablePadding>
+                    <ListItemButton onClick={handleFileClick}>
+                        <ListItemIcon>
+                            <PushPinIcon />
+                        </ListItemIcon>
+                        <ListItemText primary="Current File" />
+                        {openFile ? <ExpandLess /> : <ExpandMore />}
+                    </ListItemButton>
+                    <Collapse in={openFile} timeout="auto" unmountOnExit>
+                        {fileAnno.length > 0 &&
+                            sortAnnotationsByLocation(fileAnno).map(
+                                (a: Annotation) => {
+                                    return (
+                                        <ReactAnnotation
+                                            key={'annotationList-tsx-' + a.id}
+                                            annotation={a}
+                                            vscode={vscode}
+                                            window={window}
+                                            username={username}
+                                            userId={userId}
+                                        />
+                                    )
+                                }
+                            )}
+                    </Collapse>
+                </List>
+                <List sx={{ width: '100%' }} component="div" disablePadding>
                     <ListItemButton onClick={handleCurrProjClick}>
                         <ListItemIcon>
                             <AccountTreeIcon />
@@ -196,7 +218,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                     </Collapse>
                 </List>
             </ThemeProvider>
-        </>
+        </div>
     )
 }
 

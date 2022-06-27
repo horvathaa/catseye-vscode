@@ -18,11 +18,21 @@ import {
 import AnnotationOperationButtons from './annotationComponents/annotationOperationButtons'
 import AnchorList from './annotationComponents/anchorList'
 import TextEditor from './annotationComponents/textEditor'
-import UserProfile from './annotationComponents/userProfile'
 import ReplyContainer from './annotationComponents/replyContainer'
 import Outputs from './annotationComponents/outputs'
+import ReplyIcon from '@mui/icons-material/Reply'
 import Snapshots from './annotationComponents/snapshots'
 import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
+import { Card, CardContent, Collapse } from '@material-ui/core'
+import {
+    editorBackground,
+    iconColor,
+    vscodeTextColor,
+} from '../styles/vscodeStyles'
+import { ThemeProvider, createTheme } from '@mui/material/styles'
+import CollapsedCardHeader from './annotationComponents/annotationCardHeader'
+import EditIcon from '@mui/icons-material/Edit'
+
 interface Props {
     annotation: Annotation
     vscode: any
@@ -39,10 +49,55 @@ const ReactAnnotation: React.FC<Props> = ({
     userId,
 }) => {
     const [anno, setAnno] = React.useState<Annotation>(annotation)
+    const [expanded, setExpanded] = React.useState(false)
     const [edit, setEdit] = React.useState<boolean>(false)
     const [replying, setReplying] = React.useState<boolean>(false)
+    const [anchored, setAnchored] = React.useState(true) // change later
 
     const annoRef: React.MutableRefObject<Annotation> = React.useRef(anno)
+
+    // MUI doesn't accept CSS version of this for some reason..?
+    const cardStyle = {
+        backgroundColor: editorBackground,
+        color: vscodeTextColor,
+        margin: 10,
+        border: '1.5px',
+        borderColor: iconColor,
+        borderRadius: '10px',
+        borderStyle: 'solid',
+        padding: 5,
+    }
+    const theme = createTheme({
+        palette: {
+            primary: {
+                main: `${editorBackground}`,
+            },
+            background: {
+                paper: `${editorBackground}`,
+            },
+        },
+        typography: {
+            allVariants: {
+                fontSize: 14,
+                color: `${vscodeTextColor}`,
+                fontFamily: 'Arial',
+            },
+        },
+        components: {
+            MuiIconButton: {
+                styleOverrides: {
+                    root: {
+                        backgroundColor: editorBackground,
+                        color: iconColor,
+                    },
+                },
+            },
+        },
+    })
+
+    const handleExpandClick = () => {
+        setExpanded(!expanded)
+    }
 
     const handleIncomingMessages = (e: MessageEvent<any>) => {
         const message = e.data
@@ -305,8 +360,88 @@ const ReactAnnotation: React.FC<Props> = ({
     }
 
     return (
-        <React.Fragment>
-            <div
+        <>
+            <ThemeProvider theme={theme}>
+                <Box>
+
+
+                <Card style={cardStyle}>
+                    <CollapsedCardHeader
+                        expanded={expanded}
+                        setExpanded={setExpanded}
+                        anchored={anchored}
+                        anno={anno}
+                    />
+                    <Collapse in={expanded} timeout="auto" unmountOnExit>
+                        <CardContent>
+                            <AnchorList
+                                anchors={anno.anchors}
+                                snapshotCode={snapshotCode}
+                                scrollInEditor={scrollInEditor}
+                            />
+                            <AnnotationTypesBar
+                                currentTypes={anno.types}
+                                editTypes={updateAnnotationTypes}
+                            />
+                            <div className={styles['ContentContainer']}>
+                                {edit ? (
+                                    <TextEditor
+                                        content={anno.annotation}
+                                        submissionHandler={updateContent}
+                                        cancelHandler={cancelAnnotation}
+                                        showSplitButton={true}
+                                    />
+                                ) : (
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            flexDirection: 'row',
+                                            justifyContent: 'space-between',
+                                        }}
+                                    >
+                                        `${anno.annotation}`
+                                        <div>
+                                            <EditIcon
+                                                onClick={(
+                                                    e: React.SyntheticEvent
+                                                ) => {
+                                                    e.stopPropagation()
+                                                    setEdit(!edit)
+                                                }}
+                                            />
+                                            <ReplyIcon
+                                                onClick={(
+                                                    e: React.SyntheticEvent
+                                                ) => {
+                                                    e.stopPropagation()
+                                                    setReplying(!replying)
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            {replying === true || anno.replies.length ? (
+                                <ReplyContainer
+                                    replying={replying}
+                                    replies={anno.replies}
+                                    username={username}
+                                    userId={userId}
+                                    submitReply={submitReply}
+                                    cancelReply={() => setReplying(false)}
+                                    deleteReply={deleteReply}
+                                />
+                            ) : null}
+                        </CardContent>
+                    </Collapse>
+                </Card>
+            </ThemeProvider>
+        </>
+    )
+}
+
+{
+    /* <div
                 key={'annotation-container' + annotation.id}
                 className={styles['Pad']}
             >
@@ -377,9 +512,6 @@ const ReactAnnotation: React.FC<Props> = ({
                         deleteReply={deleteReply}
                     />
                 </li>
-            </div>
-        </React.Fragment>
-    )
+            </div> */
 }
-
 export default ReactAnnotation

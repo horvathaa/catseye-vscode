@@ -14,19 +14,18 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
     const allTypes = Object.values(Type)
     const [types, setTypes] = React.useState<Type[]>(currentTypes)
 
-    const handleAnnoClick = (selectedType: Type) => () => {
+    const handleAnnoClick = (selectedType: Type) => {
         let updatedTypes: Type[]
         if (types.includes(selectedType)) {
             updatedTypes = types.filter((obj) => obj !== selectedType)
-            console.log('deleting', types)
         } else {
             types.push(selectedType)
             updatedTypes = types
-            console.log('adding', types)
         }
         setTypes(updatedTypes)
         editTypes(types)
     }
+
     return (
         <div>
             {allTypes.map((type: Type, id) => {
@@ -35,7 +34,8 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
                         key={id}
                         label={type}
                         variant={types.includes(type) ? 'default' : 'outlined'}
-                        onClick={handleAnnoClick(type)}
+                        clickable
+                        onClick={() => handleAnnoClick(type)}
                     />
                 )
             })}

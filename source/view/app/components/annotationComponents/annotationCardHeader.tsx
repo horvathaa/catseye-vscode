@@ -10,11 +10,12 @@ import UserProfile from './userProfile'
 
 interface Props {
     expanded: boolean
+    setExpanded: (e: boolean) => void
     anchored: boolean
     anno: Annotation
 }
 
-const CardHeader = ({ expanded, anchored, anno }: Props) => {
+const CardHeader = ({ expanded, setExpanded, anchored, anno }: Props) => {
     const handleMenuClick = () => {}
     return (
         <div
@@ -23,6 +24,7 @@ const CardHeader = ({ expanded, anchored, anno }: Props) => {
                 flexDirection: 'row',
                 justifyContent: 'space-between',
             }}
+            onClick={() => setExpanded(!expanded)}
         >
             {expanded === false ? (
                 <div>

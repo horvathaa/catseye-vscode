@@ -10,16 +10,13 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode'
 import firebase from './firebase/firebase'
-import { 
-	Annotation, 
-	ChangeEvent, 
-	TsFile 
-} from './constants/constants'
+import { Annotation, ChangeEvent, TsFile } from './constants/constants'
 import * as commands from './commands/commands'
 import * as eventHandlers from './listeners/listeners'
 import * as utils from './utils/utils'
 import * as debug from './debug/debug'
 import ViewLoader from './view/ViewLoader'
+import { AstHelper } from './astHelper/astHelper'
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports
 export const gitApi = gitExtension?.getAPI(1)
 // console.log('gitApi', gitApi);
@@ -46,7 +43,8 @@ export let currentGitHubProject: string = '' // also need to add call to update 
 export let currentGitHubCommit: string = ''
 export let changes: ChangeEvent[] = []
 export let numChangeEventsCompleted = 0
-export let tsFiles: TsFile[] = [];
+export let tsFiles: TsFile[] = []
+export let astHelper: AstHelper = new AstHelper()
 
 export const annotationDecorations =
     vscode.window.createTextEditorDecorationType({
@@ -69,34 +67,11 @@ export const annotationDecorations =
         rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
     })
 
-	export const floatingDecorations = 
-		vscode.window.createTextEditorDecorationType({
-			backgroundColor: undefined,
-			opacity: undefined,
-			isWholeLine: undefined,
-			// gutterIconPath: vscode.Uri.file(path.join(, 'source/constants/Adamite.png')),
-			gutterIconSize: undefined,
-			overviewRulerLane: vscode.OverviewRulerLane.Center,
-			overviewRulerColor: undefined,
-			after: {
-				// backgroundColor: 'white',
-				// color: 'black',
-				contentText: "🍀",
-				fontWeight: 'normal',
-				fontStyle: 'normal',
-				// Pull the decoration out of the document flow if we want to be scrollable
-				textDecoration: `none;''  position: absolute;'`,
-			},
-			// before: {
-			// 	backgroundColor: 'white',
-			// 	color: 'black',
-			// 	contentText: "BEFORETEST!!!",
-			// 	fontWeight: 'normal',
-			// 	fontStyle: 'normal',
-			// 	// Pull the decoration out of the document flow if we want to be scrollable
-			// 	textDecoration: `none;''  position: absolute;'`,
-			// }	
-	})
+export const floatingDecorations = vscode.window.createTextEditorDecorationType(
+    {
+        overviewRulerLane: vscode.OverviewRulerLane.Center,
+    }
+)
 
 export const setActiveEditor = (
     newActiveEditor: vscode.TextEditor | undefined
@@ -179,12 +154,12 @@ export const setSelectedAnnotationsNavigations = (
     selectedAnnotationsNavigations = newSelectedAnnotationsNavigationList
 }
 
-export const setTsFiles = (newTsFiles: TsFile[]) : void => {
-	tsFiles = newTsFiles;
+export const setTsFiles = (newTsFiles: TsFile[]): void => {
+    tsFiles = newTsFiles
 }
 
-export const setChangeEvents = (newChangeEvents: ChangeEvent[]) : void => {
-	changes = newChangeEvents;
+export const setChangeEvents = (newChangeEvents: ChangeEvent[]): void => {
+    changes = newChangeEvents
 }
 
 export const incrementNumChangeEventsCompleted = (): void => {
@@ -197,6 +172,8 @@ export function activate(context: vscode.ExtensionContext) {
     adamiteLog.appendLine('Starting activate')
     // initialize authentication and listeners for annotations
     commands.init()
+    vscode.window.activeTextEditor &&
+        astHelper.addSourceFile(vscode.window.activeTextEditor.document)
 
     /*************************************************************************************/
     /******************************** EXTENSION LISTENERS  *******************************/
@@ -210,10 +187,10 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.onDidChangeActiveTextEditor(
             eventHandlers.handleChangeActiveTextEditor
         )
-	let didChangeTextEditorSelectionDisposable = 
-		vscode.window.onDidChangeTextEditorSelection(
-			eventHandlers.handleDidChangeTextEditorSelection
-		)
+    let didChangeTextEditorSelectionDisposable =
+        vscode.window.onDidChangeTextEditorSelection(
+            eventHandlers.handleDidChangeTextEditorSelection
+        )
     let didChangeActiveColorTheme = vscode.window.onDidChangeActiveColorTheme(
         eventHandlers.handleDidChangeActiveColorTheme
     )
@@ -285,7 +262,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(didChangeVisibleListenerDisposable)
     context.subscriptions.push(didChangeActiveEditorListenerDisposable)
-	context.subscriptions.push(didChangeTextEditorSelectionDisposable)
+    context.subscriptions.push(didChangeTextEditorSelectionDisposable)
     context.subscriptions.push(didChangeActiveColorTheme)
     context.subscriptions.push(didSaveListenerDisposable)
     context.subscriptions.push(didCloseListenerDisposable)

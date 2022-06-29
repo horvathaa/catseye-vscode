@@ -10,7 +10,9 @@ import {
 import {
     CodeContext,
     generatePath,
+    getNodes,
     handleNodeDataExtraction,
+    nodeToRange,
 } from './nodeHelper'
 import { createRangeFromAnchorObject } from '../anchorFunctions/anchor'
 import { annotationList } from '../extension'
@@ -202,6 +204,26 @@ export class AstHelper {
             ]
         } else {
             this.addSourceFile(document)
+        }
+    }
+
+    public findMostSimilarPath(
+        document: vscode.TextDocument,
+        path: CodeContext[]
+    ) {
+        this.refreshFile(document)
+        let source = this.findSourceFile(document)
+        if (source) {
+            const code = source.tsSourceFile.text
+            const nodes = getNodes(source.tsSourceFile)
+            const nodeData = nodes.map((n: ts.Node) => {
+                return {
+                    node: n,
+                    range: nodeToRange(n, code),
+                    children: getNodes(n),
+                    kind: ts.SyntaxKind[n.kind],
+                }
+            })
         }
     }
 }

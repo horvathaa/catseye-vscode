@@ -14,7 +14,7 @@ function posToLine(scode: string, pos: number) {
     return new vscode.Position(code.length - 1, code[code.length - 1].length)
 }
 
-function nodeToRange(node: ts.Node, code: string): vscode.Range {
+export function nodeToRange(node: ts.Node, code: string): vscode.Range {
     return new vscode.Range(
         posToLine(code, node.pos),
         posToLine(code, node.end)
@@ -77,7 +77,19 @@ export function handleNodeDataExtraction(
         parameters: '',
     }
     // console.log('is interface', ts.isInterfaceDeclaration(node))
+    info = addTsMetadata(info, node, code, document, path, i, activeSelection)
+    return info
+}
 
+export function addTsMetadata(
+    info: CodeContext,
+    node: ts.Node,
+    code: string,
+    document: vscode.TextDocument,
+    path: ts.Node[],
+    i: number,
+    activeSelection?: vscode.Range
+): CodeContext {
     if (ts.isArrowFunction(node)) {
         const prevNode = path[i - 1]
         if (ts.isIdentifier(prevNode)) {
@@ -212,16 +224,18 @@ export function handleNodeDataExtraction(
             : document.getText(nodeToRange(node, code)).trim()
         info.identifierType = ts.SyntaxKind[node.expression.kind]
     } else if (ts.isArrayLiteralExpression(node)) {
-        info.array = node.elements.map((e) =>
-            handleNodeDataExtraction(
-                e,
-                document,
-                activeSelection,
-                path,
-                code,
-                i
+        info.array =
+            activeSelection &&
+            node.elements.map((e) =>
+                handleNodeDataExtraction(
+                    e,
+                    document,
+                    activeSelection,
+                    path,
+                    code,
+                    i
+                )
             )
-        )
     }
 
     return info

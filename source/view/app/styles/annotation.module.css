@@ -286,11 +286,18 @@
 
 .textboxContainer {
     display: block;
-    border-radius: 8px;
-    border: 1px solid #d3d3d359;
+    /* border-radius: 8px;
+    border: 2px solid rgb(239 255 201 / 20%); */
     padding: 8px;
     margin-top: 4px;
     margin-bottom: 4px;
+}
+
+.AnchorDescription {
+    display: flex;
+    width: 100%;
+    justify-content: flex-end;
+    color: #cccccc70;
 }
 
 .textbox {
@@ -357,8 +364,8 @@
 }
 
 .AnchorContainer {
-    border: 0.25px solid rgb(239 255 201 / 20%);
-    padding: 2px 0px 2px 4px;
+    border: 2px solid rgb(239 255 201 / 20%);
+    padding: 8px 4px 0px 10px;
     border-radius: 4px;
     overflow: scroll;
     box-shadow: none;
@@ -367,7 +374,7 @@
 }
 
 .AnchorContainer:hover {
-    box-shadow: 1px 1px 8px 1px #dcdcdc;
+    box-shadow: 0.5px 0.5px 5px 0.5px #dcdcdc;
 }
 
 .LocationWrapper {
@@ -408,6 +415,9 @@
 }
 
 .ContentContainer {
+    margin: 10px 0px;
+    border: 2px solid rgb(239 255 201 / 20%);
+    border-radius: 4px;
     font-family: var(--vscode-font-family);
     overflow-wrap: anywhere;
     font-size: 1.138em;
@@ -487,4 +497,10 @@ button.cancel {
 
 button.cancel:hover {
     filter: brightness(1);
+}
+
+mark {
+    background-color: #93c0ff39;
+    color: var(--vscode-foreground);
+    font-family: 'Courier New';
 }

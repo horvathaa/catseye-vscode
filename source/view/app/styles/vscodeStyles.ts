@@ -31,3 +31,11 @@ export const iconColor: string = getComputedStyle(
 export const vscodeBorderColor: string = getComputedStyle(
     document.body
 ).getPropertyValue('--vscode-focusBorder')
+
+export const hoverText: string = getComputedStyle(
+    document.body
+).getPropertyValue('--vscode-input-foreground')
+
+export const codeColor: string = getComputedStyle(
+    document.body
+).getPropertyValue('--vscode-input-foreground')

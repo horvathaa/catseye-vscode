@@ -4,6 +4,7 @@ interface CssExports {
   'AnchorBox': string;
   'AnchorButtonContainer': string;
   'AnchorContainer': string;
+  'AnchorDescription': string;
   'AnchorListButtonContainer': string;
   'AnchorListContainer': string;
   'AnnotationContainer': string;

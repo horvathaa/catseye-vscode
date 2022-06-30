@@ -1,6 +1,14 @@
-import { Chip } from '@material-ui/core'
 import * as React from 'react'
+import Chip from '@material-ui/core/Chip'
 import { Type } from '../../../../constants/constants'
+import {
+    editorBackground,
+    hoverBackground,
+    hoverText,
+    iconColor,
+    vscodeTextColor,
+} from '../../styles/vscodeStyles'
+import { styled } from '@mui/material/styles'
 
 interface TypesProps {
     currentTypes: Type[]
@@ -13,6 +21,31 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
 }) => {
     const allTypes = Object.values(Type)
     const [types, setTypes] = React.useState<Type[]>(currentTypes)
+
+    // https://mui.com/material-ui/guides/typescript/#customization-of-theme
+    // could not get theme overrides to work :(
+    const CustomChip = styled(Chip)({
+        '&.MuiChip-clickable': {
+            backgroundColor: editorBackground,
+            color: vscodeTextColor,
+            borderColor: iconColor,
+            border: '1.2px solid',
+            margin: '3px',
+            '&:hover': {
+                backgroundColor: hoverBackground,
+                color: hoverText,
+            },
+        },
+        '&.MuiChip-clickableColorPrimary': {
+            backgroundColor: hoverText,
+            color: editorBackground,
+            border: 'none',
+            '&:hover': {
+                backgroundColor: hoverText,
+                color: editorBackground,
+            },
+        },
+    }) as typeof Chip
 
     const handleAnnoClick = (selectedType: Type) => {
         let updatedTypes: Type[]
@@ -30,11 +63,12 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
         <div>
             {allTypes.map((type: Type, id) => {
                 return (
-                    <Chip
+                    <CustomChip
                         key={id}
                         label={type}
+                        color={types.includes(type) ? 'primary' : 'default'}
                         variant={types.includes(type) ? 'default' : 'outlined'}
-                        clickable
+                        size="small"
                         onClick={() => handleAnnoClick(type)}
                     />
                 )

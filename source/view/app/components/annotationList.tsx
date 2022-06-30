@@ -22,6 +22,7 @@ import PushPinIcon from '@mui/icons-material/PushPin'
 import ExpandLess from '@mui/icons-material/ExpandLess'
 import ExpandMore from '@mui/icons-material/ExpandMore'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
+import ArticleIcon from '@mui/icons-material/Article'
 import {
     editorBackground,
     iconColor,
@@ -29,8 +30,6 @@ import {
 } from '../styles/vscodeStyles'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { useState } from 'react'
-import styles from '../styles/annotation.module.css'
-import { Typography } from '@material-ui/core'
 
 interface AnnoListProps {
     annotations: Annotation[]
@@ -170,7 +169,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                 <List sx={{ width: '100%' }} component="div" disablePadding>
                     <ListItemButton onClick={handleFileClick}>
                         <ListItemIcon>
-                            <PushPinIcon />
+                            <ArticleIcon />
                         </ListItemIcon>
                         <ListItemText primary="Current File" />
                         {openFile ? <ExpandLess /> : <ExpandMore />}

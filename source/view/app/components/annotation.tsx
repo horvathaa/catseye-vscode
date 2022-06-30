@@ -25,6 +25,7 @@ import Snapshots from './annotationComponents/snapshots'
 import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
 import { Box, Card, CardContent, Collapse } from '@material-ui/core'
 import {
+    codeColor,
     editorBackground,
     iconColor,
     vscodeTextColor,
@@ -376,11 +377,11 @@ const ReactAnnotation: React.FC<Props> = ({
                                 snapshotCode={snapshotCode}
                                 scrollInEditor={scrollInEditor}
                             />
-                            <AnnotationTypesBar
-                                currentTypes={anno.types}
-                                editTypes={updateAnnotationTypes}
-                            />
                             <div className={styles['ContentContainer']}>
+                                <AnnotationTypesBar
+                                    currentTypes={anno.types}
+                                    editTypes={updateAnnotationTypes}
+                                />
                                 {edit ? (
                                     <TextEditor
                                         content={anno.annotation}
@@ -396,7 +397,7 @@ const ReactAnnotation: React.FC<Props> = ({
                                             justifyContent: 'space-between',
                                         }}
                                     >
-                                        `${anno.annotation}`
+                                        {anno.annotation}
                                         <div>
                                             <EditIcon
                                                 onClick={(
@@ -417,18 +418,18 @@ const ReactAnnotation: React.FC<Props> = ({
                                         </div>
                                     </div>
                                 )}
+                                {replying === true || anno.replies.length ? (
+                                    <ReplyContainer
+                                        replying={replying}
+                                        replies={anno.replies}
+                                        username={username}
+                                        userId={userId}
+                                        submitReply={submitReply}
+                                        cancelReply={() => setReplying(false)}
+                                        deleteReply={deleteReply}
+                                    />
+                                ) : null}
                             </div>
-                            {replying === true || anno.replies.length ? (
-                                <ReplyContainer
-                                    replying={replying}
-                                    replies={anno.replies}
-                                    username={username}
-                                    userId={userId}
-                                    submitReply={submitReply}
-                                    cancelReply={() => setReplying(false)}
-                                    deleteReply={deleteReply}
-                                />
-                            ) : null}
                         </CardContent>
                     </Collapse>
                 </Card>

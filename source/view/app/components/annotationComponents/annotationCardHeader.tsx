@@ -1,5 +1,4 @@
 import * as React from 'react'
-import { CardActions } from '@material-ui/core'
 import { TbAnchor, TbAnchorOff } from 'react-icons/tb'
 import IconButton from '@mui/material/IconButton'
 import CheckIcon from '@mui/icons-material/Check'
@@ -7,6 +6,8 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined'
 import { Annotation } from '../../../../constants/constants'
 import UserProfile from './userProfile'
+import { codeColor } from '../../styles/vscodeStyles'
+import styles from '../../styles/annotation.module.css'
 
 interface Props {
     expanded: boolean
@@ -27,13 +28,32 @@ const CardHeader = ({ expanded, setExpanded, anchored, anno }: Props) => {
             onClick={() => setExpanded(!expanded)}
         >
             {expanded === false ? (
-                <div>
+                <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                    }}
+                >
                     <IconButton size="small">
                         {anchored === true ? <TbAnchor /> : <TbAnchorOff />}
                     </IconButton>
-                    "{anno.annotation}" at{' '}
-                    {anno.anchors[0].anchorText.slice(0, 20)}
-                    {anno.anchors[0].anchorText.length > 20 ? '...' : ''}
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                        }}
+                    >
+                        <div>
+                            <mark>
+                                {' '}
+                                {anno.anchors[0].anchorText.slice(0, 30)}
+                                {anno.anchors[0].anchorText.length > 30
+                                    ? '...'
+                                    : ''}{' '}
+                            </mark>
+                        </div>
+                        <div>{anno.annotation}</div>
+                    </div>
                 </div>
             ) : (
                 <UserProfile

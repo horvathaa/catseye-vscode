@@ -228,6 +228,8 @@ export const reconstructAnnotations = (
             anchorId: uuidv4(),
             originalCode: a.anchor.originalCode,
             parentId: newAnnoId,
+            anchored: true,
+            timestamp: new Date().getTime(),
         }
         const adjustedAnno = {
             id: newAnnoId,
@@ -511,7 +513,7 @@ export const makeObjectListFromAnnotations = (
         return {
             id: a.id ? a.id : uuidv4(),
             annotation: a.annotation ? a.annotation : '',
-            anchors: a.anchors ? a.anchors : [],
+            // anchors: a.anchors ? a.anchors : [],
             authorId: a.authorId ? a.authorId : '',
             createdTimestamp: a.createdTimestamp
                 ? a.createdTimestamp
@@ -969,6 +971,8 @@ export const createAnchorObject = async (
             programmingLang,
             filename,
             visiblePath,
+            anchored: true,
+            timestamp: new Date().getTime(),
         }
     } else {
         vscode.window.showInformationMessage('Must have open text editor!')

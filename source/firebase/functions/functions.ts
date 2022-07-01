@@ -5,7 +5,7 @@
  *
  */
 
-import { Annotation } from '../../constants/constants'
+import { Annotation, CommitObject } from '../../constants/constants'
 import { currentGitHubCommit, user } from '../../extension'
 import {
     getListFromSnapshots,
@@ -18,6 +18,9 @@ import { DB_COLLECTIONS } from '..'
 const db: firebase.firestore.Firestore = firebase.firestore()
 const annotationsRef: firebase.firestore.CollectionReference = db.collection(
     DB_COLLECTIONS.VSCODE_ANNOTATIONS
+)
+const commitsRef: firebase.firestore.CollectionReference = db.collection(
+    DB_COLLECTIONS.COMMITS
 )
 
 // Save annotations to FireStore
@@ -37,13 +40,18 @@ export const saveOutOfDateAnnotations = (annotationIds: string[]): void => {
     })
 }
 
+// const getAnchorsFromCommit = (commit: string) => {
+
+// }
+
 // Given user, pull in all of their not-deleted annotations
 export const getAnnotationsOnSignIn = async (
     user: firebase.User,
     currentGitProject: string
+    // currentGitCommit: string
 ): Promise<Annotation[]> => {
     const userAnnotationDocs: firebase.firestore.QuerySnapshot =
-        await getUserAnnotations(user.uid)
+        await getUserAnnotations(user.uid, currentGitProject)
     const collaboratorAnnotationDocs: firebase.firestore.QuerySnapshot =
         await getAnnotationsByProject(currentGitProject, user.uid)
     if (
@@ -51,9 +59,12 @@ export const getAnnotationsOnSignIn = async (
         (!collaboratorAnnotationDocs || collaboratorAnnotationDocs.empty)
     )
         return []
+
     const dataAnnotations = getListFromSnapshots(userAnnotationDocs).concat(
         getListFromSnapshots(collaboratorAnnotationDocs)
     )
+    const commitObject = await getCommitsByProject(currentGitProject) // next -- get commits, associate annotations with anchors, incorporate file IO, (maybe) update annotation object to account for carousel versions of anchors
+
     const annotations: Annotation[] =
         dataAnnotations && dataAnnotations.length
             ? dataAnnotations.map((a: any) => {
@@ -122,11 +133,33 @@ export const getAnnotationsByProject = (
 }
 
 export const getUserAnnotations = (
-    uid: string
+    uid: string,
+    gitRepo: string
 ): Promise<firebase.firestore.QuerySnapshot> => {
     return annotationsRef
         .where('authorId', '==', uid)
+        .where('gitRepo', '==', gitRepo)
+        .where('sharedWith', '==', 'private')
         .where('deleted', '==', false)
         .where('outOfDate', '==', false)
         .get()
+}
+
+export const getCommitsByProject = (
+    gitRepo: string
+): Promise<firebase.firestore.QuerySnapshot> => {
+    // console.log('gitRepo', gitRepo, 'uid', uid, 'currentGitHubCommit', currentGitHubCommit);
+    return commitsRef.where('gitRepo', '==', gitRepo).get()
+}
+
+// export const getAnnotationsFromCommit = (
+//     commit: string
+// ): Promise<firebase.firestore.QuerySnapshot> => {
+//     return commitsRef.where('commit', '==', commit).get()
+// }
+
+export const saveCommit = (commit: CommitObject) => {
+    if (user) {
+        commitsRef.doc(commit.commit).set(commit)
+    }
 }

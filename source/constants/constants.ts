@@ -2,7 +2,7 @@
 export class Annotation {
     id: string
     annotation: string
-    anchors: AnchorObject[]
+    anchors: AnchorObject[] // only updating on commit, initialized upon Annotation creation
     deleted: boolean
     outOfDate: boolean
     authorId: string
@@ -19,11 +19,12 @@ export class Annotation {
     selected: boolean
     needToUpdate: boolean
     types: Type[]
+    resolved: boolean
 
-    constructor(
+    constructor( // maybe can delete this? 
         id: string,
         annotation: string,
-        anchors: AnchorObject[],
+        anchors: AnchorObject[], // NOT in FireStore
         deleted: boolean,
         outOfDate: boolean,
         authorId: string,
@@ -39,7 +40,8 @@ export class Annotation {
         sharedWith: string,
         selected: boolean,
         needToUpdate: boolean,
-        types?: Type[]
+        types?: Type[],
+        resolved?: boolean
     ) {
         this.id = id
         this.annotation = annotation
@@ -60,6 +62,7 @@ export class Annotation {
         this.selected = selected
         this.needToUpdate = needToUpdate
         this.types = types ?? []
+        this.resolved = resolved ?? false
     }
 }
 
@@ -83,14 +86,16 @@ export interface AnchorObject {
     anchorId: string
     originalCode: string
     parentId: string
-    //add annotation field, ridding of multiple anchors
+    anchored: boolean
+    timestamp: number
+    // surroundingContext: Object[] - @Amber to update later
 }
 
 export enum Type {
-	question = "question",
-	task = "task",
-	issue = "issue",
-	proposal = "proposal"
+    question = 'question',
+    task = 'task',
+    issue = 'issue',
+    proposal = 'proposal',
 }
 
 export interface ChangeEvent {
@@ -169,6 +174,18 @@ export interface GitRepoInfo {
     commit: string
     modifiedAnnotations: Annotation[]
     nameOfPrimaryBranch: string
+}
+
+export interface CommitObject {
+    commit: string
+    gitRepo: string
+    annotationsOnCommit: [
+        {
+            [keyAsAnnotationId: string]: {
+                anchors: AnchorObject[]
+            }
+        }
+    ]
 }
 
 // export interface GitInfo {

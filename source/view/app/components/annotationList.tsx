@@ -9,6 +9,7 @@ import { Annotation } from '../../../constants/constants'
 import {
     // getAllAnnotationFilenames,
     getAllAnnotationStableGitUrls,
+    sortAnnotationsByLocation,
 } from '../utils/viewUtils'
 import ReactAnnotation from '../components/annotation'
 import * as React from 'react'
@@ -21,6 +22,7 @@ import PushPinIcon from '@mui/icons-material/PushPin'
 import ExpandLess from '@mui/icons-material/ExpandLess'
 import ExpandMore from '@mui/icons-material/ExpandMore'
 import AccountTreeIcon from '@mui/icons-material/AccountTree'
+import ArticleIcon from '@mui/icons-material/Article'
 import {
     editorBackground,
     iconColor,
@@ -49,13 +51,17 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     userId,
 }) => {
     const [openPinned, setOpenPinned] = useState(false)
+    const [openFile, setOpenFile] = useState(true)
     const [openCurrProj, setCurrProj] = useState(false)
-    const [pinnedAnno, setPinnedAnno] = useState<any[]>([])
-    const [fileAnno, setFileAnno] = useState<any[]>([])
-    const [projAnno, setProjAnno] = useState<any[]>([])
+    const [pinnedAnno, setPinnedAnno] = useState<Annotation[]>([])
+    const [fileAnno, setFileAnno] = useState<Annotation[]>([])
+    const [projAnno, setProjAnno] = useState<Annotation[]>([])
 
     const handlePinClick = () => {
         setOpenPinned(!openPinned)
+    }
+    const handleFileClick = () => {
+        setOpenFile(!openFile)
     }
     const handleCurrProjClick = () => {
         setCurrProj(!openCurrProj)
@@ -136,16 +142,16 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     return (
         <>
             <ThemeProvider theme={theme}>
-                <List sx={{ width: '100%' }} component="nav">
+                <List sx={{ width: '100%' }} component="div" disablePadding>
                     <ListItemButton onClick={handlePinClick}>
                         <ListItemIcon>
                             <PushPinIcon />
                         </ListItemIcon>
                         <ListItemText primary="Pinned" />
-                        {openPinned ? <ExpandMore /> : <ExpandLess /> }
+                        {openPinned ? <ExpandMore /> : <ExpandLess />}
                     </ListItemButton>
                     <Collapse in={openPinned} timeout="auto" unmountOnExit>
-                        {pinnedAnno.length &&
+                        {pinnedAnno.length > 0 &&
                             pinnedAnno.map((a: Annotation) => {
                                 return (
                                     <ReactAnnotation
@@ -159,19 +165,34 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                                 )
                             })}
                     </Collapse>
-                    {fileAnno.length &&
-                        fileAnno.map((a: Annotation) => {
-                            return (
-                                <ReactAnnotation
-                                    key={'annotationList-tsx-' + a.id}
-                                    annotation={a}
-                                    vscode={vscode}
-                                    window={window}
-                                    username={username}
-                                    userId={userId}
-                                />
-                            )
-                        })}
+                </List>
+                <List sx={{ width: '100%' }} component="div" disablePadding>
+                    <ListItemButton onClick={handleFileClick}>
+                        <ListItemIcon>
+                            <ArticleIcon />
+                        </ListItemIcon>
+                        <ListItemText primary="Current File" />
+                        {openFile ? <ExpandLess /> : <ExpandMore />}
+                    </ListItemButton>
+                    <Collapse in={openFile} timeout="auto" unmountOnExit>
+                        {fileAnno.length > 0 &&
+                            sortAnnotationsByLocation(fileAnno).map(
+                                (a: Annotation) => {
+                                    return (
+                                        <ReactAnnotation
+                                            key={'annotationList-tsx-' + a.id}
+                                            annotation={a}
+                                            vscode={vscode}
+                                            window={window}
+                                            username={username}
+                                            userId={userId}
+                                        />
+                                    )
+                                }
+                            )}
+                    </Collapse>
+                </List>
+                <List sx={{ width: '100%' }} component="div" disablePadding>
                     <ListItemButton onClick={handleCurrProjClick}>
                         <ListItemIcon>
                             <AccountTreeIcon />
@@ -180,7 +201,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                         {openCurrProj ? <ExpandLess /> : <ExpandMore />}
                     </ListItemButton>
                     <Collapse in={openCurrProj} timeout="auto" unmountOnExit>
-                        {projAnno.length &&
+                        {projAnno.length > 0 &&
                             projAnno.map((a: Annotation) => {
                                 return (
                                     <ReactAnnotation

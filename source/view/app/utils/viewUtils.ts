@@ -7,7 +7,7 @@
  *
  */
 import * as vscode from 'vscode'
-import { Annotation } from '../../../constants/constants'
+import { AnchorObject, Annotation } from '../../../constants/constants'
 
 const translateAnnotationAnchorStandard = (
     annoInfo: any
@@ -85,7 +85,8 @@ export const buildAnnotation = (
         annoObj['codeSnapshots'],
         annoObj['sharedWith'],
         annoObj['selected'],
-        annoObj['needToUpdate']
+        annoObj['needToUpdate'],
+        annoObj['types']
     )
 }
 
@@ -172,4 +173,25 @@ export const getAllAnnotationStableGitUrls = (
               ),
           ]
         : [...new Set(annotationList.anchors.map((a) => a.stableGitUrl))]
+}
+
+const sortAnchorsByLocation = (anchors: AnchorObject[]): AnchorObject[] => {
+    return anchors.sort((a: AnchorObject, b: AnchorObject) => {
+        return b.anchor.startLine - a.anchor.startLine === 0
+            ? b.anchor.startOffset - a.anchor.startOffset
+            : b.anchor.startLine - a.anchor.startLine
+    })
+}
+
+export const sortAnnotationsByLocation = (
+    annotationList: Annotation[]
+): Annotation[] => {
+    const sortedAnchors: string[] = sortAnchorsByLocation(
+        annotationList.flatMap((a) => a.anchors)
+    ).map((a) => a.parentId)
+    annotationList.sort((a: Annotation, b: Annotation) => {
+        return sortedAnchors.indexOf(b.id) - sortedAnchors.indexOf(a.id)
+    })
+
+    return annotationList
 }

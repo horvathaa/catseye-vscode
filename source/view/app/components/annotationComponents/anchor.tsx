@@ -137,6 +137,8 @@ const Anchor: React.FC<Props> = ({
 
     return (
         <div className={styles['AnchorContainer']}>
+            {/* DISABLED SNAPSHOT FEATURE 
+
             <div className={styles['DropdownItemOverwrite']}>
                 <div
                     className={styles['DropdownIconsWrapper']}
@@ -163,14 +165,14 @@ const Anchor: React.FC<Props> = ({
                             e.stopPropagation()
                             scrollInEditor(anchorId)
                         }}
-                    >
-                        {visiblePath}: Line {startLine + 1} to Line{' '}
-                        {endLine + 1}
-                    </div>
+                    ></div>
                     <div className={styles['AnchorButtonContainer']}>
                         {!isSingleLineAnchor && collapseExpandToggle()}
                     </div>
                 </div>
+            </div> */}
+            <div className={styles['AnchorDescription']}>
+                <i>{visiblePath}</i>
             </div>
             <div
                 className={styles['HTMLContainer']}
@@ -191,6 +193,12 @@ const Anchor: React.FC<Props> = ({
                         {collapseExpandOriginalCode()}
                     </React.Fragment>
                 )}
+            </div>
+            <div className={styles['AnchorDescription']}>
+                <i>
+                    {endLine - startLine + 1}{' '}
+                    {endLine - startLine > 0 ? 'Lines' : 'Line'}
+                </i>
             </div>
         </div>
     )

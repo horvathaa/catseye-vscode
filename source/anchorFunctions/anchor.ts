@@ -547,9 +547,9 @@ export const addHighlightsToEditor = (
                 )
                 saveOutOfDateAnnotations(invalidIds)
             }
-            if (vscode.workspace.workspaceFolders) {
-                view?.updateDisplay(newAnnotationList)
-            }
+            // if (vscode.workspace.workspaceFolders) {
+            //     view?.updateDisplay(newAnnotationList)
+            // }
         }
     }
 

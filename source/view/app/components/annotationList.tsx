@@ -148,7 +148,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                             <PushPinIcon />
                         </ListItemIcon>
                         <ListItemText primary="Pinned" />
-                        {openPinned ? <ExpandLess /> : <ExpandMore />}
+                        {openPinned ? <ExpandMore /> : <ExpandLess />}
                     </ListItemButton>
                     <Collapse in={openPinned} timeout="auto" unmountOnExit>
                         {pinnedAnno.length > 0 &&

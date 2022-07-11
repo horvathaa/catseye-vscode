@@ -35,12 +35,13 @@ import {
     currentGitHubProject,
     setCurrentGitHubCommit,
     currentGitHubCommit,
+    astHelper,
 } from '../extension'
 import * as vscode from 'vscode'
 import { v4 as uuidv4 } from 'uuid'
 import { getAnnotationsOnSignIn } from '../firebase/functions/functions'
 import { saveAnnotations as fbSaveAnnotations } from '../firebase/functions/functions'
-import { BiMessageAltCheck } from 'react-icons/bi'
+import { CodeContext } from '../astHelper/nodeHelper'
 let { parse } = require('what-the-diff')
 var shiki = require('shiki')
 
@@ -228,6 +229,12 @@ export const reconstructAnnotations = (
             anchorId: uuidv4(),
             originalCode: a.anchor.originalCode,
             parentId: newAnnoId,
+            path: vscode.window.activeTextEditor
+                ? astHelper.generateCodeContextPath(
+                      changeRange,
+                      vscode.window.activeTextEditor.document
+                  )
+                : [],
         }
         const adjustedAnno = {
             id: newAnnoId,
@@ -450,7 +457,7 @@ export const handleSaveCloseEvent = async (
             : annotationList
     if (doc && vscode.workspace.workspaceFolders) {
         let newList = await updateHtml(annotationsInCurrentFile, doc)
-        // console.log('newList', newList);
+
         const ids: string[] = newList.map((a) => a.id)
         const visibleAnnotations: Annotation[] =
             currentFile === 'all'
@@ -458,10 +465,7 @@ export const handleSaveCloseEvent = async (
                 : annotationList
                       .filter((a) => !ids.includes(a.id))
                       .concat(newList)
-        // console.log('before set', visibleAnnotations);
         setAnnotationList(visibleAnnotations)
-        // console.log('after', visibleAnnotations)
-        // console.log('about to update display -- handleSaveClose');
         view?.updateDisplay(visibleAnnotations)
         if (annosToSave.some((a: Annotation) => a.needToUpdate)) {
             lastSavedAnnotations = annosToSave
@@ -479,6 +483,7 @@ export const handleSaveCloseEvent = async (
         vscode.workspace.workspaceFolders &&
         !arraysEqual(annosToSave, lastSavedAnnotations)
     ) {
+        console.log('is this ever called???')
         lastSavedAnnotations = annosToSave
         saveAnnotations(
             annosToSave.filter((a) => a.needToUpdate),
@@ -956,6 +961,10 @@ export const createAnchorObject = async (
             .split('.')[
             textEditor.document.uri.toString().split('.').length - 1
         ]
+        const path: CodeContext[] = astHelper.generateCodeContextPath(
+            range,
+            textEditor.document
+        )
         return {
             parentId: annoId,
             anchorId: uuidv4(),
@@ -969,6 +978,7 @@ export const createAnchorObject = async (
             programmingLang,
             filename,
             visiblePath,
+            path,
         }
     } else {
         vscode.window.showInformationMessage('Must have open text editor!')

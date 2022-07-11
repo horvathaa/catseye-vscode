@@ -1,3 +1,6 @@
+import ts = require('typescript')
+import { CodeContext } from '../astHelper/nodeHelper'
+
 // import * as vscode from 'vscode';
 export class Annotation {
     id: string
@@ -83,14 +86,15 @@ export interface AnchorObject {
     anchorId: string
     originalCode: string
     parentId: string
+    path: CodeContext[]
     //add annotation field, ridding of multiple anchors
 }
 
 export enum Type {
-	question = "question",
-	task = "task",
-	issue = "issue",
-	proposal = "proposal"
+    question = 'question',
+    task = 'task',
+    issue = 'issue',
+    proposal = 'proposal',
 }
 
 export interface ChangeEvent {
@@ -169,6 +173,11 @@ export interface GitRepoInfo {
     commit: string
     modifiedAnnotations: Annotation[]
     nameOfPrimaryBranch: string
+}
+
+export interface TsFile {
+    localFileName: string
+    tsSourceFile: ts.SourceFile
 }
 
 // export interface GitInfo {

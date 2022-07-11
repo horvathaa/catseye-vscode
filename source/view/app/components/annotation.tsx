@@ -418,17 +418,15 @@ const ReactAnnotation: React.FC<Props> = ({
                                         </div>
                                     </div>
                                 )}
-                                {replying === true || anno.replies.length ? (
-                                    <ReplyContainer
-                                        replying={replying}
-                                        replies={anno.replies}
-                                        username={username}
-                                        userId={userId}
-                                        submitReply={submitReply}
-                                        cancelReply={() => setReplying(false)}
-                                        deleteReply={deleteReply}
-                                    />
-                                ) : null}
+                                <ReplyContainer
+                                    replying={replying}
+                                    replies={anno.replies}
+                                    username={username}
+                                    userId={userId}
+                                    submitReply={submitReply}
+                                    cancelReply={() => setReplying(false)}
+                                    deleteReply={deleteReply}
+                                />
                             </div>
                         </CardContent>
                     </Collapse>

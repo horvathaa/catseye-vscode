@@ -29,32 +29,24 @@ const ReplyContainer: React.FC<Props> = ({
     cancelReply,
     deleteReply,
 }) => {
-    const [showingReplies, setShowingReplies] = React.useState<boolean>(false)
+    const [showMoreReplies, setShowMoreReplies] = React.useState<boolean>(false)
     const activeReplies = replies.filter((r) => !r.deleted)
     const hasReplies = replies && activeReplies.length
 
     return (
         <div>
-            {replying && (
-                <ReactReply
-                    githubUsername={username}
-                    authorId={userId}
-                    userId={userId}
-                    replying={replying}
-                    createdTimestamp={new Date().getTime()}
-                    submissionHandler={submitReply}
-                    cancelHandler={cancelReply}
-                />
-            )}
+            {/* Ideally the below expand collapse 
+            toggle shows older comments,
+            we always display the three most recent */}
             {hasReplies
                 ? collapseExpandToggle(
-                      showingReplies,
+                      showMoreReplies,
                       activeReplies,
-                      setShowingReplies,
+                      setShowMoreReplies,
                       'reply'
                   )
                 : null}
-            {showingReplies && hasReplies
+            {hasReplies
                 ? replies?.map((r: Reply) => {
                       return !r.deleted ? (
                           <ReactReply
@@ -74,6 +66,15 @@ const ReplyContainer: React.FC<Props> = ({
                       ) : null
                   })
                 : null}
+            <ReactReply
+                githubUsername={username}
+                authorId={userId}
+                userId={userId}
+                replying={replying}
+                createdTimestamp={new Date().getTime()}
+                submissionHandler={submitReply}
+                cancelHandler={cancelReply}
+            />
         </div>
     )
 }

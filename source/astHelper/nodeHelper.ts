@@ -114,7 +114,6 @@ export function addTsMetadata(
         ts.isSwitchStatement(node) ||
         ts.isCaseClause(node)
     ) {
-        console.log(ts.SyntaxKind[node.expression.kind])
         info.identifierType = ts.SyntaxKind[node.kind]
         info.identifierValue = document
             .getText(nodeToRange(node.expression, code))

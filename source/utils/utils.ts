@@ -41,7 +41,6 @@ import * as vscode from 'vscode'
 import { v4 as uuidv4 } from 'uuid'
 import { getAnnotationsOnSignIn } from '../firebase/functions/functions'
 import { saveAnnotations as fbSaveAnnotations } from '../firebase/functions/functions'
-import { BiMessageAltCheck } from 'react-icons/bi'
 import { CodeContext } from '../astHelper/nodeHelper'
 let { parse } = require('what-the-diff')
 var shiki = require('shiki')

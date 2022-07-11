@@ -112,7 +112,6 @@ export const handleChangeActiveTextEditor = (
             }
 
             astHelper.addSourceFile(TextEditor.document)
-            console.log('asthelper', astHelper)
             if (user && vscode.workspace.workspaceFolders)
                 view?.updateDisplay(undefined, gitUrl, currentProject)
         }

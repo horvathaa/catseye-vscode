@@ -44,6 +44,7 @@ export interface CodeContext {
     isDirectParent: boolean
     originalNode?: ts.Node
     parameters?: string
+    elseStatement?: boolean
     implements?: string
     array?: CodeContext[]
     leftOperand?: string
@@ -118,6 +119,12 @@ export function addTsMetadata(
         info.identifierValue = document
             .getText(nodeToRange(node.expression, code))
             .trim()
+        info.elseStatement =
+            ts.isIfStatement(node) && node.elseStatement && activeSelection
+                ? nodeToRange(node.elseStatement, code).contains(
+                      activeSelection
+                  )
+                : false
     } else if (ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node)) {
         info.identifierName = node.name ? node.name.text : ''
         info.identifierType = ts.SyntaxKind[node.kind]

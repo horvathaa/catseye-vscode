@@ -77,13 +77,14 @@ export const Reply: React.FC<Props> = ({
             {replyContent}
         </div>
     )
-
+    // Ideally createdTimestamp is updated on Submit
     const ReplyEditor: React.ReactElement = replying ? (
         <TextEditor
             content={reply}
             submissionHandler={submissionHandler}
             cancelHandler={cancelHandler}
             showSplitButton={false}
+            showCancel={false}
         />
     ) : (
         <TextEditor

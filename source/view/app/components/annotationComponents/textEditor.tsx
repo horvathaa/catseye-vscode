@@ -21,13 +21,16 @@ interface Props {
     ) => void
     cancelHandler: () => void
     showSplitButton: boolean
+    showCancel?: boolean
 }
-
+// Having default props is weirdly supported in React, this way means showCancel is an optional
+// See: https://dev.to/bytebodger/default-props-in-react-typescript-2o5o
 const TextEditor: React.FC<Props> = ({
     content,
     submissionHandler,
     cancelHandler,
     showSplitButton,
+    showCancel = true,
 }) => {
     const [text, setText] = React.useState<any>(content)
     const [willBePinned, setWillBePinned] = React.useState<boolean>(false)
@@ -127,15 +130,17 @@ const TextEditor: React.FC<Props> = ({
                         </button>
                     )}
 
-                    <button
-                        className={styles['cancel']}
-                        onClick={(e: React.SyntheticEvent) => {
-                            e.stopPropagation()
-                            cancelHandler()
-                        }}
-                    >
-                        Cancel
-                    </button>
+                    {showCancel && (
+                        <button
+                            className={styles['cancel']}
+                            onClick={(e: React.SyntheticEvent) => {
+                                e.stopPropagation()
+                                cancelHandler()
+                            }}
+                        >
+                            Cancel
+                        </button>
+                    )}
                 </div>
                 {showSplitButton && (
                     <ThemeProvider theme={theme}>

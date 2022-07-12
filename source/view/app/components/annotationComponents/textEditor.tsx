@@ -13,7 +13,7 @@ import Checkbox from '@mui/material/Checkbox'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
 import { green } from '@material-ui/core/colors'
 interface Props {
-    content: any
+    content: any // Is either a reply, text, or annotation
     submissionHandler: (
         newContent: any,
         shareWith?: string,
@@ -34,7 +34,7 @@ const TextEditor: React.FC<Props> = ({
 }) => {
     const [text, setText] = React.useState<any>(content)
     const [willBePinned, setWillBePinned] = React.useState<boolean>(false)
-
+    // TODO: Change this theme
     const theme = createTheme({
         typography: {
             allVariants: {
@@ -68,11 +68,13 @@ const TextEditor: React.FC<Props> = ({
         if (typeof text === 'string') {
             setText((e.target as HTMLTextAreaElement).value)
         } else if (text.hasOwnProperty('replyContent')) {
+            // Checks if is reply
             setText({
                 ...text,
                 replyContent: (e.target as HTMLTextAreaElement).value,
             })
         } else if (text.hasOwnProperty('comment')) {
+            // Checks if comment
             setText({
                 ...text,
                 comment: (e.target as HTMLTextAreaElement).value,
@@ -92,7 +94,7 @@ const TextEditor: React.FC<Props> = ({
         }
         submissionHandler(text, shareWith, willBePinned)
     }
-
+    // Ideally this textbox isn't a significantly different color and is not of fixed size.
     return (
         <div className={styles['textboxContainer']}>
             <textarea
@@ -120,10 +122,22 @@ const TextEditor: React.FC<Props> = ({
                             className={styles['submit']}
                             onClick={(e: React.SyntheticEvent) => {
                                 e.stopPropagation()
+                                // Is this a checker for Snapshots?
                                 if (text.hasOwnProperty('comment')) {
                                     cancelHandler()
                                 }
+                                console.log('Get New Time?')
+                                console.log(new Date().getTime())
+                                // TODO: Update timestamp
+                                setText({
+                                    ...text,
+                                    createdTimestamp: new Date().getTime(),
+                                })
                                 submissionHandler(text)
+                                setText({
+                                    ...text,
+                                    replyContent: '',
+                                })
                             }}
                         >
                             Submit

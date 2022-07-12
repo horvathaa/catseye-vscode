@@ -32,6 +32,12 @@ const ReplyContainer: React.FC<Props> = ({
     const [showMoreReplies, setShowMoreReplies] = React.useState<boolean>(false)
     const activeReplies = replies.filter((r) => !r.deleted)
     const hasReplies = replies && activeReplies.length
+    const [tempIdCounter, setTempIdCounter] = React.useState<number>(1)
+
+    const createReply = (reply: Reply): void => {
+        submitReply(reply)
+        setTempIdCounter(tempIdCounter + 1)
+    }
 
     return (
         <div>
@@ -68,11 +74,12 @@ const ReplyContainer: React.FC<Props> = ({
                 : null}
             <ReactReply
                 githubUsername={username}
+                id={`temp-${tempIdCounter}`}
                 authorId={userId}
                 userId={userId}
                 replying={true}
                 createdTimestamp={new Date().getTime()}
-                submissionHandler={submitReply}
+                submissionHandler={createReply}
                 cancelHandler={cancelReply}
             />
         </div>

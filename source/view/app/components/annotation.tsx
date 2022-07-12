@@ -253,6 +253,7 @@ const ReactAnnotation: React.FC<Props> = ({
             value: updatedReplies,
         })
         setReplying(false)
+        // TODO: End of this function should result to clearing of annotation
     }
 
     const deleteReply = (id: string): void => {

@@ -407,14 +407,6 @@ const ReactAnnotation: React.FC<Props> = ({
                                                     setEdit(!edit)
                                                 }}
                                             />
-                                            <ReplyIcon
-                                                onClick={(
-                                                    e: React.SyntheticEvent
-                                                ) => {
-                                                    e.stopPropagation()
-                                                    setReplying(!replying)
-                                                }}
-                                            />
                                         </div>
                                     </div>
                                 )}

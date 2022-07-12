@@ -38,14 +38,14 @@ const ReplyContainer: React.FC<Props> = ({
             {/* Ideally the below expand collapse 
             toggle shows older comments,
             we always display the three most recent */}
-            {hasReplies
+            {/* {hasReplies
                 ? collapseExpandToggle(
                       showMoreReplies,
                       activeReplies,
                       setShowMoreReplies,
                       'reply'
                   )
-                : null}
+                : null} */}
             {hasReplies
                 ? replies?.map((r: Reply) => {
                       return !r.deleted ? (
@@ -70,7 +70,7 @@ const ReplyContainer: React.FC<Props> = ({
                 githubUsername={username}
                 authorId={userId}
                 userId={userId}
-                replying={replying}
+                replying={true}
                 createdTimestamp={new Date().getTime()}
                 submissionHandler={submitReply}
                 cancelHandler={cancelReply}

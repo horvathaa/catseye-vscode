@@ -7,7 +7,7 @@
  */
 import * as React from 'react'
 import { Reply as ReactReply } from './reply' // reply component
-import { collapseExpandToggle } from '../../utils/viewUtilsTsx'
+import { collapseExpandToggle, showHideLine } from '../../utils/viewUtilsTsx'
 import { Reply } from '../../../../constants/constants' // reply data model
 
 interface Props {
@@ -45,9 +45,9 @@ const ReplyContainer: React.FC<Props> = ({
     return (
         <div>
             {hasReplies && MAX_NUM_REPLIES < activeReplies.length
-                ? collapseExpandToggle(
+                ? showHideLine(
                       showMoreReplies,
-                      activeReplies,
+                      activeReplies.length - MAX_NUM_REPLIES,
                       setShowMoreReplies,
                       'reply'
                   )

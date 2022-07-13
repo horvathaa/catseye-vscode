@@ -12,6 +12,9 @@ import FormControlLabel from '@mui/material/FormControlLabel'
 import Checkbox from '@mui/material/Checkbox'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
 import { green } from '@material-ui/core/colors'
+import { editorBackground } from '../../styles/vscodeStyles'
+import { TextareaAutosize } from '@material-ui/core'
+
 interface Props {
     content: any // Is either a reply, text, or annotation
     submissionHandler: (
@@ -39,7 +42,7 @@ const TextEditor: React.FC<Props> = ({
         typography: {
             allVariants: {
                 fontSize: 12,
-                color: 'white',
+                color: `${editorBackground}`,
                 fontFamily: 'Arial',
             },
         },
@@ -85,6 +88,10 @@ const TextEditor: React.FC<Props> = ({
     const handleEnter = (e: React.KeyboardEvent): void => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             submissionHandler(text, 'private', willBePinned)
+            setText({
+                ...text,
+                replyContent: '',
+            })
         }
     }
 
@@ -97,7 +104,8 @@ const TextEditor: React.FC<Props> = ({
     // Ideally this textbox isn't a significantly different color and is not of fixed size.
     return (
         <div className={styles['textboxContainer']}>
-            <textarea
+            <TextareaAutosize
+                minRows={1}
                 className={styles['textbox']}
                 autoFocus
                 value={

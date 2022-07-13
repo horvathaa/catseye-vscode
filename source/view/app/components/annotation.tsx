@@ -380,10 +380,6 @@ const ReactAnnotation: React.FC<Props> = ({
                                 scrollInEditor={scrollInEditor}
                             />
                             <div className={styles['ContentContainer']}>
-                                <AnnotationTypesBar
-                                    currentTypes={anno.types}
-                                    editTypes={updateAnnotationTypes}
-                                />
                                 {edit ? (
                                     <TextEditor
                                         content={anno.annotation}
@@ -395,12 +391,27 @@ const ReactAnnotation: React.FC<Props> = ({
                                     <div
                                         style={{
                                             display: 'flex',
-                                            flexDirection: 'row',
+                                            flexDirection: 'column',
                                             justifyContent: 'space-between',
                                         }}
                                     >
-                                        {anno.annotation}
-                                        <div>
+                                        <div style={{ padding: '3px' }}>
+                                            {anno.annotation}
+                                        </div>
+
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                flexDirection: 'row',
+                                                justifyContent: 'space-between',
+                                            }}
+                                        >
+                                            <AnnotationTypesBar
+                                                currentTypes={anno.types}
+                                                editTypes={
+                                                    updateAnnotationTypes
+                                                }
+                                            />
                                             <EditIcon
                                                 onClick={(
                                                     e: React.SyntheticEvent

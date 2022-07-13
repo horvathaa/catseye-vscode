@@ -21,10 +21,10 @@ export class Annotation {
     types: Type[]
     resolved: boolean
 
-    constructor( // maybe can delete this? 
+    constructor(
         id: string,
         annotation: string,
-        anchors: AnchorObject[], // NOT in FireStore
+        anchors: AnchorObject[],
         deleted: boolean,
         outOfDate: boolean,
         authorId: string,
@@ -78,17 +78,31 @@ export interface AnchorObject {
     anchorText: string
     html: string
     filename: string
-    gitUrl: string
-    stableGitUrl: string
+    gitUrl: string //current commit url
+    stableGitUrl: string //tree/main
     visiblePath: string
+    gitRepo: string
+    gitBranch: string
+    gitCommit: string
     anchorPreview: string
     programmingLang: string
     anchorId: string
     originalCode: string
     parentId: string
     anchored: boolean
-    timestamp: number
-    // surroundingContext: Object[] - @Amber to update later
+    createdTimestamp: number
+    priorVersions?: AnchorOnCommit[] // Not in FB, dynamically compute priorVersionsfrom the Commit object model on launch
+    // surroundingContext: Object[] - @Amber to update later with AST info
+}
+
+export interface AnchorOnCommit {
+    id: string
+    commitHash: string
+    createdTimestamp: number
+    html: string
+    anchorText: string
+    branchName: string
+    // diff: string // MAYBE. Need to investigate diff packages
 }
 
 export enum Type {
@@ -179,16 +193,12 @@ export interface GitRepoInfo {
 export interface CommitObject {
     commit: string
     gitRepo: string
-    annotationsOnCommit: [
-        {
-            [keyAsAnnotationId: string]: {
-                anchors: AnchorObject[]
-            }
-        }
-    ]
+    branchName: string
+    anchorsOnCommit: AnchorObject[]
+    // annotationsOnCommit: [
+    //     {
+    //         annoId: string
+    //         anchors: AnchorObject[] //annotation anchors made/edited/deleted on this commit
+    //     }
+    // ]
 }
-
-// export interface GitInfo {
-// 	author: string,
-// 	[key: string]: GitRepoInfo
-// }

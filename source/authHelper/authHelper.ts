@@ -91,6 +91,7 @@ export const initializeAuth = async () => {
         try {
             // sign in to FireStore with returned data
             const user = await signInWithGithubCredential(result?.data)
+            console.log('user needs to exist before setting', user)
             adamiteLog.appendLine(
                 'Signed in to Firebase with GitHub auth credentials'
             )

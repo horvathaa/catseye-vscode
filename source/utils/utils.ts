@@ -12,6 +12,7 @@ import {
     Anchor,
     Snapshot,
     stringToShikiThemes,
+    CommitObject,
 } from '../constants/constants'
 import {
     computeRangeFromOffset,
@@ -38,7 +39,10 @@ import {
 } from '../extension'
 import * as vscode from 'vscode'
 import { v4 as uuidv4 } from 'uuid'
-import { getAnnotationsOnSignIn } from '../firebase/functions/functions'
+import {
+    getAnnotationsOnSignIn,
+    saveCommit,
+} from '../firebase/functions/functions'
 import { saveAnnotations as fbSaveAnnotations } from '../firebase/functions/functions'
 import { BiMessageAltCheck } from 'react-icons/bi'
 let { parse } = require('what-the-diff')
@@ -65,12 +69,19 @@ const arraysEqual = (a1: any[], a2: any[]): boolean => {
 export const initializeAnnotations = async (
     user: firebase.User
 ): Promise<void> => {
+    console.log('init annos')
     const currFilename: string | undefined =
         vscode.window.activeTextEditor?.document.uri.path.toString()
-    const annotations: Annotation[] = sortAnnotationsByLocation(
-        await getAnnotationsOnSignIn(user, currentGitHubProject)
-    )
+    const annotations: Annotation[] =
+        // sortAnnotationsByLocation(
+        await getAnnotationsOnSignIn(
+            user,
+            currentGitHubProject,
+            currentGitHubCommit
+        )
+    // )
     setAnnotationList(annotations)
+    console.log('annotations during initializing', annotations)
     const selectedAnnotations: Annotation[] = annotations.filter(
         (a) => a.selected
     )
@@ -196,6 +207,7 @@ export function getListFromSnapshots(
     return out
 }
 
+// copy/cut anno --> additional metadata relative to previous range
 export const reconstructAnnotations = (
     annotationOffsetList: { [key: string]: any }[],
     text: string,
@@ -225,11 +237,15 @@ export const reconstructAnnotations = (
             visiblePath,
             anchorPreview: a.anchor.anchorPreview,
             programmingLang: a.anchor.programmingLang,
+            gitRepo: gitInfo[projectName]?.repo, // a.anno.gitRepo,
+            gitBranch: gitInfo[projectName]?.branch,
+            gitCommit: gitInfo[projectName]?.commit,
             anchorId: uuidv4(),
             originalCode: a.anchor.originalCode,
             parentId: newAnnoId,
             anchored: true,
-            timestamp: new Date().getTime(),
+            createdTimestamp: new Date().getTime(),
+            priorVersions: a.anchor.priorVersions, //could append the most recent place, but commit based for now
         }
         const adjustedAnno = {
             id: newAnnoId,
@@ -663,16 +679,47 @@ export const getVisiblePath = (
     return projectName
 }
 
+const getAllAnchors = (annotationList: Annotation[]): AnchorObject[] => {
+    return annotationList.flatMap((a) => a.anchors)
+}
+
+const getAllAnchorsOnCommit = (
+    annotationList: Annotation[],
+    commit: string
+): AnchorObject[] => {
+    return getAllAnchors(annotationList).filter((a) => a.gitCommit === commit)
+}
+
 export const updateAnnotationCommit = (
+    lastCommit: string,
+    lastBranch: string,
     commit: string,
     branch: string,
     repo: string
 ): void => {
-    annotationList.forEach((a: Annotation) => {
-        if (a.gitRepo === repo && a.gitCommit === 'localChange') {
-            a.gitCommit = commit
-            a.gitBranch = branch
-        }
+    // const annosOnCommit = annotationList.filter(a => a.commit === gitInfo[])
+    const anchorsOnCommit: AnchorObject[] = getAllAnchorsOnCommit(
+        annotationList,
+        lastCommit
+    )
+    console.log('anchors', anchorsOnCommit)
+    const commitObject: CommitObject = {
+        commit: lastCommit,
+        gitRepo: repo,
+        branchName: lastBranch,
+        anchorsOnCommit: anchorsOnCommit.map((a) => {
+            const { priorVersions, ...x } = a
+            return x
+        }),
+    }
+    console.log('cmmit object??', commitObject)
+    saveCommit(commitObject)
+    anchorsOnCommit.forEach((a: AnchorObject) => {
+        // if (a.gitRepo === repo && a.gitCommit !== commit) {
+        // might not address 'localChange'
+        a.gitCommit = commit
+        a.gitBranch = branch
+        // }
     })
 }
 
@@ -753,19 +800,38 @@ export const generateGitMetaData = async (
                     modifiedAnnotations: [],
                 }
             }
+            console.log('BEFORE CHANGE', 'head repo', r)
+            console.log('gitInfo', gitInfo)
+            console.log(
+                'current project name',
+                gitInfo.hasOwnProperty(currentProjectName),
+                'commit',
+                (gitInfo[currentProjectName]?.commit !== r.state.HEAD.commit,
+                'branch',
+                gitInfo[currentProjectName]?.branch !== r.state.HEAD.name)
+            )
 
             if (
+                //heuristic for changing commit hash
                 gitInfo.hasOwnProperty(currentProjectName) &&
                 (gitInfo[currentProjectName]?.commit !== r.state.HEAD.commit ||
                     gitInfo[currentProjectName]?.branch !== r.state.HEAD.name)
             ) {
-                gitInfo[currentProjectName].commit = r.state.HEAD.commit
-                gitInfo[currentProjectName].branch = r.state.HEAD.name
+                console.log(
+                    'head commit',
+                    r.state.HEAD.commit,
+                    'our git info',
+                    gitInfo[currentProjectName]?.commit
+                )
                 updateAnnotationCommit(
+                    gitInfo[currentProjectName].commit,
+                    gitInfo[currentProjectName].branch,
                     r.state.HEAD.commit,
                     r.state.HEAD.name,
                     r?.state?.remotes[0]?.fetchUrl
                 )
+                gitInfo[currentProjectName].commit = r.state.HEAD.commit
+                gitInfo[currentProjectName].branch = r.state.HEAD.name
             }
         })
         const branchNames = r.state.refs.map(
@@ -958,21 +1024,46 @@ export const createAnchorObject = async (
             .split('.')[
             textEditor.document.uri.toString().split('.').length - 1
         ]
+        const anchorId = uuidv4()
+        const createdTimestamp = new Date().getTime()
         return {
             parentId: annoId,
-            anchorId: uuidv4(),
+            anchorId: anchorId,
             anchorText,
             html,
             anchorPreview: firstLineOfHtml,
             originalCode: html,
             gitUrl,
             stableGitUrl,
+            gitRepo: gitInfo[projectName]?.repo
+                ? gitInfo[projectName]?.repo
+                : '',
+            gitBranch: gitInfo[projectName]?.branch
+                ? gitInfo[projectName]?.branch
+                : '',
+            gitCommit: gitInfo[projectName]?.commit
+                ? gitInfo[projectName]?.commit
+                : 'localChange',
             anchor: createAnchorFromRange(range),
             programmingLang,
             filename,
             visiblePath,
             anchored: true,
-            timestamp: new Date().getTime(),
+            createdTimestamp: createdTimestamp,
+            priorVersions: [
+                {
+                    id: anchorId,
+                    createdTimestamp: createdTimestamp,
+                    html: html,
+                    anchorText: anchorText,
+                    commitHash: gitInfo[projectName]?.commit
+                        ? gitInfo[projectName]?.commit
+                        : 'localChange',
+                    branchName: gitInfo[projectName]?.branch
+                        ? gitInfo[projectName]?.branch
+                        : '',
+                },
+            ],
         }
     } else {
         vscode.window.showInformationMessage('Must have open text editor!')

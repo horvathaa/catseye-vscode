@@ -525,11 +525,12 @@ export const addHighlightsToEditor = (
             )
             valid.forEach((a: Annotation) => (a.outOfDate = false))
             // bring back annotations that are not in the file
-            const newAnnotationList: Annotation[] = sortAnnotationsByLocation(
+            const newAnnotationList: Annotation[] =
+                //sortAnnotationsByLocation(
                 valid.concat(
                     annotationList.filter((a) => !updatedIds.includes(a.id))
                 )
-            )
+            // )
 
             setAnnotationList(newAnnotationList)
 

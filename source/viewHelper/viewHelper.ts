@@ -325,7 +325,11 @@ export const handleCreateAnnotation = (
                     tempAnno?.anchors[0].filename
             )
             setTempAnno(null)
-            setAnnotationList(sortAnnotationsByLocation(annotationList))
+            setAnnotationList(
+                // sortAnnotationsByLocation(
+                annotationList
+            )
+            // )
             view?.updateDisplay(annotationList)
             if (text) addHighlightsToEditor(annotationList, text)
             if (willBePinned) {
@@ -419,7 +423,9 @@ export const handleDeleteAnnotation = (id: string): void => {
     )[0]
     visible
         ? setAnnotationList(
-              sortAnnotationsByLocation(removeOutOfDateAnnotations(updatedList))
+              // sortAnnotationsByLocation(
+              removeOutOfDateAnnotations(updatedList)
+              //)
           )
         : setAnnotationList(removeOutOfDateAnnotations(updatedList))
     view?.updateDisplay(annotationList)

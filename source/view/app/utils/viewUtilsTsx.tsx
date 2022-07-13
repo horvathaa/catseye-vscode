@@ -17,8 +17,12 @@ export const collapseExpandToggle = (
 ): React.ReactElement<any> => {
     const plural: string = subject === 'reply' ? 'replies' : subject + 's'
     const subjectString: string = showing
-        ? `Hide ${obj.length} ${obj.length === 1 ? subject : plural}`
-        : `Show ${obj.length} ${obj.length === 1 ? subject : plural}`
+        ? `Hide ${subject === 'reply' ? 'older' : obj.length} ${
+              obj.length === 1 ? subject : plural
+          }`
+        : `Show ${subject === 'reply' ? 'older' : obj.length} ${
+              obj.length === 1 ? subject : plural
+          }`
     const icon: React.ReactElement<any> = !showing ? (
         <VscChevronRight className={styles['IconContainer']} />
     ) : (

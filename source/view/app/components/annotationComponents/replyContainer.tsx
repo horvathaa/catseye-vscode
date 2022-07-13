@@ -20,6 +20,8 @@ interface Props {
     deleteReply: (id: string) => void
 }
 
+const MAX_NUM_REPLIES = 3
+
 const ReplyContainer: React.FC<Props> = ({
     replying,
     replies,
@@ -31,6 +33,7 @@ const ReplyContainer: React.FC<Props> = ({
 }) => {
     const [showMoreReplies, setShowMoreReplies] = React.useState<boolean>(false)
     const activeReplies = replies.filter((r) => !r.deleted)
+    const mostRecentReplies = activeReplies.slice(-MAX_NUM_REPLIES)
     const hasReplies = replies && activeReplies.length
     const [tempIdCounter, setTempIdCounter] = React.useState<number>(1)
 
@@ -41,36 +44,35 @@ const ReplyContainer: React.FC<Props> = ({
 
     return (
         <div>
-            {/* Ideally the below expand collapse 
-            toggle shows older comments,
-            we always display the three most recent */}
-            {/* {hasReplies
+            {hasReplies && MAX_NUM_REPLIES < activeReplies.length
                 ? collapseExpandToggle(
                       showMoreReplies,
                       activeReplies,
                       setShowMoreReplies,
                       'reply'
                   )
-                : null} */}
+                : null}
             {hasReplies
-                ? replies?.map((r: Reply) => {
-                      return !r.deleted ? (
-                          <ReactReply
-                              key={'reply-' + r.id}
-                              id={r.id}
-                              replyContent={r.replyContent}
-                              userId={userId}
-                              authorId={r.authorId}
-                              githubUsername={r.githubUsername}
-                              createdTimestamp={r.createdTimestamp}
-                              replying={false}
-                              deleted={r.deleted}
-                              submissionHandler={submitReply}
-                              cancelHandler={cancelReply}
-                              deleteHandler={deleteReply}
-                          />
-                      ) : null
-                  })
+                ? (showMoreReplies ? activeReplies : mostRecentReplies)?.map(
+                      (r: Reply) => {
+                          return !r.deleted ? (
+                              <ReactReply
+                                  key={'reply-' + r.id}
+                                  id={r.id}
+                                  replyContent={r.replyContent}
+                                  userId={userId}
+                                  authorId={r.authorId}
+                                  githubUsername={r.githubUsername}
+                                  createdTimestamp={r.createdTimestamp}
+                                  replying={false}
+                                  deleted={r.deleted}
+                                  submissionHandler={submitReply}
+                                  cancelHandler={cancelReply}
+                                  deleteHandler={deleteReply}
+                              />
+                          ) : null
+                      }
+                  )
                 : null}
             <ReactReply
                 githubUsername={username}

@@ -237,6 +237,7 @@ const ReactAnnotation: React.FC<Props> = ({
 
     const submitReply = (reply: Reply): void => {
         const replyIds: string[] = anno.replies?.map((r) => r.id)
+        // TODO: Here we should maybe sort by created and replacing instead of just concatenating
         const updatedReplies: Reply[] = replyIds.includes(reply.id)
             ? anno.replies.filter((r) => r.id !== reply.id).concat([reply])
             : anno.replies.concat([reply])

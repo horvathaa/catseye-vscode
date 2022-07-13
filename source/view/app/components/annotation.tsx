@@ -237,6 +237,7 @@ const ReactAnnotation: React.FC<Props> = ({
 
     const submitReply = (reply: Reply): void => {
         const replyIds: string[] = anno.replies?.map((r) => r.id)
+        // TODO: Here we should maybe sort by created and replacing instead of just concatenating
         const updatedReplies: Reply[] = replyIds.includes(reply.id)
             ? anno.replies.filter((r) => r.id !== reply.id).concat([reply])
             : anno.replies.concat([reply])
@@ -253,6 +254,7 @@ const ReactAnnotation: React.FC<Props> = ({
             value: updatedReplies,
         })
         setReplying(false)
+        // TODO: End of this function should result to clearing of annotation
     }
 
     const deleteReply = (id: string): void => {
@@ -378,10 +380,6 @@ const ReactAnnotation: React.FC<Props> = ({
                                 scrollInEditor={scrollInEditor}
                             />
                             <div className={styles['ContentContainer']}>
-                                <AnnotationTypesBar
-                                    currentTypes={anno.types}
-                                    editTypes={updateAnnotationTypes}
-                                />
                                 {edit ? (
                                     <TextEditor
                                         content={anno.annotation}
@@ -393,12 +391,27 @@ const ReactAnnotation: React.FC<Props> = ({
                                     <div
                                         style={{
                                             display: 'flex',
-                                            flexDirection: 'row',
+                                            flexDirection: 'column',
                                             justifyContent: 'space-between',
                                         }}
                                     >
-                                        {anno.annotation}
-                                        <div>
+                                        <div style={{ padding: '3px' }}>
+                                            {anno.annotation}
+                                        </div>
+
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                flexDirection: 'row',
+                                                justifyContent: 'space-between',
+                                            }}
+                                        >
+                                            <AnnotationTypesBar
+                                                currentTypes={anno.types}
+                                                editTypes={
+                                                    updateAnnotationTypes
+                                                }
+                                            />
                                             <EditIcon
                                                 onClick={(
                                                     e: React.SyntheticEvent
@@ -407,28 +420,18 @@ const ReactAnnotation: React.FC<Props> = ({
                                                     setEdit(!edit)
                                                 }}
                                             />
-                                            <ReplyIcon
-                                                onClick={(
-                                                    e: React.SyntheticEvent
-                                                ) => {
-                                                    e.stopPropagation()
-                                                    setReplying(!replying)
-                                                }}
-                                            />
                                         </div>
                                     </div>
                                 )}
-                                {replying === true || anno.replies.length ? (
-                                    <ReplyContainer
-                                        replying={replying}
-                                        replies={anno.replies}
-                                        username={username}
-                                        userId={userId}
-                                        submitReply={submitReply}
-                                        cancelReply={() => setReplying(false)}
-                                        deleteReply={deleteReply}
-                                    />
-                                ) : null}
+                                <ReplyContainer
+                                    replying={replying}
+                                    replies={anno.replies}
+                                    username={username}
+                                    userId={userId}
+                                    submitReply={submitReply}
+                                    cancelReply={() => setReplying(false)}
+                                    deleteReply={deleteReply}
+                                />
                             </div>
                         </CardContent>
                     </Collapse>

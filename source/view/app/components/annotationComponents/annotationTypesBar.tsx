@@ -8,11 +8,13 @@ import {
     iconColor,
     vscodeTextColor,
 } from '../../styles/vscodeStyles'
-import { styled } from '@mui/material/styles'
+import { createTheme, styled } from '@mui/material/styles'
 import BugReportIcon from '@mui/icons-material/BugReport' // Issue
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark' // Question
 import TaskIcon from '@mui/icons-material/Task' // Task
 import AssignmentIcon from '@mui/icons-material/Assignment' // Proposal
+import { useMediaQuery } from '@material-ui/core'
+import { ContactSupport } from '@mui/icons-material'
 
 interface TypesProps {
     currentTypes: Type[]
@@ -29,10 +31,25 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
         issue: <BugReportIcon />,
         proposal: <AssignmentIcon />,
         task: <TaskIcon />,
-        question: <QuestionMarkIcon />,
+        question: <ContactSupport />,
     }
 
     const [types, setTypes] = React.useState<Type[]>(currentTypes)
+
+    const theme = createTheme({
+        breakpoints: {
+            values: {
+                xs: 0,
+                sm: 150,
+                md: 475,
+                lg: 650,
+                xl: 900,
+            },
+        },
+    })
+
+    // Concept learned from https://dev.to/christensenjoe/using-breakpoints-in-materialui-5gj0
+    const isMedOrMore = useMediaQuery(theme.breakpoints.up('md'))
 
     // https://mui.com/material-ui/guides/typescript/#customization-of-theme
     // could not get theme overrides to work :(
@@ -77,8 +94,8 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
                 return (
                     <CustomChip
                         key={id}
-                        label={type}
-                        icon={typesWithIcons[type]}
+                        label={isMedOrMore ? type : typesWithIcons[type]}
+                        icon={isMedOrMore ? typesWithIcons[type] : undefined}
                         color={types.includes(type) ? 'primary' : 'default'}
                         variant={types.includes(type) ? 'default' : 'outlined'}
                         size="small"

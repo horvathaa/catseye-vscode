@@ -9,6 +9,10 @@ import {
     vscodeTextColor,
 } from '../../styles/vscodeStyles'
 import { styled } from '@mui/material/styles'
+import BugReportIcon from '@mui/icons-material/BugReport' // Issue
+import QuestionMarkIcon from '@mui/icons-material/QuestionMark' // Question
+import TaskIcon from '@mui/icons-material/Task' // Task
+import AssignmentIcon from '@mui/icons-material/Assignment' // Proposal
 
 interface TypesProps {
     currentTypes: Type[]
@@ -20,6 +24,14 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
     editTypes,
 }) => {
     const allTypes = Object.values(Type)
+
+    const typesWithIcons = {
+        issue: <BugReportIcon />,
+        proposal: <AssignmentIcon />,
+        task: <TaskIcon />,
+        question: <QuestionMarkIcon />,
+    }
+
     const [types, setTypes] = React.useState<Type[]>(currentTypes)
 
     // https://mui.com/material-ui/guides/typescript/#customization-of-theme
@@ -66,6 +78,7 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
                     <CustomChip
                         key={id}
                         label={type}
+                        icon={typesWithIcons[type]}
                         color={types.includes(type) ? 'primary' : 'default'}
                         variant={types.includes(type) ? 'default' : 'outlined'}
                         size="small"

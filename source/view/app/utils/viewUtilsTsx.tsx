@@ -8,7 +8,7 @@ import { VscChevronDown, VscChevronRight } from 'react-icons/vsc'
 import * as React from 'react'
 import styles from '../styles/annotation.module.css'
 
-// toggle button used for expanding and collapsing replies, snapshots, etc.
+// toggle button used for expanding and collapsing snapshots, etc.
 export const collapseExpandToggle = (
     showing: boolean,
     obj: any[],
@@ -43,7 +43,7 @@ export const collapseExpandToggle = (
     )
 }
 
-// toggle button used for expanding and collapsing replies, snapshots, etc.
+// textual button used for expanding and collapsing replies
 export const showHideLine = (
     showing: boolean,
     length: number,
@@ -67,3 +67,4 @@ export const showHideLine = (
         </div>
     )
 }
+

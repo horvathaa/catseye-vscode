@@ -151,13 +151,11 @@
     margin-right: 1em;
     position: relative;
     cursor: pointer;
-    padding: 0.35em 0.35em 0.35em 0.35em;
+    padding: 0.1em;
     background: #69696924;
     border-radius: 1em;
     justify-content: center;
     align-items: center;
-    margin-top: 5px;
-    margin-bottom: 5px;
 }
 
 .DropdownItemOverwrite {
@@ -311,6 +309,12 @@
     display: flex;
 }
 
+/* .TypesBarContainer {
+    display: flex;
+    flex-direction: 'row';
+    justify-content: 'space-between';
+} */
+
 .snapshotContainer {
     display: flex;
     border: 0.25px solid rgb(239 255 201 / 20%);
@@ -421,6 +425,16 @@
     overflow-wrap: anywhere;
     font-size: 1.138em;
     padding: 4px 6px;
+}
+
+.AnnoContentContainer {
+    margin: 5px 0px;
+    border: 1px solid rgb(239 255 201 / 20%);
+    border-radius: 4px;
+    font-family: var(--vscode-font-family);
+    overflow-wrap: anywhere;
+    font-size: 1.15em;
+    padding: 2px 3px;
 }
 
 .collapseExpandButton {

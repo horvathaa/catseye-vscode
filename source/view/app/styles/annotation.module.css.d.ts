@@ -7,6 +7,7 @@ interface CssExports {
   'AnchorDescription': string;
   'AnchorListButtonContainer': string;
   'AnchorListContainer': string;
+  'AnnoContentContainer': string;
   'AnnotationContainer': string;
   'AnnotationIconsContainer': string;
   'AnnotationItem': string;

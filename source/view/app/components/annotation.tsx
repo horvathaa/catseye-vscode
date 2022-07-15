@@ -33,6 +33,7 @@ import {
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CollapsedCardHeader from './annotationComponents/annotationCardHeader'
 import EditIcon from '@mui/icons-material/Edit'
+import AdamiteButton from './annotationComponents/AdamiteButton'
 
 interface Props {
     annotation: Annotation
@@ -185,6 +186,10 @@ const ReactAnnotation: React.FC<Props> = ({
             command: 'deleteAnnotation',
             annoId: anno.id,
         })
+    }
+
+    const resolveAnnotation = (e: React.SyntheticEvent): void => {
+        console.log('RESOLVE THE ANNOTATION')
     }
 
     const snapshotCode = (id: string): void => {
@@ -371,6 +376,8 @@ const ReactAnnotation: React.FC<Props> = ({
                         setExpanded={setExpanded}
                         anchored={anchored}
                         anno={anno}
+                        deleteAnnotation={(e) => deleteAnnotation(e)}
+                        resolveAnnotation={resolveAnnotation}
                     />
                     <Collapse in={expanded} timeout="auto" unmountOnExit>
                         <CardContent>
@@ -395,7 +402,11 @@ const ReactAnnotation: React.FC<Props> = ({
                                             justifyContent: 'space-between',
                                         }}
                                     >
-                                        <div style={{ padding: '3px' }}>
+                                        <div
+                                            className={
+                                                styles['AnnoContentContainer']
+                                            }
+                                        >
                                             {anno.annotation}
                                         </div>
 
@@ -412,14 +423,26 @@ const ReactAnnotation: React.FC<Props> = ({
                                                     updateAnnotationTypes
                                                 }
                                             />
-                                            <EditIcon
+                                            <AdamiteButton
+                                                buttonClicked={(
+                                                    e: React.SyntheticEvent
+                                                ) => {
+                                                    e.stopPropagation()
+                                                    setEdit(!edit)
+                                                }}
+                                                name="Edit"
+                                                icon={
+                                                    <EditIcon fontSize="small" />
+                                                }
+                                            />
+                                            {/* <EditIcon
                                                 onClick={(
                                                     e: React.SyntheticEvent
                                                 ) => {
                                                     e.stopPropagation()
                                                     setEdit(!edit)
                                                 }}
-                                            />
+                                            /> */}
                                         </div>
                                     </div>
                                 )}

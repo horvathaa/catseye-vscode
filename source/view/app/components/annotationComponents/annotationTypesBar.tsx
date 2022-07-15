@@ -9,8 +9,8 @@ import {
     vscodeTextColor,
 } from '../../styles/vscodeStyles'
 import { createTheme, styled } from '@mui/material/styles'
+import styles from '../../styles/annotation.module.css'
 import BugReportIcon from '@mui/icons-material/BugReport' // Issue
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark' // Question
 import TaskIcon from '@mui/icons-material/Task' // Task
 import AssignmentIcon from '@mui/icons-material/Assignment' // Proposal
 import { useMediaQuery } from '@material-ui/core'
@@ -40,7 +40,7 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
         breakpoints: {
             values: {
                 xs: 0,
-                sm: 150,
+                sm: 200,
                 md: 475,
                 lg: 650,
                 xl: 900,
@@ -50,6 +50,7 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
 
     // Concept learned from https://dev.to/christensenjoe/using-breakpoints-in-materialui-5gj0
     const isMedOrMore = useMediaQuery(theme.breakpoints.up('md'))
+    const isSmOrMore = useMediaQuery(theme.breakpoints.up('lg'))
 
     // https://mui.com/material-ui/guides/typescript/#customization-of-theme
     // could not get theme overrides to work :(
@@ -87,12 +88,15 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
         setTypes(updatedTypes)
         editTypes(types)
     }
-
+    // Can we make the flex
     return (
-        <div>
+        <span>
             {allTypes.map((type: Type, id) => {
                 return (
                     <CustomChip
+                        // style={{
+                        //     display: 'flex',
+                        // }}
                         key={id}
                         label={isMedOrMore ? type : typesWithIcons[type]}
                         icon={isMedOrMore ? typesWithIcons[type] : undefined}
@@ -103,7 +107,7 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
                     />
                 )
             })}
-        </div>
+        </span>
     )
 }
 

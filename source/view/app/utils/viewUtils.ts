@@ -195,3 +195,13 @@ export const sortAnnotationsByLocation = (
 
     return annotationList
 }
+
+export const breakpoints = {
+    values: {
+        xs: 0,
+        sm: 200,
+        md: 475,
+        lg: 650,
+        xl: 900,
+    },
+}

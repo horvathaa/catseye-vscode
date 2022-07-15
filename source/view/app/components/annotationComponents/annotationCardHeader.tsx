@@ -8,15 +8,25 @@ import { Annotation } from '../../../../constants/constants'
 import UserProfile from './userProfile'
 import { codeColor } from '../../styles/vscodeStyles'
 import styles from '../../styles/annotation.module.css'
+import AdamiteButton from './AdamiteButton'
 
 interface Props {
     expanded: boolean
     setExpanded: (e: boolean) => void
     anchored: boolean
     anno: Annotation
+    resolveAnnotation: (e: React.SyntheticEvent) => void
+    deleteAnnotation: (e: React.SyntheticEvent) => void
 }
 
-const CardHeader = ({ expanded, setExpanded, anchored, anno }: Props) => {
+const CardHeader = ({
+    expanded,
+    setExpanded,
+    anchored,
+    anno,
+    resolveAnnotation,
+    deleteAnnotation,
+}: Props) => {
     const handleMenuClick = () => {}
     return (
         <div
@@ -24,6 +34,7 @@ const CardHeader = ({ expanded, setExpanded, anchored, anno }: Props) => {
                 display: 'flex',
                 flexDirection: 'row',
                 justifyContent: 'space-between',
+                flexWrap: 'wrap',
             }}
             onClick={() => setExpanded(!expanded)}
         >
@@ -32,6 +43,7 @@ const CardHeader = ({ expanded, setExpanded, anchored, anno }: Props) => {
                     style={{
                         display: 'flex',
                         flexDirection: 'row',
+                        flexWrap: 'wrap',
                     }}
                 >
                     <IconButton size="small">
@@ -61,17 +73,28 @@ const CardHeader = ({ expanded, setExpanded, anchored, anno }: Props) => {
                     createdTimestamp={anno.createdTimestamp}
                 />
             )}
-            <div>
-                <IconButton size="small">
-                    <CheckIcon />
-                </IconButton>
-                <IconButton size="small">
-                    <DeleteIcon />
-                </IconButton>
+            <div
+                style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                }}
+            >
+                <AdamiteButton
+                    buttonClicked={resolveAnnotation}
+                    name="Resolve"
+                    icon={<CheckIcon fontSize="small" />}
+                />
+                <AdamiteButton
+                    buttonClicked={deleteAnnotation}
+                    name="Resolve"
+                    icon={<DeleteIcon fontSize="small" />}
+                />
                 {expanded === true ? (
-                    <IconButton size="small" onClick={handleMenuClick}>
-                        <MoreVertOutlinedIcon />
-                    </IconButton>
+                    <AdamiteButton
+                        buttonClicked={handleMenuClick}
+                        name="More"
+                        icon={<MoreVertOutlinedIcon fontSize="small" />}
+                    />
                 ) : null}
             </div>
         </div>

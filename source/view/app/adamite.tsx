@@ -252,43 +252,37 @@ const AdamitePanel: React.FC<Props> = ({
                 />
             ) : null}
             {!showLogin && (
-                <div>
-                    <StyledTabs value={tabVal} onChange={handleTabChange}>
-                        <StyledTab label="Anchored" />
-                        <StyledTab label="Unanchored" />
-                    </StyledTabs>
-                </div>
-                // <>
-                //     <TopBar
-                //         annotations={annotations}
-                //         getSearchedAnnotations={getSearchedAnnotations}
-                //         saveAnnotationsToJson={saveAnnotationsToJson}
-                //         showKeyboardShortcuts={showKeyboardShortcuts}
-                //     />
-                //     {showSearchedAnnotations &&
-                //         searchedAnnotations.map((a) => {
-                //             return (
-                //                 <ReactAnnotation
-                //                     annotation={a}
-                //                     vscode={vscode}
-                //                     window={window}
-                //                     userId={uid}
-                //                     username={userName}
-                //                 />
-                //             )
-                //         })}
-                // <AnnotationList
-                //     currentFile={currentFile}
-                //     currentProject={currentProject}
-                //     annotations={annotations}
-                //     vscode={vscode}
-                //     window={window}
-                //     username={userName}
-                //     userId={uid}
-                // />
-                // </>
+                <>
+                    <TopBar
+                        annotations={annotations}
+                        getSearchedAnnotations={getSearchedAnnotations}
+                        saveAnnotationsToJson={saveAnnotationsToJson}
+                        showKeyboardShortcuts={showKeyboardShortcuts}
+                    />
+                    {showSearchedAnnotations &&
+                        searchedAnnotations.map((a) => {
+                            return (
+                                <ReactAnnotation
+                                    annotation={a}
+                                    vscode={vscode}
+                                    window={window}
+                                    userId={uid}
+                                    username={userName}
+                                />
+                            )
+                        })}
+                <AnnotationList
+                    currentFile={currentFile}
+                    currentProject={currentProject}
+                    annotations={annotations}
+                    vscode={vscode}
+                    window={window}
+                    username={userName}
+                    userId={uid}
+                />
+                </>
             )}
-            {tabVal === 0 ? (
+            {/* {tabVal === 0 ? (
                 <AnnotationList
                     currentFile={currentFile}
                     currentProject={currentProject}
@@ -300,7 +294,7 @@ const AdamitePanel: React.FC<Props> = ({
                 />
             ) : (
                 'No annotations'
-            )}
+            )} */}
             {showLogin && <LogIn vscode={vscode} />}
         </React.Fragment>
     )

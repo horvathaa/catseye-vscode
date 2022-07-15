@@ -4,8 +4,9 @@ interface CssExports {
   'SearchBarContainer': string;
   'SearchIcon': string;
   'SearchIconOuter': string;
+  'SearchRowContainer': string;
+  'TopBarContainer': string;
   'TopRow': string;
-  'TopRowContainer': string;
   'inputBox': string;
   'profileMenu': string;
 }

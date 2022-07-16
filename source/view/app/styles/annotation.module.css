@@ -257,6 +257,11 @@
     padding: 6px;
     list-style-type: none;
     border-bottom: 0.05em solid #ffffff6e;
+    /* TODO: Change */
+}
+
+.replyContentContainer {
+    font-size: 1.138em;
 }
 
 .profilePhoto {
@@ -289,7 +294,6 @@
     padding: 8px 0;
     margin-top: 4px;
     margin-bottom: 4px;
-    border-radius: 4px;
 }
 
 .AnchorDescription {
@@ -304,6 +308,7 @@
     resize: none;
     font-family: var(--vscode-font-family);
     background-color: var(--vscode-breadcrumb-activeSelectionForeground);
+    border-radius: 4px;
 }
 
 .topRow {
@@ -424,7 +429,7 @@
     border-radius: 4px;
     font-family: var(--vscode-font-family);
     overflow-wrap: anywhere;
-    font-size: 1.138em;
+    /* font-size: 1.138em; */
     padding: 4px 6px;
 }
 

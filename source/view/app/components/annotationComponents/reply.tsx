@@ -86,7 +86,7 @@ export const Reply: React.FC<Props> = ({
                     </div>
                 )}
             </div>
-            {replyContent}
+            <div className={styles['replyContentContainer']}>{replyContent}</div>
         </div>
     )
     // Ideally createdTimestamp is updated on Submit for creation (might be happening)

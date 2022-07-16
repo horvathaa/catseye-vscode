@@ -49,6 +49,7 @@ interface CssExports {
   'profileMenu': string;
   'profilePhoto': string;
   'replyContainer': string;
+  'replyContentContainer': string;
   'replyShowHide': string;
   'row': string;
   'selected': string;

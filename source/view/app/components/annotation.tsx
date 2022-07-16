@@ -62,10 +62,10 @@ const ReactAnnotation: React.FC<Props> = ({
     const cardStyle = {
         backgroundColor: editorBackground,
         color: vscodeTextColor,
-        margin: 10,
+        margin: 4,
         border: '1.5px',
         borderColor: iconColor,
-        borderRadius: '10px',
+        borderRadius: '4px',
         borderStyle: 'solid',
         padding: 5,
     }

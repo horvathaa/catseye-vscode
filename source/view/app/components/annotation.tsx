@@ -431,6 +431,7 @@ const ReactAnnotation: React.FC<Props> = ({
                                                     setEdit(!edit)
                                                 }}
                                                 name="Edit"
+                                                noMargin={true}
                                                 icon={
                                                     <EditIcon fontSize="small" />
                                                 }

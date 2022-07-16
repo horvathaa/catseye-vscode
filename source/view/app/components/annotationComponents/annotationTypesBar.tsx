@@ -19,19 +19,21 @@ import { ContactSupport } from '@mui/icons-material'
 interface TypesProps {
     currentTypes: Type[]
     editTypes: (newTypes: Type[]) => void
+    small?: boolean
 }
 
 const AnnotationTypesBar: React.FC<TypesProps> = ({
     currentTypes,
     editTypes,
+    small = true,
 }) => {
     const allTypes = Object.values(Type)
 
     const typesWithIcons = {
-        issue: <BugReportIcon />,
-        proposal: <AssignmentIcon />,
-        task: <TaskIcon />,
-        question: <ContactSupport />,
+        issue: <BugReportIcon fontSize="small" />,
+        proposal: <AssignmentIcon fontSize="small" />,
+        task: <TaskIcon fontSize="small" />,
+        question: <ContactSupport fontSize="small" />,
     }
 
     const [types, setTypes] = React.useState<Type[]>(currentTypes)
@@ -102,7 +104,7 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
                         icon={isMedOrMore ? typesWithIcons[type] : undefined}
                         color={types.includes(type) ? 'primary' : 'default'}
                         variant={types.includes(type) ? 'default' : 'outlined'}
-                        size="small"
+                        size={small === true ? 'small' : undefined}
                         onClick={() => handleAnnoClick(type)}
                     />
                 )

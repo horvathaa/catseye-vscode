@@ -41,6 +41,7 @@ const TopBar: React.FC<Props> = ({
             <AnnotationTypesBar
                 currentTypes={Object.values(Type)}
                 editTypes={updateAnnotationTypes}
+                small={false}
             />
         </div>
     )

@@ -12,12 +12,14 @@ interface Props {
     buttonClicked: (e: React.SyntheticEvent) => void
     name: string
     icon: React.ReactElement
+    noMargin?: boolean
 }
 
 const AdamiteButton: React.FC<Props> = ({
     buttonClicked = () => {},
     name,
     icon,
+    noMargin: noMargin = false,
 }) => {
     return (
         <React.Fragment>
@@ -28,7 +30,12 @@ const AdamiteButton: React.FC<Props> = ({
                 }}
                 className={styles['DropdownItemOverwrite']}
             >
-                <div className={styles['DropdownIconsWrapper']}>
+                <div
+                    className={styles['DropdownIconsWrapper']}
+                    style={
+                        noMargin === true ? { marginRight: '0em' } : undefined
+                    }
+                >
                     <Tooltip title={`${name}`}>
                         <div>{icon}</div>
                     </Tooltip>

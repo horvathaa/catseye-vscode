@@ -171,38 +171,12 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                         <ListItemIcon>
                             <ArticleIcon />
                         </ListItemIcon>
-                        <ListItemText primary="Current File" />
+                        <ListItemText primary="Annotations" />
                         {openFile ? <ExpandLess /> : <ExpandMore />}
                     </ListItemButton>
-                    <Collapse in={openFile} timeout="auto" unmountOnExit>
-                        {fileAnno.length > 0 &&
-                            sortAnnotationsByLocation(fileAnno).map(
-                                (a: Annotation) => {
-                                    return (
-                                        <ReactAnnotation
-                                            key={'annotationList-tsx-' + a.id}
-                                            annotation={a}
-                                            vscode={vscode}
-                                            window={window}
-                                            username={username}
-                                            userId={userId}
-                                        />
-                                    )
-                                }
-                            )}
-                    </Collapse>
-                </List>
-                <List sx={{ width: '100%' }} component="div" disablePadding>
-                    <ListItemButton onClick={handleCurrProjClick}>
-                        <ListItemIcon>
-                            <AccountTreeIcon />
-                        </ListItemIcon>
-                        <ListItemText primary="Current Project" />
-                        {openCurrProj ? <ExpandLess /> : <ExpandMore />}
-                    </ListItemButton>
-                    <Collapse in={openCurrProj} timeout="auto" unmountOnExit>
-                        {projAnno.length > 0 &&
-                            projAnno.map((a: Annotation) => {
+                    {fileAnno.length > 0 &&
+                        sortAnnotationsByLocation(fileAnno).map(
+                            (a: Annotation) => {
                                 return (
                                     <ReactAnnotation
                                         key={'annotationList-tsx-' + a.id}
@@ -213,8 +187,21 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                                         userId={userId}
                                     />
                                 )
-                            })}
-                    </Collapse>
+                            }
+                        )}
+                    {projAnno.length > 0 &&
+                        projAnno.map((a: Annotation) => {
+                            return (
+                                <ReactAnnotation
+                                    key={'annotationList-tsx-' + a.id}
+                                    annotation={a}
+                                    vscode={vscode}
+                                    window={window}
+                                    username={username}
+                                    userId={userId}
+                                />
+                            )
+                        })}
                 </List>
             </ThemeProvider>
         </>

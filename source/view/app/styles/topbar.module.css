@@ -3,7 +3,6 @@
     z-index: 1;
     align-items: center;
     flex: 1;
-    margin-left: 8px;
     margin-top: 6px;
     margin-bottom: 3px;
     border-radius: 4px;
@@ -39,10 +38,9 @@
     justify-content: space-between;
 }
 
-.SearchRowContainer {
+.RowContainer {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
 }
 
 .inputBox {

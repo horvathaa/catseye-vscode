@@ -238,6 +238,11 @@ const AdamitePanel: React.FC<Props> = ({
         return
     }
 
+    // Need to Update
+    const filtersUpdated = (): void => {
+        console.log('Filters have been updated')
+    }
+
     const notifyDone = (): void => {
         setShowNewAnnotation(false)
     }
@@ -258,6 +263,7 @@ const AdamitePanel: React.FC<Props> = ({
                         getSearchedAnnotations={getSearchedAnnotations}
                         saveAnnotationsToJson={saveAnnotationsToJson}
                         showKeyboardShortcuts={showKeyboardShortcuts}
+                        filtersUpdated={filtersUpdated}
                     />
                     {showSearchedAnnotations &&
                         searchedAnnotations.map((a) => {
@@ -271,15 +277,15 @@ const AdamitePanel: React.FC<Props> = ({
                                 />
                             )
                         })}
-                <AnnotationList
-                    currentFile={currentFile}
-                    currentProject={currentProject}
-                    annotations={annotations}
-                    vscode={vscode}
-                    window={window}
-                    username={userName}
-                    userId={uid}
-                />
+                    <AnnotationList
+                        currentFile={currentFile}
+                        currentProject={currentProject}
+                        annotations={annotations}
+                        vscode={vscode}
+                        window={window}
+                        username={userName}
+                        userId={uid}
+                    />
                 </>
             )}
             {/* {tabVal === 0 ? (

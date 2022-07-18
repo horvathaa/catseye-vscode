@@ -9,12 +9,8 @@ import {
     vscodeTextColor,
 } from '../../styles/vscodeStyles'
 import { createTheme, styled } from '@mui/material/styles'
-import styles from '../../styles/annotation.module.css'
-import BugReportIcon from '@mui/icons-material/BugReport' // Issue
-import TaskIcon from '@mui/icons-material/Task' // Task
-import AssignmentIcon from '@mui/icons-material/Assignment' // Proposal
+import styles from '../../styles/topbar.module.css'
 import { useMediaQuery } from '@material-ui/core'
-import { ContactSupport } from '@mui/icons-material'
 
 // Key-value: https://stackoverflow.com/questions/36467469/is-key-value-pair-available-in-typescript
 interface OptionsProps {
@@ -86,8 +82,10 @@ const OptionChipsBar: React.FC<OptionsProps> = ({
         editOptions(options)
     }
     return (
-        <span>
-            {label}:{' '}
+        <div className={styles['RowContainer']}>
+            <div className={styles['OptionLabel']}>
+                {label}:{'  '}
+            </div>
             {options.map((option: Option, id) => {
                 return (
                     <CustomChip
@@ -103,7 +101,7 @@ const OptionChipsBar: React.FC<OptionsProps> = ({
                     />
                 )
             })}
-        </span>
+        </div>
     )
 }
 

@@ -36,11 +36,28 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    flex-wrap: wrap;
 }
 
 .RowContainer {
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
+}
+
+.OptionsContainer {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    margin: 10px -10px;
+}
+
+.SearchContainer {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
 }
 
 .inputBox {
@@ -96,4 +113,10 @@
     filter: brightness(1.4);
     transition: opacity 0.55s ease-in-out;
     color: white;
+}
+
+.OptionLabel {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }

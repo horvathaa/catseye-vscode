@@ -14,7 +14,18 @@ import SortBy from './topbarComponents/sortBy'
 import PersonIcon from '@mui/icons-material/Person'
 import OptionChipsBar from './topbarComponents/optionChipsBar'
 import { Groups } from '@mui/icons-material'
-import { Checkbox, FormControlLabel } from '@mui/material'
+import {
+    Checkbox,
+    createTheme,
+    FormControlLabel,
+    FormGroup,
+    ThemeProvider,
+} from '@mui/material'
+import {
+    editorBackground,
+    iconColor,
+    vscodeTextColor,
+} from '../styles/vscodeStyles'
 interface Props {
     annotations: Annotation[]
     getSearchedAnnotations: (annotations: Annotation[]) => void
@@ -43,45 +54,93 @@ const TopBar: React.FC<Props> = ({
         },
     ]
     const initSort = 'Relevance'
+
+    const theme = createTheme({
+        palette: {
+            primary: {
+                main: `${editorBackground}`,
+            },
+            background: {
+                paper: `${editorBackground}`,
+            },
+        },
+        typography: {
+            allVariants: {
+                fontSize: 14,
+                color: `${vscodeTextColor}`,
+                fontFamily: 'Arial',
+            },
+        },
+        components: {
+            MuiIconButton: {
+                styleOverrides: {
+                    root: {
+                        backgroundColor: editorBackground,
+                        color: iconColor,
+                    },
+                },
+            },
+            MuiFormControlLabel: {
+                styleOverrides: {
+                    root: {
+                        margin: '6px',
+                    },
+                },
+            },
+            MuiFormGroup: {
+                styleOverrides: {
+                    root: {
+                        flexDirection: 'row',
+                    },
+                },
+            },
+        },
+    })
     return (
         <div className={styles['TopBarContainer']}>
-            <div className={styles['RowContainer']}>
-                <SearchBar
-                    annotations={annotations}
-                    getSearchedAnnotations={getSearchedAnnotations}
-                />
-                <GlobalMenu
-                    saveAnnotationsToJson={saveAnnotationsToJson}
-                    showKeyboardShortcuts={showKeyboardShortcuts}
-                />
-            </div>
-            <div className={styles['RowContainer']}>
-                <SortBy
-                    sortByOptionSelected={filtersUpdated}
-                    selected={initSort}
-                ></SortBy>
-            </div>
-            <div className={styles['RowContainer']}>
-                <OptionChipsBar
-                    label="Author"
-                    initOptions={initAuthorOptions}
-                    editOptions={filtersUpdated}
-                ></OptionChipsBar>
-            </div>
-            <div className={styles['RowContainer']}>
-                Types:{' '}
-                <AnnotationTypesBar
-                    currentTypes={Object.values(Type)}
-                    editTypes={updateAnnotationTypes}
-                />
-            </div>
-            <div>
-                <FormControlLabel control={<Checkbox />} label="In-File Only" />
-                <FormControlLabel
-                    control={<Checkbox />}
-                    label="Show Resolved"
-                />
-            </div>
+            <ThemeProvider theme={theme}>
+                <div className={styles['RowContainer']}>
+                    <SearchBar
+                        annotations={annotations}
+                        getSearchedAnnotations={getSearchedAnnotations}
+                    />
+                    <GlobalMenu
+                        saveAnnotationsToJson={saveAnnotationsToJson}
+                        showKeyboardShortcuts={showKeyboardShortcuts}
+                    />
+                </div>
+                <div className={styles['OptionsContainer']}>
+                    <SortBy
+                        sortByOptionSelected={filtersUpdated}
+                        selected={initSort}
+                    ></SortBy>
+
+                    <OptionChipsBar
+                        label="Author"
+                        initOptions={initAuthorOptions}
+                        editOptions={filtersUpdated}
+                    ></OptionChipsBar>
+                    <div className={styles['RowContainer']}>
+                        <div className={styles['OptionLabel']}>
+                            Types:{'  '}
+                        </div>
+                        <AnnotationTypesBar
+                            currentTypes={Object.values(Type)}
+                            editTypes={updateAnnotationTypes}
+                        />
+                    </div>
+                    <FormGroup>
+                        <FormControlLabel
+                            control={<Checkbox />}
+                            label="In-File Only"
+                        />
+                        <FormControlLabel
+                            control={<Checkbox />}
+                            label="Show Resolved"
+                        />
+                    </FormGroup>
+                </div>
+            </ThemeProvider>
         </div>
     )
 }

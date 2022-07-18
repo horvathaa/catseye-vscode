@@ -15,6 +15,7 @@ import {
     editorBackground,
     vscodeTextColor,
     hoverBackground,
+    hoverText,
 } from '../../styles/vscodeStyles'
 
 interface Props {
@@ -52,21 +53,12 @@ const GlobalMenu: React.FC<Props> = ({
             },
         },
         components: {
-            MuiMenu: {
-                styleOverrides: {
-                    root: {
-                        borderStyle: 'solid',
-                        borderWidth: '0.15em',
-                        borderColor: '#d4d4d44f',
-                    },
-                },
-            },
             MuiMenuItem: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: editorBackground,
+                        backgroundColor: editorBackground, // Doesn't seem to do anything
                         '&:hover': {
-                            background: hoverBackground,
+                            background: hoverBackground, // background of item on hover
                         },
                     },
                 },
@@ -74,12 +66,16 @@ const GlobalMenu: React.FC<Props> = ({
             MuiList: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: editorBackground,
+                        backgroundColor: hoverText,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        padding: '0 10px', // Ideally this should go in MenuItem but doesn't seem to work?
                     },
                 },
             },
         },
     })
+
     return (
         <>
             <ThemeProvider theme={theme}>

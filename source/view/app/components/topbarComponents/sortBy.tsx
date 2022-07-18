@@ -66,7 +66,7 @@ const SortBy: React.FC<Props> = ({ selected, sortByOptionSelected }) => {
                         backgroundColor: hoverText,
                         display: 'flex',
                         flexDirection: 'column',
-                        padding: '0 10px', // Ideally this shoudl go in MenuItem but doesn't seem to work?
+                        padding: '0 10px', // Ideally this should go in MenuItem but doesn't seem to work?
                     },
                 },
             },
@@ -84,6 +84,7 @@ const SortBy: React.FC<Props> = ({ selected, sortByOptionSelected }) => {
                     variant="contained"
                     disableElevation
                     onClick={handleClick}
+                    style={{ padding: '0 10px' }}
                 >
                     Sort: {selected}
                 </Button>

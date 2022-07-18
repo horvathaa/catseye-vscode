@@ -200,7 +200,7 @@ export const breakpoints = {
     values: {
         xs: 0,
         sm: 200,
-        md: 475,
+        md: 350,
         lg: 650,
         xl: 900,
     },

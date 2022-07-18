@@ -52,6 +52,7 @@
     flex-wrap: wrap;
     justify-content: space-around;
     margin: 10px -10px;
+    column-gap: 5px;
 }
 
 .SearchContainer {
@@ -119,4 +120,5 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    font-size: 14px;
 }

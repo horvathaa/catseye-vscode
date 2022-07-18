@@ -114,7 +114,6 @@ const TopBar: React.FC<Props> = ({
                         sortByOptionSelected={filtersUpdated}
                         selected={initSort}
                     ></SortBy>
-
                     <OptionChipsBar
                         label="Author"
                         initOptions={initAuthorOptions}

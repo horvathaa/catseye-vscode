@@ -15,6 +15,7 @@ import TaskIcon from '@mui/icons-material/Task' // Task
 import AssignmentIcon from '@mui/icons-material/Assignment' // Proposal
 import { useMediaQuery } from '@material-ui/core'
 import { ContactSupport } from '@mui/icons-material'
+import { breakpoints } from '../../utils/viewUtils'
 
 interface TypesProps {
     currentTypes: Type[]
@@ -39,13 +40,12 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
     const [types, setTypes] = React.useState<Type[]>(currentTypes)
 
     const theme = createTheme({
-        breakpoints: {
-            values: {
-                xs: 0,
-                sm: 200,
-                md: 475,
-                lg: 650,
-                xl: 900,
+        breakpoints: breakpoints,
+        typography: {
+            allVariants: {
+                fontSize: 14,
+                color: `${vscodeTextColor}`,
+                fontFamily: 'Arial',
             },
         },
     })

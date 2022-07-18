@@ -11,6 +11,7 @@ import {
 import { createTheme, styled } from '@mui/material/styles'
 import styles from '../../styles/topbar.module.css'
 import { useMediaQuery } from '@material-ui/core'
+import { breakpoints } from '../../utils/viewUtils'
 
 // Key-value: https://stackoverflow.com/questions/36467469/is-key-value-pair-available-in-typescript
 interface OptionsProps {
@@ -29,15 +30,7 @@ const OptionChipsBar: React.FC<OptionsProps> = ({
     const [options, setOptions] = React.useState<Option[]>(initOptions)
 
     const theme = createTheme({
-        breakpoints: {
-            values: {
-                xs: 0,
-                sm: 200,
-                md: 475,
-                lg: 650,
-                xl: 900,
-            },
-        },
+        breakpoints: breakpoints,
     })
 
     // Concept learned from https://dev.to/christensenjoe/using-breakpoints-in-materialui-5gj0

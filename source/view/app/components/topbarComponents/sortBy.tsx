@@ -14,13 +14,15 @@ import {
     editorBackground,
     vscodeTextColor,
     hoverBackground,
+    hoverText,
 } from '../../styles/vscodeStyles'
 
 interface Props {
+    selected: string
     sortByOptionSelected: () => void
 }
 
-const SortBy: React.FC<Props> = ({ sortByOptionSelected }) => {
+const SortBy: React.FC<Props> = ({ selected, sortByOptionSelected }) => {
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
     const open = Boolean(anchorEl)
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -48,21 +50,12 @@ const SortBy: React.FC<Props> = ({ sortByOptionSelected }) => {
             },
         },
         components: {
-            MuiMenu: {
-                styleOverrides: {
-                    root: {
-                        borderStyle: 'solid',
-                        borderWidth: '0.15em',
-                        borderColor: '#d4d4d44f',
-                    },
-                },
-            },
             MuiMenuItem: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: editorBackground,
+                        backgroundColor: editorBackground, // Doesn't seem to do anything
                         '&:hover': {
-                            background: hoverBackground,
+                            background: hoverBackground, // background of item on hover
                         },
                     },
                 },
@@ -70,7 +63,10 @@ const SortBy: React.FC<Props> = ({ sortByOptionSelected }) => {
             MuiList: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: vscodeTextColor,
+                        backgroundColor: hoverText,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        padding: '0 10px', // Ideally this shoudl go in MenuItem but doesn't seem to work?
                     },
                 },
             },
@@ -89,7 +85,7 @@ const SortBy: React.FC<Props> = ({ sortByOptionSelected }) => {
                     disableElevation
                     onClick={handleClick}
                 >
-                    Sort:
+                    Sort: {selected}
                 </Button>
                 <Menu
                     id={'sortby-menu'}
@@ -98,6 +94,7 @@ const SortBy: React.FC<Props> = ({ sortByOptionSelected }) => {
                     onClose={handleClose}
                     MenuListProps={{
                         'aria-labelledby': 'sortby-button',
+                        dense: true,
                     }}
                 >
                     <MenuItem

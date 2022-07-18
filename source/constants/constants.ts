@@ -184,3 +184,9 @@ export interface TsFile {
 // 	author: string,
 // 	[key: string]: GitRepoInfo
 // }
+
+export interface Option {
+    name: string
+    selected: boolean
+    icon: React.ReactElement
+}

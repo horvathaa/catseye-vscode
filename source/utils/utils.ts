@@ -47,6 +47,7 @@ import { saveAnnotations as fbSaveAnnotations } from '../firebase/functions/func
 import { BiMessageAltCheck } from 'react-icons/bi'
 let { parse } = require('what-the-diff')
 var shiki = require('shiki')
+import { simpleGit, SimpleGit, CleanOptions } from 'simple-git'
 
 let lastSavedAnnotations: Annotation[] =
     annotationList && annotationList.length ? annotationList : []
@@ -529,7 +530,7 @@ export const makeObjectListFromAnnotations = (
         return {
             id: a.id ? a.id : uuidv4(),
             annotation: a.annotation ? a.annotation : '',
-            // anchors: a.anchors ? a.anchors : [],
+            anchors: a.anchors ? a.anchors : [], // ok to send on save/close bc CommitObject handles changes
             authorId: a.authorId ? a.authorId : '',
             createdTimestamp: a.createdTimestamp
                 ? a.createdTimestamp
@@ -691,18 +692,24 @@ const getAllAnchorsOnCommit = (
 }
 
 export const updateAnnotationCommit = (
-    lastCommit: string,
+    lastCommit: string, // "Current commit"
     lastBranch: string,
     commit: string,
     branch: string,
     repo: string
 ): void => {
-    // const annosOnCommit = annotationList.filter(a => a.commit === gitInfo[])
+    // update any anchor points that've changed since last commit
     const anchorsOnCommit: AnchorObject[] = getAllAnchorsOnCommit(
         annotationList,
-        lastCommit
+        lastCommit // commit ?
     )
-    console.log('anchors', anchorsOnCommit)
+    console.log('commit we save on', lastCommit, 'updated commit', commit)
+
+    const ids = anchorsOnCommit.map((a) => a.parentId)
+    const annosOnCommit = annotationList.filter((a) => ids.includes(a.id)) // grabs annotations whose anchor points have changed - do we also update when annotation content changes?
+    console.log('anchors', anchorsOnCommit, 'annos', annosOnCommit)
+
+    // SAVE CURRENT STATE W/ COMMITOBJECT
     const commitObject: CommitObject = {
         commit: lastCommit,
         gitRepo: repo,
@@ -714,13 +721,30 @@ export const updateAnnotationCommit = (
     }
     console.log('cmmit object??', commitObject)
     saveCommit(commitObject)
-    anchorsOnCommit.forEach((a: AnchorObject) => {
-        // if (a.gitRepo === repo && a.gitCommit !== commit) {
-        // might not address 'localChange'
-        a.gitCommit = commit
-        a.gitBranch = branch
-        // }
-    })
+    fbSaveAnnotations(annosOnCommit) // smarter - only send edited annotations, get all annotations on commit
+    setAnnotationList([
+        ...annotationList.filter((a) => !ids.includes(a.id)),
+        ...annosOnCommit,
+    ])
+
+    // update anchors + annos for next commit
+    // annosOnCommit.forEach((a: any) => {
+    //     // WRONG: updating to next commit
+    //     a.gitCommit = commit
+    //     a.gitBranch = branch
+    //     // a.anchors.forEach((anchor: AnchorObject) => {
+    //     //     anchor.gitCommit = commit
+    //     //     anchor.gitBranch = branch
+    //     // })
+    // })
+
+    // anchorsOnCommit.forEach((a: AnchorObject) => {
+    //     // if (a.gitRepo === repo && a.gitCommit !== commit) {
+    //     // might not address 'localChange'
+    //     a.gitCommit = commit
+    //     a.gitBranch = branch
+    //     // }
+    // })
 }
 
 const findMostLikelyRepository = (gitApi: any): string => {
@@ -785,7 +809,7 @@ export const generateGitMetaData = async (
     await gitApi.repositories?.forEach(async (r: any) => {
         const currentProjectName: string = getProjectName(r?.rootUri?.path)
         r?.state?.onDidChange(async () => {
-            const currentProjectName: string = getProjectName(r?.rootUri?.path)
+            // const currentProjectName: string = getProjectName(r?.rootUri?.path)
             if (!gitInfo[currentProjectName] && r) {
                 gitInfo[currentProjectName] = {
                     repo: r?.state?.remotes[0]?.fetchUrl
@@ -823,6 +847,7 @@ export const generateGitMetaData = async (
                     'our git info',
                     gitInfo[currentProjectName]?.commit
                 )
+                // save user's current commit (current) before updating to next - this is how we query for 'current commit'
                 updateAnnotationCommit(
                     gitInfo[currentProjectName].commit,
                     gitInfo[currentProjectName].branch,
@@ -1068,4 +1093,21 @@ export const createAnchorObject = async (
     } else {
         vscode.window.showInformationMessage('Must have open text editor!')
     }
+}
+
+const gitDir =
+    vscode.workspace.workspaceFolders &&
+    vscode.workspace.workspaceFolders[0].uri
+        ? vscode.workspace.workspaceFolders[0].uri.fsPath
+        : ''
+
+const git: SimpleGit = simpleGit(gitDir, { binary: 'git' })
+
+export const getLastGitCommitHash = async () => {
+    const options = ["--pretty=format:'%H'", '--skip=1', '--max-count=1']
+    const result = await git.log(options)
+    const lastCommit = result.all[0].hash.slice(1, -1)
+    console.log('the -2 commit', lastCommit)
+
+    return lastCommit
 }

@@ -7,6 +7,14 @@
 import { VscChevronDown, VscChevronRight } from 'react-icons/vsc'
 import * as React from 'react'
 import styles from '../styles/annotation.module.css'
+import { Groups } from '@mui/icons-material'
+import PersonIcon from '@mui/icons-material/Person'
+import {
+    Annotation,
+    Type,
+    Option,
+    AuthorOptions,
+} from '../../../constants/constants'
 
 // toggle button used for expanding and collapsing snapshots, etc.
 export const collapseExpandToggle = (
@@ -67,3 +75,22 @@ export const showHideLine = (
         </div>
     )
 }
+
+export const defaultAuthorOptions: Option[] = [
+    {
+        name: AuthorOptions.mine,
+        selected: true,
+        icon: <PersonIcon fontSize="small" />,
+    },
+    {
+        name: AuthorOptions.others,
+        selected: true,
+        icon: <Groups fontSize="small" />,
+    },
+]
+
+// export const defaultTypeOptions: Option[] = [
+//     {
+//         name:
+//     }
+// ]

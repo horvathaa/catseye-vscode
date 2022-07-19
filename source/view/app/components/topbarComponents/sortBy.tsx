@@ -16,14 +16,18 @@ import {
     hoverBackground,
     hoverText,
 } from '../../styles/vscodeStyles'
+import { yellow } from '@mui/material/colors'
+import { EnumType } from 'typescript'
+import { Sort } from '../../../../constants/constants'
 
 interface Props {
-    selected: string
-    sortByOptionSelected: () => void
+    initSort: Sort
+    sortByOptionSelected: (selected: Sort) => void
 }
 
-const SortBy: React.FC<Props> = ({ selected, sortByOptionSelected }) => {
+const SortBy: React.FC<Props> = ({ initSort, sortByOptionSelected }) => {
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
+    const [sort, setSort] = React.useState<Sort>(initSort)
     const open = Boolean(anchorEl)
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.stopPropagation()
@@ -32,9 +36,14 @@ const SortBy: React.FC<Props> = ({ selected, sortByOptionSelected }) => {
     const handleClose = (event: React.MouseEvent<HTMLAnchorElement>) => {
         event.stopPropagation()
         setAnchorEl(null)
-        sortByOptionSelected()
+        // sortByOptionSelected()
     }
 
+    // const sortByOptionSelected = (selected?: Sort = undefined) => {
+    //     if (selected) {
+    //         setSort(selected)
+    //     }
+    // }
     // https://mui.com/material-ui/customization/theming/
     const theme = createTheme({
         palette: {
@@ -44,18 +53,30 @@ const SortBy: React.FC<Props> = ({ selected, sortByOptionSelected }) => {
         },
         typography: {
             allVariants: {
-                fontSize: 12,
+                fontSize: 14,
                 color: `${vscodeTextColor}`,
                 fontFamily: 'Arial',
             },
         },
         components: {
+            MuiButton: {
+                styleOverrides: {
+                    root: {
+                        backgroundColor: editorBackground, // Doesn't seem to do anything
+                        '&:hover': {
+                            borderColor: vscodeTextColor,
+                            margin: '2px 0 !important',
+                        },
+                    },
+                },
+            },
+            // MuiMenuItem doesn't seem to do anything
             MuiMenuItem: {
                 styleOverrides: {
                     root: {
                         backgroundColor: editorBackground, // Doesn't seem to do anything
                         '&:hover': {
-                            background: hoverBackground, // background of item on hover
+                            background: vscodeTextColor,
                         },
                     },
                 },
@@ -63,9 +84,11 @@ const SortBy: React.FC<Props> = ({ selected, sortByOptionSelected }) => {
             MuiList: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: hoverText,
+                        backgroundColor: hoverText, // background of item on hover
+                        color: editorBackground,
                         display: 'flex',
                         flexDirection: 'column',
+                        borderRadius: '8px',
                         padding: '0 10px', // Ideally this should go in MenuItem but doesn't seem to work?
                     },
                 },
@@ -81,12 +104,20 @@ const SortBy: React.FC<Props> = ({ selected, sortByOptionSelected }) => {
                     aria-controls={open ? 'sortby-menu' : undefined}
                     aria-haspopup="true"
                     aria-expanded={open ? 'true' : undefined}
-                    variant="contained"
+                    variant="outlined"
                     disableElevation
                     onClick={handleClick}
-                    style={{ padding: '0 10px' }}
+                    style={{
+                        padding: '0 10px',
+                        color: `${editorBackground}`,
+                        backgroundColor: `${vscodeTextColor}`,
+                        textTransform: 'none',
+                        borderRadius: '4px',
+                        margin: '3px 1px',
+                    }}
+                    endIcon={<KeyboardArrowDownIcon />}
                 >
-                    Sort: {selected}
+                    Sort: {sort}
                 </Button>
                 <Menu
                     id={'sortby-menu'}
@@ -98,12 +129,31 @@ const SortBy: React.FC<Props> = ({ selected, sortByOptionSelected }) => {
                         dense: true,
                     }}
                 >
-                    <MenuItem
+                    {Object.values(Sort).map((sort: Sort, id) => {
+                        return (
+                            <MenuItem
+                                href=""
+                                key={id}
+                                onClick={(
+                                    e: React.MouseEvent<HTMLAnchorElement>
+                                ) => {
+                                    e.stopPropagation()
+                                    handleClose(e)
+                                    setSort(sort)
+                                    sortByOptionSelected(sort)
+                                }}
+                            >
+                                {sort}
+                            </MenuItem>
+                        )
+                    })}
+                    {/* <MenuItem
                         href=""
                         onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                             e.stopPropagation()
                             handleClose(e)
-                            sortByOptionSelected()
+                            setSort(selected)
+                            sortByOptionSelected(selected)
                         }}
                     >
                         Relevance
@@ -113,7 +163,8 @@ const SortBy: React.FC<Props> = ({ selected, sortByOptionSelected }) => {
                         onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                             e.stopPropagation()
                             handleClose(e)
-                            sortByOptionSelected()
+                            setSort(selected)
+                            sortByOptionSelected(selected)
                         }}
                     >
                         Location
@@ -123,11 +174,11 @@ const SortBy: React.FC<Props> = ({ selected, sortByOptionSelected }) => {
                         onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                             e.stopPropagation()
                             handleClose(e)
-                            sortByOptionSelected()
+                            sortByOptionSelected(selected)
                         }}
                     >
                         Time
-                    </MenuItem>
+                    </MenuItem> */}
                 </Menu>
             </ThemeProvider>
         </>

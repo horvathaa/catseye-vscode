@@ -190,3 +190,23 @@ export interface Option {
     selected: boolean
     icon: React.ReactElement
 }
+
+export enum AuthorOptions {
+    mine = 'mine',
+    others = 'others',
+}
+
+export enum Sort {
+    relevance = 'Relevance',
+    location = 'Location',
+    time = 'Time',
+}
+
+export interface FilterOptions {
+    sort: Sort
+    authorOptions: Option[]
+    typeOptions: Option[]
+    searchText?: string
+    showResolved: boolean
+    showFileOnly: boolean
+}

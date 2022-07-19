@@ -64,6 +64,13 @@ const TextEditor: React.FC<Props> = ({
                     },
                 },
             },
+            MuiButton: {
+                styleOverrides: {
+                    root: {
+                        color: green[400],
+                    },
+                },
+            },
         },
     })
 

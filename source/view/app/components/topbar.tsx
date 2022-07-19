@@ -11,9 +11,7 @@ import GlobalMenu from './topbarComponents/globalMenu'
 import styles from '../styles/topbar.module.css'
 import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
 import SortBy from './topbarComponents/sortBy'
-import PersonIcon from '@mui/icons-material/Person'
 import OptionChipsBar from './topbarComponents/optionChipsBar'
-import { Groups } from '@mui/icons-material'
 import {
     Checkbox,
     createTheme,
@@ -26,6 +24,8 @@ import {
     iconColor,
     vscodeTextColor,
 } from '../styles/vscodeStyles'
+import { defaultAuthorOptions } from '../utils/viewUtilsTsx'
+import { defaultSort } from '../utils/viewUtils'
 interface Props {
     annotations: Annotation[]
     getSearchedAnnotations: (annotations: Annotation[]) => void
@@ -45,15 +45,7 @@ const TopBar: React.FC<Props> = ({
     const updateAnnotationTypes = (types: Type[]): void => {
         console.log('UPDATE TYPES')
     }
-    const initAuthorOptions: Option[] = [
-        { name: 'mine', selected: true, icon: <PersonIcon fontSize="small" /> },
-        {
-            name: 'others',
-            selected: true,
-            icon: <Groups fontSize="small" />,
-        },
-    ]
-    const initSort = 'Relevance'
+    const initAuthorOptions: Option[] = defaultAuthorOptions
 
     const theme = createTheme({
         palette: {
@@ -112,7 +104,7 @@ const TopBar: React.FC<Props> = ({
                 <div className={styles['OptionsContainer']}>
                     <SortBy
                         sortByOptionSelected={filtersUpdated}
-                        selected={initSort}
+                        initSort={defaultSort}
                     ></SortBy>
                     <OptionChipsBar
                         label="Author"

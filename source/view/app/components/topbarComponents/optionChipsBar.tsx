@@ -59,7 +59,7 @@ const OptionChipsBar: React.FC<OptionsProps> = ({
                 backgroundColor: hoverText,
                 color: editorBackground,
             },
-        },
+    },
     }) as typeof Chip
 
     const handleOptClick = (selectedOption: Option) => {

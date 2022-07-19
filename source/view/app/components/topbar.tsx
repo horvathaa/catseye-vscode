@@ -26,6 +26,7 @@ import {
 } from '../styles/vscodeStyles'
 import { defaultAuthorOptions } from '../utils/viewUtilsTsx'
 import { defaultSort } from '../utils/viewUtils'
+import { red } from '@material-ui/core/colors'
 interface Props {
     annotations: Annotation[]
     getSearchedAnnotations: (annotations: Annotation[]) => void
@@ -53,7 +54,7 @@ const TopBar: React.FC<Props> = ({
                 main: `${editorBackground}`,
             },
             background: {
-                paper: `${editorBackground}`,
+                paper: `${vscodeTextColor}`,
             },
         },
         typography: {
@@ -64,14 +65,14 @@ const TopBar: React.FC<Props> = ({
             },
         },
         components: {
-            MuiIconButton: {
-                styleOverrides: {
-                    root: {
-                        backgroundColor: editorBackground,
-                        color: iconColor,
-                    },
-                },
-            },
+            // MuiIconButton: {
+            //     styleOverrides: {
+            //         root: {
+            //             backgroundColor: editorBackground,
+            //             color: iconColor,
+            //         },
+            //     },
+            // },
             MuiFormControlLabel: {
                 styleOverrides: {
                     root: {

@@ -85,9 +85,9 @@ const OptionChipsBar: React.FC<OptionsProps> = ({
                         key={id}
                         label={isMedOrMore ? option.name : option.icon}
                         icon={isMedOrMore ? option.icon : undefined}
-                        color={options.includes(option) ? 'primary' : 'default'}
+                        color={option.selected === true ? 'primary' : 'default'}
                         variant={
-                            options.includes(option) ? 'default' : 'outlined'
+                            option.selected === true ? 'default' : 'outlined'
                         }
                         size={small === true ? 'small' : undefined}
                         onClick={() => handleOptClick(option)}

@@ -82,10 +82,10 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
     const handleAnnoClick = (selectedType: Type) => {
         let updatedTypes: Type[]
         if (types.includes(selectedType)) {
-            updatedTypes = types.filter((obj) => obj !== selectedType)
+            updatedTypes = types.filter((obj: Type) => obj !== selectedType)
         } else {
-            types.push(selectedType)
-            updatedTypes = types
+            // Can't mutate the types array like done previously!
+            updatedTypes = [selectedType].concat(types)
         }
         setTypes(updatedTypes)
         editTypes(types)

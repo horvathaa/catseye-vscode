@@ -62,9 +62,9 @@ const SortBy: React.FC<Props> = ({ initSort, sortByOptionSelected }) => {
             MuiButton: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: editorBackground, // Doesn't seem to do anything
+                        // backgroundColor: editorBackground, // Doesn't seem to do anything
                         '&:hover': {
-                            borderColor: vscodeTextColor,
+                            // borderColor: vscodeTextColor,
                             margin: '2px 0 !important',
                         },
                     },
@@ -74,9 +74,9 @@ const SortBy: React.FC<Props> = ({ initSort, sortByOptionSelected }) => {
             MuiMenuItem: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: editorBackground, // Doesn't seem to do anything
+                        // backgroundColor: editorBackground, // Doesn't seem to do anything
                         '&:hover': {
-                            background: vscodeTextColor,
+                            // background: vscodeTextColor,
                         },
                     },
                 },
@@ -88,7 +88,7 @@ const SortBy: React.FC<Props> = ({ initSort, sortByOptionSelected }) => {
                         color: editorBackground,
                         display: 'flex',
                         flexDirection: 'column',
-                        borderRadius: '8px',
+                        borderRadius: '4px',
                         padding: '0 10px', // Ideally this should go in MenuItem but doesn't seem to work?
                     },
                 },
@@ -127,6 +127,9 @@ const SortBy: React.FC<Props> = ({ initSort, sortByOptionSelected }) => {
                     MenuListProps={{
                         'aria-labelledby': 'sortby-button',
                         dense: true,
+                    }}
+                    PaperProps={{
+                        style: { borderRadius: 4 },
                     }}
                 >
                     {Object.values(Sort).map((sort: Sort, id) => {

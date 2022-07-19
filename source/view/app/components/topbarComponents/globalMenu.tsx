@@ -56,9 +56,9 @@ const GlobalMenu: React.FC<Props> = ({
             MuiMenuItem: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: editorBackground, // Doesn't seem to do anything
+                        // backgroundColor: editorBackground, // Doesn't seem to do anything
                         '&:hover': {
-                            background: hoverBackground, // background of item on hover
+                            // color: vscodeTextColor, // background of item on hover
                         },
                     },
                 },
@@ -66,9 +66,11 @@ const GlobalMenu: React.FC<Props> = ({
             MuiList: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: hoverText,
+                        backgroundColor: hoverText, // background of item on hover
+                        color: editorBackground,
                         display: 'flex',
                         flexDirection: 'column',
+                        borderRadius: '4px',
                         padding: '0 10px', // Ideally this should go in MenuItem but doesn't seem to work?
                     },
                 },
@@ -88,7 +90,6 @@ const GlobalMenu: React.FC<Props> = ({
                 >
                     <VscMenu
                         style={{
-                            color: 'white',
                             width: '20px',
                             height: '20px',
                         }}
@@ -102,6 +103,9 @@ const GlobalMenu: React.FC<Props> = ({
                     onClose={handleClose}
                     MenuListProps={{
                         'aria-labelledby': 'annotation-action-button',
+                    }}
+                    PaperProps={{
+                        style: { borderRadius: 4 },
                     }}
                 >
                     <MenuItem

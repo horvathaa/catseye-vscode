@@ -113,7 +113,7 @@
 .profileMenu:hover {
     filter: brightness(1.4);
     transition: opacity 0.55s ease-in-out;
-    color: white;
+    /* color: white; */
 }
 
 .OptionLabel {

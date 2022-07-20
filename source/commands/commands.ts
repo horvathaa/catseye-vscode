@@ -251,6 +251,16 @@ export const createNewAnnotation = async () => {
                     r,
                     activeTextEditor.document
                 ),
+                surroundingCode: {
+                    linesBefore: anchor.getSurroundingLinesBeforeAnchor(
+                        activeTextEditor.document,
+                        r
+                    ),
+                    linesAfter: anchor.getSurroundingLinesAfterAnchor(
+                        activeTextEditor.document,
+                        r
+                    ),
+                },
             }
             const temp = {
                 id: newAnnoId,
@@ -324,6 +334,10 @@ export const createFileAnnotation = async (
         createdTimestamp: new Date().getTime(),
         priorVersions: [],
         path: [],
+        surroundingCode: {
+            linesBefore: [],
+            linesAfter: [],
+        },
     }
     const temp = {
         id: newAnnoId,
@@ -450,6 +464,16 @@ export const addNewHighlight = (
                     r,
                     activeTextEditor.document
                 ),
+                surroundingCode: {
+                    linesBefore: anchor.getSurroundingLinesBeforeAnchor(
+                        activeTextEditor.document,
+                        r
+                    ),
+                    linesAfter: anchor.getSurroundingLinesAfterAnchor(
+                        activeTextEditor.document,
+                        r
+                    ),
+                },
             }
             const temp = {
                 id: newAnnoId,

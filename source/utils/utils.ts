@@ -16,7 +16,10 @@ import {
 } from '../constants/constants'
 import {
     computeRangeFromOffset,
+    computeVsCodeRangeFromOffset,
     createAnchorFromRange,
+    getSurroundingLinesAfterAnchor,
+    getSurroundingLinesBeforeAnchor,
 } from '../anchorFunctions/anchor'
 import {
     gitInfo,
@@ -229,6 +232,10 @@ export const reconstructAnnotations = (
             : ''
         const projectName: string = getProjectName(filePath.toString())
         const newAnnoId: string = uuidv4()
+        const newAnchorRange = computeVsCodeRangeFromOffset(
+            changeRange,
+            a.offsetInCopy
+        )
         const anchorObject: AnchorObject = {
             anchor: computeRangeFromOffset(changeRange, a.offsetInCopy),
             anchorText: a.anchor.anchorText,
@@ -254,6 +261,20 @@ export const reconstructAnnotations = (
                       vscode.window.activeTextEditor.document
                   )
                 : [],
+            surroundingCode: {
+                linesBefore: vscode.window.activeTextEditor
+                    ? getSurroundingLinesBeforeAnchor(
+                          vscode.window.activeTextEditor.document,
+                          newAnchorRange
+                      )
+                    : [],
+                linesAfter: vscode.window.activeTextEditor
+                    ? getSurroundingLinesAfterAnchor(
+                          vscode.window.activeTextEditor.document,
+                          newAnchorRange
+                      )
+                    : [],
+            },
         }
         const adjustedAnno = {
             id: newAnnoId,
@@ -1079,6 +1100,16 @@ export const createAnchorObject = async (
                 },
             ],
             path,
+            surroundingCode: {
+                linesBefore: getSurroundingLinesBeforeAnchor(
+                    textEditor.document,
+                    range
+                ),
+                linesAfter: getSurroundingLinesAfterAnchor(
+                    textEditor.document,
+                    range
+                ),
+            },
         }
     } else {
         vscode.window.showInformationMessage('Must have open text editor!')

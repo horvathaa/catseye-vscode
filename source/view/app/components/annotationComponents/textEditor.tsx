@@ -12,8 +12,11 @@ import FormControlLabel from '@mui/material/FormControlLabel'
 import Checkbox from '@mui/material/Checkbox'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
 import { green } from '@material-ui/core/colors'
+import { editorBackground } from '../../styles/vscodeStyles'
+import { TextareaAutosize } from '@material-ui/core'
+
 interface Props {
-    content: any
+    content: any // Is either a reply, text, or annotation
     submissionHandler: (
         newContent: any,
         shareWith?: string,
@@ -21,22 +24,25 @@ interface Props {
     ) => void
     cancelHandler: () => void
     showSplitButton: boolean
+    showCancel?: boolean
 }
-
+// Having default props is weirdly supported in React, this way means showCancel is an optional
+// See: https://dev.to/bytebodger/default-props-in-react-typescript-2o5o
 const TextEditor: React.FC<Props> = ({
     content,
     submissionHandler,
     cancelHandler,
     showSplitButton,
+    showCancel = true,
 }) => {
     const [text, setText] = React.useState<any>(content)
     const [willBePinned, setWillBePinned] = React.useState<boolean>(false)
-
+    // TODO: Change this theme
     const theme = createTheme({
         typography: {
             allVariants: {
                 fontSize: 12,
-                color: 'white',
+                color: `${editorBackground}`,
                 fontFamily: 'Arial',
             },
         },
@@ -65,11 +71,13 @@ const TextEditor: React.FC<Props> = ({
         if (typeof text === 'string') {
             setText((e.target as HTMLTextAreaElement).value)
         } else if (text.hasOwnProperty('replyContent')) {
+            // Checks if is reply
             setText({
                 ...text,
                 replyContent: (e.target as HTMLTextAreaElement).value,
             })
         } else if (text.hasOwnProperty('comment')) {
+            // Checks if comment
             setText({
                 ...text,
                 comment: (e.target as HTMLTextAreaElement).value,
@@ -80,6 +88,10 @@ const TextEditor: React.FC<Props> = ({
     const handleEnter = (e: React.KeyboardEvent): void => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             submissionHandler(text, 'private', willBePinned)
+            setText({
+                ...text,
+                replyContent: '',
+            })
         }
     }
 
@@ -89,10 +101,11 @@ const TextEditor: React.FC<Props> = ({
         }
         submissionHandler(text, shareWith, willBePinned)
     }
-
+    // Ideally this textbox isn't a significantly different color and is not of fixed size.
     return (
         <div className={styles['textboxContainer']}>
-            <textarea
+            <TextareaAutosize
+                minRows={1}
                 className={styles['textbox']}
                 autoFocus
                 value={
@@ -117,25 +130,39 @@ const TextEditor: React.FC<Props> = ({
                             className={styles['submit']}
                             onClick={(e: React.SyntheticEvent) => {
                                 e.stopPropagation()
+                                // Is this a checker for Snapshots?
                                 if (text.hasOwnProperty('comment')) {
                                     cancelHandler()
                                 }
+                                console.log('Get New Time?')
+                                console.log(new Date().getTime())
+                                // TODO: Update timestamp
+                                setText({
+                                    ...text,
+                                    createdTimestamp: new Date().getTime(),
+                                })
                                 submissionHandler(text)
+                                setText({
+                                    ...text,
+                                    replyContent: '',
+                                })
                             }}
                         >
                             Submit
                         </button>
                     )}
 
-                    <button
-                        className={styles['cancel']}
-                        onClick={(e: React.SyntheticEvent) => {
-                            e.stopPropagation()
-                            cancelHandler()
-                        }}
-                    >
-                        Cancel
-                    </button>
+                    {showCancel && (
+                        <button
+                            className={styles['cancel']}
+                            onClick={(e: React.SyntheticEvent) => {
+                                e.stopPropagation()
+                                cancelHandler()
+                            }}
+                        >
+                            Cancel
+                        </button>
+                    )}
                 </div>
                 {showSplitButton && (
                     <ThemeProvider theme={theme}>

@@ -52,6 +52,9 @@ interface CssExports {
   'row': string;
   'selected': string;
   'show': string;
+  'showHideLine': string;
+  'showHideLineButton': string;
+  'showHideLineContainer': string;
   'snapshotContainer': string;
   'submit': string;
   'textbox': string;

@@ -384,7 +384,10 @@ const ReactAnnotation: React.FC<Props> = ({
                     />
                     <Collapse in={expanded} timeout="auto" unmountOnExit>
                         <CardContent>
-                            <AnchorVersions anchors={anno.anchors} />
+                            <AnchorVersions
+                                anchors={anno.anchors}
+                                scrollInEditor={scrollInEditor}
+                            />
                             <div className={styles['ContentContainer']}>
                                 {edit ? (
                                     <TextEditor

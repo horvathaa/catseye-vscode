@@ -18,9 +18,10 @@ import Carousel from './anchorCarousel'
 
 interface Props {
     anchors: AnchorObject[]
+    scrollInEditor: (id: string) => void
 }
 
-const AnchorVersions: React.FC<Props> = ({ anchors }) => {
+const AnchorVersions: React.FC<Props> = ({ anchors, scrollInEditor }) => {
     const theme = createTheme({
         palette: {
             primary: {
@@ -72,6 +73,7 @@ const AnchorVersions: React.FC<Props> = ({ anchors }) => {
                         key={i}
                         priorVersions={anchor.priorVersions}
                         currentAnchorObject={anchor}
+                        scrollInEditor={scrollInEditor}
                     ></Carousel>
                 )
             })}

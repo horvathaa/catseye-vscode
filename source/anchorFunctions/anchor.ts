@@ -6,7 +6,12 @@
  */
 
 import * as vscode from 'vscode'
-import { Annotation, AnchorObject, Anchor } from '../constants/constants'
+import {
+    Annotation,
+    AnchorObject,
+    Anchor,
+    NUM_SURROUNDING_LINES,
+} from '../constants/constants'
 import {
     sortAnnotationsByLocation,
     getProjectName,
@@ -57,6 +62,58 @@ export const computeRangeFromOffset = (
     }
 
     return newAnchor
+}
+
+export const getSurroundingLinesBeforeAnchor = (
+    document: vscode.TextDocument,
+    anchorRange: vscode.Range
+): string[] => {
+    const textBefore = document.getText(
+        document.validateRange(
+            new vscode.Range(
+                new vscode.Position(
+                    anchorRange.start.line - NUM_SURROUNDING_LINES,
+                    0
+                ),
+                new vscode.Position(anchorRange.start.line, 10000)
+            )
+        )
+    )
+    return textBefore.split('\n')
+}
+
+export const getSurroundingLinesAfterAnchor = (
+    document: vscode.TextDocument,
+    anchorRange: vscode.Range
+): string[] => {
+    const textAfter = document.getText(
+        document.validateRange(
+            new vscode.Range(
+                new vscode.Position(anchorRange.end.line, 0),
+                new vscode.Position(
+                    anchorRange.end.line + NUM_SURROUNDING_LINES,
+                    10000
+                )
+            )
+        )
+    )
+    return textAfter.split('\n')
+}
+
+export const computeVsCodeRangeFromOffset = (
+    range: vscode.Range,
+    offsetData: { [key: string]: any }
+): vscode.Range => {
+    return new vscode.Range(
+        new vscode.Position(
+            range.start.line + offsetData.startLine,
+            range.start.character + offsetData.startOffset
+        ),
+        new vscode.Position(
+            range.start.line + offsetData.endLine,
+            range.end.character + offsetData.endOffset
+        )
+    )
 }
 
 // Helper function to take an anchor object (Adamite's representation of an anchor + its metadata) and create a VS Code range object

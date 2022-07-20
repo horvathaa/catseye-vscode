@@ -203,6 +203,16 @@ export const createNewAnnotation = async () => {
             const anc = anchor.createAnchorFromRange(r)
             const anchorId = uuidv4()
             const createdTimestamp = new Date().getTime()
+            const surrounding = {
+                linesBefore: anchor.getSurroundingLinesBeforeAnchor(
+                    activeTextEditor.document,
+                    r
+                ),
+                linesAfter: anchor.getSurroundingLinesAfterAnchor(
+                    activeTextEditor.document,
+                    r
+                ),
+            }
             const anchorObject: AnchorObject = {
                 anchor: anc,
                 anchorText: text,
@@ -249,12 +259,14 @@ export const createNewAnnotation = async () => {
                         startLine: anc.startLine,
                         endLine: anc.endLine,
                         path: visiblePath,
+                        surroundingCode: surrounding,
                     },
                 ],
-                // path: astHelper.generateCodeContextPath(
-                //     r,
-                //     activeTextEditor.document
-                // ),
+                path: astHelper.generateCodeContextPath(
+                    r,
+                    activeTextEditor.document
+                ),
+                surroundingCode: surrounding,
             }
             const temp = {
                 id: newAnnoId,
@@ -327,7 +339,11 @@ export const createFileAnnotation = async (
         anchored: true,
         createdTimestamp: new Date().getTime(),
         priorVersions: [],
-        // path: [],
+        path: [],
+        surroundingCode: {
+            linesBefore: [],
+            linesAfter: [],
+        },
     }
     const temp = {
         id: newAnnoId,
@@ -406,6 +422,16 @@ export const addNewHighlight = (
             const anchorId = uuidv4()
             const createdTimestamp = new Date().getTime()
             const anc = anchor.createAnchorFromRange(r)
+            const surrounding = {
+                linesBefore: anchor.getSurroundingLinesBeforeAnchor(
+                    activeTextEditor.document,
+                    r
+                ),
+                linesAfter: anchor.getSurroundingLinesAfterAnchor(
+                    activeTextEditor.document,
+                    r
+                ),
+            }
             const anchorObject: AnchorObject = {
                 anchor: anc,
                 anchorText: text,
@@ -452,12 +478,14 @@ export const addNewHighlight = (
                         startLine: anc.startLine,
                         endLine: anc.endLine,
                         path: visiblePath,
+                        surroundingCode: surrounding,
                     },
                 ],
-                // path: astHelper.generateCodeContextPath(
-                //     r,
-                //     activeTextEditor.document
-                // ),
+                path: astHelper.generateCodeContextPath(
+                    r,
+                    activeTextEditor.document
+                ),
+                surroundingCode: surrounding,
             }
             const temp = {
                 id: newAnnoId,

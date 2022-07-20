@@ -16,7 +16,10 @@ import {
 } from '../constants/constants'
 import {
     computeRangeFromOffset,
+    computeVsCodeRangeFromOffset,
     createAnchorFromRange,
+    getSurroundingLinesAfterAnchor,
+    getSurroundingLinesBeforeAnchor,
 } from '../anchorFunctions/anchor'
 import {
     gitInfo,
@@ -229,6 +232,10 @@ export const reconstructAnnotations = (
             : ''
         const projectName: string = getProjectName(filePath.toString())
         const newAnnoId: string = uuidv4()
+        const newAnchorRange = computeVsCodeRangeFromOffset(
+            changeRange,
+            a.offsetInCopy
+        )
         const anchorObject: AnchorObject = {
             anchor: computeRangeFromOffset(changeRange, a.offsetInCopy),
             anchorText: a.anchor.anchorText,
@@ -248,12 +255,26 @@ export const reconstructAnnotations = (
             anchored: true,
             createdTimestamp: new Date().getTime(),
             priorVersions: a.anchor.priorVersions, //could append the most recent place, but commit based for now
-            // path: vscode.window.activeTextEditor
-            //     ? astHelper.generateCodeContextPath(
-            //           changeRange,
-            //           vscode.window.activeTextEditor.document
-            //       )
-            //     : [],
+            path: vscode.window.activeTextEditor
+                ? astHelper.generateCodeContextPath(
+                      changeRange,
+                      vscode.window.activeTextEditor.document
+                  )
+                : [],
+            surroundingCode: {
+                linesBefore: vscode.window.activeTextEditor
+                    ? getSurroundingLinesBeforeAnchor(
+                          vscode.window.activeTextEditor.document,
+                          newAnchorRange
+                      )
+                    : [],
+                linesAfter: vscode.window.activeTextEditor
+                    ? getSurroundingLinesAfterAnchor(
+                          vscode.window.activeTextEditor.document,
+                          newAnchorRange
+                      )
+                    : [],
+            },
         }
         const adjustedAnno = {
             id: newAnnoId,
@@ -1018,10 +1039,20 @@ export const createAnchorObject = async (
         const anchorId = uuidv4()
         const createdTimestamp = new Date().getTime()
         const anc = createAnchorFromRange(range)
-        // const path: CodeContext[] = astHelper.generateCodeContextPath(
-        //     range,
-        //     textEditor.document
-        // )
+        const path: CodeContext[] = astHelper.generateCodeContextPath(
+            range,
+            textEditor.document
+        )
+        const surrounding = {
+            linesBefore: getSurroundingLinesBeforeAnchor(
+                textEditor.document,
+                range
+            ),
+            linesAfter: getSurroundingLinesAfterAnchor(
+                textEditor.document,
+                range
+            ),
+        }
         return {
             parentId: annoId,
             anchorId: anchorId,
@@ -1061,9 +1092,11 @@ export const createAnchorObject = async (
                     startLine: anc.startLine,
                     endLine: anc.endLine,
                     path: visiblePath,
+                    surroundingCode: surrounding,
                 },
             ],
-            // path,
+            path,
+            surroundingCode: surrounding,
         }
     } else {
         vscode.window.showInformationMessage('Must have open text editor!')

@@ -5,18 +5,24 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import { IconButton } from '@material-ui/core'
 import '../../styles/versions.module.css'
 import styles from '../../styles/versions.module.css'
-import { AnchorObject, AnchorOnCommit } from '../../../../constants/constants'
+import {
+    AnchorObject,
+    AnchorOnCommit,
+    SurroundingAnchorArea,
+} from '../../../../constants/constants'
 import { iconColor } from '../../styles/vscodeStyles'
 // import { Anchor } from '@mui/icons-material'
 
 interface Props {
-    priorVersions: AnchorOnCommit[]
+    priorVersions: AnchorOnCommit[] | undefined
     currentAnchorObject: AnchorObject
+    scrollInEditor: (id: string) => void
 }
 
 const AnchorCarousel: React.FC<Props> = ({
     priorVersions,
     currentAnchorObject,
+    scrollInEditor,
 }) => {
     const [allVersions, setAllVersions] =
         React.useState<AnchorOnCommit[]>(priorVersions)
@@ -28,6 +34,9 @@ const AnchorCarousel: React.FC<Props> = ({
 
     React.useEffect(() => {
         // construct a pseudo pv object to represent the most up to date anchor object and add to allVersions array
+        // const surrounding: SurroundingAnchorArea = {
+        //     linesBefore:
+        // }
         const pseudoPriorVersion: AnchorOnCommit = {
             id: currentAnchorObject.anchorId,
             commitHash: '',
@@ -38,6 +47,7 @@ const AnchorCarousel: React.FC<Props> = ({
             startLine: currentAnchorObject.anchor.startLine,
             endLine: currentAnchorObject.anchor.endLine,
             path: currentAnchorObject.visiblePath,
+            surroundingCode: currentAnchorObject.surroundingCode,
         }
 
         const foundCurrentAnchorToDisplay: boolean =
@@ -51,8 +61,6 @@ const AnchorCarousel: React.FC<Props> = ({
         )
         setIndex(allVersions.length - 1)
     }, [currentAnchorObject]) //watch for any changes to current anchor and update
-
-    console.log('all versions', allVersions)
 
     const [showBack, setShowBack] = React.useState(false)
     const [showForward, setShowForward] = React.useState(false)
@@ -88,6 +96,12 @@ const AnchorCarousel: React.FC<Props> = ({
         }
     }
 
+    const handleClick = (e: React.SyntheticEvent, aId: string): void => {
+        console.log('nav to anchor')
+        e.stopPropagation()
+        if (index === allVersions.length - 1) scrollInEditor(aId)
+    }
+
     return (
         <div style={{ display: 'flex', flexDirection: 'row' }}>
             {showBack ? (
@@ -101,7 +115,6 @@ const AnchorCarousel: React.FC<Props> = ({
                     minWidth: 50,
                     maxWidth: 800,
                     height: 150,
-                    // overflow: 'scroll',
                 }} // cannot move dimensions to CSS file or else package styles override
             >
                 <Slider // not sure how to resolve type issue yet 'JSX element type 'Slider' does not have any construct or call signatures.'
@@ -122,11 +135,13 @@ const AnchorCarousel: React.FC<Props> = ({
                                 alignItems: 'flex-start',
                                 width: '100%',
                                 height: 150,
-                                // overflow: 'scroll',
                                 padding: '10px, 1px',
                                 color: iconColor,
                             }} // same as AnchorContainer ^^
                             key={index}
+                            onClick={(e) => {
+                                handleClick(e, currentAnchorObject.anchorId)
+                            }}
                         >
                             <span>
                                 <i> {pv.path} </i>
@@ -155,9 +170,11 @@ const AnchorCarousel: React.FC<Props> = ({
                                     color: '#2ADD42',
                                 }}
                             >
-                                <p style={{ opacity: '0.3' }}>really before</p>
+                                <p style={{ opacity: '0.3' }}>
+                                    {pv.surroundingCode.linesBefore[5]}
+                                </p>
                                 <p style={{ opacity: '0.5' }}>
-                                    before the anchor
+                                    {pv.surroundingCode.linesBefore[4]}
                                 </p>
                                 <p>
                                     <b>
@@ -169,9 +186,11 @@ const AnchorCarousel: React.FC<Props> = ({
                                             : null}
                                     </b>
                                 </p>
-                                <p style={{ opacity: '0.5' }}>after anchor</p>
+                                <p style={{ opacity: '0.5' }}>
+                                    {pv.surroundingCode.linesAfter[0]}
+                                </p>
                                 <p style={{ opacity: '0.3' }}>
-                                    really after anchor
+                                    {pv.surroundingCode.linesAfter[1]}
                                 </p>
                                 {/* styling within carousel doesn't work here */}
                                 {/* <div

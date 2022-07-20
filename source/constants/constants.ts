@@ -76,6 +76,13 @@ export interface Anchor {
     endOffset: number
 }
 
+export const NUM_SURROUNDING_LINES = 5
+
+export interface SurroundingAnchorArea {
+    linesBefore: string[] // len should equal NUM_SURROUNDING_LINES
+    linesAfter: string[]
+}
+
 export interface AnchorObject {
     anchor: Anchor
     anchorText: string
@@ -95,7 +102,8 @@ export interface AnchorObject {
     anchored: boolean
     createdTimestamp: number
     priorVersions?: AnchorOnCommit[] // Not in FB until commit. Rn, dynamically compute priorVersionsfrom the Commit object model on launch
-    // path: CodeContext[]
+    path: CodeContext[]
+    surroundingCode: SurroundingAnchorArea
     //add annotation field, ridding of multiple anchors
 }
 
@@ -109,6 +117,7 @@ export interface AnchorOnCommit {
     startLine: number
     endLine: number
     path: string
+    surroundingCode: SurroundingAnchorArea
     // diff: string // MAYBE. Need to investigate diff packages
 }
 

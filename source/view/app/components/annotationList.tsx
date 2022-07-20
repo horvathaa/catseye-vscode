@@ -8,7 +8,7 @@
 import { Annotation } from '../../../constants/constants'
 import {
     // getAllAnnotationFilenames,
-    getAllAnnotationStableGitUrls,
+    // getAllAnnotationStableGitUrls,
     sortAnnotationsByLocation,
 } from '../utils/viewUtils'
 import ReactAnnotation from '../components/annotation'
@@ -111,11 +111,11 @@ const AnnotationList: React.FC<AnnoListProps> = ({
             'Current Project': [],
         }
         annotations.forEach((a: Annotation) => {
-            const annoFiles = getAllAnnotationStableGitUrls(a)
+            // const annoFiles = getAllAnnotationStableGitUrls(a)
             if (a.selected) {
                 output['Pinned'].push(a)
-            } else if (annoFiles.includes(currentFile)) {
-                output['Current File'].push(a)
+                // } else if (annoFiles.includes(currentFile)) {
+                //     output['Current File'].push(a)
             } else if (a.projectName === currentProject) {
                 output['Current Project'].push(a) // only pulls annotations since last commit?
             }

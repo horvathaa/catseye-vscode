@@ -200,6 +200,8 @@ export const createNewAnnotation = async () => {
                       activeTextEditor.document.uri.fsPath
                   )
                 : activeTextEditor.document.uri.fsPath
+            const anchorId = uuidv4()
+            const createdTimestamp = new Date().getTime()
             const anchorObject: AnchorObject = {
                 anchor: anchor.createAnchorFromRange(r),
                 anchorText: text,
@@ -211,15 +213,40 @@ export const createNewAnnotation = async () => {
                     projectName,
                     true
                 ),
+                gitRepo: gitInfo[projectName]?.repo
+                    ? gitInfo[projectName]?.repo
+                    : '',
+                gitBranch: gitInfo[projectName]?.branch
+                    ? gitInfo[projectName]?.branch
+                    : '',
+                gitCommit: gitInfo[projectName]?.commit
+                    ? gitInfo[projectName]?.commit
+                    : 'localChange',
                 anchorPreview: utils.getFirstLineOfHtml(
                     html,
                     !text.includes('\n')
                 ),
                 visiblePath,
-                anchorId: uuidv4(),
+                anchorId: anchorId,
                 originalCode: html,
                 parentId: newAnnoId,
                 programmingLang,
+                anchored: true,
+                createdTimestamp: createdTimestamp,
+                priorVersions: [
+                    {
+                        id: anchorId,
+                        createdTimestamp: createdTimestamp,
+                        html: html,
+                        anchorText: text,
+                        commitHash: gitInfo[projectName]?.commit
+                            ? gitInfo[projectName]?.commit
+                            : 'localChange',
+                        branchName: gitInfo[projectName]?.branch
+                            ? gitInfo[projectName]?.branch
+                            : '',
+                    },
+                ],
                 path: astHelper.generateCodeContextPath(
                     r,
                     activeTextEditor.document
@@ -280,12 +307,22 @@ export const createFileAnnotation = async (
         filename: context.toString(),
         gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
         stableGitUrl: utils.getGithubUrl(visiblePath, projectName, true),
+        gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : '',
+        gitBranch: gitInfo[projectName]?.branch
+            ? gitInfo[projectName]?.branch
+            : '',
+        gitCommit: gitInfo[projectName]?.commit
+            ? gitInfo[projectName]?.commit
+            : 'localChange',
         anchorPreview: visiblePath,
         visiblePath,
         anchorId: uuidv4(),
         originalCode: visiblePath,
         parentId: newAnnoId,
         programmingLang,
+        anchored: true,
+        createdTimestamp: new Date().getTime(),
+        priorVersions: [],
         path: [],
     }
     const temp = {
@@ -362,6 +399,8 @@ export const addNewHighlight = (
             text
         )
         .then((html) => {
+            const anchorId = uuidv4()
+            const createdTimestamp = new Date().getTime()
             const anchorObject: AnchorObject = {
                 anchor: anchor.createAnchorFromRange(r),
                 anchorText: text,
@@ -373,15 +412,40 @@ export const addNewHighlight = (
                     projectName,
                     true
                 ),
+                gitRepo: gitInfo[projectName]?.repo
+                    ? gitInfo[projectName]?.repo
+                    : '',
+                gitBranch: gitInfo[projectName]?.branch
+                    ? gitInfo[projectName]?.branch
+                    : '',
+                gitCommit: gitInfo[projectName]?.commit
+                    ? gitInfo[projectName]?.commit
+                    : 'localChange',
                 anchorPreview: utils.getFirstLineOfHtml(
                     html,
                     !text.includes('\n')
                 ),
                 visiblePath,
-                anchorId: uuidv4(),
+                anchorId: anchorId,
                 originalCode: html,
                 parentId: newAnnoId,
                 programmingLang,
+                anchored: true,
+                createdTimestamp: createdTimestamp,
+                priorVersions: [
+                    {
+                        id: anchorId,
+                        createdTimestamp: createdTimestamp,
+                        html: html,
+                        anchorText: text,
+                        commitHash: gitInfo[projectName]?.commit
+                            ? gitInfo[projectName]?.commit
+                            : 'localChange',
+                        branchName: gitInfo[projectName]?.branch
+                            ? gitInfo[projectName]?.branch
+                            : '',
+                    },
+                ],
                 path: astHelper.generateCodeContextPath(
                     r,
                     activeTextEditor.document

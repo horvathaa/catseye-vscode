@@ -154,6 +154,13 @@ export const getAnchorsInCurrentFile = (
     return anchors
 }
 
+const checkIfAnchorChanged = (
+    originalRange: vscode.Range,
+    newRange: vscode.Range
+): boolean => {
+    return !originalRange.isEqual(newRange)
+}
+
 // The meat and potatoes of keeping anchor points up to date
 // Gets called on every keystroke for files that contain annotations
 // Uses a series of methods to, given the details VS Code gave us about the edit operation performed,
@@ -214,7 +221,6 @@ export const translateChanges = (
     if (changeRange.start.isAfter(originalRange.end)) {
         return anchorObject
     }
-
     let changeOccurredInRange: boolean = false
     textLength = userAutocompletedOrCommented(
         changeText,
@@ -238,8 +244,9 @@ export const translateChanges = (
             startAndEndLineAreSameNoNewLine,
             originalAnchor.startOffset === changeRange.start.character
         )
-        if (originalAnchor.startOffset === changeRange.start.character)
+        if (originalAnchor.startOffset === changeRange.start.character) {
             changeOccurredInRange = true
+        }
     }
 
     // user adds/removes text at or before the end offset (no new lines)
@@ -386,11 +393,21 @@ export const translateChanges = (
         newAnchorText = doc.getText(createRangeFromObject(newRange))
     }
 
+    const originalGitCommit = anchorObject.gitCommit
+    const newRangeObj = createRangeFromObject(newRange)
+
     // update anchor object
     const newAnchor: AnchorObject = {
         ...anchorObject,
         anchorText: newAnchorText,
         anchor: newRange,
+        gitCommit:
+            checkIfAnchorChanged(originalRange, newRangeObj) ||
+            // changeOccurredInRange
+            (originalRange.start.isBefore(changeRange.start) &&
+                originalRange.end.isAfter(changeRange.end))
+                ? gitInfo[getProjectName(doc.uri.toString())].commit
+                : originalGitCommit,
     }
 
     return newAnchor

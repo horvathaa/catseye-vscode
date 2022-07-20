@@ -51,10 +51,22 @@ export const Reply: React.FC<Props> = ({
 
     React.useEffect(() => {
         if (replyContent && replyContent !== reply.replyContent) {
-            setReply({ ...reply, replyContent: replyContent })
+            setReply({ ...reply, replyContent })
             setEditing(false)
         }
     }, [replyContent])
+
+    React.useEffect(() => {
+        if (id && id !== reply.id) {
+            setReply({ ...reply, id })
+        }
+    }, [id])
+
+    const createReply = (replyFromCallback: ReplyInterface): void => {
+        const { replyContent } = replyFromCallback
+        const replyToSend = { ...reply, replyContent, createdTimestamp }
+        submissionHandler(replyToSend)
+    }
 
     const ReplyContent: React.ReactElement = (
         <div className={styles['replyContainer']}>
@@ -77,15 +89,17 @@ export const Reply: React.FC<Props> = ({
             {replyContent}
         </div>
     )
-
+    // Ideally createdTimestamp is updated on Submit for creation (might be happening)
     const ReplyEditor: React.ReactElement = replying ? (
         <TextEditor
             content={reply}
-            submissionHandler={submissionHandler}
+            submissionHandler={createReply}
             cancelHandler={cancelHandler}
             showSplitButton={false}
+            showCancel={false}
         />
     ) : (
+        // This shouldn't update created Timestamp, maybe have a new edit time field though
         <TextEditor
             content={reply}
             submissionHandler={submissionHandler}

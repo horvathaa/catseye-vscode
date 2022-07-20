@@ -358,8 +358,10 @@ export const handleUpdateAnnotation = (
 ): void => {
     if (key === 'replies' || key === 'codeSnapshots') {
         value.forEach((obj: Reply | Snapshot) => {
-            if (obj.id === '') {
+            if (obj.id.startsWith('temp')) {
+                console.log('before set', obj)
                 obj.id = uuidv4()
+                console.log(obj)
             }
         })
     }

@@ -476,3 +476,320 @@ const generateLineMetadata = (h: {
 
 // // 																	})
 // // 																	.filter((l: {[key: string]: any} | undefined) => l !== undefined );
+
+// function getNodes(node: ts.Node) {
+//     const nodes: ts.Node[] = []
+//     ts.forEachChild(node, (cbNode) => {
+//         nodes.push(cbNode)
+//     })
+//     return nodes
+// }
+
+// function nodeToRange(node: ts.Node, code: string): vscode.Range {
+//     return new vscode.Range(
+//         posToLine(code, node.pos),
+//         posToLine(code, node.end)
+//     )
+// }
+
+// function posToLine(scode: string, pos: number) {
+//     const code = scode.slice(0, pos).split('\n')
+//     return new vscode.Position(code.length - 1, code[code.length - 1].length)
+// }
+
+// function rangeToOffset(
+//     document: vscode.TextDocument,
+//     range: vscode.Range
+// ): number {
+//     const rangeOffset = new vscode.Range(
+//         0,
+//         0,
+//         range.start.line,
+//         range.start.character
+//     )
+//     return document.getText(rangeOffset).length
+// }
+
+// interface CodeContext {
+//     nodeType: string
+//     range: vscode.Range
+//     identifierName: string
+//     identifierType?: string
+//     identifierValue?: string
+//     distanceFromRange: number
+//     isDirectParent: boolean
+//     originalNode: ts.Node
+//     parameters?: string
+//     implements?: string
+//     array?: CodeContext[]
+//     leftOperand?: string
+//     rightOperand?: string
+//     operator?: string
+// }
+
+// function handleNodeDataExtraction(
+//     node: ts.Node,
+//     textEditor: vscode.TextEditor,
+//     activeSelection: vscode.Selection,
+//     path: ts.Node[],
+//     code: string,
+//     i: number
+// ): CodeContext {
+//     const isDirectParent: boolean =
+//         nodeToRange(node, code).contains(activeSelection) ||
+//         (i < path.length - 1 &&
+//             rangeToOffset(textEditor.document, activeSelection) - node.end ===
+//                 rangeToOffset(textEditor.document, activeSelection) -
+//                     path[i + 1].end &&
+//             ts.SyntaxKind[path[i + 1].kind] === 'Block')
+//     let info: CodeContext = {
+//         nodeType: ts.SyntaxKind[node.kind],
+//         range: nodeToRange(node, code),
+//         identifierName: '',
+//         identifierType: '',
+//         identifierValue: '',
+//         distanceFromRange:
+//             rangeToOffset(textEditor.document, activeSelection) - node.end,
+//         isDirectParent: isDirectParent,
+//         originalNode: node,
+//         parameters: '',
+//     }
+//     // console.log('is interface', ts.isInterfaceDeclaration(node))
+
+//     if (ts.isArrowFunction(node)) {
+//         const prevNode = path[i - 1]
+//         if (ts.isIdentifier(prevNode)) {
+//             info.identifierName = prevNode.text
+//         } else {
+//             info.identifierName = ''
+//         }
+//         info.identifierType = ts.SyntaxKind[node.kind]
+//         info.parameters = node.parameters
+//             .map((n) => textEditor.document.getText(nodeToRange(n, code)))
+//             .join()
+//             .trim()
+//     } else if (ts.isFunctionDeclaration(node)) {
+//         info.identifierType = ts.SyntaxKind[node.kind]
+//         info.identifierName = node.name?.text ? node.name?.text : ''
+//         info.parameters = node.parameters
+//             .map((n) => textEditor.document.getText(nodeToRange(n, code)))
+//             .join()
+//             .trim()
+//     } else if (
+//         ts.isIfStatement(node) ||
+//         ts.isSwitchStatement(node) ||
+//         ts.isCaseClause(node)
+//     ) {
+//         console.log(ts.SyntaxKind[node.expression.kind])
+//         info.identifierType = ts.SyntaxKind[node.kind]
+//         info.identifierValue = textEditor.document
+//             .getText(nodeToRange(node.expression, code))
+//             .trim()
+//     } else if (ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node)) {
+//         info.identifierName = node.name ? node.name.text : ''
+//         info.identifierType = ts.SyntaxKind[node.kind]
+//         info.implements = node.heritageClauses
+//             ? node.heritageClauses
+//                   .map(
+//                       (h) =>
+//                           ts.isIdentifier(h.types[0].expression) &&
+//                           h.types[0].expression.text
+//                   )
+//                   .join()
+//             : ''
+//     } else if (ts.isTypeReferenceNode(node)) {
+//         info.identifierName = ts.isIdentifier(node.typeName)
+//             ? node.typeName.text
+//             : ''
+//         info.identifierType = ts.SyntaxKind[node.kind]
+//     } else if (
+//         ts.isPropertyAssignment(node) ||
+//         ts.isVariableDeclaration(node)
+//     ) {
+//         info.identifierName = ts.isIdentifier(node.name) ? node.name.text : ''
+//         info.identifierValue = node.initializer
+//             ? textEditor.document
+//                   .getText(nodeToRange(node.initializer, code))
+//                   .trim()
+//             : ts.SyntaxKind[node.kind]
+//     } else if (ts.isCallExpression(node)) {
+//         info.identifierName = textEditor.document
+//             .getText(nodeToRange(node.expression, code))
+//             .trim()
+//         info.identifierType = ts.SyntaxKind[node.kind]
+//         info.parameters = node.arguments
+//             .map((n) => textEditor.document.getText(nodeToRange(n, code)))
+//             .join()
+//     } else if (ts.isObjectLiteralExpression(node)) {
+//         info.identifierName = node.properties
+//             .map((p) => (p.name && ts.isIdentifier(p.name) ? p.name.text : ''))
+//             .join()
+//         info.identifierValue = node.properties
+//             .map((p) =>
+//                 ts.isPropertyAssignment(p)
+//                     ? textEditor.document.getText(
+//                           nodeToRange(p.initializer, code)
+//                       )
+//                     : ''
+//             )
+//             .join()
+//     } else if (ts.isPropertyAccessExpression(node)) {
+//         info.identifierName = ts.isIdentifier(node.expression)
+//             ? node.expression.text
+//             : textEditor.document
+//                   .getText(nodeToRange(node.expression, code))
+//                   .trim()
+//         info.identifierValue = node.name.text
+//     } else if (ts.isBinaryExpression(node)) {
+//         info.identifierValue = textEditor.document
+//             .getText(
+//                 new vscode.Range(
+//                     posToLine(code, node.left.pos),
+//                     posToLine(code, node.right.end)
+//                 )
+//             )
+//             .trim()
+//         info.leftOperand = ts.isIdentifier(node.left)
+//             ? node.left.text
+//             : textEditor.document
+//                   .getText(
+//                       new vscode.Range(
+//                           posToLine(code, node.left.pos),
+//                           posToLine(code, node.left.end)
+//                       )
+//                   )
+//                   .trim()
+//         info.rightOperand = ts.isIdentifier(node.right)
+//             ? node.right.text
+//             : textEditor.document
+//                   .getText(
+//                       new vscode.Range(
+//                           posToLine(code, node.right.pos),
+//                           posToLine(code, node.right.end)
+//                       )
+//                   )
+//                   .trim()
+//         info.operator = ts.SyntaxKind[node.operatorToken.kind]
+//     } else if (ts.isIdentifier(node)) {
+//         // console.log('identifier node', node)
+//         info.identifierName = node.text
+//         info.identifierValue = textEditor.document
+//             .getText(nodeToRange(node, code))
+//             .trim()
+//     } else if (ts.isParameter(node)) {
+//         // console.log('parameter node', node)
+//         info.identifierType = ts.SyntaxKind[node.name.kind]
+//         info.identifierName = ts.isIdentifier(node.name)
+//             ? node.name.text
+//             : textEditor.document.getText(nodeToRange(node.name, code)).trim()
+//         info.identifierValue =
+//             node.type &&
+//             ts.isTypeReferenceNode(node.type) &&
+//             ts.isIdentifier(node.type.typeName)
+//                 ? node.type.typeName.text
+//                 : textEditor.document.getText(nodeToRange(node, code)).trim()
+//     } else if (ts.isExpressionStatement(node)) {
+//         // console.log('expression node', node)
+//         info.identifierValue = ts.isIdentifier(node.expression)
+//             ? node.expression.text
+//             : textEditor.document.getText(nodeToRange(node, code)).trim()
+//         info.identifierType = ts.SyntaxKind[node.expression.kind]
+//     } else if (ts.isArrayLiteralExpression(node)) {
+// //         info.array = node.elements.map((e) =>
+// //             handleNodeDataExtraction(
+// //                 e,
+// //                 textEditor,
+// //                 activeSelection,
+// //                 path,
+// //                 code,
+// //                 i
+// //             )
+// //         )
+// //     }
+
+// //     return info
+// // }
+
+// // function handleClassRootNode(node: ts.ClassDeclaration, code: string, activeSelection: vscode.Selection) : ts.Node[] {
+// //     let root: ts.NodeArray<ts.ClassElement> = node.members
+// //     let path: ts.NodeArray<ts.ClassElement | ts.ClassDeclaration> = node;
+// //     do {
+// //         let candidates = root.filter((c: ts.Node) => {
+// //             let range = nodeToRange(c, code)
+// //             return range.contains(activeSelection)
+// //         })
+// //         // let candidateNodes: any[] = []
+// //         // candidates.forEach((c: any) => candidateNodes.push(getNodes(c)))
+// //         // let flat = new ts.NodeArray<ts.ClassElement> ([].concat(...candidateNodes))
+// //         let flat = candidates.flatMap(c => getNodes(c))
+// //         path = path.concat(...flat)
+// //         root = flat
+// //     } while(root.length)
+// // }
+
+// const tsSource = tsFiles.find(
+//     (f) => f.localFileName === textEditor.document.fileName
+// )
+// if (tsSource) {
+//     const code = tsSource.tsSourceFile.text
+//     const nodes = getNodes(tsSource.tsSourceFile)
+//     const nodeData = nodes.map((n, i) => {
+//         return {
+//             node: n,
+//             range: nodeToRange(n, code),
+//             children: getNodes(n),
+//         }
+//     })
+//     const parent = nodeData.find((r) => r.range.contains(activeSelection))
+//     if (parent) {
+//         let root: ts.Node[] = parent.children
+//         let path: ts.Node[] = [parent.node]
+//         do {
+//             let candidates = root.filter((c: ts.Node) => {
+//                 let range = nodeToRange(c, code)
+//                 return range.contains(activeSelection)
+//             })
+//             let candidateNodes: any[] = []
+//             candidates.forEach((c: any) => candidateNodes.push(getNodes(c)))
+//             let flat: ts.Node[] = [].concat(...candidateNodes)
+//             path = path.concat(...flat)
+//             root = flat
+//         } while (root.length)
+//         // console.log('path to selection', path)
+//         let nodeInfo: any[] = path.map((p, i) =>
+//             handleNodeDataExtraction(
+//                 p,
+//                 textEditor,
+//                 activeSelection,
+//                 path,
+//                 code,
+//                 i
+//             )
+//         )
+//         console.log('nodeInfo', nodeInfo)
+//         console.log(
+//             'kinds',
+//             path.map((n) => ts.SyntaxKind[n.kind])
+//         )
+//         const parentToChildPath = nodeInfo.filter((n) => n.isDirectParent)
+//         console.log(
+//             'direct parents?',
+//             nodeInfo.filter((n) => n.isDirectParent)
+//         )
+//         const match: CodeContext =
+//             parentToChildPath[parentToChildPath.length - 1]
+//         textEditor.revealRange(match.range)
+//         // const identifierNodes: ts.Node[] = path.filter((node: ts.Node) => {
+//         //     return ts.isIdentifier(node)
+//         // })
+//         // console.log('identifier', identifierNodes);
+//     }
+// }
+// if(activeSelection.start.isEqual(activeSelection.end)) {
+//     textEditor.setDecorations(floatingDecorations, []);
+//     return
+// }
+// const range = textEditor.document.lineAt(activeSelection.start).range;
+
+// const hover = await hoverController.provideAnnotationCreationHover(textEditor.document, activeSelection.end);
+// console.log('hover', hover);

@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode'
+import * as ts from 'typescript'
 import {
     annotationList,
     copiedAnnotations,
@@ -27,6 +28,10 @@ import {
     gitInfo,
     currentGitHubProject,
     gitApi,
+    tsFiles,
+    setTsFiles,
+    floatingDecorations,
+    astHelper,
 } from '../extension'
 import * as anchor from '../anchorFunctions/anchor'
 import * as utils from '../utils/utils'
@@ -36,6 +41,7 @@ import {
     ChangeEvent,
     // Timer
 } from '../constants/constants'
+
 let timeSinceLastEdit: number = -1
 let tempChanges: any[] = []
 // Update our internal representation of the color theme so Shiki (our package for code formatting) uses appropriate colors
@@ -70,9 +76,11 @@ export const handleChangeVisibleTextEditors = (
 
     if (!annotationsToHighlight.length) return
     if (view) {
-        textEditors.forEach((t) =>
+        textEditors.forEach((t) => {
             anchor.addHighlightsToEditor(annotationsToHighlight, t)
-        )
+            !astHelper.checkIsSourceFileIsWatched(t.document) &&
+                astHelper.addSourceFile(t.document)
+        })
     }
 }
 
@@ -106,7 +114,8 @@ export const handleChangeActiveTextEditor = (
                 utils.updateCurrentGitHubProject(gitApi)
                 utils.updateCurrentGitHubCommit(gitApi)
             }
-            // console.log('changing active text editor');
+
+            astHelper.addSourceFile(TextEditor.document)
             if (user && vscode.workspace.workspaceFolders)
                 view?.updateDisplay(undefined, gitUrl, currentProject)
         }
@@ -117,6 +126,8 @@ export const handleChangeActiveTextEditor = (
 // In case where user saves or closes a window, save annotations to FireStore
 export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
     const gitUrl = utils.getStableGitHubUrl(TextDocument.uri.fsPath)
+    const updated = astHelper.updatePaths(TextDocument)
+    setAnnotationList(utils.removeOutOfDateAnnotations(updated))
     if (vscode.workspace.workspaceFolders)
         utils.handleSaveCloseEvent(
             annotationList,
@@ -351,4 +362,30 @@ export const handleDidChangeTextDocument = (
             )
         }
     }
+}
+
+export const handleDidChangeTextEditorSelection = async (
+    e: vscode.TextEditorSelectionChangeEvent
+): Promise<void> => {
+    const { selections, textEditor } = e
+    const activeSelection = selections[0]
+
+    if (!activeSelection.start.isEqual(activeSelection.end)) {
+        let createAnnotationWebviewLink: vscode.MarkdownString =
+            new vscode.MarkdownString()
+        createAnnotationWebviewLink.isTrusted = true
+        const create = vscode.Uri.parse(`command:adamite.addAnnotation`)
+        createAnnotationWebviewLink.appendMarkdown(
+            `[Create Annotation](${create})`
+        )
+        const decOpts: vscode.DecorationOptions[] = [
+            {
+                range: activeSelection,
+                hoverMessage: createAnnotationWebviewLink,
+            },
+        ]
+        textEditor.setDecorations(floatingDecorations, decOpts)
+    }
+
+    return
 }

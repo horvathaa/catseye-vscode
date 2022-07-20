@@ -10,12 +10,13 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode'
 import firebase from './firebase/firebase'
-import { Annotation, ChangeEvent } from './constants/constants'
+import { Annotation, ChangeEvent, TsFile } from './constants/constants'
 import * as commands from './commands/commands'
 import * as eventHandlers from './listeners/listeners'
 import * as utils from './utils/utils'
 import * as debug from './debug/debug'
 import ViewLoader from './view/ViewLoader'
+import { AstHelper } from './astHelper/astHelper'
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports
 export const gitApi = gitExtension?.getAPI(1)
 console.log('gitApi', gitApi)
@@ -42,6 +43,8 @@ export let currentGitHubProject: string = '' // also need to add call to update 
 export let currentGitHubCommit: string = ''
 export let changes: ChangeEvent[] = []
 export let numChangeEventsCompleted = 0
+export let tsFiles: TsFile[] = []
+export let astHelper: AstHelper = new AstHelper()
 
 export const annotationDecorations =
     vscode.window.createTextEditorDecorationType({
@@ -63,6 +66,12 @@ export const annotationDecorations =
         },
         rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
     })
+
+export const floatingDecorations = vscode.window.createTextEditorDecorationType(
+    {
+        overviewRulerLane: vscode.OverviewRulerLane.Center,
+    }
+)
 
 export const setActiveEditor = (
     newActiveEditor: vscode.TextEditor | undefined
@@ -96,7 +105,7 @@ export const setInsertSpaces = (newInsertSpaces: boolean | string): void => {
 
 export const setAnnotationList = (newAnnotationList: Annotation[]): void => {
     annotationList = newAnnotationList
-    console.log(annotationList)
+    // console.log(annotationList)
 }
 
 export const setCopiedAnnotationList = (
@@ -145,6 +154,10 @@ export const setSelectedAnnotationsNavigations = (
     selectedAnnotationsNavigations = newSelectedAnnotationsNavigationList
 }
 
+export const setTsFiles = (newTsFiles: TsFile[]): void => {
+    tsFiles = newTsFiles
+}
+
 export const setChangeEvents = (newChangeEvents: ChangeEvent[]): void => {
     changes = newChangeEvents
 }
@@ -159,6 +172,8 @@ export function activate(context: vscode.ExtensionContext) {
     adamiteLog.appendLine('Starting activate')
     // initialize authentication and listeners for annotations
     commands.init()
+    vscode.window.activeTextEditor &&
+        astHelper.addSourceFile(vscode.window.activeTextEditor.document)
 
     /*************************************************************************************/
     /******************************** EXTENSION LISTENERS  *******************************/
@@ -171,6 +186,10 @@ export function activate(context: vscode.ExtensionContext) {
     let didChangeActiveEditorListenerDisposable =
         vscode.window.onDidChangeActiveTextEditor(
             eventHandlers.handleChangeActiveTextEditor
+        )
+    let didChangeTextEditorSelectionDisposable =
+        vscode.window.onDidChangeTextEditorSelection(
+            eventHandlers.handleDidChangeTextEditorSelection
         )
     let didChangeActiveColorTheme = vscode.window.onDidChangeActiveColorTheme(
         eventHandlers.handleDidChangeActiveColorTheme
@@ -243,6 +262,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(didChangeVisibleListenerDisposable)
     context.subscriptions.push(didChangeActiveEditorListenerDisposable)
+    context.subscriptions.push(didChangeTextEditorSelectionDisposable)
     context.subscriptions.push(didChangeActiveColorTheme)
     context.subscriptions.push(didSaveListenerDisposable)
     context.subscriptions.push(didCloseListenerDisposable)

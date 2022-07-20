@@ -207,7 +207,7 @@
     display: block;
     padding: 4px;
     list-style-type: none;
-    border-top: 0.05em solid #ffffff6e;
+    border-top: 0.05em solid var(--vscode-editor-foreground);
     overflow: auto;
 }
 
@@ -258,7 +258,7 @@
     display: block;
     padding: 6px;
     list-style-type: none;
-    border-top: 0.05em solid #ffffff6e;
+    border-bottom: 0.05em solid #ffffff6e;
 }
 
 .profilePhoto {
@@ -301,9 +301,8 @@
 }
 
 .textbox {
-    width: 95%;
+    width: 98%;
     resize: none;
-    min-height: 4em;
     font-family: var(--vscode-font-family);
     background-color: var(--vscode-breadcrumb-activeSelectionForeground);
 }
@@ -431,6 +430,33 @@
     align-items: center;
     padding-left: 4px;
     cursor: pointer;
+}
+
+/* Inspired by Google Docs css styles */
+.showHideLineContainer {
+    position: relative;
+    text-align: center;
+    margin-top: 5px;
+    cursor: pointer;
+}
+
+.showHideLineButton {
+    background-color: var(--vscode-editor-background);
+    align-items: center;
+    text-align: center;
+    padding: 3px 8px;
+    z-index: 1;
+    position: relative;
+    display: inline-block;
+}
+
+.showHideLine {
+    border-top: 1px solid var(--vscode-editor-foreground);
+    height: 50%;
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    filter: brightness(30%);
 }
 
 .LocationContainer {

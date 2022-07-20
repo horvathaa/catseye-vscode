@@ -1,3 +1,6 @@
+import ts = require('typescript')
+import { CodeContext } from '../astHelper/nodeHelper'
+
 // import * as vscode from 'vscode';
 export class Annotation {
     id: string
@@ -91,8 +94,9 @@ export interface AnchorObject {
     parentId: string
     anchored: boolean
     createdTimestamp: number
-    priorVersions?: AnchorOnCommit[] // Not in FB, dynamically compute priorVersionsfrom the Commit object model on launch
-    // surroundingContext: Object[] - @Amber to update later with AST info
+    priorVersions?: AnchorOnCommit[] // Not in FB until commit. Rn, dynamically compute priorVersionsfrom the Commit object model on launch
+    path: CodeContext[]
+    //add annotation field, ridding of multiple anchors
 }
 
 export interface AnchorOnCommit {
@@ -197,3 +201,12 @@ export interface CommitObject {
     anchorsOnCommit: AnchorObject[]
     createdTimestamp: number
 }
+export interface TsFile {
+    localFileName: string
+    tsSourceFile: ts.SourceFile
+}
+
+// export interface GitInfo {
+// 	author: string,
+// 	[key: string]: GitRepoInfo
+// }

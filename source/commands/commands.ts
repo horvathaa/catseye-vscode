@@ -19,6 +19,7 @@ import {
     adamiteLog,
     selectedAnnotationsNavigations,
     setSelectedAnnotationsNavigations,
+    astHelper,
 } from '../extension'
 import { AnchorObject, Annotation } from '../constants/constants'
 import * as anchor from '../anchorFunctions/anchor'
@@ -246,6 +247,10 @@ export const createNewAnnotation = async () => {
                             : '',
                     },
                 ],
+                path: astHelper.generateCodeContextPath(
+                    r,
+                    activeTextEditor.document
+                ),
             }
             const temp = {
                 id: newAnnoId,
@@ -318,6 +323,7 @@ export const createFileAnnotation = async (
         anchored: true,
         createdTimestamp: new Date().getTime(),
         priorVersions: [],
+        path: [],
     }
     const temp = {
         id: newAnnoId,
@@ -440,6 +446,10 @@ export const addNewHighlight = (
                             : '',
                     },
                 ],
+                path: astHelper.generateCodeContextPath(
+                    r,
+                    activeTextEditor.document
+                ),
             }
             const temp = {
                 id: newAnnoId,

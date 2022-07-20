@@ -154,6 +154,13 @@ export const getAnchorsInCurrentFile = (
     return anchors
 }
 
+const checkIfAnchorChanged = (
+    originalRange: vscode.Range,
+    newRange: vscode.Range
+): boolean => {
+    return originalRange.isEqual(newRange)
+}
+
 // The meat and potatoes of keeping anchor points up to date
 // Gets called on every keystroke for files that contain annotations
 // Uses a series of methods to, given the details VS Code gave us about the edit operation performed,

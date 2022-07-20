@@ -94,6 +94,20 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                     },
                 },
             },
+            MuiListItemButton: {
+                styleOverrides: {
+                    root: {
+                        display: 'flex',
+                    },
+                },
+            },
+            MuiButtonBase: {
+                styleOverrides: {
+                    root: {
+                        display: 'flex !important',
+                    },
+                },
+            },
             MuiListItemIcon: {
                 styleOverrides: {
                     root: {
@@ -143,7 +157,13 @@ const AnnotationList: React.FC<AnnoListProps> = ({
         <>
             <ThemeProvider theme={theme}>
                 <List sx={{ width: '100%' }} component="div" disablePadding>
-                    <ListItemButton onClick={handlePinClick}>
+                    <ListItemButton
+                        style={{
+                            display: 'flex',
+                            padding: '8px 16px 8px 16px',
+                        }}
+                        onClick={handlePinClick}
+                    >
                         <ListItemIcon>
                             <PushPinIcon />
                         </ListItemIcon>
@@ -167,7 +187,13 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                     </Collapse>
                 </List>
                 <List sx={{ width: '100%' }} component="div" disablePadding>
-                    <ListItemButton onClick={handleFileClick}>
+                    <ListItemButton
+                        style={{
+                            display: 'flex',
+                            padding: '8px 16px 8px 16px',
+                        }}
+                        onClick={handleFileClick}
+                    >
                         <ListItemIcon>
                             <ArticleIcon />
                         </ListItemIcon>
@@ -193,7 +219,13 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                     </Collapse>
                 </List>
                 <List sx={{ width: '100%' }} component="div" disablePadding>
-                    <ListItemButton onClick={handleCurrProjClick}>
+                    <ListItemButton
+                        style={{
+                            display: 'flex',
+                            padding: '8px 16px 8px 16px',
+                        }}
+                        onClick={handleCurrProjClick}
+                    >
                         <ListItemIcon>
                             <AccountTreeIcon />
                         </ListItemIcon>

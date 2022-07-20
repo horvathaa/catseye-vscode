@@ -8,7 +8,7 @@
 import { Annotation } from '../../../constants/constants'
 import {
     // getAllAnnotationFilenames,
-    getAllAnnotationStableGitUrls,
+    // getAllAnnotationStableGitUrls,
     sortAnnotationsByLocation,
 } from '../utils/viewUtils'
 import ReactAnnotation from '../components/annotation'
@@ -202,19 +202,20 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                     </ListItemButton>
                     <Collapse in={openFile} timeout="auto" unmountOnExit>
                         {fileAnno.length > 0 &&
-                            // sortAnnotationsByLocation(
-                            fileAnno.map((a: Annotation) => {
-                                return (
-                                    <ReactAnnotation
-                                        key={'annotationList-tsx-' + a.id}
-                                        annotation={a}
-                                        vscode={vscode}
-                                        window={window}
-                                        username={username}
-                                        userId={userId}
-                                    />
-                                )
-                            })}
+                            sortAnnotationsByLocation(fileAnno).map(
+                                (a: Annotation) => {
+                                    return (
+                                        <ReactAnnotation
+                                            key={'annotationList-tsx-' + a.id}
+                                            annotation={a}
+                                            vscode={vscode}
+                                            window={window}
+                                            username={username}
+                                            userId={userId}
+                                        />
+                                    )
+                                }
+                            )}
                     </Collapse>
                 </List>
                 <List sx={{ width: '100%' }} component="div" disablePadding>

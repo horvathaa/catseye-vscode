@@ -214,7 +214,8 @@ export interface TsFile {
     tsSourceFile: ts.SourceFile
 }
 
-// export interface GitInfo {
-// 	author: string,
-// 	[key: string]: GitRepoInfo
-// }
+export interface AnchorsToUpdate {
+    annoId: string
+    createdTimestamp: number
+    anchors: AnchorObject[]
+}

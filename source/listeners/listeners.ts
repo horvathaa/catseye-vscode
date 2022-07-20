@@ -94,11 +94,8 @@ export const handleChangeActiveTextEditor = (
                 setTabSize(TextEditor.options.tabSize)
             if (TextEditor.options?.insertSpaces)
                 setInsertSpaces(TextEditor.options.insertSpaces)
-            setAnnotationList(
-                //utils.sortAnnotationsByLocation(
-                annotationList
-                //)
-            )
+            setAnnotationList(utils.sortAnnotationsByLocation(annotationList))
+
             const currentProject: string = utils.getProjectName(
                 TextEditor.document.uri.fsPath
             )
@@ -199,11 +196,8 @@ const logChanges = (e: vscode.TextDocumentChangeEvent): void => {
 export const handleDidChangeTextDocument = (
     e: vscode.TextDocumentChangeEvent
 ) => {
-    // console.log('e', e);
-
     // logChanges(e);
     if (e.document.fileName.includes('extension-output-')) return // this listener also gets triggered when the output pane updates???? for some reason????
-    console.log('translateChangeEvent', e)
     const stableGitPath = utils.getStableGitHubUrl(e.document.uri.fsPath)
 
     // const currentAnnotations = utils.getAllAnnotationsWithAnchorInFile(annotationList, e.document.uri.toString());

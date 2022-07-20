@@ -19,7 +19,7 @@ import ViewLoader from './view/ViewLoader'
 import { AstHelper } from './astHelper/astHelper'
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports
 export const gitApi = gitExtension?.getAPI(1)
-// console.log('gitApi', gitApi);
+console.log('gitApi', gitApi)
 export let gitInfo: { [key: string]: any } = {}
 export let annotationList: Annotation[] = []
 export let copiedAnnotations: { [key: string]: any }[] = []

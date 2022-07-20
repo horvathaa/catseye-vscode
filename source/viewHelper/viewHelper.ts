@@ -81,6 +81,7 @@ export const handleCopyText = (text: string): void => {
 }
 
 // Update the annotation with a new snapshot of code on the extension side
+// if bring back need to add update to latest commit code!
 export const handleSnapshotCode = (id: string, anchorId: string): void => {
     const anno: Annotation | undefined = annotationList.find(
         (anno) => anno.id === id
@@ -325,7 +326,11 @@ export const handleCreateAnnotation = (
                     tempAnno?.anchors[0].filename
             )
             setTempAnno(null)
-            setAnnotationList(sortAnnotationsByLocation(annotationList))
+            setAnnotationList(
+                // sortAnnotationsByLocation(
+                annotationList
+            )
+            // )
             view?.updateDisplay(annotationList)
             if (text) addHighlightsToEditor(annotationList, text)
             if (willBePinned) {
@@ -360,48 +365,53 @@ export const handleUpdateAnnotation = (
             }
         })
     }
-    let updatedAnno: Annotation
-    if (typeof value === 'boolean' && typeof key === 'string') {
-        updatedAnno = buildAnnotation({
-            ...annotationList.filter((a) => a.id === id)[0],
-            [key]: value,
-            needToUpdate: true,
-        })
-        setSelectedAnnotationsNavigations(
-            value
-                ? [
-                      ...selectedAnnotationsNavigations,
-                      {
-                          id,
-                          lastVisited: false,
-                          anchorId: annotationList.filter((a) => a.id === id)[0]
-                              .anchors[0].anchorId,
-                      },
-                  ]
-                : selectedAnnotationsNavigations.filter((a) => a.id !== id)
-        )
-    } else if (typeof key === 'string') {
-        // This would be where replies go
-        updatedAnno = buildAnnotation({
-            ...annotationList.filter((a) => a.id === id)[0],
-            [key]: value,
-            needToUpdate: true,
-        })
-    } else {
-        updatedAnno = buildAnnotation({
-            ...annotationList.filter((a) => a.id === id)[0],
-            [key[0]]: value[key[0]],
-            [key[1]]: value[key[1]],
-            needToUpdate: true,
-        })
+    let updatedAnno: Annotation | undefined = annotationList.find(
+        (a) => a.id === id
+    )
+    if (updatedAnno) {
+        if (typeof value === 'boolean' && typeof key === 'string') {
+            updatedAnno = buildAnnotation({
+                ...updatedAnno,
+                [key]: value,
+                needToUpdate: true,
+                gitCommit: gitInfo[updatedAnno.projectName].commit,
+            })
+            setSelectedAnnotationsNavigations(
+                value
+                    ? [
+                          ...selectedAnnotationsNavigations,
+                          {
+                              id,
+                              lastVisited: false,
+                              anchorId: updatedAnno.anchors[0].anchorId,
+                          },
+                      ]
+                    : selectedAnnotationsNavigations.filter((a) => a.id !== id)
+            )
+        } else if (typeof key === 'string') {
+            updatedAnno = buildAnnotation({
+                updatedAnno,
+                [key]: value,
+                needToUpdate: true,
+                gitCommit: gitInfo[updatedAnno.projectName].commit,
+            })
+        } else {
+            updatedAnno = buildAnnotation({
+                updatedAnno,
+                [key[0]]: value[key[0]],
+                [key[1]]: value[key[1]],
+                needToUpdate: true,
+                gitCommit: gitInfo[updatedAnno.projectName].commit,
+            })
+        }
+        const updatedList = annotationList
+            .filter((a) => a.id !== id)
+            .concat([updatedAnno])
+        setAnnotationList(updatedList)
+        if (typeof value === 'boolean' && typeof key === 'string')
+            view?.updateDisplay(updatedList)
     }
     // console.log('updated', updatedAnno);
-    const updatedList = annotationList
-        .filter((a) => a.id !== id)
-        .concat([updatedAnno])
-    setAnnotationList(updatedList)
-    if (typeof value === 'boolean' && typeof key === 'string')
-        view?.updateDisplay(updatedList)
 }
 
 // Removes the annotation from the list, updates the annotation list in the webview, and removes the corresponding highlight
@@ -422,7 +432,9 @@ export const handleDeleteAnnotation = (id: string): void => {
     )[0]
     visible
         ? setAnnotationList(
-              sortAnnotationsByLocation(removeOutOfDateAnnotations(updatedList))
+              // sortAnnotationsByLocation(
+              removeOutOfDateAnnotations(updatedList)
+              //)
           )
         : setAnnotationList(removeOutOfDateAnnotations(updatedList))
     view?.updateDisplay(annotationList)

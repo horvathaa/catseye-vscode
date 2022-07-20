@@ -125,11 +125,11 @@ const AnnotationList: React.FC<AnnoListProps> = ({
             'Current Project': [],
         }
         annotations.forEach((a: Annotation) => {
-            const annoFiles = getAllAnnotationStableGitUrls(a)
+            // const annoFiles = getAllAnnotationStableGitUrls(a)
             if (a.selected) {
                 output['Pinned'].push(a)
-            } else if (annoFiles.includes(currentFile)) {
-                output['Current File'].push(a)
+                // } else if (annoFiles.includes(currentFile)) {
+                //     output['Current File'].push(a)
             } else if (a.projectName === currentProject) {
                 output['Current Project'].push(a) // only pulls annotations since last commit?
             }
@@ -202,20 +202,19 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                     </ListItemButton>
                     <Collapse in={openFile} timeout="auto" unmountOnExit>
                         {fileAnno.length > 0 &&
-                            sortAnnotationsByLocation(fileAnno).map(
-                                (a: Annotation) => {
-                                    return (
-                                        <ReactAnnotation
-                                            key={'annotationList-tsx-' + a.id}
-                                            annotation={a}
-                                            vscode={vscode}
-                                            window={window}
-                                            username={username}
-                                            userId={userId}
-                                        />
-                                    )
-                                }
-                            )}
+                            // sortAnnotationsByLocation(
+                            fileAnno.map((a: Annotation) => {
+                                return (
+                                    <ReactAnnotation
+                                        key={'annotationList-tsx-' + a.id}
+                                        annotation={a}
+                                        vscode={vscode}
+                                        window={window}
+                                        username={username}
+                                        userId={userId}
+                                    />
+                                )
+                            })}
                     </Collapse>
                 </List>
                 <List sx={{ width: '100%' }} component="div" disablePadding>

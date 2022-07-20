@@ -12,6 +12,7 @@ export const DB_COLLECTIONS = {
     USERS: 'users',
     ANNOTATIONS: 'annotations',
     VSCODE_ANNOTATIONS: 'vscode-annotations',
+    COMMITS: 'commits',
     GROUPS: 'groups',
 }
 

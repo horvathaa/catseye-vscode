@@ -158,7 +158,7 @@ const checkIfAnchorChanged = (
     originalRange: vscode.Range,
     newRange: vscode.Range
 ): boolean => {
-    return originalRange.isEqual(newRange)
+    return !originalRange.isEqual(newRange)
 }
 
 // The meat and potatoes of keeping anchor points up to date
@@ -221,7 +221,7 @@ export const translateChanges = (
     if (changeRange.start.isAfter(originalRange.end)) {
         return anchorObject
     }
-
+    let anyChangeOccured: boolean = false
     let changeOccurredInRange: boolean = false
     textLength = userAutocompletedOrCommented(
         changeText,
@@ -245,8 +245,10 @@ export const translateChanges = (
             startAndEndLineAreSameNoNewLine,
             originalAnchor.startOffset === changeRange.start.character
         )
-        if (originalAnchor.startOffset === changeRange.start.character)
+        if (originalAnchor.startOffset === changeRange.start.character) {
             changeOccurredInRange = true
+            anyChangeOccured = true
+        }
     }
 
     // user adds/removes text at or before the end offset (no new lines)
@@ -266,12 +268,14 @@ export const translateChanges = (
             changeRange
         )
         changeOccurredInRange = true
+        anyChangeOccured = true
     }
 
     // user added lines above start of range
     if (changeRange.start.line < originalStartLine && diff) {
         // console.log('userChangedLinesBeforeStart');
         newRange = userChangedLinesBeforeStart(newRange, originalAnchor, diff)
+        anyChangeOccured = true
     }
 
     // user added new line at the front of our anchor point
@@ -290,6 +294,7 @@ export const translateChanges = (
             (originalStartOffset - changeRange.start.character)
         newRange.endOffset =
             newRange.startOffset + (originalEndOffset - originalStartOffset)
+        anyChangeOccured = true
     }
 
     // user added/removed line in middle of the anchor -- we are not including end offset
@@ -314,6 +319,7 @@ export const translateChanges = (
             rangeLength,
             originalRange
         )
+        anyChangeOccured = true
     }
 
     // user's edit started in the middle of our anchor point but (possibly) ends past the point our anchor ends
@@ -334,6 +340,7 @@ export const translateChanges = (
             originalAnchor,
             originalRange
         )
+        anyChangeOccured = true
     }
 
     // user's edit started before our anchor point but ends in the middle of our anchor point
@@ -354,6 +361,7 @@ export const translateChanges = (
             originalStartLine,
             originalStartOffset
         )
+        anyChangeOccured = true
     }
 
     // shrink end of anchor if it is just white space
@@ -377,6 +385,7 @@ export const translateChanges = (
                 new vscode.Range(newRange.endLine, 0, newRange.endLine, 500)
             )
         ).length
+        anyChangeOccured = true
     }
 
     // user changed text somewhere inside the range - need to update text
@@ -386,18 +395,45 @@ export const translateChanges = (
         !diff
     ) {
         changeOccurredInRange = true
+        anyChangeOccured = true
     }
 
     // update anchor text
     if (changeOccurredInRange) {
         newAnchorText = doc.getText(createRangeFromObject(newRange))
+        anyChangeOccured = true
     }
+
+    console.log(
+        'gitInfo[commit]',
+        gitInfo[getProjectName(doc.uri.toString())].commit
+    )
+
+    console.log(
+        'change condition',
+        checkIfAnchorChanged(originalRange, createRangeFromObject(newRange)) ||
+            changeOccurredInRange,
+        'func',
+        checkIfAnchorChanged(originalRange, createRangeFromObject(newRange)),
+        'var',
+        changeOccurredInRange
+    )
+
+    const originalGitCommit = anchorObject.gitCommit
+    const newRangeObj = createRangeFromObject(newRange)
 
     // update anchor object
     const newAnchor: AnchorObject = {
         ...anchorObject,
         anchorText: newAnchorText,
         anchor: newRange,
+        gitCommit:
+            checkIfAnchorChanged(originalRange, newRangeObj) ||
+            // changeOccurredInRange
+            (originalRange.start.isBefore(changeRange.start) &&
+                originalRange.end.isAfter(changeRange.end))
+                ? gitInfo[getProjectName(doc.uri.toString())].commit
+                : originalGitCommit,
     }
 
     return newAnchor
@@ -532,11 +568,12 @@ export const addHighlightsToEditor = (
             )
             valid.forEach((a: Annotation) => (a.outOfDate = false))
             // bring back annotations that are not in the file
-            const newAnnotationList: Annotation[] = sortAnnotationsByLocation(
+            const newAnnotationList: Annotation[] =
+                //sortAnnotationsByLocation(
                 valid.concat(
                     annotationList.filter((a) => !updatedIds.includes(a.id))
                 )
-            )
+            // )
 
             setAnnotationList(newAnnotationList)
 

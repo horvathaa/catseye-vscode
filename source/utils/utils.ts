@@ -701,10 +701,8 @@ export const updateAnnotationCommit = (
     // update any anchor points that've changed since last commit
     const anchorsOnCommit: AnchorObject[] = getAllAnchorsOnCommit(
         annotationList,
-        lastCommit // commit ?
+        lastCommit
     )
-    console.log('commit we save on', lastCommit, 'updated commit', commit)
-
     const ids = anchorsOnCommit.map((a) => a.parentId)
     const annosOnCommit = annotationList.filter((a) => ids.includes(a.id)) // grabs annotations whose anchor points have changed - do we also update when annotation content changes?
     console.log('anchors', anchorsOnCommit, 'annos', annosOnCommit)
@@ -718,6 +716,7 @@ export const updateAnnotationCommit = (
             const { priorVersions, ...x } = a
             return x
         }),
+        createdTimestamp: new Date().getTime(),
     }
     console.log('cmmit object??', commitObject)
     saveCommit(commitObject)
@@ -726,25 +725,6 @@ export const updateAnnotationCommit = (
         ...annotationList.filter((a) => !ids.includes(a.id)),
         ...annosOnCommit,
     ])
-
-    // update anchors + annos for next commit
-    // annosOnCommit.forEach((a: any) => {
-    //     // WRONG: updating to next commit
-    //     a.gitCommit = commit
-    //     a.gitBranch = branch
-    //     // a.anchors.forEach((anchor: AnchorObject) => {
-    //     //     anchor.gitCommit = commit
-    //     //     anchor.gitBranch = branch
-    //     // })
-    // })
-
-    // anchorsOnCommit.forEach((a: AnchorObject) => {
-    //     // if (a.gitRepo === repo && a.gitCommit !== commit) {
-    //     // might not address 'localChange'
-    //     a.gitCommit = commit
-    //     a.gitBranch = branch
-    //     // }
-    // })
 }
 
 const findMostLikelyRepository = (gitApi: any): string => {

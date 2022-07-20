@@ -195,10 +195,5 @@ export interface CommitObject {
     gitRepo: string
     branchName: string
     anchorsOnCommit: AnchorObject[]
-    // annotationsOnCommit: [
-    //     {
-    //         annoId: string
-    //         anchors: AnchorObject[] //annotation anchors made/edited/deleted on this commit
-    //     }
-    // ]
+    createdTimestamp: number
 }

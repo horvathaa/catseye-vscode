@@ -17,6 +17,7 @@ import {
     makeObjectListFromAnnotations,
     buildAnnotation,
     getLastGitCommitHash,
+    removeNulls,
 } from '../../utils/utils'
 import firebase from '../firebase'
 import { DB_COLLECTIONS } from '..'
@@ -70,8 +71,6 @@ export const getAnnotationsOnSignIn = async (
         getListFromSnapshots(collaboratorAnnotationDocs)
     )
 
-    console.log('data annotations', dataAnnotations)
-
     const allCommits = getListFromSnapshots(
         await getCommitsByProject(currentGitProject)
     )
@@ -79,117 +78,111 @@ export const getAnnotationsOnSignIn = async (
     const lastCommitObject: CommitObject | undefined = allCommits.find(
         (commit) => commit.commit === lastCommit
     )
-    console.log(
-        'current git commit',
-        currentGitCommit,
-        'last git commit',
-        lastCommit
-    )
-    console.log('last recent CommitObject', lastCommitObject)
-    console.log('ALL COMMITS FOR REAL', allCommits)
 
-    const currentAnchors = lastCommitObject?.anchorsOnCommit
+    let currentAnchors = lastCommitObject?.anchorsOnCommit
     console.log('touched anchors on last commit', currentAnchors)
-
-    /* IN GENERAL: 
-    - need to populate all annotations with anchors (always)
-    - need to populate said anchors with prior versions (if any)
-
-    ASSUME: Annotation commit is most up to date. 
-
-    Some annotations will not have changed. Their commit will not be the last commit (perhaps their anchors sh already exist) 
-    For unchanged anno --> iterate through all AnchorObjects and find annotations with matching id 
-    
-    All anchor points have an annotation. Could be many.
-    FACT: no. of anchors >= no. of annotations. This means iterating through all annotations is computationally LESS $$. 
-        For each annotation: 
-            allCommits.find(annotation.commit == commitObject.commit) // search all commits and find the commit object 
-            commitObject.anchorsOnCommit.forEach => 
-
-    PROPOSAL: Annotations stores an anchors array. We reset the anchors array only if anchors changing 
-    
-    NOW: Anchor commits are source of truth. 
-        HOW NOW?: Iterate through all AnchorObjects, find their Annotation via parentID and populate its anchors array. 
-        BAD: $$$$. no. of anchors >= no. of annotations. 
-        MAKE BETTER: differentiate between AnchorObjects that've changed. 
-    
-    
-    MAYBE: If an anchor's commit == lastCommit, compute a priorVersion because it has changed., 
-
-    
-    
-    CONSIDER: if anchor commit changed, should its annotation commit also update? 
-
-    */
 
     const partition = (array: any[], filter: any) => {
         let lastCommit: any = [],
             otherCommit: any = []
         array.forEach((a, idx, arr) => {
-            console.log('a', a, 'idx', idx, 'arr', arr)
             return (filter(a, idx, arr) ? lastCommit : otherCommit).push(a)
         })
         return [lastCommit, otherCommit]
     }
 
-    //Run it with some dummy data and filter
-    const [lastEditedAnnotations, uneditedAnnotations] = partition(
+    let [lastEditedAnnotations, uneditedAnnotations] = partition(
         dataAnnotations,
         (a: any) => a.gitCommit === lastCommit
     )
-    let priorAnchorsAnnotations: Annotation[] = []
 
     console.log('last commit anno', lastEditedAnnotations)
     console.log('undedited anno', uneditedAnnotations)
 
-    lastEditedAnnotations.forEach((a: any) => {
-        currentAnchors?.forEach((currAnchorObject: any) => {
-            allCommits.forEach((commit: CommitObject) => {
-                console.log('searching all commits for prior anchors')
-                // search commit history for previous AnchorObjects matching the current AnchorObject
-                const priorVersionObjects: AnchorObject[] =
-                    commit.anchorsOnCommit.filter((priorAnchor: any) => {
-                        console.log(
-                            'filtering',
-                            currAnchorObject.anchorId === priorAnchor.anchorId
-                        )
-                        return (
-                            currAnchorObject.anchorId === priorAnchor.anchorId
-                        )
-                    })
-                console.log('prior versions', priorVersionObjects)
-                // if current anchor has any prior versions, create AnchorOnCommit objects
-                if (priorVersionObjects.length) {
-                    let priorVersions: AnchorOnCommit[] =
-                        currAnchorObject.priorVersions
-                            ? currAnchorObject.priorVersions
-                            : []
-                    priorVersionObjects.forEach(
-                        (anchorObject: AnchorObject) => {
-                            const priorVersion: AnchorOnCommit = {
-                                id: anchorObject.anchorId,
-                                commitHash: commit.commit,
-                                createdTimestamp: anchorObject.createdTimestamp,
-                                html: anchorObject.html,
-                                anchorText: anchorObject.anchorText,
-                                branchName: commit.branchName,
-                            }
-                            priorVersions.push(priorVersion)
-                            // anchorObject.priorVersions
-                            //     ? anchorObject.priorVersions.push(priorVersion)
-                            //     : priorVersions
-                        }
-                    )
-                    currAnchorObject.priorVersions = priorVersions
+    interface ToUpdate {
+        annoId: string
+        createdTimestamp: number
+        anchors: AnchorObject[]
+    }
+
+    let inProgressAnnos: any[] = []
+    currentAnchors?.forEach((currAnchorObject: any) => {
+        const timeStamp = lastEditedAnnotations.find(
+            (a: any) => a.id === currAnchorObject.parentId
+        ).createdTimestamp
+        let objToUpdate: ToUpdate = inProgressAnnos.find(
+            (a) => a.id === currAnchorObject.parentId
+        )
+
+        if (!objToUpdate) {
+            objToUpdate = {
+                annoId: currAnchorObject.parentId,
+                anchors: [],
+                createdTimestamp: timeStamp,
+            }
+            inProgressAnnos.push(objToUpdate)
+        }
+
+        let commitsSinceAnnoCreation = allCommits.filter(
+            (c) =>
+                c?.createdTimestamp &&
+                c?.createdTimestamp >
+                    (objToUpdate ? objToUpdate.createdTimestamp : timeStamp)
+        )
+        commitsSinceAnnoCreation.forEach((commit: CommitObject) => {
+            // console.log('searching all commits for prior anchors')
+            // search commit history for previous AnchorObjects matching the current AnchorObject
+            const priorVersionFromCommit: AnchorObject | undefined =
+                commit.anchorsOnCommit.find((priorAnchor: any) => {
+                    return currAnchorObject.anchorId === priorAnchor.anchorId
+                })
+            // if current anchor has any prior versions, create AnchorOnCommit objects
+            let pv = objToUpdate?.anchors.find(
+                (a: AnchorObject) => a.anchorId === currAnchorObject.anchorId
+            )?.priorVersions
+                ? objToUpdate.anchors.find(
+                      (a: AnchorObject) =>
+                          a.anchorId === currAnchorObject.anchorId
+                  )?.priorVersions
+                : []
+            if (!pv) pv = []
+
+            if (priorVersionFromCommit) {
+                const priorVersion: AnchorOnCommit = {
+                    id: priorVersionFromCommit.anchorId,
+                    commitHash: commit.commit,
+                    createdTimestamp: priorVersionFromCommit.createdTimestamp,
+                    html: priorVersionFromCommit.html,
+                    anchorText: priorVersionFromCommit.anchorText,
+                    branchName: commit.branchName,
                 }
-            })
-            a = buildAnnotation({
-                ...a,
-                anchors: currAnchorObject,
-            })
+                pv = [...pv, { ...priorVersion }]
+            }
+
+            const updatedAnchorObject = {
+                ...currAnchorObject,
+                priorVersions: pv,
+            }
+            objToUpdate.anchors = objToUpdate.anchors
+                .filter((a) => a.anchorId !== currAnchorObject.anchorId)
+                .concat(updatedAnchorObject)
+            inProgressAnnos = inProgressAnnos
+                .filter((a: ToUpdate) => a.annoId !== objToUpdate.annoId)
+                .concat(objToUpdate)
         })
-        priorAnchorsAnnotations.push(a)
     })
+
+    const realAnnos: Annotation[] = removeNulls(
+        inProgressAnnos.map((a) => {
+            const match = lastEditedAnnotations.find(
+                (anno: any) => anno.id === a.annoId
+            )
+            if (!match) {
+                return null
+            }
+            return buildAnnotation({ ...match, anchors: a.anchors })
+        })
+    )
 
     const remainingAnnotations: Annotation[] =
         uneditedAnnotations && uneditedAnnotations.length
@@ -201,17 +194,8 @@ export const getAnnotationsOnSignIn = async (
               })
             : []
 
-    const allAnnotations = priorAnchorsAnnotations.concat(remainingAnnotations)
-    console.log('populateAnnotations', allAnnotations)
-
+    const allAnnotations = realAnnos.concat(remainingAnnotations)
     return allAnnotations
-}
-
-export const getPriorVersions = async (
-    anchors: AnchorObject[],
-    currentGitProject: string
-): Promise<AnchorOnCommit[]> => {
-    return []
 }
 
 // Authenticate using email and password (should only be used for super user)

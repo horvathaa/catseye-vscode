@@ -48,8 +48,15 @@ import { saveAnnotations as fbSaveAnnotations } from '../firebase/functions/func
 import { CodeContext } from '../astHelper/nodeHelper'
 let { parse } = require('what-the-diff')
 var shiki = require('shiki')
-import { simpleGit, SimpleGit, CleanOptions } from 'simple-git'
+import { simpleGit, SimpleGit } from 'simple-git'
 
+// https://www.npmjs.com/package/simple-git
+const gitDir =
+    vscode.workspace.workspaceFolders &&
+    vscode.workspace.workspaceFolders[0].uri
+        ? vscode.workspace.workspaceFolders[0].uri.fsPath
+        : ''
+const git: SimpleGit = simpleGit(gitDir, { binary: 'git' })
 let lastSavedAnnotations: Annotation[] =
     annotationList && annotationList.length ? annotationList : []
 
@@ -71,19 +78,12 @@ const arraysEqual = (a1: any[], a2: any[]): boolean => {
 export const initializeAnnotations = async (
     user: firebase.User
 ): Promise<void> => {
-    console.log('init annos')
     const currFilename: string | undefined =
         vscode.window.activeTextEditor?.document.uri.path.toString()
-    const annotations: Annotation[] =
-        // sortAnnotationsByLocation(
-        await getAnnotationsOnSignIn(
-            user,
-            currentGitHubProject,
-            currentGitHubCommit
-        )
-    // )
+    const annotations: Annotation[] = sortAnnotationsByLocation(
+        await getAnnotationsOnSignIn(user, currentGitHubProject)
+    )
     setAnnotationList(annotations)
-    console.log('annotations during initializing', annotations)
     const selectedAnnotations: Annotation[] = annotations.filter(
         (a) => a.selected
     )
@@ -663,7 +663,6 @@ export const getGithubUrl = (
         return ''
     const baseUrl: string = gitInfo[projectName].repo.split('.git')[0]
     const endUrl = getEndUrl(visPath, projectName)
-    // console.log('endUrl', endUrl, 'visPath', visPath);
     return gitInfo[projectName].commit === 'localChange' || returnStable
         ? baseUrl + '/tree/' + gitInfo[projectName].nameOfPrimaryBranch + endUrl
         : baseUrl + '/tree/' + gitInfo[projectName].commit + endUrl
@@ -677,7 +676,6 @@ export const getVisiblePath = (
         const path: string = workspacePath.substring(
             workspacePath.indexOf(projectName)
         )
-        // console.log('path', path);
         if (path) return path
     } else if (workspacePath) {
         return workspacePath
@@ -710,7 +708,6 @@ export const updateAnnotationCommit = (
     )
     const ids = anchorsOnCommit.map((a) => a.parentId)
     const annosOnCommit = annotationList.filter((a) => ids.includes(a.id)) // grabs annotations whose anchor points have changed - do we also update when annotation content changes?
-    console.log('anchors', anchorsOnCommit, 'annos', annosOnCommit)
 
     // SAVE CURRENT STATE W/ COMMITOBJECT
     const commitObject: CommitObject = {
@@ -723,7 +720,6 @@ export const updateAnnotationCommit = (
         }),
         createdTimestamp: new Date().getTime(),
     }
-    console.log('cmmit object??', commitObject)
     saveCommit(commitObject)
     fbSaveAnnotations(annosOnCommit) // smarter - only send edited annotations, get all annotations on commit
     setAnnotationList([
@@ -782,7 +778,6 @@ export const updateCurrentGitHubProject = (gitApi: any): void => {
         setCurrentGitHubProject(gitInfo[getProjectName()].repo)
     } else {
         const match = findMostLikelyRepository(gitApi)
-        // console.log('match', match);
         match ? setCurrentGitHubProject(match) : setCurrentGitHubProject('')
     }
 }
@@ -809,16 +804,6 @@ export const generateGitMetaData = async (
                     modifiedAnnotations: [],
                 }
             }
-            console.log('BEFORE CHANGE', 'head repo', r)
-            console.log('gitInfo', gitInfo)
-            console.log(
-                'current project name',
-                gitInfo.hasOwnProperty(currentProjectName),
-                'commit',
-                (gitInfo[currentProjectName]?.commit !== r.state.HEAD.commit,
-                'branch',
-                gitInfo[currentProjectName]?.branch !== r.state.HEAD.name)
-            )
 
             if (
                 //heuristic for changing commit hash
@@ -826,12 +811,6 @@ export const generateGitMetaData = async (
                 (gitInfo[currentProjectName]?.commit !== r.state.HEAD.commit ||
                     gitInfo[currentProjectName]?.branch !== r.state.HEAD.name)
             ) {
-                console.log(
-                    'head commit',
-                    r.state.HEAD.commit,
-                    'our git info',
-                    gitInfo[currentProjectName]?.commit
-                )
                 // save user's current commit (current) before updating to next - this is how we query for 'current commit'
                 updateAnnotationCommit(
                     gitInfo[currentProjectName].commit,
@@ -1085,19 +1064,18 @@ export const createAnchorObject = async (
     }
 }
 
-const gitDir =
-    vscode.workspace.workspaceFolders &&
-    vscode.workspace.workspaceFolders[0].uri
-        ? vscode.workspace.workspaceFolders[0].uri.fsPath
-        : ''
-
-const git: SimpleGit = simpleGit(gitDir, { binary: 'git' })
-
 export const getLastGitCommitHash = async () => {
     const options = ["--pretty=format:'%H'", '--skip=1', '--max-count=1']
     const result = await git.log(options)
     const lastCommit = result.all[0].hash.slice(1, -1)
-    console.log('the -2 commit', lastCommit)
-
     return lastCommit
+}
+
+export const partitionAnnotationsOnSignIn = (array: any[], filter: any) => {
+    let lastCommit: any = [],
+        otherCommit: any = []
+    array.forEach((a, idx, arr) => {
+        return (filter(a, idx, arr) ? lastCommit : otherCommit).push(a)
+    })
+    return [lastCommit, otherCommit]
 }

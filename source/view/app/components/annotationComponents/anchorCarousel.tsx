@@ -105,6 +105,23 @@ const AnchorCarousel: React.FC<Props> = ({
         if (index === allVersions.length - 1) scrollInEditor(aId)
     }
 
+    const displayBefore = (pv: AnchorOnCommit, index: number) => {
+        const lineBefore =
+            pv.surroundingCode.linesBefore[
+                pv.surroundingCode.linesBefore.length - index
+            ]
+        const length = lineBefore.length
+        const tooLong = length > 45
+        return tooLong ? lineBefore.slice(0, 45).concat('...') : lineBefore
+    }
+
+    const displayAfter = (pv: AnchorOnCommit, index: number) => {
+        const lineAfter = pv.surroundingCode.linesAfter[index]
+        const length = lineAfter.length
+        const tooLong = length > 45
+        return tooLong ? lineAfter.slice(0, 45) : lineAfter
+    }
+
     return (
         <div style={{ display: 'flex', flexDirection: 'row' }}>
             {showBack ? (
@@ -138,7 +155,7 @@ const AnchorCarousel: React.FC<Props> = ({
                                 alignItems: 'flex-start',
                                 width: '100%',
                                 height: 150,
-                                padding: '10px, 1px',
+                                padding: '10px',
                                 color: iconColor,
                             }} // same as AnchorContainer ^^
                             key={index}
@@ -171,29 +188,30 @@ const AnchorCarousel: React.FC<Props> = ({
                                     width: 'fit-content',
                                     alignItems: 'flex-start',
                                     color: '#2ADD42',
+                                    overflow: 'scroll',
                                 }}
                             >
-                                <p style={{ opacity: '0.3' }}>
-                                    {pv.surroundingCode.linesBefore[5]}
-                                </p>
                                 <p style={{ opacity: '0.5' }}>
-                                    {pv.surroundingCode.linesBefore[4]}
+                                    {displayBefore(pv, 3)}
+                                </p>
+                                <p style={{ opacity: '0.7' }}>
+                                    {displayBefore(pv, 2)}
                                 </p>
                                 <p>
                                     <b>
-                                        {pv.anchorText.length > 30
-                                            ? pv.anchorText.slice(0, 30)
+                                        {pv.anchorText.length > 45
+                                            ? pv.anchorText.slice(0, 45)
                                             : pv.anchorText}
-                                        {pv.anchorText.length > 30
+                                        {pv.anchorText.length > 45
                                             ? '...'
                                             : null}
                                     </b>
                                 </p>
-                                <p style={{ opacity: '0.5' }}>
-                                    {pv.surroundingCode.linesAfter[0]}
+                                <p style={{ opacity: '0.7' }}>
+                                    {displayAfter(pv, 0)}
                                 </p>
-                                <p style={{ opacity: '0.3' }}>
-                                    {pv.surroundingCode.linesAfter[1]}
+                                <p style={{ opacity: '0.5' }}>
+                                    {displayAfter(pv, 1)}
                                 </p>
                                 {/* styling within carousel doesn't work here */}
                                 {/* <div

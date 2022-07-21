@@ -205,8 +205,8 @@ export enum Sort {
 export interface FilterOptions {
     sort: Sort
     authorOptions: Option[]
-    typeOptions: Option[]
-    searchText?: string
+    typeOptions: Type[]
+    searchText: string
     showResolved: boolean
     showFileOnly: boolean
 }

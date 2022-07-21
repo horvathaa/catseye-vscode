@@ -7,7 +7,7 @@
  */
 import * as React from 'react'
 import { useState } from 'react'
-import { Annotation } from '../../constants/constants'
+import { Annotation, FilterOptions } from '../../constants/constants'
 import ReactAnnotation from './components/annotation'
 import NewAnnotation from './components/newAnnotation'
 import AnnotationList from './components/annotationList'
@@ -23,6 +23,7 @@ import {
     vscodeDisableTextColor,
     vscodeBorderColor,
 } from './styles/vscodeStyles'
+import { defaultFilterOptions } from './utils/viewUtilsTsx'
 
 interface Props {
     vscode: any
@@ -52,6 +53,8 @@ const AdamitePanel: React.FC<Props> = ({
     const [searchedAnnotations, setSearchedAnnotations] = useState<
         Annotation[]
     >([])
+    const [filterOptions, setFilterOptions] =
+        React.useState<FilterOptions>(defaultFilterOptions)
     const [currentProject, setCurrentProject] = useState(
         window.currentProject ? window.currentProject : ''
     )
@@ -62,54 +65,6 @@ const AdamitePanel: React.FC<Props> = ({
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
         setTabVal(newValue)
     }
-
-    // custom styling for tab interface
-    interface StyledTabsProps {
-        children?: React.ReactNode
-        value: number
-        onChange: (event: React.SyntheticEvent, newValue: number) => void
-    }
-
-    const StyledTabs = styled((props: StyledTabsProps) => (
-        <Tabs
-            {...props}
-            variant="fullWidth"
-            TabIndicatorProps={{
-                children: <span className="MuiTabs-indicatorSpan" />,
-            }}
-        />
-    ))({
-        '& .MuiTabs-indicator': {
-            display: 'flex',
-            justifyContent: 'center',
-            backgroundColor: 'transparent',
-        },
-        '& .MuiTabs-indicatorSpan': {
-            maxWidth: 40,
-            width: '100%',
-            backgroundColor: vscodeBorderColor,
-        },
-    })
-
-    interface StyledTabProps {
-        label: string
-    }
-
-    const StyledTab = styled((props: StyledTabProps) => (
-        <Tab disableRipple {...props} />
-    ))(({ theme }) => ({
-        textTransform: 'none',
-        fontWeight: theme.typography.fontWeightRegular,
-        fontSize: theme.typography.pxToRem(15),
-        marginRight: theme.spacing(1),
-        color: vscodeDisableTextColor,
-        '&.Mui-selected': {
-            color: vscodeTextColor,
-        },
-        '&.Mui-focusVisible': {
-            color: vscodeTextColor,
-        },
-    }))
 
     // incoming messages are created and sent by ViewLoader.ts
     // e.g., ViewLoader's function "public createNewAnno" sends the "newAnno" message
@@ -239,8 +194,9 @@ const AdamitePanel: React.FC<Props> = ({
     }
 
     // Need to Update
-    const filtersUpdated = (): void => {
-        console.log('Filters have been updated')
+    const filtersUpdated = (filters: FilterOptions): void => {
+        console.log('Adamite filters updated')
+        setFilterOptions(filters)
     }
 
     const notifyDone = (): void => {
@@ -265,18 +221,6 @@ const AdamitePanel: React.FC<Props> = ({
                         showKeyboardShortcuts={showKeyboardShortcuts}
                         filtersUpdated={filtersUpdated}
                     />
-                    {showSearchedAnnotations &&
-                        searchedAnnotations.map((a) => {
-                            return (
-                                <ReactAnnotation
-                                    annotation={a}
-                                    vscode={vscode}
-                                    window={window}
-                                    userId={uid}
-                                    username={userName}
-                                />
-                            )
-                        })}
                     <AnnotationList
                         currentFile={currentFile}
                         currentProject={currentProject}
@@ -285,22 +229,10 @@ const AdamitePanel: React.FC<Props> = ({
                         window={window}
                         username={userName}
                         userId={uid}
+                        filters={filterOptions}
                     />
                 </>
             )}
-            {/* {tabVal === 0 ? (
-                <AnnotationList
-                    currentFile={currentFile}
-                    currentProject={currentProject}
-                    annotations={annotations}
-                    vscode={vscode}
-                    window={window}
-                    username={userName}
-                    userId={uid}
-                />
-            ) : (
-                'No annotations'
-            )} */}
             {showLogin && <LogIn vscode={vscode} />}
         </React.Fragment>
     )

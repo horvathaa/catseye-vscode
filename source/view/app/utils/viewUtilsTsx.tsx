@@ -14,7 +14,9 @@ import {
     Type,
     Option,
     AuthorOptions,
+    FilterOptions,
 } from '../../../constants/constants'
+import { defaultSort } from '../utils/viewUtils'
 
 // toggle button used for expanding and collapsing snapshots, etc.
 export const collapseExpandToggle = (
@@ -88,6 +90,15 @@ export const defaultAuthorOptions: Option[] = [
         icon: <Groups fontSize="small" />,
     },
 ]
+
+export const defaultFilterOptions: FilterOptions = {
+    sort: defaultSort,
+    authorOptions: defaultAuthorOptions,
+    typeOptions: Object.values(Type),
+    searchText: '',
+    showResolved: false,
+    showFileOnly: false,
+}
 
 // export const defaultTypeOptions: Option[] = [
 //     {

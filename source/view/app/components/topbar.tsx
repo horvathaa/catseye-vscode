@@ -5,7 +5,14 @@
  *
  */
 import * as React from 'react'
-import { Annotation, Type, Option } from '../../../constants/constants'
+import {
+    Annotation,
+    Type,
+    Option,
+    FilterOptions,
+    Sort,
+    AuthorOptions,
+} from '../../../constants/constants'
 import SearchBar from './topbarComponents/searchbar'
 import GlobalMenu from './topbarComponents/globalMenu'
 import styles from '../styles/topbar.module.css'
@@ -24,16 +31,17 @@ import {
     iconColor,
     vscodeTextColor,
 } from '../styles/vscodeStyles'
-import { defaultAuthorOptions } from '../utils/viewUtilsTsx'
+import {
+    defaultAuthorOptions,
+    defaultFilterOptions,
+} from '../utils/viewUtilsTsx'
 import { defaultSort } from '../utils/viewUtils'
-import { red } from '@material-ui/core/colors'
 interface Props {
     annotations: Annotation[]
     getSearchedAnnotations: (annotations: Annotation[]) => void
     saveAnnotationsToJson: () => void
     showKeyboardShortcuts: () => void
-    // filtersUpdated: (filters: SearchFilters) => void
-    filtersUpdated: () => void
+    filtersUpdated: (filters: FilterOptions) => void
 }
 // Add a bell/notification
 const TopBar: React.FC<Props> = ({
@@ -43,10 +51,29 @@ const TopBar: React.FC<Props> = ({
     showKeyboardShortcuts,
     filtersUpdated,
 }) => {
-    const updateAnnotationTypes = (types: Type[]): void => {
-        console.log('UPDATE TYPES')
+    const [filterOptions, setFilterOptions] =
+        React.useState<FilterOptions>(defaultFilterOptions)
+
+    const annotationTypesUpdated = (types: Type[]): void => {
+        setFilterOptions({ ...filterOptions, typeOptions: types })
+        filtersUpdated(filterOptions)
     }
-    const initAuthorOptions: Option[] = defaultAuthorOptions
+
+    const optionsUpdated = (newOptions: Option[]) => {
+        setFilterOptions({ ...filterOptions, authorOptions: newOptions })
+        filtersUpdated(filterOptions)
+    }
+
+    const sortUpdated = (selected: Sort) => {
+        setFilterOptions({ ...filterOptions, sort: selected })
+        filtersUpdated(filterOptions)
+    }
+    // getSearchedAnnotations
+    const searchValueUpdated = (value: string) => {
+        console.log('Top Bar Filtered Called')
+        setFilterOptions({ ...filterOptions, searchText: value })
+        filtersUpdated(filterOptions)
+    }
 
     const theme = createTheme({
         palette: {
@@ -95,7 +122,7 @@ const TopBar: React.FC<Props> = ({
                 <div className={styles['RowContainer']}>
                     <SearchBar
                         annotations={annotations}
-                        getSearchedAnnotations={getSearchedAnnotations}
+                        searchValueUpdated={searchValueUpdated}
                     />
                     <GlobalMenu
                         saveAnnotationsToJson={saveAnnotationsToJson}
@@ -104,21 +131,21 @@ const TopBar: React.FC<Props> = ({
                 </div>
                 <div className={styles['OptionsContainer']}>
                     <SortBy
-                        sortByOptionSelected={filtersUpdated}
-                        initSort={defaultSort}
+                        sortByOptionSelected={sortUpdated}
+                        initSort={filterOptions.sort}
                     ></SortBy>
                     <OptionChipsBar
                         label="Author"
-                        initOptions={initAuthorOptions}
-                        editOptions={filtersUpdated}
+                        initOptions={filterOptions.authorOptions}
+                        editOptions={optionsUpdated}
                     ></OptionChipsBar>
                     <div className={styles['RowContainer']}>
                         <div className={styles['OptionLabel']}>
                             Types:{'  '}
                         </div>
                         <AnnotationTypesBar
-                            currentTypes={Object.values(Type)}
-                            editTypes={updateAnnotationTypes}
+                            currentTypes={filterOptions.typeOptions}
+                            editTypes={annotationTypesUpdated}
                         />
                     </div>
                     <FormGroup>

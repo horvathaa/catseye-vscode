@@ -211,7 +211,15 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     return (
         <>
             <ThemeProvider theme={theme}>
-                <List sx={{ width: '100%' }} component="div" disablePadding>
+                <List
+                    sx={{
+                        width: '100%',
+                        border: '1.5px solid rgb(66, 66, 66)',
+                        borderRadius: '4px',
+                    }}
+                    component="div"
+                    disablePadding
+                >
                     <ListItemButton onClick={handlePinClick}>
                         <ListItemIcon>
                             <PushPinIcon />

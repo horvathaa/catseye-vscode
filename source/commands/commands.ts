@@ -247,10 +247,10 @@ export const createNewAnnotation = async () => {
                             : '',
                     },
                 ],
-                path: astHelper.generateCodeContextPath(
-                    r,
-                    activeTextEditor.document
-                ),
+                // path: astHelper.generateCodeContextPath(
+                //     r,
+                //     activeTextEditor.document
+                // ),
             }
             const temp = {
                 id: newAnnoId,
@@ -323,7 +323,7 @@ export const createFileAnnotation = async (
         anchored: true,
         createdTimestamp: new Date().getTime(),
         priorVersions: [],
-        path: [],
+        // path: [],
     }
     const temp = {
         id: newAnnoId,
@@ -446,10 +446,10 @@ export const addNewHighlight = (
                             : '',
                     },
                 ],
-                path: astHelper.generateCodeContextPath(
-                    r,
-                    activeTextEditor.document
-                ),
+                // path: astHelper.generateCodeContextPath(
+                //     r,
+                //     activeTextEditor.document
+                // ),
             }
             const temp = {
                 id: newAnnoId,

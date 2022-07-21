@@ -248,12 +248,12 @@ export const reconstructAnnotations = (
             anchored: true,
             createdTimestamp: new Date().getTime(),
             priorVersions: a.anchor.priorVersions, //could append the most recent place, but commit based for now
-            path: vscode.window.activeTextEditor
-                ? astHelper.generateCodeContextPath(
-                      changeRange,
-                      vscode.window.activeTextEditor.document
-                  )
-                : [],
+            // path: vscode.window.activeTextEditor
+            //     ? astHelper.generateCodeContextPath(
+            //           changeRange,
+            //           vscode.window.activeTextEditor.document
+            //       )
+            //     : [],
         }
         const adjustedAnno = {
             id: newAnnoId,
@@ -1015,10 +1015,10 @@ export const createAnchorObject = async (
         ]
         const anchorId = uuidv4()
         const createdTimestamp = new Date().getTime()
-        const path: CodeContext[] = astHelper.generateCodeContextPath(
-            range,
-            textEditor.document
-        )
+        // const path: CodeContext[] = astHelper.generateCodeContextPath(
+        //     range,
+        //     textEditor.document
+        // )
         return {
             parentId: annoId,
             anchorId: anchorId,
@@ -1057,7 +1057,7 @@ export const createAnchorObject = async (
                         : '',
                 },
             ],
-            path,
+            // path,
         }
     } else {
         vscode.window.showInformationMessage('Must have open text editor!')

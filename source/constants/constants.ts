@@ -95,7 +95,7 @@ export interface AnchorObject {
     anchored: boolean
     createdTimestamp: number
     priorVersions?: AnchorOnCommit[] // Not in FB until commit. Rn, dynamically compute priorVersionsfrom the Commit object model on launch
-    path: CodeContext[]
+    // path: CodeContext[]
     //add annotation field, ridding of multiple anchors
 }
 

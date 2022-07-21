@@ -8,6 +8,7 @@ interface CssExports {
   'SearchContainer': string;
   'SearchIcon': string;
   'SearchIconOuter': string;
+  'SearchInputContainer': string;
   'TopBarContainer': string;
   'TopRow': string;
   'inputBox': string;

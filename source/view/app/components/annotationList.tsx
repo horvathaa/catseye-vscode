@@ -53,11 +53,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     filters,
 }) => {
     const [openPinned, setOpenPinned] = useState(false)
-    const [openFile, setOpenFile] = useState(true)
-    const [openCurrProj, setCurrProj] = useState(false)
     const [pinnedAnno, setPinnedAnno] = useState<Annotation[]>([])
-    const [fileAnno, setFileAnno] = useState<Annotation[]>([])
-    const [projAnno, setProjAnno] = useState<Annotation[]>([])
     const [filteredAnno, setFilteredAnno] = useState<Annotation[]>([])
     const fields = ['annotation']
     const complex = ['anchors']
@@ -66,14 +62,9 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     const handlePinClick = () => {
         setOpenPinned(!openPinned)
     }
-    const handleFileClick = () => {
-        setOpenFile(!openFile)
-    }
-    // const handleCurrProjClick = () => {
-    //     setCurrProj(!openCurrProj)
-    // }
 
     React.useEffect(() => {
+        console.log('Annotations prop changed')
         if (annotations.length) {
             displayAnnotations()
         }
@@ -196,12 +187,6 @@ const AnnotationList: React.FC<AnnoListProps> = ({
             if (group === 'Pinned') {
                 setPinnedAnno(annot)
             }
-            if (group === 'Current File') {
-                setFileAnno(annot)
-            }
-            if (group === 'Current Project') {
-                setProjAnno(annot)
-            }
             if (group === 'All Unpinned') {
                 setFilteredAnno(filtered)
             }
@@ -214,8 +199,10 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                 <List
                     sx={{
                         width: '100%',
-                        border: '1.5px solid rgb(66, 66, 66)',
+                        border: '1.5px',
                         borderRadius: '4px',
+                        borderStyle: 'solid',
+                        borderColor: iconColor,
                     }}
                     component="div"
                     disablePadding
@@ -256,43 +243,6 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                             />
                         )
                     })}
-                </List>
-                <List sx={{ width: '100%' }} component="div" disablePadding>
-                    <ListItemButton onClick={handleFileClick}>
-                        <ListItemIcon>
-                            <ArticleIcon />
-                        </ListItemIcon>
-                        <ListItemText primary="Annotations" />
-                        {/* {openFile ? <ExpandLess /> : <ExpandMore />} */}
-                    </ListItemButton>
-                    {fileAnno.length > 0 &&
-                        sortAnnotationsByLocation(fileAnno).map(
-                            (a: Annotation) => {
-                                return (
-                                    <ReactAnnotation
-                                        key={'annotationList-tsx-' + a.id}
-                                        annotation={a}
-                                        vscode={vscode}
-                                        window={window}
-                                        username={username}
-                                        userId={userId}
-                                    />
-                                )
-                            }
-                        )}
-                    {projAnno.length > 0 &&
-                        projAnno.map((a: Annotation) => {
-                            return (
-                                <ReactAnnotation
-                                    key={'annotationList-tsx-' + a.id}
-                                    annotation={a}
-                                    vscode={vscode}
-                                    window={window}
-                                    username={username}
-                                    userId={userId}
-                                />
-                            )
-                        })}
                 </List>
             </ThemeProvider>
         </>

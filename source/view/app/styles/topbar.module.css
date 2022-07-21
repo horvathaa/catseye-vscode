@@ -7,7 +7,6 @@
     margin-bottom: 3px;
     border-radius: 4px;
     padding-left: 1em;
-    padding-right: 1em;
     border: 1px solid transparent;
     background-color: var(--vscode-input-background);
     border-color: var(--vscode-activityBar-activeBorder);
@@ -59,6 +58,11 @@
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
+}
+
+.SearchInputContainer {
+    display: flex;
+    flex-grow: 1;
 }
 
 .inputBox {

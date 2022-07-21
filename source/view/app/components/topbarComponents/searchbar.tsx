@@ -15,12 +15,7 @@ interface Props {
 }
 
 const SearchBar: React.FC<Props> = ({ annotations, searchValueUpdated }) => {
-    const [searchedAnnotations, setSearchedAnnotations] =
-        React.useState<string>('')
     const [value, setValue] = React.useState('')
-    const fields = ['annotation']
-    const complex = ['anchors']
-    const replies = ['replies']
     // const link = ['url']
 
     const onChange = (value: string) => {
@@ -33,23 +28,11 @@ const SearchBar: React.FC<Props> = ({ annotations, searchValueUpdated }) => {
         setValue(newVal)
         if (newVal == null || newVal == '') {
             searchValueUpdated('')
-            setSearchedAnnotations('')
         } else {
             onChange(newVal)
             searchValueUpdated(newVal)
         }
     }
-
-    // const checkIfSubmit = (event: React.KeyboardEvent) => {
-    //     if (event.key === 'Enter') {
-    //         searchValueUpdated(
-    //             searchedAnnotations.sort(
-    //                 (a: Annotation, b: Annotation) =>
-    //                     b.createdTimestamp - a.createdTimestamp
-    //             )
-    //         )
-    //     }
-    // }
 
     return (
         <div className={styles['TopRow']}>
@@ -60,7 +43,7 @@ const SearchBar: React.FC<Props> = ({ annotations, searchValueUpdated }) => {
                         onClick={() => searchValueUpdated(value)}
                     />
                 </div>
-                <div>
+                <div className={styles['SearchInputContainer']}>
                     {' '}
                     <input
                         className={styles['inputBox']}
@@ -71,13 +54,6 @@ const SearchBar: React.FC<Props> = ({ annotations, searchValueUpdated }) => {
                     />
                 </div>
             </div>
-            {searchedAnnotations.length > 0 && (
-                <>
-                    {searchedAnnotations.length === 1
-                        ? `1 result`
-                        : `${searchedAnnotations.length} results`}
-                </>
-            )}
         </div>
     )
 }

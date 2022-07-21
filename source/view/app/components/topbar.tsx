@@ -78,7 +78,7 @@ const TopBar: React.FC<Props> = ({
     const theme = createTheme({
         palette: {
             primary: {
-                main: `${editorBackground}`,
+                main: `${vscodeTextColor}`,
             },
             background: {
                 paper: `${vscodeTextColor}`,

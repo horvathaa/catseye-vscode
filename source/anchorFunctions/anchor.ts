@@ -23,6 +23,7 @@ import {
     getAllAnnotationStableGitUrls,
     getAnnotationsNotInFile,
     handleSaveCloseEvent,
+    levenshteinDistance,
 } from '../utils/utils'
 import {
     annotationDecorations,
@@ -167,7 +168,7 @@ export const getSurroundingLinesBeforeAnchor = (
     // pros: more semantically-meaningful content
     // cons: may make it harder to find since we don't have a concept of how many whitespace lines we removed i.e., how far apart these lines
     // actually are from one another
-    console.log(addLinesWithContent(textBefore, document, anchorRange))
+    // console.log(addLinesWithContent(textBefore, document, anchorRange))
 
     return textBefore.split('\n')
 }
@@ -301,6 +302,14 @@ export const getAnchorsInCurrentFile = (
     return anchors
 }
 
+export const getAnchorsWithGitUrl = (gitUrl: string): AnchorObject[] => {
+    const filteredAnnos = annotationList.filter((a) =>
+        gitUrl.includes(a.gitRepo.split('.git')[1])
+    )
+    const candidateAnchors = filteredAnnos.flatMap((a) => a.anchors)
+    return candidateAnchors.filter((a) => a.stableGitUrl === gitUrl)
+}
+
 const checkIfAnchorChanged = (
     originalRange: vscode.Range,
     newRange: vscode.Range
@@ -421,15 +430,15 @@ export const translateChanges = (
         newRange = userChangedLinesBeforeStart(newRange, originalAnchor, diff)
     }
 
-    // user added new line at the front of our anchor point
+    // user added new line at or before the front of our anchor point
     // anchor point should move down
     if (
         changeRange.start.line === originalStartLine &&
         diff &&
-        changeRange.start.character === originalStartOffset &&
+        changeRange.start.character <= originalStartOffset &&
         originalEndLine === originalStartLine
     ) {
-        // console.log('newLineAtStartOffset');
+        console.log('newLineAtStartOffset')
         newRange.startLine = changeRange.end.line + diff
         newRange.endLine = changeRange.end.line + diff
         newRange.startOffset =
@@ -541,7 +550,20 @@ export const translateChanges = (
     }
 
     const originalGitCommit = anchorObject.gitCommit
-    const newRangeObj = createRangeFromObject(newRange)
+    const newRangeObj = doc.validateRange(createRangeFromObject(newRange))
+
+    console.log('hewwo', {
+        ...anchorObject,
+        anchorText: newAnchorText,
+        anchor: createAnchorFromRange(newRangeObj),
+        gitCommit:
+            checkIfAnchorChanged(originalRange, newRangeObj) ||
+            // changeOccurredInRange
+            (originalRange.start.isBefore(changeRange.start) &&
+                originalRange.end.isAfter(changeRange.end))
+                ? gitInfo[getProjectName(doc.uri.toString())].commit
+                : originalGitCommit,
+    })
 
     // update anchor object
     const newAnchor: AnchorObject = {
@@ -723,4 +745,23 @@ export const addHighlightsToEditor = (
         view?.updateDisplay(annotationList) // update that list is empty ?
         text?.setDecorations(annotationDecorations, [])
     }
+}
+
+export const computeMostSimilarAnchor = (
+    document: vscode.TextDocument,
+    anchor: AnchorObject
+): AnchorObject => {
+    console.log('anchor', anchor)
+    const splitOriginalAnchorText: string[] = anchor.anchorText.split('\n')
+    const textToSearch: string[] = document
+        .getText
+        // createRangeFromObject(anchor.anchor)
+        ()
+        .split('\n')
+    console.log('textToSearch', textToSearch)
+    splitOriginalAnchorText.forEach((t: string, i: number) => {
+        console.log(levenshteinDistance(t, textToSearch[i]))
+    })
+
+    return anchor
 }

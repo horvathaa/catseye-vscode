@@ -122,9 +122,15 @@ export const getPriorVersions = (
 ): any[] => {
     let inProgressAnnos: any[] = []
     currentAnchors?.forEach((currAnchorObject: any) => {
-        const timeStamp = lastEditedAnnotations.find(
+        // everything breaks if it doesnt find a match so this will have to do...
+        const timeStamp: number = lastEditedAnnotations.find(
             (a: any) => a.id === currAnchorObject.parentId
-        ).createdTimestamp
+        )
+            ? lastEditedAnnotations.find(
+                  (a: any) => a.id === currAnchorObject.parentId
+              ).createdTimestamp
+            : new Date().getTime()
+
         let objToUpdate: AnchorsToUpdate = inProgressAnnos.find(
             (a) => a.id === currAnchorObject.parentId
         )

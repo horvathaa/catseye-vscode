@@ -110,6 +110,7 @@ export interface AnchorObject {
 // create: using re-anchor algorithm (tbd how/when to run that)
 // update: using translateChanges
 // delete: when user reattaches (either this turns into an AnchorObject or it is deleted because user didn't choose it)
+// or parent anno is deleted OR parent anchor is deleted
 export interface GhostAnchorObject extends AnchorObject {
     weight: number // how likely we think this anchor point is
 }

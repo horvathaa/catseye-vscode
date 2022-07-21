@@ -124,7 +124,19 @@ export const handleChangeActiveTextEditor = (
 export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
     const gitUrl = utils.getStableGitHubUrl(TextDocument.uri.fsPath)
     const updated = astHelper.updatePaths(TextDocument)
-
+    const anchors = anchor.getAnchorsWithGitUrl(
+        utils.getStableGitHubUrl(TextDocument.uri.fsPath)
+    )
+    console.log(
+        anchors.map((a) => anchor.computeMostSimilarAnchor(TextDocument, a))
+    )
+    // const mostSimilarAnchor = anchor.computeMostSimilarAnchor(
+    //     TextDocument,
+    //     utils.getAnnotationsWithStableGitUrl(
+    //         updated,
+    //         utils.getStableGitHubUrl(TextDocument.uri.fsPath)
+    //     )[0].anchors[0]
+    // )
     // const testPath = utils.getAnnotationsWithStableGitUrl(
     //     updated,
     //     utils.getStableGitHubUrl(TextDocument.uri.fsPath)

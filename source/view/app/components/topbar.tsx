@@ -55,24 +55,50 @@ const TopBar: React.FC<Props> = ({
         React.useState<FilterOptions>(defaultFilterOptions)
 
     const annotationTypesUpdated = (types: Type[]): void => {
-        setFilterOptions({ ...filterOptions, typeOptions: types })
-        filtersUpdated(filterOptions)
+        console.log('Types Updated')
+        const newFilterOptions = { ...filterOptions, typeOptions: types }
+        setFilterOptions(newFilterOptions)
+        filtersUpdated(newFilterOptions)
     }
 
     const optionsUpdated = (newOptions: Option[]) => {
-        setFilterOptions({ ...filterOptions, authorOptions: newOptions })
-        filtersUpdated(filterOptions)
+        console.log('Option Updated')
+        const newFilterOptions = { ...filterOptions, authorOptions: newOptions }
+        setFilterOptions(newFilterOptions)
+        filtersUpdated(newFilterOptions)
     }
 
     const sortUpdated = (selected: Sort) => {
-        setFilterOptions({ ...filterOptions, sort: selected })
-        filtersUpdated(filterOptions)
+        console.log('Sort Updated')
+        const newFilterOptions = { ...filterOptions, sort: selected }
+        setFilterOptions(newFilterOptions)
+        filtersUpdated(newFilterOptions)
     }
     // getSearchedAnnotations
     const searchValueUpdated = (value: string) => {
-        console.log('Top Bar Filtered Called')
-        setFilterOptions({ ...filterOptions, searchText: value })
-        filtersUpdated(filterOptions)
+        // This avoids duplication, once we set filterOptions,
+        // we are still capturing the old one so can't just use filterOptions
+        const newFilterOptions = { ...filterOptions, searchText: value }
+        setFilterOptions(newFilterOptions)
+        filtersUpdated(newFilterOptions)
+    }
+
+    const showInFileUpdated = () => {
+        const newFilterOptions = {
+            ...filterOptions,
+            showFileOnly: !filterOptions.showFileOnly,
+        }
+        setFilterOptions(newFilterOptions)
+        filtersUpdated(newFilterOptions)
+    }
+
+    const showResolvedUpdated = () => {
+        const newFilterOptions = {
+            ...filterOptions,
+            showResolved: !filterOptions.showFileOnly,
+        }
+        setFilterOptions(newFilterOptions)
+        filtersUpdated(newFilterOptions)
     }
 
     const theme = createTheme({
@@ -150,11 +176,13 @@ const TopBar: React.FC<Props> = ({
                     </div>
                     <FormGroup>
                         <FormControlLabel
-                            control={<Checkbox />}
+                            control={<Checkbox onChange={showInFileUpdated} />}
                             label="In-File Only"
                         />
                         <FormControlLabel
-                            control={<Checkbox />}
+                            control={
+                                <Checkbox onChange={showResolvedUpdated} />
+                            }
                             label="Show Resolved"
                         />
                     </FormGroup>

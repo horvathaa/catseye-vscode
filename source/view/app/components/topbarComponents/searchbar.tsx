@@ -19,17 +19,18 @@ const SearchBar: React.FC<Props> = ({ annotations, searchValueUpdated }) => {
     // const link = ['url']
 
     const onChange = (value: string) => {
-        console.log('Search Bar Filtered Called')
+        // console.log('Search Bar Filtered Called')
     }
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const newVal = (event.target as HTMLInputElement).value
         setValue(newVal)
         if (newVal == null || newVal == '') {
-            onChange('')
+            // onChange('')
             searchValueUpdated('')
         } else {
-            onChange(newVal)
+            console.log('newVal:', newVal)
+            console.log('val:', value)
             searchValueUpdated(newVal)
         }
     }

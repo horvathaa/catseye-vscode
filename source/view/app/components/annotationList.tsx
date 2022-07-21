@@ -64,17 +64,18 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     }
 
     React.useEffect(() => {
-        console.log('Annotations prop changed')
+        // console.log('Annotations prop changed')
         if (annotations.length) {
             displayAnnotations()
         }
     }, [annotations]) // annotations state set in adamite.tsx
 
     React.useEffect(() => {
-        console.log('FILTERED CHANGED')
         if (annotations.length) {
             displayAnnotations()
         }
+        // console.log(' ')
+        console.log('Anno Filters: ', filters)
     }, [filters]) // annotations state set in adamite.tsx
 
     const theme = createTheme({
@@ -127,9 +128,20 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                 output['All Unpinned'].push(a)
             }
         })
+        // console.log(output['Pinned'])
 
         return output
     }
+
+    const pinned: Annotation[] = annotations
+        ? annotations.filter((anno) => {
+              anno.selected === true
+          })
+        : []
+
+    // const searchAnnos = (annos: Annotation[]): Annotation[] => {
+    //     return annos
+    // }
 
     // now, with the filtered array of annotations
     // this solution is adapted from here: https://stackoverflow.com/questions/8517089/js-search-in-object-values
@@ -211,8 +223,10 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                         <ListItemIcon>
                             <PushPinIcon />
                         </ListItemIcon>
-                        <ListItemText primary="Pinned" />
-                        {openPinned ? <ExpandMore /> : <ExpandLess />}
+                        <ListItemText
+                            primary={openPinned ? 'Hide Pinned' : 'Show Pinned'}
+                        />
+                        {openPinned ? <ExpandLess /> : <ExpandMore />}
                     </ListItemButton>
                     <Collapse in={openPinned} timeout="auto" unmountOnExit>
                         {pinnedAnno.length > 0 &&
@@ -231,7 +245,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                     </Collapse>
                 </List>
                 <List sx={{ width: '100%' }} component="div" disablePadding>
-                    {filteredAnno.map((a: Annotation) => {
+                    {filtered.map((a: Annotation) => {
                         return (
                             <ReactAnnotation
                                 key={'annotationList-tsx-' + a.id}

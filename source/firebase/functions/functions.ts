@@ -5,12 +5,21 @@
  *
  */
 
-import { Annotation } from '../../constants/constants'
+import {
+    AnchorObject,
+    AnchorOnCommit,
+    AnchorsToUpdate,
+    Annotation,
+    CommitObject,
+} from '../../constants/constants'
 import { currentGitHubCommit, user } from '../../extension'
 import {
     getListFromSnapshots,
     makeObjectListFromAnnotations,
     buildAnnotation,
+    getLastGitCommitHash,
+    removeNulls,
+    partitionAnnotationsOnSignIn,
 } from '../../utils/utils'
 import firebase from '../firebase'
 import { DB_COLLECTIONS } from '..'
@@ -18,6 +27,9 @@ import { DB_COLLECTIONS } from '..'
 const db: firebase.firestore.Firestore = firebase.firestore()
 const annotationsRef: firebase.firestore.CollectionReference = db.collection(
     DB_COLLECTIONS.VSCODE_ANNOTATIONS
+)
+const commitsRef: firebase.firestore.CollectionReference = db.collection(
+    DB_COLLECTIONS.COMMITS
 )
 
 // Save annotations to FireStore
@@ -51,16 +63,129 @@ export const getAnnotationsOnSignIn = async (
         (!collaboratorAnnotationDocs || collaboratorAnnotationDocs.empty)
     )
         return []
+
     const dataAnnotations = getListFromSnapshots(userAnnotationDocs).concat(
         getListFromSnapshots(collaboratorAnnotationDocs)
     )
-    const annotations: Annotation[] =
-        dataAnnotations && dataAnnotations.length
-            ? dataAnnotations.map((a: any) => {
-                  return buildAnnotation({ ...a, needToUpdate: false })
+    const allCommits: CommitObject[] = getListFromSnapshots(
+        await getCommitsByProject(currentGitProject)
+    )
+    const lastCommit = await getLastGitCommitHash()
+    const lastCommitObject: CommitObject | undefined = allCommits.find(
+        (commit) => commit.commit === lastCommit
+    )
+    let currentAnchors: AnchorObject[] | undefined =
+        lastCommitObject?.anchorsOnCommit
+    let [lastEditedAnnotations, uneditedAnnotations] =
+        partitionAnnotationsOnSignIn(
+            dataAnnotations,
+            (a: any) => a.gitCommit === lastCommit
+        )
+
+    const populatedAnnoWithAnchorsWithPV: any[] = getPriorVersions(
+        currentAnchors,
+        lastEditedAnnotations,
+        allCommits
+    )
+
+    const priorVersionAnnotations: Annotation[] = removeNulls(
+        populatedAnnoWithAnchorsWithPV.map((a) => {
+            const match = lastEditedAnnotations.find(
+                (anno: any) => anno.id === a.annoId
+            )
+            if (!match) {
+                return null
+            }
+            return buildAnnotation({ ...match, anchors: a.anchors })
+        })
+    )
+
+    const remainingAnnotations: Annotation[] =
+        uneditedAnnotations && uneditedAnnotations.length
+            ? uneditedAnnotations.map((a: any) => {
+                  return buildAnnotation({
+                      ...a,
+                      needToUpdate: false,
+                  })
               })
             : []
-    return annotations
+
+    const allAnnotations = priorVersionAnnotations.concat(remainingAnnotations)
+    return allAnnotations
+}
+
+// Helper function to populate anchors with prior versions. Returns annotations with populated anchor field
+export const getPriorVersions = (
+    currentAnchors: AnchorObject[] | undefined,
+    lastEditedAnnotations: any[],
+    allCommits: CommitObject[]
+): any[] => {
+    let inProgressAnnos: any[] = []
+    currentAnchors?.forEach((currAnchorObject: any) => {
+        const timeStamp = lastEditedAnnotations.find(
+            (a: any) => a.id === currAnchorObject.parentId
+        ).createdTimestamp
+        let objToUpdate: AnchorsToUpdate = inProgressAnnos.find(
+            (a) => a.id === currAnchorObject.parentId
+        )
+
+        if (!objToUpdate) {
+            objToUpdate = {
+                annoId: currAnchorObject.parentId,
+                anchors: [],
+                createdTimestamp: timeStamp,
+            }
+            inProgressAnnos.push(objToUpdate)
+        }
+
+        let commitsSinceAnnoCreation = allCommits.filter(
+            (c) =>
+                c?.createdTimestamp &&
+                c?.createdTimestamp >
+                    (objToUpdate ? objToUpdate.createdTimestamp : timeStamp)
+        )
+        commitsSinceAnnoCreation.forEach((commit: CommitObject) => {
+            // search commit history for previous AnchorObjects matching the current AnchorObject
+            const priorVersionFromCommit: AnchorObject | undefined =
+                commit.anchorsOnCommit.find((priorAnchor: any) => {
+                    return currAnchorObject.anchorId === priorAnchor.anchorId
+                })
+            // if current anchor has any prior versions, create AnchorOnCommit objects
+            let pv = objToUpdate?.anchors.find(
+                (a: AnchorObject) => a.anchorId === currAnchorObject.anchorId
+            )?.priorVersions
+                ? objToUpdate.anchors.find(
+                      (a: AnchorObject) =>
+                          a.anchorId === currAnchorObject.anchorId
+                  )?.priorVersions
+                : []
+            if (!pv) pv = []
+
+            if (priorVersionFromCommit) {
+                const priorVersion: AnchorOnCommit = {
+                    id: priorVersionFromCommit.anchorId,
+                    commitHash: commit.commit,
+                    createdTimestamp: priorVersionFromCommit.createdTimestamp,
+                    html: priorVersionFromCommit.html,
+                    anchorText: priorVersionFromCommit.anchorText,
+                    branchName: commit.branchName,
+                }
+                pv = [...pv, { ...priorVersion }]
+            }
+
+            const updatedAnchorObject = {
+                ...currAnchorObject,
+                priorVersions: pv,
+            }
+            objToUpdate.anchors = objToUpdate.anchors
+                .filter((a) => a.anchorId !== currAnchorObject.anchorId)
+                .concat(updatedAnchorObject)
+            inProgressAnnos = inProgressAnnos
+                .filter((a: AnchorsToUpdate) => a.annoId !== objToUpdate.annoId)
+                .concat(objToUpdate)
+        })
+    })
+    return inProgressAnnos
 }
 
 // Authenticate using email and password (should only be used for super user)
@@ -108,7 +233,6 @@ export const getAnnotationsByProject = (
     gitRepo: string,
     uid: string
 ): Promise<firebase.firestore.QuerySnapshot> => {
-    // console.log('gitRepo', gitRepo, 'uid', uid, 'currentGitHubCommit', currentGitHubCommit);
     return annotationsRef
         .where('gitRepo', '==', gitRepo)
         .where('authorId', '!=', uid)
@@ -126,7 +250,28 @@ export const getUserAnnotations = (
 ): Promise<firebase.firestore.QuerySnapshot> => {
     return annotationsRef
         .where('authorId', '==', uid)
+        .where('sharedWith', '==', 'private')
         .where('deleted', '==', false)
         .where('outOfDate', '==', false)
         .get()
+}
+
+export const getCommitsByProject = (
+    // need annotations for carousel version
+    gitRepo: string
+): Promise<firebase.firestore.QuerySnapshot> => {
+    return commitsRef.where('gitRepo', '==', gitRepo).get()
+}
+
+export const getAnnotationsFromCommit = (
+    // grab current state annotations
+    commit: string
+): Promise<firebase.firestore.QuerySnapshot> => {
+    return commitsRef.where('commit', '==', commit).get()
+}
+
+export const saveCommit = (commit: CommitObject) => {
+    if (user) {
+        commitsRef.doc(commit.commit).set(commit)
+    }
 }

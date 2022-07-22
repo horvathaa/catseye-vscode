@@ -6,7 +6,7 @@ import { CodeContext } from '../astHelper/nodeHelper'
 export class Annotation {
     id: string
     annotation: string
-    anchors: AnchorObject[]
+    anchors: AnchorObject[] // only updating on commit, initialized upon Annotation creation
     deleted: boolean
     outOfDate: boolean
     authorId: string
@@ -23,6 +23,7 @@ export class Annotation {
     selected: boolean
     needToUpdate: boolean
     types: Type[]
+    resolved: boolean
 
     constructor(
         id: string,
@@ -43,7 +44,8 @@ export class Annotation {
         sharedWith: string,
         selected: boolean,
         needToUpdate: boolean,
-        types?: Type[]
+        types?: Type[],
+        resolved?: boolean
     ) {
         this.id = id
         this.annotation = annotation
@@ -64,6 +66,7 @@ export class Annotation {
         this.selected = selected
         this.needToUpdate = needToUpdate
         this.types = types ?? []
+        this.resolved = resolved ?? false
     }
 }
 
@@ -79,16 +82,32 @@ export interface AnchorObject {
     anchorText: string
     html: string
     filename: string
-    gitUrl: string
-    stableGitUrl: string
+    gitUrl: string //current commit url
+    stableGitUrl: string //tree/main
     visiblePath: string
+    gitRepo: string
+    gitBranch: string
+    gitCommit: string
     anchorPreview: string
     programmingLang: string
     anchorId: string
     originalCode: string
     parentId: string
+    anchored: boolean
+    createdTimestamp: number
+    priorVersions?: AnchorOnCommit[] // Not in FB until commit. Rn, dynamically compute priorVersionsfrom the Commit object model on launch
     path: CodeContext[]
     //add annotation field, ridding of multiple anchors
+}
+
+export interface AnchorOnCommit {
+    id: string
+    commitHash: string
+    createdTimestamp: number
+    html: string
+    anchorText: string
+    branchName: string
+    // diff: string // MAYBE. Need to investigate diff packages
 }
 
 export enum Type {
@@ -176,6 +195,13 @@ export interface GitRepoInfo {
     nameOfPrimaryBranch: string
 }
 
+export interface CommitObject {
+    commit: string
+    gitRepo: string
+    branchName: string
+    anchorsOnCommit: AnchorObject[]
+    createdTimestamp: number
+}
 export interface TsFile {
     localFileName: string
     tsSourceFile: ts.SourceFile
@@ -215,4 +241,10 @@ export interface FilterOptions {
     searchText: string
     showResolved: boolean
     showFileOnly: boolean
+}
+
+export interface AnchorsToUpdate {
+    annoId: string
+    createdTimestamp: number
+    anchors: AnchorObject[]
 }

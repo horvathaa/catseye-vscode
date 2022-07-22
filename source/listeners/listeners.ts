@@ -95,6 +95,7 @@ export const handleChangeActiveTextEditor = (
             if (TextEditor.options?.insertSpaces)
                 setInsertSpaces(TextEditor.options.insertSpaces)
             setAnnotationList(utils.sortAnnotationsByLocation(annotationList))
+
             const currentProject: string = utils.getProjectName(
                 TextEditor.document.uri.fsPath
             )
@@ -188,11 +189,8 @@ const logChanges = (e: vscode.TextDocumentChangeEvent): void => {
 export const handleDidChangeTextDocument = (
     e: vscode.TextDocumentChangeEvent
 ) => {
-    // console.log('e', e);
-
     // logChanges(e);
     if (e.document.fileName.includes('extension-output-')) return // this listener also gets triggered when the output pane updates???? for some reason????
-
     const stableGitPath = utils.getStableGitHubUrl(e.document.uri.fsPath)
 
     // const currentAnnotations = utils.getAllAnnotationsWithAnchorInFile(annotationList, e.document.uri.toString());
@@ -282,8 +280,8 @@ export const handleDidChangeTextDocument = (
                             (a: AnchorObject) =>
                                 a.stableGitUrl === stableGitPath
                         )
-                    const translate = anchorsToTranslate.map(
-                        (a: AnchorObject) =>
+                    const translate: (AnchorObject | null)[] =
+                        anchorsToTranslate.map((a: AnchorObject) =>
                             anchor.translateChanges(
                                 a,
                                 change.range,
@@ -293,7 +291,7 @@ export const handleDidChangeTextDocument = (
                                 e.document,
                                 change.text
                             )
-                    )
+                        )
                     const translatedAnchors = utils.removeNulls(translate)
                     const needToUpdate = translatedAnchors.some((t) => {
                         const anchor = anchorsToTranslate.find(
@@ -301,9 +299,15 @@ export const handleDidChangeTextDocument = (
                         )
                         return !utils.objectsEqual(anchor.anchor, t.anchor)
                     })
+                    const gitCommit: string | undefined =
+                        translatedAnchors.find((t) => {
+                            return t.gitCommit === gitInfo[a.projectName].commit
+                        })?.gitCommit
+                    const originalGitCommit = a.gitCommit
                     return utils.buildAnnotation({
                         ...a,
                         needToUpdate,
+                        gitCommit: gitCommit ? gitCommit : originalGitCommit,
                         anchors: [
                             ...translatedAnchors,
                             ...anchorsNotToTranslate,
@@ -345,9 +349,7 @@ export const handleDidChangeTextDocument = (
                 vscode.window.activeTextEditor
             )
         } else {
-            setAnnotationList(
-                utils.sortAnnotationsByLocation(newAnnotationList)
-            )
+            setAnnotationList(utils.sortAnnotationsByLocation(annotationList))
         }
     }
 }

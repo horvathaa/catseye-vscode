@@ -12,6 +12,7 @@ import {
     Anchor,
     Snapshot,
     stringToShikiThemes,
+    CommitObject,
 } from '../constants/constants'
 import {
     computeRangeFromOffset,
@@ -39,12 +40,23 @@ import {
 } from '../extension'
 import * as vscode from 'vscode'
 import { v4 as uuidv4 } from 'uuid'
-import { getAnnotationsOnSignIn } from '../firebase/functions/functions'
+import {
+    getAnnotationsOnSignIn,
+    saveCommit,
+} from '../firebase/functions/functions'
 import { saveAnnotations as fbSaveAnnotations } from '../firebase/functions/functions'
 import { CodeContext } from '../astHelper/nodeHelper'
 let { parse } = require('what-the-diff')
 var shiki = require('shiki')
+import { simpleGit, SimpleGit } from 'simple-git'
 
+// https://www.npmjs.com/package/simple-git
+const gitDir =
+    vscode.workspace.workspaceFolders &&
+    vscode.workspace.workspaceFolders[0].uri
+        ? vscode.workspace.workspaceFolders[0].uri.fsPath
+        : ''
+const git: SimpleGit = simpleGit(gitDir, { binary: 'git' })
 let lastSavedAnnotations: Annotation[] =
     annotationList && annotationList.length ? annotationList : []
 
@@ -197,6 +209,7 @@ export function getListFromSnapshots(
     return out
 }
 
+// copy/cut anno --> additional metadata relative to previous range
 export const reconstructAnnotations = (
     annotationOffsetList: { [key: string]: any }[],
     text: string,
@@ -226,9 +239,15 @@ export const reconstructAnnotations = (
             visiblePath,
             anchorPreview: a.anchor.anchorPreview,
             programmingLang: a.anchor.programmingLang,
+            gitRepo: gitInfo[projectName]?.repo, // a.anno.gitRepo,
+            gitBranch: gitInfo[projectName]?.branch,
+            gitCommit: gitInfo[projectName]?.commit,
             anchorId: uuidv4(),
             originalCode: a.anchor.originalCode,
             parentId: newAnnoId,
+            anchored: true,
+            createdTimestamp: new Date().getTime(),
+            priorVersions: a.anchor.priorVersions, //could append the most recent place, but commit based for now
             path: vscode.window.activeTextEditor
                 ? astHelper.generateCodeContextPath(
                       changeRange,
@@ -516,7 +535,7 @@ export const makeObjectListFromAnnotations = (
         return {
             id: a.id ? a.id : uuidv4(),
             annotation: a.annotation ? a.annotation : '',
-            anchors: a.anchors ? a.anchors : [],
+            anchors: a.anchors ? a.anchors : [], // ok to send on save/close bc CommitObject handles changes
             authorId: a.authorId ? a.authorId : '',
             createdTimestamp: a.createdTimestamp
                 ? a.createdTimestamp
@@ -644,7 +663,6 @@ export const getGithubUrl = (
         return ''
     const baseUrl: string = gitInfo[projectName].repo.split('.git')[0]
     const endUrl = getEndUrl(visPath, projectName)
-    // console.log('endUrl', endUrl, 'visPath', visPath);
     return gitInfo[projectName].commit === 'localChange' || returnStable
         ? baseUrl + '/tree/' + gitInfo[projectName].nameOfPrimaryBranch + endUrl
         : baseUrl + '/tree/' + gitInfo[projectName].commit + endUrl
@@ -658,7 +676,6 @@ export const getVisiblePath = (
         const path: string = workspacePath.substring(
             workspacePath.indexOf(projectName)
         )
-        // console.log('path', path);
         if (path) return path
     } else if (workspacePath) {
         return workspacePath
@@ -666,17 +683,49 @@ export const getVisiblePath = (
     return projectName
 }
 
+const getAllAnchors = (annotationList: Annotation[]): AnchorObject[] => {
+    return annotationList.flatMap((a) => a.anchors)
+}
+
+const getAllAnchorsOnCommit = (
+    annotationList: Annotation[],
+    commit: string
+): AnchorObject[] => {
+    return getAllAnchors(annotationList).filter((a) => a.gitCommit === commit)
+}
+
 export const updateAnnotationCommit = (
+    lastCommit: string, // "Current commit"
+    lastBranch: string,
     commit: string,
     branch: string,
     repo: string
 ): void => {
-    annotationList.forEach((a: Annotation) => {
-        if (a.gitRepo === repo && a.gitCommit === 'localChange') {
-            a.gitCommit = commit
-            a.gitBranch = branch
-        }
-    })
+    // update any anchor points that've changed since last commit
+    const anchorsOnCommit: AnchorObject[] = getAllAnchorsOnCommit(
+        annotationList,
+        lastCommit
+    )
+    const ids = anchorsOnCommit.map((a) => a.parentId)
+    const annosOnCommit = annotationList.filter((a) => ids.includes(a.id)) // grabs annotations whose anchor points have changed - do we also update when annotation content changes?
+
+    // SAVE CURRENT STATE W/ COMMITOBJECT
+    const commitObject: CommitObject = {
+        commit: lastCommit,
+        gitRepo: repo,
+        branchName: lastBranch,
+        anchorsOnCommit: anchorsOnCommit.map((a) => {
+            const { priorVersions, ...x } = a
+            return x
+        }),
+        createdTimestamp: new Date().getTime(),
+    }
+    saveCommit(commitObject)
+    fbSaveAnnotations(annosOnCommit) // smarter - only send edited annotations, get all annotations on commit
+    setAnnotationList([
+        ...annotationList.filter((a) => !ids.includes(a.id)),
+        ...annosOnCommit,
+    ])
 }
 
 const findMostLikelyRepository = (gitApi: any): string => {
@@ -729,7 +778,6 @@ export const updateCurrentGitHubProject = (gitApi: any): void => {
         setCurrentGitHubProject(gitInfo[getProjectName()].repo)
     } else {
         const match = findMostLikelyRepository(gitApi)
-        // console.log('match', match);
         match ? setCurrentGitHubProject(match) : setCurrentGitHubProject('')
     }
 }
@@ -741,7 +789,7 @@ export const generateGitMetaData = async (
     await gitApi.repositories?.forEach(async (r: any) => {
         const currentProjectName: string = getProjectName(r?.rootUri?.path)
         r?.state?.onDidChange(async () => {
-            const currentProjectName: string = getProjectName(r?.rootUri?.path)
+            // const currentProjectName: string = getProjectName(r?.rootUri?.path)
             if (!gitInfo[currentProjectName] && r) {
                 gitInfo[currentProjectName] = {
                     repo: r?.state?.remotes[0]?.fetchUrl
@@ -758,17 +806,21 @@ export const generateGitMetaData = async (
             }
 
             if (
+                //heuristic for changing commit hash
                 gitInfo.hasOwnProperty(currentProjectName) &&
                 (gitInfo[currentProjectName]?.commit !== r.state.HEAD.commit ||
                     gitInfo[currentProjectName]?.branch !== r.state.HEAD.name)
             ) {
-                gitInfo[currentProjectName].commit = r.state.HEAD.commit
-                gitInfo[currentProjectName].branch = r.state.HEAD.name
+                // save user's current commit (current) before updating to next - this is how we query for 'current commit'
                 updateAnnotationCommit(
+                    gitInfo[currentProjectName].commit,
+                    gitInfo[currentProjectName].branch,
                     r.state.HEAD.commit,
                     r.state.HEAD.name,
                     r?.state?.remotes[0]?.fetchUrl
                 )
+                gitInfo[currentProjectName].commit = r.state.HEAD.commit
+                gitInfo[currentProjectName].branch = r.state.HEAD.name
             }
         })
         const branchNames = r.state.refs.map(
@@ -961,26 +1013,69 @@ export const createAnchorObject = async (
             .split('.')[
             textEditor.document.uri.toString().split('.').length - 1
         ]
+        const anchorId = uuidv4()
+        const createdTimestamp = new Date().getTime()
         const path: CodeContext[] = astHelper.generateCodeContextPath(
             range,
             textEditor.document
         )
         return {
             parentId: annoId,
-            anchorId: uuidv4(),
+            anchorId: anchorId,
             anchorText,
             html,
             anchorPreview: firstLineOfHtml,
             originalCode: html,
             gitUrl,
             stableGitUrl,
+            gitRepo: gitInfo[projectName]?.repo
+                ? gitInfo[projectName]?.repo
+                : '',
+            gitBranch: gitInfo[projectName]?.branch
+                ? gitInfo[projectName]?.branch
+                : '',
+            gitCommit: gitInfo[projectName]?.commit
+                ? gitInfo[projectName]?.commit
+                : 'localChange',
             anchor: createAnchorFromRange(range),
             programmingLang,
             filename,
             visiblePath,
+            anchored: true,
+            createdTimestamp: createdTimestamp,
+            priorVersions: [
+                {
+                    id: anchorId,
+                    createdTimestamp: createdTimestamp,
+                    html: html,
+                    anchorText: anchorText,
+                    commitHash: gitInfo[projectName]?.commit
+                        ? gitInfo[projectName]?.commit
+                        : 'localChange',
+                    branchName: gitInfo[projectName]?.branch
+                        ? gitInfo[projectName]?.branch
+                        : '',
+                },
+            ],
             path,
         }
     } else {
         vscode.window.showInformationMessage('Must have open text editor!')
     }
+}
+
+export const getLastGitCommitHash = async () => {
+    const options = ["--pretty=format:'%H'", '--skip=1', '--max-count=1']
+    const result = await git.log(options)
+    const lastCommit = result.all[0].hash.slice(1, -1)
+    return lastCommit
+}
+
+export const partitionAnnotationsOnSignIn = (array: any[], filter: any) => {
+    let lastCommit: any = [],
+        otherCommit: any = []
+    array.forEach((a, idx, arr) => {
+        return (filter(a, idx, arr) ? lastCommit : otherCommit).push(a)
+    })
+    return [lastCommit, otherCommit]
 }

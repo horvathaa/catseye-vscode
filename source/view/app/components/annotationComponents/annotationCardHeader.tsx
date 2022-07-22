@@ -58,8 +58,8 @@ const CardHeader = ({
                         <div>
                             <mark>
                                 {' '}
-                                {anno.anchors[0].anchorText.slice(0, 30)}
-                                {anno.anchors[0].anchorText.length > 30
+                                {anno.anchors[0]?.anchorText.slice(0, 30)}
+                                {anno.anchors[0]?.anchorText.length > 30
                                     ? '...'
                                     : ''}{' '}
                             </mark>

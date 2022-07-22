@@ -2,6 +2,7 @@ import ts = require('typescript')
 import { CodeContext } from '../astHelper/nodeHelper'
 
 // import * as vscode from 'vscode';
+// Todo: Add lastModified field (and for replies)
 export class Annotation {
     id: string
     annotation: string
@@ -191,6 +192,11 @@ export interface Option {
     icon: React.ReactElement
 }
 
+export interface OptionGroup {
+    label: string
+    options: Option[]
+}
+
 export enum AuthorOptions {
     mine = 'mine',
     others = 'others',
@@ -204,8 +210,8 @@ export enum Sort {
 
 export interface FilterOptions {
     sort: Sort
-    authorOptions: Option[]
-    typeOptions: Type[]
+    authorOptions: OptionGroup
+    typeOptions: OptionGroup
     searchText: string
     showResolved: boolean
     showFileOnly: boolean

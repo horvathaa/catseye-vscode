@@ -1,6 +1,6 @@
 import * as React from 'react'
 import Chip from '@material-ui/core/Chip'
-import { Option } from '../../../../constants/constants'
+import { Option, OptionGroup } from '../../../../constants/constants'
 import {
     editorBackground,
     hoverBackground,
@@ -15,19 +15,17 @@ import { breakpoints } from '../../utils/viewUtils'
 
 // Key-value: https://stackoverflow.com/questions/36467469/is-key-value-pair-available-in-typescript
 interface OptionsProps {
-    label: string
-    initOptions: Option[]
-    editOptions: (newOptions: Option[]) => void
+    initOptions: OptionGroup
+    editOptions: (newOptions: OptionGroup) => void
     small?: boolean
 }
 
 const OptionChipsBar: React.FC<OptionsProps> = ({
-    label,
     initOptions,
     editOptions,
     small = true,
 }) => {
-    const [options, setOptions] = React.useState<Option[]>(initOptions)
+    const [options, setOptions] = React.useState<Option[]>(initOptions.options)
 
     const theme = createTheme({
         breakpoints: breakpoints,
@@ -59,7 +57,7 @@ const OptionChipsBar: React.FC<OptionsProps> = ({
                 backgroundColor: hoverText,
                 color: editorBackground,
             },
-    },
+        },
     }) as typeof Chip
 
     const handleOptClick = (selectedOption: Option) => {
@@ -72,12 +70,12 @@ const OptionChipsBar: React.FC<OptionsProps> = ({
                 : option
         )
         setOptions(updatedOptions)
-        editOptions(options)
+        editOptions({ label: initOptions.label, options: updatedOptions })
     }
     return (
         <div className={styles['RowContainer']}>
             <div className={styles['OptionLabel']}>
-                {label}:{'  '}
+                {initOptions.label}:{'  '}
             </div>
             {options.map((option: Option, id) => {
                 return (

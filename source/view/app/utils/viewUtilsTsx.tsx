@@ -15,8 +15,14 @@ import {
     Option,
     AuthorOptions,
     FilterOptions,
+    OptionGroup,
 } from '../../../constants/constants'
 import { defaultSort } from '../utils/viewUtils'
+import BugReportIcon from '@mui/icons-material/BugReport' // Issue
+import TaskIcon from '@mui/icons-material/Task' // Task
+import AssignmentIcon from '@mui/icons-material/Assignment' // Proposal
+import { ContactSupport } from '@mui/icons-material'
+import CodeOffIcon from '@mui/icons-material/CodeOff'
 
 // toggle button used for expanding and collapsing snapshots, etc.
 export const collapseExpandToggle = (
@@ -78,23 +84,57 @@ export const showHideLine = (
     )
 }
 
-export const defaultAuthorOptions: Option[] = [
-    {
-        name: AuthorOptions.mine,
-        selected: true,
-        icon: <PersonIcon fontSize="small" />,
-    },
-    {
-        name: AuthorOptions.others,
-        selected: true,
-        icon: <Groups fontSize="small" />,
-    },
-]
+export const defaultAuthorOptions: OptionGroup = {
+    label: 'Author',
+    options: [
+        {
+            name: AuthorOptions.mine,
+            selected: true,
+            icon: <PersonIcon fontSize="small" />,
+        },
+        {
+            name: AuthorOptions.others,
+            selected: true,
+            icon: <Groups fontSize="small" />,
+        },
+    ],
+}
+
+export const defaultTypeOptions: OptionGroup = {
+    label: 'Type',
+    options: [
+        {
+            name: Type.issue,
+            selected: true,
+            icon: <BugReportIcon fontSize="small" />,
+        },
+        {
+            name: Type.proposal,
+            selected: true,
+            icon: <AssignmentIcon fontSize="small" />,
+        },
+        {
+            name: Type.task,
+            selected: true,
+            icon: <TaskIcon fontSize="small" />,
+        },
+        {
+            name: Type.question,
+            selected: true,
+            icon: <ContactSupport fontSize="small" />,
+        },
+        {
+            name: 'untyped',
+            selected: true,
+            icon: <CodeOffIcon fontSize="small" />,
+        },
+    ],
+}
 
 export const defaultFilterOptions: FilterOptions = {
     sort: defaultSort,
     authorOptions: defaultAuthorOptions,
-    typeOptions: Object.values(Type),
+    typeOptions: defaultTypeOptions,
     searchText: '',
     showResolved: false,
     showFileOnly: false,

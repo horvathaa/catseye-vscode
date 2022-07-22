@@ -195,7 +195,6 @@ const AdamitePanel: React.FC<Props> = ({
 
     // Need to Update
     const filtersUpdated = (filters: FilterOptions): void => {
-        console.log('Adamite filters updated')
         setFilterOptions(filters)
     }
 

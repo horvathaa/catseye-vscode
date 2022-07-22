@@ -12,6 +12,7 @@ import {
     FilterOptions,
     Sort,
     AuthorOptions,
+    OptionGroup,
 } from '../../../constants/constants'
 import SearchBar from './topbarComponents/searchbar'
 import GlobalMenu from './topbarComponents/globalMenu'
@@ -54,14 +55,14 @@ const TopBar: React.FC<Props> = ({
     const [filterOptions, setFilterOptions] =
         React.useState<FilterOptions>(defaultFilterOptions)
 
-    const annotationTypesUpdated = (types: Type[]): void => {
+    const annotationTypesUpdated = (newOptions: OptionGroup): void => {
         console.log('Types Updated')
-        const newFilterOptions = { ...filterOptions, typeOptions: types }
+        const newFilterOptions = { ...filterOptions, typeOptions: newOptions }
         setFilterOptions(newFilterOptions)
         filtersUpdated(newFilterOptions)
     }
 
-    const optionsUpdated = (newOptions: Option[]) => {
+    const optionsUpdated = (newOptions: OptionGroup) => {
         console.log('Option Updated')
         const newFilterOptions = { ...filterOptions, authorOptions: newOptions }
         setFilterOptions(newFilterOptions)
@@ -118,14 +119,6 @@ const TopBar: React.FC<Props> = ({
             },
         },
         components: {
-            // MuiIconButton: {
-            //     styleOverrides: {
-            //         root: {
-            //             backgroundColor: editorBackground,
-            //             color: iconColor,
-            //         },
-            //     },
-            // },
             MuiFormControlLabel: {
                 styleOverrides: {
                     root: {
@@ -161,11 +154,14 @@ const TopBar: React.FC<Props> = ({
                         initSort={filterOptions.sort}
                     ></SortBy>
                     <OptionChipsBar
-                        label="Author"
                         initOptions={filterOptions.authorOptions}
                         editOptions={optionsUpdated}
                     ></OptionChipsBar>
-                    <div className={styles['RowContainer']}>
+                    <OptionChipsBar
+                        initOptions={filterOptions.typeOptions}
+                        editOptions={annotationTypesUpdated}
+                    ></OptionChipsBar>
+                    {/* <div className={styles['RowContainer']}>
                         <div className={styles['OptionLabel']}>
                             Types:{'  '}
                         </div>
@@ -173,7 +169,7 @@ const TopBar: React.FC<Props> = ({
                             currentTypes={filterOptions.typeOptions}
                             editTypes={annotationTypesUpdated}
                         />
-                    </div>
+                    </div> */}
                     <FormGroup>
                         <FormControlLabel
                             control={<Checkbox onChange={showInFileUpdated} />}

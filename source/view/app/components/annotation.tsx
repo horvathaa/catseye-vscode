@@ -43,6 +43,7 @@ interface Props {
     userId: string
 }
 
+// TODO: Add Pin button next to edit
 const ReactAnnotation: React.FC<Props> = ({
     annotation,
     vscode,

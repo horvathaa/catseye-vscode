@@ -74,7 +74,7 @@ const SortBy: React.FC<Props> = ({ initSort, sortByOptionSelected }) => {
             MuiMenuItem: {
                 styleOverrides: {
                     root: {
-                        // backgroundColor: editorBackground, // Doesn't seem to do anything
+                        // backgroundColor: hoverText, // Doesn't seem to do anything
                         '&:hover': {
                             // background: vscodeTextColor,
                         },
@@ -110,7 +110,7 @@ const SortBy: React.FC<Props> = ({ initSort, sortByOptionSelected }) => {
                     style={{
                         padding: '0 10px',
                         color: `${editorBackground}`,
-                        backgroundColor: `${vscodeTextColor}`,
+                        backgroundColor: `${hoverText}`,
                         textTransform: 'none',
                         borderRadius: '4px',
                         margin: '3px 1px',

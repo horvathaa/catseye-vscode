@@ -102,6 +102,10 @@ const TopBar: React.FC<Props> = ({
         filtersUpdated(newFilterOptions)
     }
 
+    const showAnchoredUpdated = () => {
+        console.log('UPDATED')
+    }
+
     const theme = createTheme({
         palette: {
             primary: {
@@ -161,15 +165,6 @@ const TopBar: React.FC<Props> = ({
                         initOptions={filterOptions.typeOptions}
                         editOptions={annotationTypesUpdated}
                     ></OptionChipsBar>
-                    {/* <div className={styles['RowContainer']}>
-                        <div className={styles['OptionLabel']}>
-                            Types:{'  '}
-                        </div>
-                        <AnnotationTypesBar
-                            currentTypes={filterOptions.typeOptions}
-                            editTypes={annotationTypesUpdated}
-                        />
-                    </div> */}
                     <FormGroup>
                         <FormControlLabel
                             control={<Checkbox onChange={showInFileUpdated} />}
@@ -180,6 +175,12 @@ const TopBar: React.FC<Props> = ({
                                 <Checkbox onChange={showResolvedUpdated} />
                             }
                             label="Show Resolved"
+                        />
+                        <FormControlLabel
+                            control={
+                                <Checkbox onChange={showAnchoredUpdated} />
+                            }
+                            label="Unanchored Only"
                         />
                     </FormGroup>
                 </div>

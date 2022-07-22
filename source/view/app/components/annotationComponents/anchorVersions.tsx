@@ -17,8 +17,13 @@ import {
 } from '../../styles/vscodeStyles'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import '../../styles/versions.module.css'
+import { AnchorObject, AnchorOnCommit } from '../../../../constants/constants'
 
-const AnchorVersions: React.FC = () => {
+interface Props {
+    anchors: AnchorObject[]
+}
+
+const AnchorVersions: React.FC<Props> = ({ anchors }) => {
     const theme = createTheme({
         palette: {
             primary: {
@@ -58,39 +63,43 @@ const AnchorVersions: React.FC = () => {
         },
     })
 
-    const anchors = [
-        { text: 'hello', order: 0 },
-        { text: 'you', order: 1 },
-        { text: 'are', order: 2 },
-        { text: 'great', order: 3 },
-    ]
-
-    const [index, setIndex] = React.useState(anchors.length - 1)
+    const [index, setIndex] = React.useState(
+        anchors[0].priorVersions.length - 1
+    )
     const [showBack, setShowBack] = React.useState(false)
     const [showForward, setShowForward] = React.useState(false)
+    const [priorVersions, setPriorVersions] = React.useState([])
 
     React.useEffect(() => {
         if (index > 0) {
             setShowBack(true)
         }
-        if (index < anchors.length - 1) {
+        if (index < anchors[0].priorVersions.length - 1) {
             setShowForward(true)
         }
         if (index === 0) {
             setShowBack(false)
         }
-        if (index === anchors.length - 1) {
+        if (index === anchors[0].priorVersions.length - 1) {
             setShowForward(false)
         }
     }, [index])
 
+    React.useEffect(() => {
+        if (anchors.length) {
+            anchors[0].priorVersions.reverse()
+            setPriorVersions(anchors[0].priorVersions)
+        }
+    }, [anchors])
+
     const forward = () => {
-        if (index === anchors.length - 1) setShowForward(false)
-        if (index < anchors.length - 1) {
+        if (index === anchors[0].priorVersions.length - 1) setShowForward(false)
+        if (index < anchors[0].priorVersions.length - 1) {
             setIndex(index + 1)
             setShowBack(true)
         }
     }
+    console.log('anchors', anchors)
 
     const back = () => {
         if (index === 1) setShowBack(false)
@@ -100,64 +109,74 @@ const AnchorVersions: React.FC = () => {
         }
     }
     return (
-        <>
+        <div>
             <ThemeProvider theme={theme}>
-                <div
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        minWidth: 50,
-                        height: 200,
-                        border: '0.25px solid rgb(239 255 201 / 20%)',
-                        padding: 'none',
-                        boxSizing: 'border-box',
-                    }}
-                >
-                    {showBack ? (
-                        <IconButton onClick={back}>
-                            <ArrowBackIcon />
-                        </IconButton>
-                    ) : null}
-                    <Slider
-                        onSlideComplete={(i) => {
-                            setIndex(i)
-                            console.log(
-                                'finished dragging, current slide is',
-                                i
-                            )
-                        }}
-                        onSlideStart={(i) => {
-                            console.log('started dragging on slide', i)
-                        }}
-                        activeIndex={index}
-                        // threshHold={50}
-                        transition={0.5}
-                        scaleOnDrag={true}
-                    >
-                        {anchors.map((a: any, index) => (
-                            <div
-                                style={{
-                                    width: '100%',
-                                    height: '200',
-                                    backgroundColor: 'red',
-                                    padding: 'none',
-                                    margin: 'none',
+                {anchors.map((anchor: AnchorObject) => {
+                    return (
+                        <div
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'row',
+                                minWidth: 50,
+                                height: 100,
+                                border: '0.25px solid rgb(239 255 201 / 20%)',
+                                padding: 'none',
+                                margin: 'none',
+                                boxSizing: 'border-box',
+                            }}
+                        >
+                            {showBack ? (
+                                <IconButton onClick={back}>
+                                    <ArrowBackIcon />
+                                </IconButton>
+                            ) : null}
+                            <Slider
+                                onSlideComplete={(i) => {
+                                    setIndex(i)
+                                    console.log(
+                                        'finished dragging, current slide is',
+                                        i
+                                    )
                                 }}
-                                key={index}
+                                onSlideStart={(i) => {
+                                    console.log('started dragging on slide', i)
+                                }}
+                                activeIndex={index}
+                                // threshHold={50}
+                                transition={0.5}
+                                scaleOnDrag={true}
                             >
-                                {a.text}
-                            </div>
-                        ))}
-                    </Slider>
-
-                    {showForward ? (
-                        <IconButton onClick={forward}>
-                            <ArrowForwardIcon />
-                        </IconButton>
-                    ) : null}
-                </div>
+                                {priorVersions.map(
+                                    (pv: AnchorOnCommit, index) => (
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                width: '100%',
+                                                height: 100,
+                                                color: iconColor,
+                                            }}
+                                            key={index}
+                                        >
+                                            <p>{pv.anchorText}</p>
+                                            <span>
+                                                {pv.branchName} :{' '}
+                                                {pv.commitHash.slice(0, 6)}
+                                            </span>
+                                        </div>
+                                    )
+                                )}
+                            </Slider>
+                            {showForward ? (
+                                <IconButton onClick={forward}>
+                                    <ArrowForwardIcon />
+                                </IconButton>
+                            ) : null}
+                        </div>
+                    )
+                })}
             </ThemeProvider>
-        </>
+        </div>
     )
 }
 

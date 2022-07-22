@@ -162,11 +162,12 @@ export const getPriorVersions = (
             if (!pv) pv = []
 
             if (priorVersionFromCommit) {
+                console.log('pv in commit', priorVersionFromCommit)
                 const priorVersion: AnchorOnCommit = {
                     id: priorVersionFromCommit.anchorId,
                     commitHash: commit.commit,
-                    createdTimestamp: priorVersionFromCommit.createdTimestamp,
-                    html: priorVersionFromCommit.html,
+                    createdTimestamp: priorVersionFromCommit.createdTimestamp, // not updated
+                    html: priorVersionFromCommit.html, // not updated correctly
                     anchorText: priorVersionFromCommit.anchorText,
                     branchName: commit.branchName,
                 }

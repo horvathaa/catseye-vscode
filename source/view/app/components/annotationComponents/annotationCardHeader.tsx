@@ -8,16 +8,28 @@ import { Annotation } from '../../../../constants/constants'
 import UserProfile from './userProfile'
 import { codeColor } from '../../styles/vscodeStyles'
 import styles from '../../styles/annotation.module.css'
+import { BiAnchor } from 'react-icons/bi'
+import { Tooltip } from '@material-ui/core'
 
 interface Props {
     expanded: boolean
     setExpanded: (e: boolean) => void
     anchored: boolean
     anno: Annotation
+    // vscode: any,
+    addAnchor: () => void
 }
 
-const CardHeader = ({ expanded, setExpanded, anchored, anno }: Props) => {
+const CardHeader = ({
+    expanded,
+    setExpanded,
+    anchored,
+    anno,
+    // vscode,
+    addAnchor,
+}: Props) => {
     const handleMenuClick = () => {}
+
     return (
         <div
             style={{
@@ -69,9 +81,28 @@ const CardHeader = ({ expanded, setExpanded, anchored, anno }: Props) => {
                     <DeleteIcon />
                 </IconButton>
                 {expanded === true ? (
-                    <IconButton size="small" onClick={handleMenuClick}>
-                        <MoreVertOutlinedIcon />
-                    </IconButton>
+                    <div>
+                        <div
+                            onClick={(e: React.SyntheticEvent) => {
+                                e.stopPropagation()
+                                addAnchor()
+                            }}
+                            className={styles['DropdownItemOverwrite']}
+                        >
+                            <div className={styles['DropdownIconsWrapper']}>
+                                <Tooltip title="Add Anchor">
+                                    <div>
+                                        <BiAnchor
+                                            className={styles['profileMenu']}
+                                        />
+                                    </div>
+                                </Tooltip>
+                            </div>
+                        </div>
+                        <IconButton size="small" onClick={handleMenuClick}>
+                            <MoreVertOutlinedIcon />
+                        </IconButton>
+                    </div>
                 ) : null}
             </div>
         </div>

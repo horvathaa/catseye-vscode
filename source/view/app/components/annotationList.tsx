@@ -72,6 +72,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
             displayAnnotations()
         }
     }, [annotations]) // annotations state set in adamite.tsx
+    // React.useEffect(() => {}, [annotations])
 
     const theme = createTheme({
         palette: {

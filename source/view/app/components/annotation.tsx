@@ -380,6 +380,8 @@ const ReactAnnotation: React.FC<Props> = ({
                         setExpanded={setExpanded}
                         anchored={anchored}
                         anno={anno}
+                        // vscode={vscode}
+                        addAnchor={addAnchor}
                     />
                     <Collapse in={expanded} timeout="auto" unmountOnExit>
                         <CardContent>
@@ -388,7 +390,7 @@ const ReactAnnotation: React.FC<Props> = ({
                                 snapshotCode={snapshotCode}
                                 scrollInEditor={scrollInEditor}
                             /> */}
-                            <AnchorVersions />
+                            <AnchorVersions anchors={anno.anchors} />
                             <div className={styles['ContentContainer']}>
                                 {edit ? (
                                     <TextEditor

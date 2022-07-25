@@ -6,7 +6,6 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined'
 import { Annotation } from '../../../../constants/constants'
 import UserProfile from './userProfile'
-import { codeColor } from '../../styles/vscodeStyles'
 import styles from '../../styles/annotation.module.css'
 import { BiAnchor } from 'react-icons/bi'
 import { Tooltip } from '@material-ui/core'
@@ -16,7 +15,6 @@ interface Props {
     setExpanded: (e: boolean) => void
     anchored: boolean
     anno: Annotation
-    // vscode: any,
     addAnchor: () => void
 }
 
@@ -72,7 +70,26 @@ const CardHeader = ({
                     createdTimestamp={anno.createdTimestamp}
                 />
             )}
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'row' }}>
+                {expanded === true ? (
+                    <div
+                        onClick={(e: React.SyntheticEvent) => {
+                            e.stopPropagation()
+                            addAnchor()
+                        }}
+                        className={styles['DropdownItemOverwrite']}
+                    >
+                        <div className={styles['DropdownIconsWrapper']}>
+                            <Tooltip title="Add Anchor">
+                                <div>
+                                    <BiAnchor
+                                        className={styles['profileMenu']}
+                                    />
+                                </div>
+                            </Tooltip>
+                        </div>
+                    </div>
+                ) : null}
                 <IconButton size="small">
                     <CheckIcon />
                 </IconButton>
@@ -80,28 +97,9 @@ const CardHeader = ({
                     <DeleteIcon />
                 </IconButton>
                 {expanded === true ? (
-                    <div>
-                        <div
-                            onClick={(e: React.SyntheticEvent) => {
-                                e.stopPropagation()
-                                addAnchor()
-                            }}
-                            className={styles['DropdownItemOverwrite']}
-                        >
-                            <div className={styles['DropdownIconsWrapper']}>
-                                <Tooltip title="Add Anchor">
-                                    <div>
-                                        <BiAnchor
-                                            className={styles['profileMenu']}
-                                        />
-                                    </div>
-                                </Tooltip>
-                            </div>
-                            <IconButton size="small" onClick={handleMenuClick}>
-                                <MoreVertOutlinedIcon />
-                            </IconButton>
-                        </div>
-                    </div>
+                    <IconButton size="small" onClick={handleMenuClick}>
+                        <MoreVertOutlinedIcon />
+                    </IconButton>
                 ) : null}
             </div>
         </div>

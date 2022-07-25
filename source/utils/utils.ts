@@ -1015,6 +1015,7 @@ export const createAnchorObject = async (
         ]
         const anchorId = uuidv4()
         const createdTimestamp = new Date().getTime()
+        const anc = createAnchorFromRange(range)
         // const path: CodeContext[] = astHelper.generateCodeContextPath(
         //     range,
         //     textEditor.document
@@ -1055,6 +1056,9 @@ export const createAnchorObject = async (
                     branchName: gitInfo[projectName]?.branch
                         ? gitInfo[projectName]?.branch
                         : '',
+                    startLine: anc.startLine,
+                    endLine: anc.endLine,
+                    path: visiblePath,
                 },
             ],
             // path,

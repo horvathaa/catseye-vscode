@@ -380,16 +380,10 @@ const ReactAnnotation: React.FC<Props> = ({
                         setExpanded={setExpanded}
                         anchored={anchored}
                         anno={anno}
-                        // vscode={vscode}
                         addAnchor={addAnchor}
                     />
                     <Collapse in={expanded} timeout="auto" unmountOnExit>
                         <CardContent>
-                            {/* <AnchorList
-                                anchors={anno.anchors}
-                                snapshotCode={snapshotCode}
-                                scrollInEditor={scrollInEditor}
-                            /> */}
                             <AnchorVersions anchors={anno.anchors} />
                             <div className={styles['ContentContainer']}>
                                 {edit ? (

@@ -200,10 +200,11 @@ export const createNewAnnotation = async () => {
                       activeTextEditor.document.uri.fsPath
                   )
                 : activeTextEditor.document.uri.fsPath
+            const anc = anchor.createAnchorFromRange(r)
             const anchorId = uuidv4()
             const createdTimestamp = new Date().getTime()
             const anchorObject: AnchorObject = {
-                anchor: anchor.createAnchorFromRange(r),
+                anchor: anc,
                 anchorText: text,
                 html,
                 filename: activeTextEditor.document.uri.toString(),
@@ -245,6 +246,9 @@ export const createNewAnnotation = async () => {
                         branchName: gitInfo[projectName]?.branch
                             ? gitInfo[projectName]?.branch
                             : '',
+                        startLine: anc.startLine,
+                        endLine: anc.endLine,
+                        path: visiblePath,
                     },
                 ],
                 // path: astHelper.generateCodeContextPath(
@@ -401,8 +405,9 @@ export const addNewHighlight = (
         .then((html) => {
             const anchorId = uuidv4()
             const createdTimestamp = new Date().getTime()
+            const anc = anchor.createAnchorFromRange(r)
             const anchorObject: AnchorObject = {
-                anchor: anchor.createAnchorFromRange(r),
+                anchor: anc,
                 anchorText: text,
                 html,
                 filename: activeTextEditor.document.uri.toString(),
@@ -444,6 +449,9 @@ export const addNewHighlight = (
                         branchName: gitInfo[projectName]?.branch
                             ? gitInfo[projectName]?.branch
                             : '',
+                        startLine: anc.startLine,
+                        endLine: anc.endLine,
+                        path: visiblePath,
                     },
                 ],
                 // path: astHelper.generateCodeContextPath(

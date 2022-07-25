@@ -15,9 +15,20 @@ p {
     font-feature-settings: 'liga' 0, 'calt' 0;
     line-height: 18px;
     letter-spacing: 0px;
+    margin: 0px;
 }
 
 span {
-    font-family: var(--vscode-editor-font-family);
-    font-size: 11px;
+    font-family: var(--vscode-font-family);
+    font-size: 12px;
+}
+
+.AnchorContainer {
+    display: flex;
+    flex-direction: row;
+    border: 2px solid rgb(239 255 201 / 20%);
+    border-radius: 4px;
+    padding: none;
+    margin: 5px;
+    box-sizing: border-box;
 }

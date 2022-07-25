@@ -25,7 +25,6 @@ const CardHeader = ({
     setExpanded,
     anchored,
     anno,
-    // vscode,
     addAnchor,
 }: Props) => {
     const handleMenuClick = () => {}
@@ -98,10 +97,10 @@ const CardHeader = ({
                                     </div>
                                 </Tooltip>
                             </div>
+                            <IconButton size="small" onClick={handleMenuClick}>
+                                <MoreVertOutlinedIcon />
+                            </IconButton>
                         </div>
-                        <IconButton size="small" onClick={handleMenuClick}>
-                            <MoreVertOutlinedIcon />
-                        </IconButton>
                     </div>
                 ) : null}
             </div>

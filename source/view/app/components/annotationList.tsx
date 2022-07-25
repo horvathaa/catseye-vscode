@@ -144,6 +144,19 @@ const AnnotationList: React.FC<AnnoListProps> = ({
           })
         : []
 
+    const filterResolved = (
+        annos: Annotation[],
+        showResolved: boolean
+    ): Annotation[] => {
+        return showResolved
+            ? annos
+            : annos.filter((anno) => {
+                  return !anno.resolved // Should this not reference to prop to be 'true'
+              })
+
+        // return showResolved ? annos : annos.filter((anno) => !anno.resolved)
+    }
+
     const filterInFile = (
         annos: Annotation[],
         showFileOnly: boolean
@@ -276,15 +289,18 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     // now, with the filtered array of annotations
     // this solution is adapted from here: https://stackoverflow.com/questions/8517089/js-search-in-object-values
     const filtered: Annotation[] = annotations
-        ? filterInFile(
-              optionSearch(
+        ? filterResolved(
+              filterInFile(
                   optionSearch(
-                      textSearch(annotations, filters.searchText),
-                      filters.authorOptions
+                      optionSearch(
+                          textSearch(annotations, filters.searchText),
+                          filters.authorOptions
+                      ),
+                      filters.typeOptions
                   ),
-                  filters.typeOptions
+                  filters.showFileOnly
               ),
-              filters.showFileOnly
+              filters.showResolved
           )
         : []
 

@@ -411,12 +411,19 @@ export const handleUpdateAnnotation = (
 }
 
 // Removes the annotation from the list, updates the annotation list in the webview, and removes the corresponding highlight
-export const handleDeleteAnnotation = (id: string): void => {
+export const handleDeleteResolveAnnotation = (
+    id: string,
+    resolve: boolean
+): void => {
     const updatedAnno = buildAnnotation({
         ...annotationList.filter((a) => a.id === id)[0],
-        deleted: true,
         needToUpdate: true,
     })
+    if (resolve) {
+        updatedAnno.resolved = true
+    } else {
+        updatedAnno.deleted = true
+    }
     const updatedList = annotationList
         .filter((a) => a.id !== id)
         .concat([updatedAnno])

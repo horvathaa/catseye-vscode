@@ -190,7 +190,11 @@ const ReactAnnotation: React.FC<Props> = ({
     }
 
     const resolveAnnotation = (e: React.SyntheticEvent): void => {
-        console.log('RESOLVE THE ANNOTATION')
+        e.stopPropagation()
+        vscode.postMessage({
+            command: 'resolveAnnotation',
+            annoId: anno.id,
+        })
     }
 
     const snapshotCode = (id: string): void => {

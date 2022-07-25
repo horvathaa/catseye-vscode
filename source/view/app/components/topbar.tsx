@@ -96,7 +96,7 @@ const TopBar: React.FC<Props> = ({
     const showResolvedUpdated = () => {
         const newFilterOptions = {
             ...filterOptions,
-            showResolved: !filterOptions.showFileOnly,
+            showResolved: !filterOptions.showResolved,
         }
         setFilterOptions(newFilterOptions)
         filtersUpdated(newFilterOptions)

@@ -141,8 +141,7 @@ const TextEditor: React.FC<Props> = ({
                                 if (text.hasOwnProperty('comment')) {
                                     cancelHandler()
                                 }
-                                console.log('Get New Time?')
-                                console.log(new Date().getTime())
+
                                 // TODO: Update timestamp
                                 setText({
                                     ...text,

@@ -355,9 +355,7 @@ export const handleUpdateAnnotation = (
     if (key === 'replies' || key === 'codeSnapshots') {
         value.forEach((obj: Reply | Snapshot) => {
             if (obj.id.startsWith('temp')) {
-                console.log('before set', obj)
                 obj.id = uuidv4()
-                console.log(obj)
             }
         })
     }
@@ -386,14 +384,14 @@ export const handleUpdateAnnotation = (
             )
         } else if (typeof key === 'string') {
             updatedAnno = buildAnnotation({
-                updatedAnno,
+                ...updatedAnno,
                 [key]: value,
                 needToUpdate: true,
                 gitCommit: gitInfo[updatedAnno.projectName].commit,
             })
         } else {
             updatedAnno = buildAnnotation({
-                updatedAnno,
+                ...updatedAnno,
                 [key[0]]: value[key[0]],
                 [key[1]]: value[key[1]],
                 needToUpdate: true,

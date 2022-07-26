@@ -169,7 +169,7 @@ export const getAllAnnotationStableGitUrls = (
 ): string[] => {
     return [
         ...new Set(
-            annotationList.flatMap((a) => a.anchors.map((a) => a.stableGitUrl))
+            annotationList.flatMap((a) => a.anchors?.map((a) => a.stableGitUrl))
         ),
     ]
 }
@@ -317,7 +317,9 @@ export const sortAnnotationsByLocation = (
     annotationList: Annotation[]
 ): Annotation[] => {
     const sortedAnchors: string[] = sortAnchorsByLocation(
-        annotationList.flatMap((a) => a.anchors)
+        annotationList.flatMap((a) => {
+            return a.anchors
+        })
     ).map((a) => a.parentId)
     annotationList.sort((a: Annotation, b: Annotation) => {
         return sortedAnchors.indexOf(b.id) - sortedAnchors.indexOf(a.id)
@@ -502,7 +504,7 @@ export const handleSaveCloseEvent = async (
         vscode.workspace.workspaceFolders &&
         !arraysEqual(annosToSave, lastSavedAnnotations)
     ) {
-        console.log('is this ever called???')
+        // console.log('is this ever called???')
         lastSavedAnnotations = annosToSave
         saveAnnotations(
             annosToSave.filter((a) => a.needToUpdate),

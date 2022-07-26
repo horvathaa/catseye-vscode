@@ -214,6 +214,8 @@ export class AstHelper {
         }
     }
 
+    // https://stackoverflow.com/questions/42284139/how-to-get-a-subtree-given-a-path-from-a-tree-object
+    // consider subtree traversal
     public findMostSimilarPath(
         document: vscode.TextDocument,
         path: CodeContext[]

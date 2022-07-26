@@ -64,7 +64,7 @@ const AnchorVersions: React.FC<Props> = ({ anchors }) => {
         <div>
             <ThemeProvider theme={theme}>
                 {anchors.map((anchor: AnchorObject, i) => {
-                    anchor.priorVersions.reverse()
+                    anchor && anchor.priorVersions.reverse()
                     return (
                         <Carousel
                             key={i}

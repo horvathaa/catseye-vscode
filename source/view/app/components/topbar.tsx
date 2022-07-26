@@ -13,6 +13,7 @@ import {
     Sort,
     AuthorOptions,
     OptionGroup,
+    Scope,
 } from '../../../constants/constants'
 import SearchBar from './topbarComponents/searchbar'
 import GlobalMenu from './topbarComponents/globalMenu'
@@ -75,6 +76,14 @@ const TopBar: React.FC<Props> = ({
         setFilterOptions(newFilterOptions)
         filtersUpdated(newFilterOptions)
     }
+
+    const scopeUpdated = (selected: Scope) => {
+        console.log('Sort Updated')
+        const newFilterOptions = { ...filterOptions, Scope: selected }
+        setFilterOptions(newFilterOptions)
+        filtersUpdated(newFilterOptions)
+    }
+
     // getSearchedAnnotations
     const searchValueUpdated = (value: string) => {
         // This avoids duplication, once we set filterOptions,

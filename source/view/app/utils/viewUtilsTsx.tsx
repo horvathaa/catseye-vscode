@@ -17,7 +17,7 @@ import {
     FilterOptions,
     OptionGroup,
 } from '../../../constants/constants'
-import { defaultSort } from '../utils/viewUtils'
+import { defaultSort, defaultScope } from '../utils/viewUtils'
 import BugReportIcon from '@mui/icons-material/BugReport' // Issue
 import TaskIcon from '@mui/icons-material/Task' // Task
 import AssignmentIcon from '@mui/icons-material/Assignment' // Proposal
@@ -135,9 +135,11 @@ export const defaultFilterOptions: FilterOptions = {
     sort: defaultSort,
     authorOptions: defaultAuthorOptions,
     typeOptions: defaultTypeOptions,
+    scope: defaultScope,
     searchText: '',
     showResolved: false,
     showFileOnly: false,
+    showProjectOnly: true,
 }
 
 // export const defaultTypeOptions: Option[] = [

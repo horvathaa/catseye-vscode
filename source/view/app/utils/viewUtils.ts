@@ -7,7 +7,12 @@
  *
  */
 import * as vscode from 'vscode'
-import { AnchorObject, Annotation, Sort } from '../../../constants/constants'
+import {
+    AnchorObject,
+    Annotation,
+    Scope,
+    Sort,
+} from '../../../constants/constants'
 
 const translateAnnotationAnchorStandard = (
     annoInfo: any
@@ -207,3 +212,5 @@ export const breakpoints = {
 }
 
 export const defaultSort = Sort.relevance
+
+export const defaultScope = Scope.project

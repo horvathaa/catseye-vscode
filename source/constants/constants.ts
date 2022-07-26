@@ -228,6 +228,12 @@ export enum AuthorOptions {
     others = 'others',
 }
 
+export enum Scope {
+    file = 'file',
+    project = 'project',
+    all = 'all',
+}
+
 export enum Sort {
     relevance = 'Relevance',
     location = 'Location',
@@ -239,8 +245,10 @@ export interface FilterOptions {
     authorOptions: OptionGroup
     typeOptions: OptionGroup
     searchText: string
+    scope: Scope
     showResolved: boolean
     showFileOnly: boolean
+    showProjectOnly: boolean // Could be a different interface?
 }
 
 export interface AnchorsToUpdate {

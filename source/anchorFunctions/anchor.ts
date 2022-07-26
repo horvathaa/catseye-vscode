@@ -747,21 +747,59 @@ export const addHighlightsToEditor = (
     }
 }
 
+interface CodeLine {
+    code: string
+    line: number
+}
+
+const getCodeLine = (text: string, start?: number): CodeLine[] => {
+    return text.split('\n').map((t, i) => {
+        return {
+            code: t
+                .replace(/(?:\r\n|\n|\r)/g, '')
+                .replace(/^\s+|\s+$|\s+(?=\s)/g, ''),
+            line: start ? start + i : i,
+        }
+    })
+}
+
+const getCodeAtLine = (cl: CodeLine[], l: number): CodeLine | undefined => {
+    const match = cl.find((c) => c.line === l)
+    if (match) return match
+}
+
+const findAtOriginalLocation = (
+    sourceCode: CodeLine[],
+    anchorCode: CodeLine[]
+): boolean => {
+    return (
+        Math.max(
+            ...anchorCode.map((a, i) => {
+                let distance = Infinity
+                const cl = getCodeAtLine(sourceCode, a.line)
+                if (cl) {
+                    distance = levenshteinDistance(a.code, cl.code)
+                }
+                return distance
+            })
+        ) === 0
+    )
+}
+
 export const computeMostSimilarAnchor = (
     document: vscode.TextDocument,
     anchor: AnchorObject
 ): AnchorObject => {
-    console.log('anchor', anchor)
-    const splitOriginalAnchorText: string[] = anchor.anchorText.split('\n')
-    const textToSearch: string[] = document
-        .getText
-        // createRangeFromObject(anchor.anchor)
-        ()
-        .split('\n')
-    console.log('textToSearch', textToSearch)
-    splitOriginalAnchorText.forEach((t: string, i: number) => {
-        console.log(levenshteinDistance(t, textToSearch[i]))
-    })
+    const sourceCode: CodeLine[] = getCodeLine(document.getText())
+    const anchorCode: CodeLine[] = getCodeLine(
+        anchor.anchorText,
+        anchor.anchor.startLine
+    )
+    console.log('sourceCode', sourceCode)
+    console.log('anchorCode', anchorCode)
+    if (findAtOriginalLocation(sourceCode, anchorCode)) {
+        console.log('wowza')
+    }
 
     return anchor
 }

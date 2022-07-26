@@ -289,18 +289,18 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     // now, with the filtered array of annotations
     // this solution is adapted from here: https://stackoverflow.com/questions/8517089/js-search-in-object-values
     const filtered: Annotation[] = annotations
-        ? filterResolved(
-              filterInFile(
-                  optionSearch(
-                      optionSearch(
+        ? optionSearch(
+              optionSearch(
+                  filterResolved(
+                      filterInFile(
                           textSearch(annotations, filters.searchText),
-                          filters.authorOptions
+                          filters.showFileOnly
                       ),
-                      filters.typeOptions
+                      filters.showResolved
                   ),
-                  filters.showFileOnly
+                  filters.authorOptions
               ),
-              filters.showResolved
+              filters.typeOptions
           )
         : []
 

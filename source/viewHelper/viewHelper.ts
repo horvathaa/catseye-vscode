@@ -370,7 +370,9 @@ export const handleUpdateAnnotation = (
                 ...updatedAnno,
                 [key]: value,
                 needToUpdate: true,
-                gitCommit: gitInfo[updatedAnno.projectName].commit,
+                gitCommit: gitInfo[updatedAnno.projectName]
+                    ? gitInfo[updatedAnno.projectName].commit
+                    : updatedAnno.gitCommit,
             })
             setSelectedAnnotationsNavigations(
                 value
@@ -389,7 +391,9 @@ export const handleUpdateAnnotation = (
                 updatedAnno,
                 [key]: value,
                 needToUpdate: true,
-                gitCommit: gitInfo[updatedAnno.projectName].commit,
+                gitCommit: gitInfo[updatedAnno.projectName]
+                    ? gitInfo[updatedAnno.projectName].commit
+                    : updatedAnno.gitCommit,
             })
         } else {
             updatedAnno = buildAnnotation({
@@ -397,7 +401,9 @@ export const handleUpdateAnnotation = (
                 [key[0]]: value[key[0]],
                 [key[1]]: value[key[1]],
                 needToUpdate: true,
-                gitCommit: gitInfo[updatedAnno.projectName].commit,
+                gitCommit: gitInfo[updatedAnno.projectName]
+                    ? gitInfo[updatedAnno.projectName].commit
+                    : updatedAnno.gitCommit,
             })
         }
         const updatedList = annotationList

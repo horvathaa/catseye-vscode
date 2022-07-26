@@ -88,7 +88,7 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
             updatedTypes = [selectedType].concat(types)
         }
         setTypes(updatedTypes)
-        editTypes(types)
+        editTypes(updatedTypes)
     }
     // Can we make the flex
     return (

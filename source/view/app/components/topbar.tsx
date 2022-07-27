@@ -38,6 +38,7 @@ import {
     defaultFilterOptions,
 } from '../utils/viewUtilsTsx'
 import { defaultSort } from '../utils/viewUtils'
+import ScopeMenu from './topbarComponents/scopeMenu'
 interface Props {
     annotations: Annotation[]
     getSearchedAnnotations: (annotations: Annotation[]) => void
@@ -78,8 +79,9 @@ const TopBar: React.FC<Props> = ({
     }
 
     const scopeUpdated = (selected: Scope) => {
-        console.log('Sort Updated')
-        const newFilterOptions = { ...filterOptions, Scope: selected }
+        console.log('HI')
+        console.log('filter updated', selected)
+        const newFilterOptions = { ...filterOptions, scope: selected }
         setFilterOptions(newFilterOptions)
         filtersUpdated(newFilterOptions)
     }
@@ -166,6 +168,10 @@ const TopBar: React.FC<Props> = ({
                         sortByOptionSelected={sortUpdated}
                         initSort={filterOptions.sort}
                     ></SortBy>
+                    <ScopeMenu
+                        scopeOptionSelected={scopeUpdated}
+                        initScope={filterOptions.scope}
+                    ></ScopeMenu>
                     <OptionChipsBar
                         initOptions={filterOptions.authorOptions}
                         editOptions={optionsUpdated}
@@ -175,10 +181,6 @@ const TopBar: React.FC<Props> = ({
                         editOptions={annotationTypesUpdated}
                     ></OptionChipsBar>
                     <FormGroup>
-                        <FormControlLabel
-                            control={<Checkbox onChange={showInFileUpdated} />}
-                            label="In-File Only"
-                        />
                         <FormControlLabel
                             control={
                                 <Checkbox onChange={showResolvedUpdated} />

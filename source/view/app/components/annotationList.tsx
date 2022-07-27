@@ -12,6 +12,7 @@ import {
     Option,
     OptionGroup,
     Reply,
+    Scope,
 } from '../../../constants/constants'
 import {
     // getAllAnnotationFilenames,
@@ -169,6 +170,25 @@ const AnnotationList: React.FC<AnnoListProps> = ({
             : annos
     }
 
+    const filterScope = (annos: Annotation[], scope: Scope): Annotation[] => {
+        console.log('filter scope: ', scope)
+        switch (scope) {
+            case Scope.all:
+                return annos
+            case Scope.file:
+                return annos.filter((anno) => {
+                    const annoFiles = getAllAnnotationStableGitUrls(anno)
+                    return annoFiles.includes(currentFile) // Should this not reference to prop to be 'true'
+                })
+            case Scope.project:
+                return annos.filter(
+                    (anno) => anno.projectName == currentProject
+                )
+            default:
+                throw new Error(`Non-existent scope in switch: ${scope}`)
+        }
+    }
+
     const filterMine = (annos: Annotation[]): Annotation[] => {
         return annos.filter((anno) => anno['authorId'] === userId)
     }
@@ -292,9 +312,9 @@ const AnnotationList: React.FC<AnnoListProps> = ({
         ? optionSearch(
               optionSearch(
                   filterResolved(
-                      filterInFile(
+                      filterScope(
                           textSearch(annotations, filters.searchText),
-                          filters.showFileOnly
+                          filters.scope
                       ),
                       filters.showResolved
                   ),
@@ -341,8 +361,8 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                         {openPinned ? <ExpandLess /> : <ExpandMore />}
                     </ListItemButton>
                     <Collapse in={openPinned} timeout="auto" unmountOnExit>
-                        {pinnedAnno.length > 0 &&
-                            pinnedAnno.map((a: Annotation) => {
+                        {pinned.length > 0 &&
+                            pinned.map((a: Annotation) => {
                                 return (
                                     <ReactAnnotation
                                         key={'annotationList-tsx-' + a.id}

@@ -229,9 +229,9 @@ export enum AuthorOptions {
 }
 
 export enum Scope {
-    file = 'file',
-    project = 'project',
-    all = 'all',
+    file = 'File',
+    project = 'Project',
+    all = 'All',
 }
 
 export enum Sort {

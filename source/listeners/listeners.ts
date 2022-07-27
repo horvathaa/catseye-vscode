@@ -125,6 +125,9 @@ export const handleChangeActiveTextEditor = (
 export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
     const gitUrl = utils.getStableGitHubUrl(TextDocument.uri.fsPath)
     const updated = astHelper.updatePaths(TextDocument)
+    // get anchors
+    // for each anchors call getSurroundingLinesBeforeAnchor and getSurroundingLinesAfterAnchor(TextDocument, anchor)
+    // update each corresponding annotation
     const anchors = anchor.getAnchorsWithGitUrl(
         utils.getStableGitHubUrl(TextDocument.uri.fsPath)
     )

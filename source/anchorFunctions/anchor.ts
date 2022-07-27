@@ -570,6 +570,7 @@ export const translateChanges = (
         ...anchorObject,
         anchorText: newAnchorText,
         anchor: newRange,
+        // update surrounding lines here or at save
         gitCommit:
             checkIfAnchorChanged(originalRange, newRangeObj) ||
             // changeOccurredInRange
@@ -746,18 +747,44 @@ export const addHighlightsToEditor = (
         text?.setDecorations(annotationDecorations, [])
     }
 }
-
+interface CodeToken {
+    token: string
+    offset: number
+}
 interface CodeLine {
-    code: string
+    code: CodeToken[]
     line: number
 }
 
 const getCodeLine = (text: string, start?: number): CodeLine[] => {
+    //preprocessing potential new anchor ranges
     return text.split('\n').map((t, i) => {
+        let n: number[] = []
+        let sum = 0
+        const splitText = t.split(' ')
+        const lengths = splitText.map((t) => t.length)
+        // console.log('lengths', lengths)
+        // console.log('split text', splitText)
+        lengths.reduce((runningTotal, currentValue, currIndex) => {
+            if (currentValue !== 0) n.push(runningTotal + currIndex)
+            return runningTotal + currentValue
+        }, sum)
+
+        // console.log('n', n)
         return {
             code: t
-                .replace(/(?:\r\n|\n|\r)/g, '')
-                .replace(/^\s+|\s+$|\s+(?=\s)/g, ''),
+                .split(' ')
+                .filter((c) => c.length)
+                .map((c, i) => {
+                    return {
+                        token: c,
+                        offset: n[i],
+                    }
+                }),
+            // will still need to clean up string for text comparison
+            // t
+            //     .replace(/(?:\r\n|\n|\r)/g, '')
+            //     .replace(/^\s+|\s+$|\s+(?=\s)/g, ''),
             line: start ? start + i : i,
         }
     })
@@ -778,13 +805,15 @@ const findAtOriginalLocation = (
                 let distance = Infinity
                 const cl = getCodeAtLine(sourceCode, a.line)
                 if (cl) {
-                    distance = levenshteinDistance(a.code, cl.code)
+                    // distance = levenshteinDistance(a.code[0].token, cl.code)
                 }
                 return distance
             })
         ) === 0
     )
 }
+
+// use AST for suggesting primarily
 
 export const computeMostSimilarAnchor = (
     document: vscode.TextDocument,

@@ -39,6 +39,7 @@ import {
     Annotation,
     AnchorObject,
     ChangeEvent,
+    GhostAnchorObject,
     // Timer
 } from '../constants/constants'
 
@@ -130,6 +131,7 @@ export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
     console.log(
         anchors.map((a) => anchor.computeMostSimilarAnchor(TextDocument, a))
     )
+    // const GhostAnchor: GhostAnchorObject = anchor.computeMostSimilarAnchor()
     // const mostSimilarAnchor = anchor.computeMostSimilarAnchor(
     //     TextDocument,
     //     utils.getAnnotationsWithStableGitUrl(
@@ -143,7 +145,11 @@ export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
     // )[4].anchors[0].path
     // console.log('path', testPath)
     // astHelper.findMostSimilarPath(TextDocument, testPath)
-    setAnnotationList(utils.removeOutOfDateAnnotations(updated))
+    setAnnotationList(
+        utils
+            .removeOutOfDateAnnotations(updated)
+            .concat(utils.getAnnotationsNotWithGitUrl(annotationList, gitUrl))
+    )
     if (vscode.workspace.workspaceFolders)
         utils.handleSaveCloseEvent(
             annotationList,

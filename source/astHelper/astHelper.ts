@@ -153,6 +153,9 @@ export class AstHelper {
         // gitUrl: string
         document: vscode.TextDocument
     ): AnchorObject {
+        if (!this.isTsJsJsxTsx(document)) {
+            return anchor
+        }
         const source = this.findSourceFile(document)
         if (source) {
             const anchorRange = createRangeFromAnchorObject(anchor)
@@ -169,7 +172,7 @@ export class AstHelper {
             })
             return { ...anchor, path: nodeInfo.filter((p) => p.isDirectParent) }
         }
-        console.error('Could not create path')
+        console.error('Could not create path') // only throw this error if it's a file we should bother finding i.e., js/ts file
         return anchor
     }
 

@@ -87,7 +87,7 @@ const CardHeader = ({
                 />
                 <AdamiteButton
                     buttonClicked={deleteAnnotation}
-                    name="Resolve"
+                    name="Delete"
                     icon={<DeleteIcon fontSize="small" />}
                 />
                 {expanded === true ? (

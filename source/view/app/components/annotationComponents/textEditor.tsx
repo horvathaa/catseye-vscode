@@ -12,7 +12,11 @@ import FormControlLabel from '@mui/material/FormControlLabel'
 import Checkbox from '@mui/material/Checkbox'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
 import { green } from '@material-ui/core/colors'
-import { editorBackground } from '../../styles/vscodeStyles'
+import {
+    editorBackground,
+    textBoxBackground,
+    vscodeTextColor,
+} from '../../styles/vscodeStyles'
 import { TextareaAutosize } from '@material-ui/core'
 
 interface Props {
@@ -39,10 +43,18 @@ const TextEditor: React.FC<Props> = ({
     const [willBePinned, setWillBePinned] = React.useState<boolean>(false)
     // TODO: Change this theme
     const theme = createTheme({
+        palette: {
+            primary: {
+                main: `${vscodeTextColor}`,
+            },
+            background: {
+                paper: `${vscodeTextColor}`,
+            },
+        },
         typography: {
             allVariants: {
                 fontSize: 12,
-                color: `${editorBackground}`,
+                color: `${vscodeTextColor}`,
                 fontFamily: 'Arial',
             },
         },
@@ -50,27 +62,27 @@ const TextEditor: React.FC<Props> = ({
             MuiCheckbox: {
                 styleOverrides: {
                     root: {
-                        color: green[400],
+                        color: `${vscodeTextColor} !important`,
                         '&.Mui-checked': {
-                            color: green[600],
+                            color: `${vscodeTextColor}`,
                         },
                     },
                 },
             },
-            MuiButtonBase: {
-                styleOverrides: {
-                    root: {
-                        color: green[400],
-                    },
-                },
-            },
-            MuiButton: {
-                styleOverrides: {
-                    root: {
-                        color: green[400],
-                    },
-                },
-            },
+            // MuiButtonBase: {
+            //     styleOverrides: {
+            //         root: {
+            //             color: green[400],
+            //         },
+            //     },
+            // },
+            // MuiButton: {
+            //     styleOverrides: {
+            //         root: {
+            //             color: green[400],
+            //         },
+            //     },
+            // },
         },
     })
 
@@ -114,6 +126,7 @@ const TextEditor: React.FC<Props> = ({
             <TextareaAutosize
                 minRows={1}
                 className={styles['textbox']}
+                style={{ backgroundColor: textBoxBackground }}
                 autoFocus
                 value={
                     typeof text === 'string'
@@ -176,6 +189,10 @@ const TextEditor: React.FC<Props> = ({
                             <FormControlLabel
                                 control={
                                     <Checkbox
+                                        style={{
+                                            fontSize: 14,
+                                            color: `${vscodeTextColor} !important`,
+                                        }}
                                         onChange={() =>
                                             setWillBePinned(
                                                 (willBePinned) => !willBePinned

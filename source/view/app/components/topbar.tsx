@@ -147,6 +147,16 @@ const TopBar: React.FC<Props> = ({
                     },
                 },
             },
+            MuiCheckbox: {
+                styleOverrides: {
+                    root: {
+                        color: `${vscodeTextColor} !important`,
+                        '&.Mui-checked': {
+                            color: `${vscodeTextColor}`,
+                        },
+                    },
+                },
+            },
         },
     })
     return (
@@ -182,9 +192,21 @@ const TopBar: React.FC<Props> = ({
                     <FormGroup>
                         <FormControlLabel
                             control={
-                                <Checkbox onChange={showResolvedUpdated} />
+                                <Checkbox
+                                    onChange={showResolvedUpdated}
+                                    sx={{
+                                        color: `${vscodeTextColor} !important`,
+                                        '&.Mui-checked': {
+                                            color: `${vscodeTextColor}`,
+                                        },
+                                    }}
+                                />
                             }
                             label="Show Resolved"
+                        />
+                        <FormControlLabel
+                            control={<Checkbox onChange={pinnedOnlyUpdated} />}
+                            label="Pinned Only"
                         />
                         <FormControlLabel
                             control={
@@ -192,12 +214,12 @@ const TopBar: React.FC<Props> = ({
                             }
                             label="Unanchored Only"
                         />
-                        <FormControlLabel
+                        {/* <FormControlLabel
                             control={
-                                <Checkbox onChange={pinnedOnlyUpdated} />
+                                <Checkbox onChange={showAnchoredUpdated} />
                             }
-                            label="Pinned Only"
-                        />
+                            label="Unanchored Only"
+                        /> */}
                     </FormGroup>
                 </div>
             </ThemeProvider>

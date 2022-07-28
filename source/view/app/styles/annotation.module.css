@@ -307,8 +307,9 @@
     width: 98%;
     resize: none;
     font-family: var(--vscode-font-family);
-    background-color: var(--vscode-breadcrumb-activeSelectionForeground);
     border-radius: 4px;
+    outline: 1px solid #7fae42 !important;
+    color: var(--vscode-foreground);
 }
 
 .topRow {
@@ -510,11 +511,11 @@ code {
 }
 
 button.submit {
-    border-radius: 8px;
+    border-radius: 4px;
     padding-left: 1em;
     padding-right: 1em;
     cursor: pointer;
-    color: white;
+    color: var(--vscode-foreground);
     margin-top: 6px;
     border: 1px solid transparent;
     border-color: #7fae42;
@@ -529,15 +530,18 @@ button.submit:hover {
 }
 
 button.cancel {
-    border-radius: 8px;
+    border-radius: 4px;
     padding-left: 1em;
     padding-right: 1em;
     margin-left: 10px;
+    margin-top: 2px;
+    margin-bottom: 1px;
     cursor: pointer;
-    color: white;
+    color: var(--vscode-foreground);
     border: 1px solid transparent;
-    background-color: rgba(158, 158, 158, 0.651);
-    height: 30px;
+    border-color: #7fae42;
+    background-color: var(--vscode-editor-background);
+    height: 27px;
     transition: all 0.5s ease-in-out;
 }
 

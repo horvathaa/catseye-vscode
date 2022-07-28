@@ -73,18 +73,6 @@ const AnnotationList: React.FC<AnnoListProps> = ({
         setOpenPinned(!openPinned)
     }
 
-    // React.useEffect(() => {
-    //     if (annotations.length) {
-    //         displayAnnotations()
-    //     }
-    // }, [annotations]) // annotations state set in adamite.tsx
-
-    // React.useEffect(() => {
-    //     if (annotations.length) {
-    //         displayAnnotations()
-    //     }
-    // }, [filters]) // annotations state set in adamite.tsx
-
     const theme = createTheme({
         palette: {
             primary: {
@@ -115,29 +103,6 @@ const AnnotationList: React.FC<AnnoListProps> = ({
             },
         },
     })
-
-    // const getAnnotations = (): { [key: string]: any } => {
-    //     const output: { [key: string]: any } = {
-    //         Pinned: [],
-    //         'Current File': [],
-    //         'Current Project': [],
-    //         'All Unpinned': [],
-    //     }
-    //     annotations.forEach((a: Annotation) => {
-    //         const annoFiles = getAllAnnotationStableGitUrls(a)
-    //         if (a.selected) {
-    //             output['Pinned'].push(a)
-    //         } else if (annoFiles.includes(currentFile)) {
-    //             output['Current File'].push(a)
-    //             output['All Unpinned'].push(a)
-    //         } else if (a.projectName === currentProject) {
-    //             output['Current Project'].push(a) // only pulls annotations since last commit?
-    //             output['All Unpinned'].push(a)
-    //         }
-    //     })
-
-    //     return output
-    // }
 
     // Alternative way of getting pinned files?
     const pinned: Annotation[] = annotations
@@ -344,7 +309,6 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     return (
         <>
             <ThemeProvider theme={theme}>
-                
                 <List sx={{ width: '100%' }} component="div" disablePadding>
                     {filtered.map((a: Annotation) => {
                         return (

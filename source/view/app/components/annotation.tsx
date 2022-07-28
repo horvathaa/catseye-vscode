@@ -42,6 +42,7 @@ import CollapsedCardHeader from './annotationComponents/annotationCardHeader'
 import EditIcon from '@mui/icons-material/Edit'
 import AdamiteButton from './annotationComponents/AdamiteButton'
 import { useMediaQuery } from '@material-ui/core'
+import AnnotationList from './annotationList'
 
 interface Props {
     annotation: Annotation
@@ -50,6 +51,7 @@ interface Props {
     username: string
     userId: string
     annotationSelected: (anno: Annotation) => void
+    annotations: Annotation[]
 }
 
 // TODO: Add Pin button next to edit
@@ -60,6 +62,7 @@ const ReactAnnotation: React.FC<Props> = ({
     username,
     userId,
     annotationSelected,
+    annotations,
 }) => {
     const [anno, setAnno] = React.useState<Annotation>(annotation)
     const [expanded, setExpanded] = React.useState(false)
@@ -473,14 +476,6 @@ const ReactAnnotation: React.FC<Props> = ({
                                                     <EditIcon fontSize="small" />
                                                 }
                                             />
-                                            {/* <EditIcon
-                                                onClick={(
-                                                    e: React.SyntheticEvent
-                                                ) => {
-                                                    e.stopPropagation()
-                                                    setEdit(!edit)
-                                                }}
-                                            /> */}
                                         </div>
                                     </div>
                                 )}
@@ -493,6 +488,15 @@ const ReactAnnotation: React.FC<Props> = ({
                                     cancelReply={() => setReplying(false)}
                                     deleteReply={deleteReply}
                                 />
+                                <AnnotationList
+                                    title=""
+                                    parentId={anno.id}
+                                    annotations={[anno]}
+                                    vscode={vscode}
+                                    window={window}
+                                    username={username}
+                                    userId={userId}
+                                ></AnnotationList>
                             </div>
                         </CardContent>
                     </Collapse>

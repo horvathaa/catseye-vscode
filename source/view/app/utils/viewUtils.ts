@@ -211,6 +211,6 @@ export const breakpoints = {
     },
 }
 
-export const defaultSort = Sort.relevance
+export const defaultSort = Sort.location
 
 export const defaultScope = Scope.project

@@ -235,7 +235,7 @@ export enum Scope {
 }
 
 export enum Sort {
-    relevance = 'Relevance',
+    // relevance = 'Relevance',
     location = 'Location',
     time = 'Time',
 }

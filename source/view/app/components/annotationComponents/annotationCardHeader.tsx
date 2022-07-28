@@ -43,6 +43,7 @@ const CardHeader = ({
                     style={{
                         display: 'flex',
                         flexDirection: 'row',
+                        flexGrow: 1,
                         flexWrap: 'wrap',
                     }}
                 >

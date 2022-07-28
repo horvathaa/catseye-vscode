@@ -193,7 +193,6 @@ const AdamitePanel: React.FC<Props> = ({
         return
     }
 
-    // Need to Update
     const filtersUpdated = (filters: FilterOptions): void => {
         setFilterOptions(filters)
     }

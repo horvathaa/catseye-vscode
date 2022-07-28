@@ -138,7 +138,7 @@ export const defaultFilterOptions: FilterOptions = {
     scope: defaultScope,
     searchText: '',
     showResolved: false,
-    showFileOnly: false,
+    pinnedOnly: false,
     showProjectOnly: true,
 }
 

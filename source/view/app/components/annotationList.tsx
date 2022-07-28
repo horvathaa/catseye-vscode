@@ -62,8 +62,9 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     filters,
 }) => {
     const [openPinned, setOpenPinned] = useState(false)
-    const [pinnedAnno, setPinnedAnno] = useState<Annotation[]>([])
-    const [filteredAnno, setFilteredAnno] = useState<Annotation[]>([])
+    // const [pinnedAnno, setPinnedAnno] = useState<Annotation[]>([])
+    // const [filteredAnno, setFilteredAnno] = useState<Annotation[]>([])
+    const [selectedAnnos, setSelectedAnnos] = useState<Annotation[]>([])
     const fields = ['annotation']
     const complex = ['anchors']
     const replies = ['replies']
@@ -72,17 +73,17 @@ const AnnotationList: React.FC<AnnoListProps> = ({
         setOpenPinned(!openPinned)
     }
 
-    React.useEffect(() => {
-        if (annotations.length) {
-            displayAnnotations()
-        }
-    }, [annotations]) // annotations state set in adamite.tsx
+    // React.useEffect(() => {
+    //     if (annotations.length) {
+    //         displayAnnotations()
+    //     }
+    // }, [annotations]) // annotations state set in adamite.tsx
 
-    React.useEffect(() => {
-        if (annotations.length) {
-            displayAnnotations()
-        }
-    }, [filters]) // annotations state set in adamite.tsx
+    // React.useEffect(() => {
+    //     if (annotations.length) {
+    //         displayAnnotations()
+    //     }
+    // }, [filters]) // annotations state set in adamite.tsx
 
     const theme = createTheme({
         palette: {
@@ -115,28 +116,28 @@ const AnnotationList: React.FC<AnnoListProps> = ({
         },
     })
 
-    const getAnnotations = (): { [key: string]: any } => {
-        const output: { [key: string]: any } = {
-            Pinned: [],
-            'Current File': [],
-            'Current Project': [],
-            'All Unpinned': [],
-        }
-        annotations.forEach((a: Annotation) => {
-            const annoFiles = getAllAnnotationStableGitUrls(a)
-            if (a.selected) {
-                output['Pinned'].push(a)
-            } else if (annoFiles.includes(currentFile)) {
-                output['Current File'].push(a)
-                output['All Unpinned'].push(a)
-            } else if (a.projectName === currentProject) {
-                output['Current Project'].push(a) // only pulls annotations since last commit?
-                output['All Unpinned'].push(a)
-            }
-        })
+    // const getAnnotations = (): { [key: string]: any } => {
+    //     const output: { [key: string]: any } = {
+    //         Pinned: [],
+    //         'Current File': [],
+    //         'Current Project': [],
+    //         'All Unpinned': [],
+    //     }
+    //     annotations.forEach((a: Annotation) => {
+    //         const annoFiles = getAllAnnotationStableGitUrls(a)
+    //         if (a.selected) {
+    //             output['Pinned'].push(a)
+    //         } else if (annoFiles.includes(currentFile)) {
+    //             output['Current File'].push(a)
+    //             output['All Unpinned'].push(a)
+    //         } else if (a.projectName === currentProject) {
+    //             output['Current Project'].push(a) // only pulls annotations since last commit?
+    //             output['All Unpinned'].push(a)
+    //         }
+    //     })
 
-        return output
-    }
+    //     return output
+    // }
 
     // Alternative way of getting pinned files?
     const pinned: Annotation[] = annotations
@@ -156,18 +157,6 @@ const AnnotationList: React.FC<AnnoListProps> = ({
               })
 
         // return showResolved ? annos : annos.filter((anno) => !anno.resolved)
-    }
-
-    const filterInFile = (
-        annos: Annotation[],
-        showFileOnly: boolean
-    ): Annotation[] => {
-        return showFileOnly
-            ? annos.filter((anno) => {
-                  const annoFiles = getAllAnnotationStableGitUrls(anno)
-                  return annoFiles.includes(currentFile) // Should this not reference to prop to be 'true'
-              })
-            : annos
     }
 
     const filterScope = (annos: Annotation[], scope: Scope): Annotation[] => {
@@ -309,73 +298,53 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     // now, with the filtered array of annotations
     // this solution is adapted from here: https://stackoverflow.com/questions/8517089/js-search-in-object-values
     const filtered: Annotation[] = annotations
-        ? optionSearch(
-              optionSearch(
-                  filterResolved(
-                      filterScope(
-                          textSearch(annotations, filters.searchText),
-                          filters.scope
+        ? filters.pinnedOnly
+            ? pinned
+            : optionSearch(
+                  optionSearch(
+                      filterResolved(
+                          filterScope(
+                              textSearch(annotations, filters.searchText),
+                              filters.scope
+                          ),
+                          filters.showResolved
                       ),
-                      filters.showResolved
+                      filters.authorOptions
                   ),
-                  filters.authorOptions
-              ),
-              filters.typeOptions
-          )
+                  filters.typeOptions
+              )
         : []
 
-    const displayAnnotations = () => {
-        const groupings = getAnnotations()
-        Object.keys(groupings).forEach((group) => {
-            let annot = groupings[group]
-            if (group === 'Pinned') {
-                setPinnedAnno(annot)
-            }
-            if (group === 'All Unpinned') {
-                setFilteredAnno(filtered)
-            }
-        })
+    // const displayAnnotations = () => {
+    //     const groupings = getAnnotations()
+    //     Object.keys(groupings).forEach((group) => {
+    //         let annot = groupings[group]
+    //         if (group === 'Pinned') {
+    //             setPinnedAnno(annot)
+    //         }
+    //         if (group === 'All Unpinned') {
+    //             setFilteredAnno(filtered)
+    //         }
+    //     })
+    // }
+
+    const annotationSelected = (anno: Annotation) => {
+        let updatedSelectedAnnos: Annotation[]
+        if (selectedAnnos.includes(anno)) {
+            updatedSelectedAnnos = selectedAnnos.filter(
+                (obj: Annotation) => obj !== anno
+            )
+        } else {
+            // Can't mutate the types array like done previously!
+            updatedSelectedAnnos = [anno].concat(selectedAnnos)
+        }
+        setSelectedAnnos(updatedSelectedAnnos)
     }
 
     return (
         <>
             <ThemeProvider theme={theme}>
-                <List
-                    sx={{
-                        width: '100%',
-                        border: '1.5px',
-                        borderRadius: '4px',
-                        borderStyle: 'solid',
-                        borderColor: iconColor,
-                    }}
-                    component="div"
-                    disablePadding
-                >
-                    <ListItemButton onClick={handlePinClick}>
-                        <ListItemIcon>
-                            <PushPinIcon />
-                        </ListItemIcon>
-                        <ListItemText
-                            primary={openPinned ? 'Hide Pinned' : 'Show Pinned'}
-                        />
-                        {openPinned ? <ExpandLess /> : <ExpandMore />}
-                    </ListItemButton>
-                    <Collapse in={openPinned} timeout="auto" unmountOnExit>
-                        {pinned.length > 0 &&
-                            pinned.map((a: Annotation) => {
-                                return (
-                                    <ReactAnnotation
-                                        key={'annotationList-tsx-' + a.id}
-                                        annotation={a}
-                                        vscode={vscode}
-                                        window={window}
-                                        username={username}
-                                        userId={userId}
-                                    />
-                                )
-                            })}
-                    </Collapse>
-                </List>
+                
                 <List sx={{ width: '100%' }} component="div" disablePadding>
                     {filtered.map((a: Annotation) => {
                         return (
@@ -386,6 +355,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                                 window={window}
                                 username={username}
                                 userId={userId}
+                                annotationSelected={annotationSelected}
                             />
                         )
                     })}

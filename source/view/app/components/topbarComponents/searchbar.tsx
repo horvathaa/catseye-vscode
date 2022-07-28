@@ -49,7 +49,7 @@ const SearchBar: React.FC<Props> = ({ annotations, searchValueUpdated }) => {
                     <input
                         className={styles['inputBox']}
                         value={value || ''}
-                        placeholder={`Search ${annotations.length} annotations...`}
+                        placeholder={`Search annotations...`}
                         onChange={handleChange}
                         // onKeyDown={checkIfSubmit}
                     />

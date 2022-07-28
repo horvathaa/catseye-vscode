@@ -6,7 +6,7 @@
  */
 import * as React from 'react'
 import cn from 'classnames'
-import { buildAnnotation } from '../utils/viewUtils'
+import { breakpoints, buildAnnotation } from '../utils/viewUtils'
 import styles from '../styles/annotation.module.css'
 import {
     Annotation,
@@ -23,7 +23,14 @@ import Outputs from './annotationComponents/outputs'
 import ReplyIcon from '@mui/icons-material/Reply'
 import Snapshots from './annotationComponents/snapshots'
 import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
-import { Box, Card, CardContent, Collapse } from '@material-ui/core'
+import {
+    Box,
+    Card,
+    CardContent,
+    Checkbox,
+    Collapse,
+    FormControlLabel,
+} from '@material-ui/core'
 import {
     codeColor,
     editorBackground,
@@ -34,6 +41,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CollapsedCardHeader from './annotationComponents/annotationCardHeader'
 import EditIcon from '@mui/icons-material/Edit'
 import AdamiteButton from './annotationComponents/AdamiteButton'
+import { useMediaQuery } from '@material-ui/core'
 
 interface Props {
     annotation: Annotation
@@ -41,6 +49,7 @@ interface Props {
     window: Window
     username: string
     userId: string
+    annotationSelected: (anno: Annotation) => void
 }
 
 // TODO: Add Pin button next to edit
@@ -50,6 +59,7 @@ const ReactAnnotation: React.FC<Props> = ({
     window,
     username,
     userId,
+    annotationSelected,
 }) => {
     const [anno, setAnno] = React.useState<Annotation>(annotation)
     const [expanded, setExpanded] = React.useState(false)
@@ -69,6 +79,7 @@ const ReactAnnotation: React.FC<Props> = ({
         borderRadius: '4px',
         borderStyle: 'solid',
         padding: 5,
+        flexGrow: 1,
     }
     const theme = createTheme({
         palette: {
@@ -96,7 +107,10 @@ const ReactAnnotation: React.FC<Props> = ({
                 },
             },
         },
+        breakpoints: breakpoints,
     })
+
+    const isMedOrMore = useMediaQuery(theme.breakpoints.up('md'))
 
     const handleExpandClick = () => {
         setExpanded(!expanded)
@@ -373,8 +387,16 @@ const ReactAnnotation: React.FC<Props> = ({
     }
 
     return (
-        <>
+        <div
+            style={{
+                display: 'flex',
+                flexDirection: 'row',
+            }}
+        >
             <ThemeProvider theme={theme}>
+                {isMedOrMore && (
+                    <Checkbox onChange={() => annotationSelected(anno)} />
+                )}
                 <Card style={cardStyle}>
                     <CollapsedCardHeader
                         expanded={expanded}
@@ -466,7 +488,7 @@ const ReactAnnotation: React.FC<Props> = ({
                     </Collapse>
                 </Card>
             </ThemeProvider>
-        </>
+        </div>
     )
 }
 

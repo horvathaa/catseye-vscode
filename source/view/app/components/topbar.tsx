@@ -94,20 +94,19 @@ const TopBar: React.FC<Props> = ({
         setFilterOptions(newFilterOptions)
         filtersUpdated(newFilterOptions)
     }
-
-    const showInFileUpdated = () => {
+    const showResolvedUpdated = () => {
         const newFilterOptions = {
             ...filterOptions,
-            showFileOnly: !filterOptions.showFileOnly,
+            showResolved: !filterOptions.showResolved,
         }
         setFilterOptions(newFilterOptions)
         filtersUpdated(newFilterOptions)
     }
 
-    const showResolvedUpdated = () => {
+    const pinnedOnlyUpdated = () => {
         const newFilterOptions = {
             ...filterOptions,
-            showResolved: !filterOptions.showResolved,
+            pinnedOnly: !filterOptions.pinnedOnly,
         }
         setFilterOptions(newFilterOptions)
         filtersUpdated(newFilterOptions)
@@ -192,6 +191,12 @@ const TopBar: React.FC<Props> = ({
                                 <Checkbox onChange={showAnchoredUpdated} />
                             }
                             label="Unanchored Only"
+                        />
+                        <FormControlLabel
+                            control={
+                                <Checkbox onChange={pinnedOnlyUpdated} />
+                            }
+                            label="Pinned Only"
                         />
                     </FormGroup>
                 </div>

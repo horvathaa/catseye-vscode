@@ -247,7 +247,7 @@ export interface FilterOptions {
     searchText: string
     scope: Scope
     showResolved: boolean
-    showFileOnly: boolean
+    pinnedOnly: boolean
     showProjectOnly: boolean // Could be a different interface?
 }
 

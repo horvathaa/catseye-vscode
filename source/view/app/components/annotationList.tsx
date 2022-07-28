@@ -70,10 +70,6 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     const complex = ['anchors']
     const replies = ['replies']
 
-    const handlePinClick = () => {
-        setOpenPinned(!openPinned)
-    }
-
     const theme = createTheme({
         palette: {
             primary: {
@@ -178,7 +174,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
             return []
         }
     }
-    // array1.filter(value => array2.includes(value));
+
     const filterTypes = (annos: Annotation[], optionGroup: OptionGroup) => {
         // Could maybe be faster with reduce?
         const selectedOptions = optionGroup.options.filter(
@@ -281,19 +277,6 @@ const AnnotationList: React.FC<AnnoListProps> = ({
               )
         : []
 
-    // const displayAnnotations = () => {
-    //     const groupings = getAnnotations()
-    //     Object.keys(groupings).forEach((group) => {
-    //         let annot = groupings[group]
-    //         if (group === 'Pinned') {
-    //             setPinnedAnno(annot)
-    //         }
-    //         if (group === 'All Unpinned') {
-    //             setFilteredAnno(filtered)
-    //         }
-    //     })
-    // }
-
     const annotationSelected = (anno: Annotation) => {
         let updatedSelectedAnnos: Annotation[]
         if (selectedAnnos.includes(anno)) {
@@ -307,16 +290,9 @@ const AnnotationList: React.FC<AnnoListProps> = ({
         setSelectedAnnos(updatedSelectedAnnos)
     }
 
-    const massOperationSelected = (operation: string) => {
-        console.log('Mass Oepration Selected')
-    }
-
     return (
         <>
             <ThemeProvider theme={theme}>
-                <MassOperationsBar
-                    massOperationSelected={massOperationSelected}
-                ></MassOperationsBar>
                 <List sx={{ width: '100%' }} component="div" disablePadding>
                     {filtered.map((a: Annotation) => {
                         return (

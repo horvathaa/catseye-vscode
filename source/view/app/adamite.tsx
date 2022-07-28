@@ -24,6 +24,7 @@ import {
     vscodeBorderColor,
 } from './styles/vscodeStyles'
 import { defaultFilterOptions } from './utils/viewUtilsTsx'
+import MassOperationsBar from './components/massOperationsBar'
 
 interface Props {
     vscode: any
@@ -201,6 +202,10 @@ const AdamitePanel: React.FC<Props> = ({
         setShowNewAnnotation(false)
     }
 
+    const massOperationSelected = (operation: string) => {
+        console.log('Mass Oepration Selected')
+    }
+
     return (
         <React.Fragment>
             {showNewAnnotation ? (
@@ -219,6 +224,9 @@ const AdamitePanel: React.FC<Props> = ({
                         showKeyboardShortcuts={showKeyboardShortcuts}
                         filtersUpdated={filtersUpdated}
                     />
+                    <MassOperationsBar
+                        massOperationSelected={massOperationSelected}
+                    ></MassOperationsBar>
                     <AnnotationList
                         currentFile={currentFile}
                         currentProject={currentProject}

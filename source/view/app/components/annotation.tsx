@@ -27,10 +27,10 @@ import {
     Box,
     Card,
     CardContent,
-    Checkbox,
     Collapse,
     FormControlLabel,
 } from '@material-ui/core'
+import { Checkbox } from '@mui/material'
 import {
     codeColor,
     editorBackground,
@@ -103,6 +103,16 @@ const ReactAnnotation: React.FC<Props> = ({
                     root: {
                         backgroundColor: editorBackground,
                         color: iconColor,
+                    },
+                },
+            },
+            MuiCheckbox: {
+                styleOverrides: {
+                    root: {
+                        color: `${vscodeTextColor} !important`,
+                        '&.Mui-checked': {
+                            color: `${vscodeTextColor}`,
+                        },
                     },
                 },
             },

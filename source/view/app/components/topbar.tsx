@@ -192,15 +192,7 @@ const TopBar: React.FC<Props> = ({
                     <FormGroup>
                         <FormControlLabel
                             control={
-                                <Checkbox
-                                    onChange={showResolvedUpdated}
-                                    sx={{
-                                        color: `${vscodeTextColor} !important`,
-                                        '&.Mui-checked': {
-                                            color: `${vscodeTextColor}`,
-                                        },
-                                    }}
-                                />
+                                <Checkbox onChange={showResolvedUpdated} />
                             }
                             label="Show Resolved"
                         />

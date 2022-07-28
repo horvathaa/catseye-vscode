@@ -38,6 +38,7 @@ import {
 } from '../styles/vscodeStyles'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { useState } from 'react'
+import MassOperationsBar from './massOperationsBar'
 
 interface AnnoListProps {
     annotations: Annotation[]
@@ -306,9 +307,16 @@ const AnnotationList: React.FC<AnnoListProps> = ({
         setSelectedAnnos(updatedSelectedAnnos)
     }
 
+    const massOperationSelected = (operation: string) => {
+        console.log('Mass Oepration Selected')
+    }
+
     return (
         <>
             <ThemeProvider theme={theme}>
+                <MassOperationsBar
+                    massOperationSelected={massOperationSelected}
+                ></MassOperationsBar>
                 <List sx={{ width: '100%' }} component="div" disablePadding>
                     {filtered.map((a: Annotation) => {
                         return (

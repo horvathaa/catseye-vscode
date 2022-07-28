@@ -111,6 +111,7 @@ export const getAnnotationsOnSignIn = async (
             : []
 
     const allAnnotations = priorVersionAnnotations.concat(remainingAnnotations)
+    console.log('annotations', allAnnotations)
     return allAnnotations
 }
 
@@ -122,9 +123,14 @@ export const getPriorVersions = (
 ): any[] => {
     let inProgressAnnos: any[] = []
     currentAnchors?.forEach((currAnchorObject: any) => {
-        const timeStamp = lastEditedAnnotations.find(
+        const timeStamp: number = lastEditedAnnotations.find(
             (a: any) => a.id === currAnchorObject.parentId
-        ).createdTimestamp
+        )
+            ? lastEditedAnnotations.find(
+                  (a: any) => a.id === currAnchorObject.parentId
+              ).createdTimestamp
+            : new Date().getTime()
+
         let objToUpdate: AnchorsToUpdate = inProgressAnnos.find(
             (a) => a.id === currAnchorObject.parentId
         )

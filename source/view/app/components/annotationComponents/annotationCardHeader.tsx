@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { TbAnchor, TbAnchorOff } from 'react-icons/tb'
 import IconButton from '@mui/material/IconButton'
-import CheckIcon from '@mui/icons-material/Check'
+import HandshakeIcon from '@mui/icons-material/Handshake'
 import DeleteIcon from '@mui/icons-material/Delete'
 import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined'
 import { Annotation } from '../../../../constants/constants'
@@ -83,7 +83,7 @@ const CardHeader = ({
                 <AdamiteButton
                     buttonClicked={resolveAnnotation}
                     name="Resolve"
-                    icon={<CheckIcon fontSize="small" />}
+                    icon={<HandshakeIcon fontSize="small" />}
                 />
                 <AdamiteButton
                     buttonClicked={deleteAnnotation}

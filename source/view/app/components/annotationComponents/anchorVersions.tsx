@@ -67,15 +67,18 @@ const AnchorVersions: React.FC<Props> = ({ anchors, scrollInEditor }) => {
         <div>
             {/* <ThemeProvider theme={theme}> */}
             {anchors.map((anchor: AnchorObject, i) => {
-                anchor && anchor.priorVersions.reverse()
-                return (
-                    <Carousel
-                        key={i}
-                        priorVersions={anchor.priorVersions}
-                        currentAnchorObject={anchor}
-                        scrollInEditor={scrollInEditor}
-                    ></Carousel>
-                )
+                anchor.priorVersions && anchor.priorVersions.reverse()
+                if (anchor.priorVersions) {
+                    return (
+                        <Carousel
+                            key={i}
+                            priorVersions={anchor.priorVersions}
+                            currentAnchorObject={anchor}
+                            scrollInEditor={scrollInEditor}
+                        ></Carousel>
+                    )
+                }
+                return null
             })}
             {/* </ThemeProvider> */}
         </div>

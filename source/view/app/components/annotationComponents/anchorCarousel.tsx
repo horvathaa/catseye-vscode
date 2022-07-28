@@ -14,7 +14,7 @@ import { iconColor } from '../../styles/vscodeStyles'
 // import { Anchor } from '@mui/icons-material'
 
 interface Props {
-    priorVersions: AnchorOnCommit[] | undefined
+    priorVersions: AnchorOnCommit[]
     currentAnchorObject: AnchorObject
     scrollInEditor: (id: string) => void
 }
@@ -26,17 +26,13 @@ const AnchorCarousel: React.FC<Props> = ({
 }) => {
     const [allVersions, setAllVersions] =
         React.useState<AnchorOnCommit[]>(priorVersions)
-    const [index, setIndex] = React.useState(null)
+    const [index, setIndex] = React.useState<number>(0)
 
     React.useEffect(() => {
         setIndex(allVersions.length - 1)
     }, [allVersions])
 
     React.useEffect(() => {
-        // construct a pseudo pv object to represent the most up to date anchor object and add to allVersions array
-        // const surrounding: SurroundingAnchorArea = {
-        //     linesBefore:
-        // }
         const pseudoPriorVersion: AnchorOnCommit = {
             id: currentAnchorObject.anchorId,
             commitHash: '',
@@ -49,9 +45,14 @@ const AnchorCarousel: React.FC<Props> = ({
             path: currentAnchorObject.visiblePath,
             surroundingCode: currentAnchorObject.surroundingCode,
         }
+        console.log('pseudo', pseudoPriorVersion)
 
+        console.log(
+            'surroundingCodeTest',
+            pseudoPriorVersion.surroundingCode.linesAfter[0]
+        )
         const foundCurrentAnchorToDisplay: boolean =
-            priorVersions.find((pv) => pv.id === pseudoPriorVersion.id).id ===
+            priorVersions.find((pv) => pv.id === pseudoPriorVersion.id)?.id ===
             pseudoPriorVersion.id
 
         setAllVersions(
@@ -62,21 +63,24 @@ const AnchorCarousel: React.FC<Props> = ({
         setIndex(allVersions.length - 1)
     }, [currentAnchorObject]) //watch for any changes to current anchor and update
 
+    console.log('all versions', allVersions)
     const [showBack, setShowBack] = React.useState(false)
     const [showForward, setShowForward] = React.useState(false)
 
     React.useEffect(() => {
-        if (index > 0) {
-            setShowBack(true)
-        }
-        if (index < allVersions.length - 1) {
-            setShowForward(true)
-        }
-        if (index === 0) {
-            setShowBack(false)
-        }
-        if (index === allVersions.length - 1) {
-            setShowForward(false)
+        if (index) {
+            if (index > 0) {
+                setShowBack(true)
+            }
+            if (index < allVersions.length - 1) {
+                setShowForward(true)
+            }
+            if (index === 0) {
+                setShowBack(false)
+            }
+            if (index === allVersions.length - 1) {
+                setShowForward(false)
+            }
         }
     }, [index])
 
@@ -97,7 +101,6 @@ const AnchorCarousel: React.FC<Props> = ({
     }
 
     const handleClick = (e: React.SyntheticEvent, aId: string): void => {
-        console.log('nav to anchor')
         e.stopPropagation()
         if (index === allVersions.length - 1) scrollInEditor(aId)
     }
@@ -118,10 +121,10 @@ const AnchorCarousel: React.FC<Props> = ({
                 }} // cannot move dimensions to CSS file or else package styles override
             >
                 <Slider // not sure how to resolve type issue yet 'JSX element type 'Slider' does not have any construct or call signatures.'
-                    onSlideComplete={(i) => {
+                    onSlideComplete={(i: any) => {
                         setIndex(i)
                     }}
-                    onSlideStart={(i) => {}}
+                    onSlideStart={(i: any) => {}}
                     activeIndex={index}
                     // threshHold={50} // min # of pixels dragged to trigger swipe
                     transition={0.5}

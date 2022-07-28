@@ -213,6 +213,7 @@ export const createNewAnnotation = async () => {
                     r
                 ),
             }
+            console.log('surrounding when creating', surrounding)
             const anchorObject: AnchorObject = {
                 anchor: anc,
                 anchorText: text,
@@ -268,6 +269,7 @@ export const createNewAnnotation = async () => {
                 ),
                 surroundingCode: surrounding,
             }
+            console.log('anchor obj on creating anno', anchorObject)
             const temp = {
                 id: newAnnoId,
                 anchors: [anchorObject],

@@ -68,8 +68,23 @@ export const getSurroundingLinesBeforeAnchor = (
     document: vscode.TextDocument,
     anchorRange: vscode.Range
 ): string[] => {
-    const textBefore = document.getText(
-        document.validateRange(
+    try {
+        const textBefore = document.getText(
+            document.validateRange(
+                new vscode.Range(
+                    new vscode.Position(
+                        anchorRange.start.line - NUM_SURROUNDING_LINES,
+                        0
+                    ),
+                    new vscode.Position(anchorRange.start.line, 10000)
+                )
+            )
+        )
+        return textBefore.split('\n')
+    } catch (e) {
+        console.log(e)
+        console.log(
+            'range',
             new vscode.Range(
                 new vscode.Position(
                     anchorRange.start.line - NUM_SURROUNDING_LINES,
@@ -78,26 +93,32 @@ export const getSurroundingLinesBeforeAnchor = (
                 new vscode.Position(anchorRange.start.line, 10000)
             )
         )
-    )
-    return textBefore.split('\n')
+        console.log('did not grab lines before')
+    }
+    return []
 }
 
 export const getSurroundingLinesAfterAnchor = (
     document: vscode.TextDocument,
     anchorRange: vscode.Range
 ): string[] => {
-    const textAfter = document.getText(
-        document.validateRange(
-            new vscode.Range(
-                new vscode.Position(anchorRange.end.line, 0),
-                new vscode.Position(
-                    anchorRange.end.line + NUM_SURROUNDING_LINES,
-                    10000
+    try {
+        const textAfter = document.getText(
+            document.validateRange(
+                new vscode.Range(
+                    new vscode.Position(anchorRange.end.line, 0),
+                    new vscode.Position(
+                        anchorRange.end.line + NUM_SURROUNDING_LINES,
+                        10000
+                    )
                 )
             )
         )
-    )
-    return textAfter.split('\n')
+        return textAfter.split('\n')
+    } catch (e) {
+        console.log(e)
+    }
+    return []
 }
 
 export const computeVsCodeRangeFromOffset = (

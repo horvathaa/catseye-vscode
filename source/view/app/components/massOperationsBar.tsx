@@ -9,6 +9,8 @@ import styles from '../styles/topbar.module.css'
 import CheckIcon from '@mui/icons-material/Check'
 import DeleteIcon from '@mui/icons-material/Delete'
 import MergeIcon from '@mui/icons-material/Merge'
+import ShareIcon from '@mui/icons-material/Share'
+import PushPinIcon from '@mui/icons-material/PushPin'
 import { Card, Checkbox, createTheme, ThemeProvider } from '@mui/material'
 import {
     editorBackground,
@@ -81,14 +83,24 @@ const MassOperationsBar: React.FC<Props> = ({ massOperationSelected }) => {
                 <Checkbox onChange={() => massOperationSelected('select')} />
                 <Card sx={{ flexGrow: 2 }}>
                     <AdamiteButton
+                        buttonClicked={() => massOperationSelected('merge')}
+                        name="Merge"
+                        icon={<MergeIcon fontSize="small" />}
+                    />
+                    <AdamiteButton
+                        buttonClicked={() => massOperationSelected('pin')}
+                        name="Pin"
+                        icon={<PushPinIcon fontSize="small" />}
+                    />
+                    <AdamiteButton
+                        buttonClicked={() => massOperationSelected('share')}
+                        name="Share"
+                        icon={<ShareIcon fontSize="small" />}
+                    />
+                    <AdamiteButton
                         buttonClicked={() => massOperationSelected('resolve')}
                         name="Resolve"
                         icon={<CheckIcon fontSize="small" />}
-                    />
-                    <AdamiteButton
-                        buttonClicked={() => massOperationSelected('delete')}
-                        name="Merge"
-                        icon={<MergeIcon fontSize="small" />}
                     />
                     <AdamiteButton
                         buttonClicked={() => massOperationSelected('delete')}

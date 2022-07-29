@@ -6,7 +6,7 @@
  */
 import * as React from 'react'
 import styles from '../styles/topbar.module.css'
-import HandshakeIcon from '@mui/icons-material/Handshake'
+import CheckIcon from '@mui/icons-material/Check'
 import DeleteIcon from '@mui/icons-material/Delete'
 import MergeIcon from '@mui/icons-material/Merge'
 import ShareIcon from '@mui/icons-material/Share'
@@ -83,11 +83,6 @@ const MassOperationsBar: React.FC<Props> = ({ massOperationSelected }) => {
                 <Checkbox onChange={() => massOperationSelected('select')} />
                 <Card sx={{ flexGrow: 2 }}>
                     <AdamiteButton
-                        buttonClicked={() => massOperationSelected('resolve')}
-                        name="Resolve"
-                        icon={<HandshakeIcon fontSize="small" />}
-                    />
-                    <AdamiteButton
                         buttonClicked={() => massOperationSelected('merge')}
                         name="Merge"
                         icon={<MergeIcon fontSize="small" />}
@@ -101,6 +96,11 @@ const MassOperationsBar: React.FC<Props> = ({ massOperationSelected }) => {
                         buttonClicked={() => massOperationSelected('share')}
                         name="Share"
                         icon={<ShareIcon fontSize="small" />}
+                    />
+                    <AdamiteButton
+                        buttonClicked={() => massOperationSelected('resolve')}
+                        name="Resolve"
+                        icon={<CheckIcon fontSize="small" />}
                     />
                     <AdamiteButton
                         buttonClicked={() => massOperationSelected('delete')}

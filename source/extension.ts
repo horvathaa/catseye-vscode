@@ -158,7 +158,7 @@ export const setTsFiles = (newTsFiles: TsFile[]): void => {
     tsFiles = newTsFiles
 }
 
-export const setChangeEvents = (newChangeEvents: ChangeEvent[]): void => {
+export const setChangpeEvents = (newChangeEvents: ChangeEvent[]): void => {
     changes = newChangeEvents
 }
 

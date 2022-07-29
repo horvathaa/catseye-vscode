@@ -493,6 +493,7 @@ export const handleSaveCloseEvent = async (
         outOfDateAnnotations,
         deletedAnnotations
     )
+    // console.log('annosToSave?', annosToSave)
     const annotationsInCurrentFile =
         currentFile !== 'all'
             ? getAllAnnotationsWithGitUrlInFile(annotationList, currentFile)

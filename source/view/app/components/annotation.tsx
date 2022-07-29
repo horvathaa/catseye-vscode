@@ -479,6 +479,15 @@ const ReactAnnotation: React.FC<Props> = ({
                                         </div>
                                     </div>
                                 )}
+                                <div
+                                    style={{
+                                        fontSize: '1.15em',
+                                        fontWeight: 500,
+                                        color: `${vscodeTextColor} !important`,
+                                    }}
+                                >
+                                    Replies
+                                </div>
                                 <ReplyContainer
                                     replying={replying}
                                     replies={anno.replies}
@@ -488,6 +497,15 @@ const ReactAnnotation: React.FC<Props> = ({
                                     cancelReply={() => setReplying(false)}
                                     deleteReply={deleteReply}
                                 />
+                                <div
+                                    style={{
+                                        fontSize: '1.15em',
+                                        fontWeight: 500,
+                                        color: `${vscodeTextColor} !important`,
+                                    }}
+                                >
+                                    Related Annotations
+                                </div>
                                 <AnnotationList
                                     title=""
                                     parentId={anno.id}

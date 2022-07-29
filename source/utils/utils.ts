@@ -550,6 +550,7 @@ export const makeObjectListFromAnnotations = (
             projectName: a.projectName ? a.projectName : '',
             githubUsername: a.githubUsername ? a.githubUsername : '',
             replies: a.replies ? a.replies : [],
+            resolved: a.resolved ? a.resolved : false,
             outputs: a.outputs ? a.outputs : [],
             codeSnapshots: a.codeSnapshots
                 ? a.codeSnapshots.length > 0 &&

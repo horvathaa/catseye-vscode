@@ -28,7 +28,13 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
     editTypes,
     small = true,
 }) => {
+    const [types, setTypes] = React.useState<Type[]>(currentTypes)
     const allTypes = Object.values(Type)
+
+    React.useEffect(() => {
+        console.log('new types', currentTypes)
+        console.log('old types', types)
+    }, [currentTypes])
 
     const typesWithIcons = {
         issue: <BugReportIcon fontSize="small" />,
@@ -37,7 +43,7 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
         question: <ContactSupport fontSize="small" />,
     }
 
-    const [types, setTypes] = React.useState<Type[]>(currentTypes)
+    console.log('types state value', types)
 
     const theme = createTheme({
         breakpoints: breakpoints,
@@ -87,6 +93,7 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
             // Can't mutate the types array like done previously!
             updatedTypes = [selectedType].concat(types)
         }
+        console.log('updated in handleAnnoClick', updatedTypes)
         setTypes(updatedTypes)
         editTypes(updatedTypes)
     }

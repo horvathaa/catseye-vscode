@@ -122,6 +122,7 @@ export const createView = async (context: vscode.ExtensionContext) => {
                     }
                     case 'resolveAnnotation': {
                         const { annoId } = message
+                        console.log('resolveAnnotation case')
                         viewHelper.handleDeleteResolveAnnotation(annoId, true)
                         break
                     }

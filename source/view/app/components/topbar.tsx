@@ -40,16 +40,12 @@ import {
 import { defaultSort } from '../utils/viewUtils'
 import ScopeMenu from './topbarComponents/scopeMenu'
 interface Props {
-    annotations: Annotation[]
-    getSearchedAnnotations: (annotations: Annotation[]) => void
     saveAnnotationsToJson: () => void
     showKeyboardShortcuts: () => void
     filtersUpdated: (filters: FilterOptions) => void
 }
 // Add a bell/notification
 const TopBar: React.FC<Props> = ({
-    annotations,
-    getSearchedAnnotations,
     saveAnnotationsToJson,
     showKeyboardShortcuts,
     filtersUpdated,
@@ -163,10 +159,7 @@ const TopBar: React.FC<Props> = ({
         <div className={styles['TopBarContainer']}>
             <ThemeProvider theme={theme}>
                 <div className={styles['RowContainer']}>
-                    <SearchBar
-                        annotations={annotations}
-                        searchValueUpdated={searchValueUpdated}
-                    />
+                    <SearchBar searchValueUpdated={searchValueUpdated} />
                     <GlobalMenu
                         saveAnnotationsToJson={saveAnnotationsToJson}
                         showKeyboardShortcuts={showKeyboardShortcuts}

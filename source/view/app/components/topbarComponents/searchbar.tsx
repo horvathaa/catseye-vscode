@@ -10,11 +10,10 @@ import { BiSearch } from 'react-icons/bi'
 import styles from '../../styles/topbar.module.css'
 
 interface Props {
-    annotations: Annotation[]
     searchValueUpdated: (value: string) => void
 }
 
-const SearchBar: React.FC<Props> = ({ annotations, searchValueUpdated }) => {
+const SearchBar: React.FC<Props> = ({ searchValueUpdated }) => {
     const [value, setValue] = React.useState('')
     // const link = ['url']
 

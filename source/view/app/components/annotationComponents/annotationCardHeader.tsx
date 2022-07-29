@@ -27,6 +27,12 @@ const CardHeader = ({
     resolveAnnotation,
     deleteAnnotation,
 }: Props) => {
+    const [annotation, setAnnotation] = React.useState<Annotation>(anno)
+    React.useEffect(() => {
+        console.log('card anno', anno)
+        setAnnotation(anno)
+    }, [anno])
+
     const handleMenuClick = () => {}
     return (
         <div
@@ -59,19 +65,19 @@ const CardHeader = ({
                         <div>
                             <mark>
                                 {' '}
-                                {anno.anchors[0]?.anchorText.slice(0, 30)}
-                                {anno.anchors[0]?.anchorText.length > 30
+                                {annotation.anchors[0]?.anchorText.slice(0, 30)}
+                                {annotation.anchors[0]?.anchorText.length > 30
                                     ? '...'
                                     : ''}{' '}
                             </mark>
                         </div>
-                        <div>{anno.annotation}</div>
+                        <div>{annotation.annotation}</div>
                     </div>
                 </div>
             ) : (
                 <UserProfile
-                    githubUsername={anno.githubUsername}
-                    createdTimestamp={anno.createdTimestamp}
+                    githubUsername={annotation.githubUsername}
+                    createdTimestamp={annotation.createdTimestamp}
                 />
             )}
             <div

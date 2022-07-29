@@ -170,6 +170,8 @@ const ReactAnnotation: React.FC<Props> = ({
     }, [])
 
     React.useEffect(() => {
+        console.log('old anno', anno)
+        console.log('new annotation', annotation)
         const newAnno: Annotation = buildAnnotation(annotation)
         setAnno(newAnno)
         annoRef.current = newAnno
@@ -419,7 +421,9 @@ const ReactAnnotation: React.FC<Props> = ({
                         deleteAnnotation={(e) => deleteAnnotation(e)}
                         resolveAnnotation={resolveAnnotation}
                     />
-                    <Collapse in={expanded} timeout="auto" unmountOnExit>
+                    <Collapse in={expanded} timeout="auto" 
+                    //unmountOnExit
+                    >
                         <CardContent>
                             <AnchorList
                                 anchors={anno.anchors}
@@ -488,7 +492,7 @@ const ReactAnnotation: React.FC<Props> = ({
                                     cancelReply={() => setReplying(false)}
                                     deleteReply={deleteReply}
                                 />
-                                <AnnotationList
+                                {/* <AnnotationList
                                     title=""
                                     parentId={anno.id}
                                     annotations={[anno]}
@@ -496,7 +500,7 @@ const ReactAnnotation: React.FC<Props> = ({
                                     window={window}
                                     username={username}
                                     userId={userId}
-                                ></AnnotationList>
+                                ></AnnotationList> */}
                             </div>
                         </CardContent>
                     </Collapse>

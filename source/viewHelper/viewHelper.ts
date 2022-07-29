@@ -385,6 +385,7 @@ export const handleUpdateAnnotation = (
                     : selectedAnnotationsNavigations.filter((a) => a.id !== id)
             )
         } else if (typeof key === 'string') {
+            key === 'types' && console.log('in update', value)
             updatedAnno = buildAnnotation({
                 ...updatedAnno,
                 [key]: value,
@@ -408,8 +409,8 @@ export const handleUpdateAnnotation = (
             .filter((a) => a.id !== id)
             .concat([updatedAnno])
         setAnnotationList(updatedList)
-        if (typeof value === 'boolean' && typeof key === 'string')
-            view?.updateDisplay(updatedList)
+        // if (typeof value === 'boolean' && typeof key === 'string') -- ????
+        //     view?.updateDisplay(updatedList)
     }
     // console.log('updated', updatedAnno);
 }
@@ -423,6 +424,7 @@ export const handleDeleteResolveAnnotation = (
         ...annotationList.filter((a) => a.id === id)[0],
         needToUpdate: true,
     })
+
     if (resolve) {
         updatedAnno.resolved = true
     } else {

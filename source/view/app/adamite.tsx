@@ -58,11 +58,6 @@ const AdamitePanel: React.FC<Props> = ({
     const [uid, setUserId] = useState(window.userId ? window.userId : '')
     const [selection, setSelection] = useState('')
     const [showNewAnnotation, setShowNewAnnotation] = useState(false)
-    const [showSearchedAnnotations, setShowSearchedAnnotations] =
-        useState(false)
-    const [searchedAnnotations, setSearchedAnnotations] = useState<
-        Annotation[]
-    >([])
     const [filterOptions, setFilterOptions] =
         React.useState<FilterOptions>(defaultFilterOptions)
     const [currentProject, setCurrentProject] = useState(
@@ -182,11 +177,6 @@ const AdamitePanel: React.FC<Props> = ({
         }
     }
 
-    const getSearchedAnnotations = (annotations: Annotation[]): void => {
-        setSearchedAnnotations(annotations)
-        setShowSearchedAnnotations(annotations.length > 0)
-    }
-
     const saveAnnotationsToJson = (): void => {
         // console.log('saving...');
         vscode.postMessage({
@@ -203,6 +193,7 @@ const AdamitePanel: React.FC<Props> = ({
     }
 
     const filtersUpdated = (filters: FilterOptions): void => {
+        console.log(filters)
         setFilterOptions(filters)
     }
 
@@ -215,11 +206,11 @@ const AdamitePanel: React.FC<Props> = ({
     }
 
     // Alternative way of getting pinned files?
+    console.log('annotations?', annotations)
     const pinned: Annotation[] = annotations
-        ? annotations.filter((anno) => {
-              anno.selected === true
-          })
+        ? annotations.filter((anno) => anno.selected === true)
         : []
+    console.log('pinned', pinned)
 
     const filterResolved = (
         annos: Annotation[],
@@ -402,8 +393,6 @@ const AdamitePanel: React.FC<Props> = ({
             {!showLogin && (
                 <>
                     <TopBar
-                        annotations={annotations}
-                        getSearchedAnnotations={getSearchedAnnotations}
                         saveAnnotationsToJson={saveAnnotationsToJson}
                         showKeyboardShortcuts={showKeyboardShortcuts}
                         filtersUpdated={filtersUpdated}
@@ -415,6 +404,7 @@ const AdamitePanel: React.FC<Props> = ({
                         title=""
                         parentId="main"
                         annotations={filtered}
+                        // annotations={annotations}
                         vscode={vscode}
                         window={window}
                         username={userName}

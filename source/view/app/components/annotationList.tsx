@@ -62,7 +62,6 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     userId,
 }) => {
     const [selectedAnnos, setSelectedAnnos] = useState<Annotation[]>([])
-
     const theme = createTheme({
         palette: {
             primary: {
@@ -106,6 +105,8 @@ const AnnotationList: React.FC<AnnoListProps> = ({
         }
         setSelectedAnnos(updatedSelectedAnnos)
     }
+
+    console.log('annotationList tsx annotations', annotations)
 
     return (
         <>

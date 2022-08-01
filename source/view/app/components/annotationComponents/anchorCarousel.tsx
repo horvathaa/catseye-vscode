@@ -14,7 +14,7 @@ import { iconColor } from '../../styles/vscodeStyles'
 
 interface Props {
     priorVersions?: AnchorOnCommit[]
-    potentialVersions?: PotentialAnchorObject[] //prior or suggested version
+    potentialVersions?: PotentialAnchorObject[]
     currentAnchorObject: AnchorObject
     scrollInEditor: (id: string) => void
 }
@@ -25,20 +25,22 @@ const AnchorCarousel: React.FC<Props> = ({
     currentAnchorObject,
     scrollInEditor,
 }) => {
-    const [pastVersions, setPastVersions] =
-        React.useState<AnchorOnCommit[]>(priorVersions)
+    const [pastVersions, setPastVersions] = React.useState<
+        AnchorOnCommit[] | undefined
+    >(priorVersions)
 
-    const [futureVersions, setFutureVersions] =
-        React.useState<PotentialAnchorObject[]>(potentialVersions)
+    const [futureVersions, setFutureVersions] = React.useState<
+        PotentialAnchorObject[] | undefined
+    >(potentialVersions)
 
     const [potentialVersion, setPotentialVersion] =
-        React.useState<PotentialAnchorObject>(null)
+        React.useState<PotentialAnchorObject | null>(null)
 
     const [index, setIndex] = React.useState<number>(0)
 
     React.useEffect(() => {
-        pastVersions ? setIndex(pastVersions.length - 1) : null
-        futureVersions ? setIndex(0) : null
+        pastVersions && setIndex(pastVersions?.length - 1)
+        futureVersions && setIndex(0)
     }, [pastVersions, futureVersions])
 
     React.useEffect(() => {
@@ -64,7 +66,7 @@ const AnchorCarousel: React.FC<Props> = ({
                     ? priorVersions.concat(pseudoPriorVersion)
                     : priorVersions
             )
-            setIndex(pastVersions.length - 1)
+            pastVersions && setIndex(pastVersions?.length - 1)
         }
     }, [currentAnchorObject]) //watch for any changes to current anchor and update
 
@@ -119,7 +121,8 @@ const AnchorCarousel: React.FC<Props> = ({
 
     const handleClick = (e: React.SyntheticEvent, aId: string): void => {
         e.stopPropagation()
-        if (index === pastVersions.length - 1) scrollInEditor(aId)
+        if (pastVersions && index === pastVersions.length - 1)
+            scrollInEditor(aId)
     }
 
     const displayBefore = (
@@ -152,16 +155,18 @@ const AnchorCarousel: React.FC<Props> = ({
     }
 
     // only handles frontend options
-    const handleRemoveSuggestion = (removedAnchor: PotentialAnchorObject) => {
-        const removedAFuture = futureVersions.filter(
-            (pv: PotentialAnchorObject) => {
-                return removedAnchor.anchorId !== pv.anchorId
-            }
-        )
+    const handleRemoveSuggestion = (
+        removedAnchor: PotentialAnchorObject | null
+    ) => {
+        const removedAFuture =
+            futureVersions &&
+            futureVersions.filter((pv: PotentialAnchorObject) => {
+                return removedAnchor?.anchorId !== pv.anchorId
+            })
         setFutureVersions(removedAFuture)
     }
 
-    const handleReanchor = (removedAnchor: PotentialAnchorObject) => {
+    const handleReanchor = (removedAnchor: PotentialAnchorObject | null) => {
         // reanchor at potential object
         // set annotation.anchored === true
         return
@@ -200,88 +205,112 @@ const AnchorCarousel: React.FC<Props> = ({
                             transition={0.5}
                             scaleOnDrag={true}
                         >
-                            {pastVersions.map((pv: AnchorOnCommit, index) => (
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'flex-start',
-                                        width: '100%',
-                                        height: 150,
-                                        padding: '10px',
-                                        color: iconColor,
-                                    }} // same as AnchorContainer ^^
-                                    key={index}
-                                    onClick={(e) => {
-                                        handleClick(
-                                            e,
-                                            currentAnchorObject.anchorId
-                                        )
-                                    }}
-                                >
-                                    <span>
-                                        <i> {pv.path} </i>
-                                    </span>
-                                    {pv.endLine - pv.startLine > 0 ? (
-                                        <span>
-                                            lines {pv.startLine + 1}-
-                                            {pv.endLine + 1} on {pv.branchName}{' '}
-                                            {pv.commitHash !== '' ? ':' : null}{' '}
-                                            {pv.commitHash.slice(0, 7)}
-                                        </span>
-                                    ) : (
-                                        <span>
-                                            line {pv.startLine + 1} on{' '}
-                                            {pv.branchName}
-                                            {pv.commitHash !== ''
-                                                ? ':'
-                                                : null}{' '}
-                                            {pv.commitHash.slice(0, 6)}
-                                        </span>
-                                    )}
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                        }}
-                                    >
+                            {pastVersions &&
+                                pastVersions.map(
+                                    (pv: AnchorOnCommit, index) => (
                                         <div
                                             style={{
                                                 display: 'flex',
                                                 flexDirection: 'column',
-                                                width: 'fit-content',
                                                 alignItems: 'flex-start',
-                                                color: '#2ADD42',
-                                                overflow: 'scroll',
+                                                width: '100%',
+                                                height: 150,
+                                                padding: '10px',
+                                                color: iconColor,
+                                            }} // same as AnchorContainer ^^
+                                            key={index}
+                                            onClick={(e) => {
+                                                handleClick(
+                                                    e,
+                                                    currentAnchorObject.anchorId
+                                                )
                                             }}
                                         >
-                                            <p style={{ opacity: '0.5' }}>
-                                                {displayBefore(pv, 3)}
-                                            </p>
-                                            <p style={{ opacity: '0.7' }}>
-                                                {displayBefore(pv, 2)}
-                                            </p>
-                                            <p>
-                                                <b>
-                                                    {pv.anchorText.length > 60
-                                                        ? pv.anchorText.slice(
-                                                              0,
-                                                              60
-                                                          )
-                                                        : pv.anchorText}
-                                                    {pv.anchorText.length > 60
-                                                        ? '...'
-                                                        : null}
-                                                </b>
-                                            </p>
-                                            <p style={{ opacity: '0.7' }}>
-                                                {displayAfter(pv, 1)}
-                                            </p>
-                                            <p style={{ opacity: '0.5' }}>
-                                                {displayAfter(pv, 2)}
-                                            </p>
-                                            {/* styling html within carousel hard */}
-                                            {/* <div
+                                            <span>
+                                                <i> {pv.path} </i>
+                                            </span>
+                                            {pv.endLine - pv.startLine > 0 ? (
+                                                <span>
+                                                    lines {pv.startLine + 1}-
+                                                    {pv.endLine + 1} on{' '}
+                                                    {pv.branchName}{' '}
+                                                    {pv.commitHash !== ''
+                                                        ? ':'
+                                                        : null}{' '}
+                                                    {pv.commitHash.slice(0, 7)}
+                                                </span>
+                                            ) : (
+                                                <span>
+                                                    line {pv.startLine + 1} on{' '}
+                                                    {pv.branchName}
+                                                    {pv.commitHash !== ''
+                                                        ? ':'
+                                                        : null}{' '}
+                                                    {pv.commitHash.slice(0, 6)}
+                                                </span>
+                                            )}
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                }}
+                                            >
+                                                <div
+                                                    style={{
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        width: 'fit-content',
+                                                        alignItems:
+                                                            'flex-start',
+                                                        color: '#2ADD42',
+                                                        overflow: 'scroll',
+                                                    }}
+                                                >
+                                                    <p
+                                                        style={{
+                                                            opacity: '0.5',
+                                                        }}
+                                                    >
+                                                        {displayBefore(pv, 3)}
+                                                    </p>
+                                                    <p
+                                                        style={{
+                                                            opacity: '0.7',
+                                                        }}
+                                                    >
+                                                        {displayBefore(pv, 2)}
+                                                    </p>
+                                                    <p>
+                                                        <b>
+                                                            {pv.anchorText
+                                                                .length > 60
+                                                                ? pv.anchorText.slice(
+                                                                      0,
+                                                                      60
+                                                                  )
+                                                                : pv.anchorText}
+                                                            {pv.anchorText
+                                                                .length > 60
+                                                                ? '...'
+                                                                : null}
+                                                        </b>
+                                                    </p>
+                                                    <p
+                                                        style={{
+                                                            opacity: '0.7',
+                                                        }}
+                                                    >
+                                                        {displayAfter(pv, 1)}
+                                                    </p>
+                                                    <p
+                                                        style={{
+                                                            opacity: '0.5',
+                                                        }}
+                                                    >
+                                                        {displayAfter(pv, 2)}
+                                                    </p>
+                                                    {/* styling html within carousel hard */}
+                                                    {/* <div
                                     dangerouslySetInnerHTML={{
                                         __html: pv.html,
                                     }}
@@ -289,10 +318,11 @@ const AnchorCarousel: React.FC<Props> = ({
                                         cursor: 'normal',
                                     }}
                                 ></div> */}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                            ))}
+                                    )
+                                )}
                         </Slider>
                     </div>
                     {showForward ? (
@@ -324,89 +354,93 @@ const AnchorCarousel: React.FC<Props> = ({
                         transition={0.5}
                         scaleOnDrag={true}
                     >
-                        {futureVersions.map(
-                            (pv: PotentialAnchorObject, index) => (
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'flex-start',
-                                        width: '100%',
-                                        height: 150,
-                                        padding: '10px',
-                                        color: iconColor,
-                                    }} // same as AnchorContainer ^^
-                                    key={index}
-                                    onClick={(e) => {
-                                        handleClick(e, pv.anchorId)
-                                    }}
-                                >
-                                    <span>
-                                        <i>
-                                            {' '}
-                                            {pv.weight * 100}% match in{' '}
-                                            {pv.visiblePath}
-                                        </i>
-                                    </span>
-                                    {pv.anchor.endLine - pv.anchor.startLine >
-                                    0 ? (
-                                        <span>
-                                            found {pv.reasonSuggested} at lines{' '}
-                                            {pv.anchor.startLine + 1}-
-                                            {pv.anchor.endLine + 1}
-                                        </span>
-                                    ) : (
-                                        <span>
-                                            found {pv.reasonSuggested} at line{' '}
-                                            {pv.anchor.startLine + 1}
-                                        </span>
-                                    )}
+                        {futureVersions &&
+                            futureVersions.map(
+                                (pv: PotentialAnchorObject, index) => (
                                     <div
                                         style={{
                                             display: 'flex',
                                             flexDirection: 'column',
+                                            alignItems: 'flex-start',
+                                            width: '100%',
+                                            height: 150,
+                                            padding: '10px',
+                                            color: iconColor,
+                                        }} // same as AnchorContainer ^^
+                                        key={index}
+                                        onClick={(e) => {
+                                            handleClick(e, pv.anchorId)
                                         }}
                                     >
+                                        <span>
+                                            <i>
+                                                {' '}
+                                                {pv.weight * 100}% match in{' '}
+                                                {pv.visiblePath}
+                                            </i>
+                                        </span>
+                                        {pv.anchor.endLine -
+                                            pv.anchor.startLine >
+                                        0 ? (
+                                            <span>
+                                                found {pv.reasonSuggested} at
+                                                lines {pv.anchor.startLine + 1}-
+                                                {pv.anchor.endLine + 1}
+                                            </span>
+                                        ) : (
+                                            <span>
+                                                found {pv.reasonSuggested} at
+                                                line {pv.anchor.startLine + 1}
+                                            </span>
+                                        )}
                                         <div
                                             style={{
                                                 display: 'flex',
                                                 flexDirection: 'column',
-                                                width: 'fit-content',
-                                                alignItems: 'flex-start',
-                                                color: '#2ADD42',
-                                                overflow: 'scroll',
                                             }}
                                         >
-                                            <p style={{ opacity: '0.5' }}>
-                                                {displayBefore(pv, 3)}
-                                            </p>
-                                            <p style={{ opacity: '0.7' }}>
-                                                {displayBefore(pv, 2)}
-                                            </p>
-                                            <p>
-                                                <b>
-                                                    {pv.anchorText.length > 60
-                                                        ? pv.anchorText.slice(
-                                                              0,
-                                                              60
-                                                          )
-                                                        : pv.anchorText}
-                                                    {pv.anchorText.length > 60
-                                                        ? '...'
-                                                        : null}
-                                                </b>
-                                            </p>
-                                            <p style={{ opacity: '0.7' }}>
-                                                {displayAfter(pv, 1)}
-                                            </p>
-                                            <p style={{ opacity: '0.5' }}>
-                                                {displayAfter(pv, 2)}
-                                            </p>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    width: 'fit-content',
+                                                    alignItems: 'flex-start',
+                                                    color: '#2ADD42',
+                                                    overflow: 'scroll',
+                                                }}
+                                            >
+                                                <p style={{ opacity: '0.5' }}>
+                                                    {displayBefore(pv, 3)}
+                                                </p>
+                                                <p style={{ opacity: '0.7' }}>
+                                                    {displayBefore(pv, 2)}
+                                                </p>
+                                                <p>
+                                                    <b>
+                                                        {pv.anchorText.length >
+                                                        60
+                                                            ? pv.anchorText.slice(
+                                                                  0,
+                                                                  60
+                                                              )
+                                                            : pv.anchorText}
+                                                        {pv.anchorText.length >
+                                                        60
+                                                            ? '...'
+                                                            : null}
+                                                    </b>
+                                                </p>
+                                                <p style={{ opacity: '0.7' }}>
+                                                    {displayAfter(pv, 1)}
+                                                </p>
+                                                <p style={{ opacity: '0.5' }}>
+                                                    {displayAfter(pv, 2)}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            )
-                        )}
+                                )
+                            )}
                     </Slider>
                 </div>
             ) : null}

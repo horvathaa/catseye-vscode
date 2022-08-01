@@ -492,15 +492,6 @@ const ReactAnnotation: React.FC<Props> = ({
                                     cancelReply={() => setReplying(false)}
                                     deleteReply={deleteReply}
                                 />
-                                {/* <AnnotationList
-                                    title=""
-                                    parentId={anno.id}
-                                    annotations={[anno]}
-                                    vscode={vscode}
-                                    window={window}
-                                    username={username}
-                                    userId={userId}
-                                ></AnnotationList> */}
                             </div>
                         </CardContent>
                     </Collapse>

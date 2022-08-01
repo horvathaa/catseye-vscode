@@ -412,8 +412,10 @@ const ReactAnnotation: React.FC<Props> = ({
                         deleteAnnotation={(e) => deleteAnnotation(e)}
                         resolveAnnotation={resolveAnnotation}
                     />
-                    <Collapse in={expanded} timeout="auto" 
-                    //unmountOnExit
+                    <Collapse
+                        in={expanded}
+                        timeout="auto"
+                        //unmountOnExit
                     >
                         <CardContent>
                             <AnchorList

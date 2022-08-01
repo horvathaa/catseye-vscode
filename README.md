@@ -17,3 +17,4 @@ How to Test the extension:
 ## Known Bugs
 
 -   [ ] resolve/trash permissions sometimes don't show up right for replies
+-   [ ] Types do not consistently save on edit

@@ -36,6 +36,7 @@ import {
     editorBackground,
     iconColor,
     vscodeTextColor,
+    cardStyle,
 } from '../styles/vscodeStyles'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CollapsedCardHeader from './annotationComponents/annotationCardHeader'
@@ -73,17 +74,7 @@ const ReactAnnotation: React.FC<Props> = ({
     const annoRef: React.MutableRefObject<Annotation> = React.useRef(anno)
 
     // MUI doesn't accept CSS version of this for some reason..?
-    const cardStyle = {
-        backgroundColor: editorBackground,
-        color: vscodeTextColor,
-        margin: 4,
-        border: '1.5px',
-        borderColor: iconColor,
-        borderRadius: '4px',
-        borderStyle: 'solid',
-        padding: 5,
-        flexGrow: 1,
-    }
+
     const theme = createTheme({
         palette: {
             primary: {

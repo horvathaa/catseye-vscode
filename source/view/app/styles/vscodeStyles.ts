@@ -76,3 +76,15 @@ function lightenDarkenColor(col, amt) {
 
     return (usePound ? '#' : '') + (g | (b << 8) | (r << 16)).toString(16)
 }
+
+export const cardStyle = {
+    backgroundColor: editorBackground,
+    color: vscodeTextColor,
+    margin: 4,
+    border: '1.5px',
+    borderColor: iconColor,
+    borderRadius: '4px',
+    borderStyle: 'solid',
+    padding: 5,
+    flexGrow: 1,
+}

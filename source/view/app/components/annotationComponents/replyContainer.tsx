@@ -9,6 +9,7 @@ import * as React from 'react'
 import { Reply as ReactReply } from './reply' // reply component
 import { collapseExpandToggle, showHideLine } from '../../utils/viewUtilsTsx'
 import { Reply } from '../../../../constants/constants' // reply data model
+import styles from '../../styles/annotation.module.css'
 
 interface Props {
     replying: boolean
@@ -43,7 +44,7 @@ const ReplyContainer: React.FC<Props> = ({
     }
 
     return (
-        <div>
+        <div className={styles['ContentContainer']}>
             {hasReplies && MAX_NUM_REPLIES < activeReplies.length
                 ? showHideLine(
                       showMoreReplies,

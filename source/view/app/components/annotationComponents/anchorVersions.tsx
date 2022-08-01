@@ -5,15 +5,11 @@
  *
  */
 import * as React from 'react'
-import {
-    editorBackground,
-    iconColor,
-    vscodeTextColor,
-    disabledIcon,
-} from '../../styles/vscodeStyles'
-import { ThemeProvider, createTheme } from '@mui/material/styles'
 import '../../styles/versions.module.css'
-import { AnchorObject } from '../../../../constants/constants'
+import {
+    AnchorObject,
+    PotentialAnchorObject,
+} from '../../../../constants/constants'
 import Carousel from './anchorCarousel'
 
 interface Props {
@@ -22,50 +18,102 @@ interface Props {
 }
 
 const AnchorVersions: React.FC<Props> = ({ anchors, scrollInEditor }) => {
-    const theme = createTheme({
-        palette: {
-            primary: {
-                main: `${editorBackground}`,
+    let dummyFuture: PotentialAnchorObject[] = [
+        {
+            weight: 0.5,
+            reasonSuggested: 'similar text',
+            anchor: {
+                startLine: 2,
+                endLine: 3,
+                startOffset: 0,
+                endOffset: 0,
             },
-            background: {
-                paper: `${editorBackground}`,
-            },
-            action: {
-                disabled: `${disabledIcon}`,
-            },
-        },
-        typography: {
-            allVariants: {
-                fontSize: 14,
-                color: `${vscodeTextColor}`,
-                fontFamily: 'Arial',
-            },
-        },
-        components: {
-            MuiIconButton: {
-                styleOverrides: {
-                    root: {
-                        backgroundColor: editorBackground,
-                        color: iconColor,
-                    },
-                },
-            },
-            MuiSvgIcon: {
-                styleOverrides: {
-                    root: {
-                        backgroundColor: editorBackground,
-                        color: iconColor,
-                    },
-                },
+            anchorText: 'new place at const Hello',
+            html: '',
+            filename: '',
+            gitUrl: '',
+            stableGitUrl: '',
+            visiblePath: 'diff.tsx',
+            gitRepo: '',
+            gitBranch: '',
+            gitCommit: '',
+            anchorPreview: '',
+            programmingLang: '',
+            anchorId: '123',
+            originalCode: '',
+            parentId: '',
+            anchored: false,
+            createdTimestamp: 0,
+            surroundingCode: {
+                linesBefore: ['b1', 'b2', 'b3', 'b4', 'b5'],
+                linesAfter: ['a1', 'a2', 'a3', 'a4', 'a5'],
             },
         },
-    })
-
-    console.log('anchors', anchors)
+        {
+            weight: 0.25,
+            reasonSuggested: 'parent scope',
+            anchor: {
+                endLine: 15,
+                endOffset: 17,
+                startLine: 15,
+                startOffset: 12,
+            },
+            anchorText: 'another new place at hello',
+            html: '',
+            filename: '',
+            gitUrl: '',
+            stableGitUrl: '',
+            visiblePath: 'diff.tsx',
+            gitRepo: '',
+            gitBranch: '',
+            gitCommit: '',
+            anchorPreview: '',
+            programmingLang: '',
+            anchorId: '456',
+            originalCode: '',
+            parentId: '',
+            anchored: false,
+            createdTimestamp: 0,
+            surroundingCode: {
+                linesBefore: ['b1', 'b2', 'b3', 'b4', 'b5'],
+                linesAfter: ['a1', 'a2', 'a3', 'a4', 'a5'],
+            },
+        },
+        {
+            weight: 0.1,
+            reasonSuggested: 'proximity to original',
+            anchor: {
+                endLine: 15,
+                endOffset: 17,
+                startLine: 15,
+                startOffset: 12,
+            },
+            anchorText: 'another new place at hello',
+            html: '',
+            filename: '',
+            gitUrl: '',
+            stableGitUrl: '',
+            visiblePath: 'diff.tsx',
+            gitRepo: '',
+            gitBranch: '',
+            gitCommit: '',
+            anchorPreview: '',
+            programmingLang: '',
+            anchorId: '789',
+            originalCode: '',
+            parentId: '',
+            anchored: false,
+            createdTimestamp: 0,
+            surroundingCode: {
+                linesBefore: ['b1', 'b2', 'b3', 'b4', 'b5'],
+                linesAfter: ['a1', 'a2', 'a3', 'a4', 'a5'],
+            },
+        },
+    ]
+    const [showSuggestions, setShowSuggestions] = React.useState<boolean>(true)
 
     return (
         <div>
-            {/* <ThemeProvider theme={theme}> */}
             {anchors.map((anchor: AnchorObject, i) => {
                 anchor.priorVersions && anchor.priorVersions.reverse()
                 if (anchor.priorVersions) {
@@ -79,8 +127,32 @@ const AnchorVersions: React.FC<Props> = ({ anchors, scrollInEditor }) => {
                     )
                 }
                 return null
+                // if (!anchor.anchored) {
+                // return (
+                // put show/hide here
+                // )
+                // }
+                // return null
             })}
-            {/* </ThemeProvider> */}
+            <p onClick={() => setShowSuggestions(!showSuggestions)}>
+                {showSuggestions
+                    ? 'Hide Suggestions'
+                    : 'Unanchored! Show Suggestions'}
+            </p>
+            {showSuggestions &&
+                anchors.map((anchor: AnchorObject, i) => {
+                    // if (!anchor.anchored) {
+                    return (
+                        <Carousel
+                            key={i}
+                            potentialVersions={dummyFuture}
+                            currentAnchorObject={anchor}
+                            scrollInEditor={scrollInEditor}
+                        ></Carousel>
+                    )
+                    // }
+                    // return null
+                })}
         </div>
     )
 }

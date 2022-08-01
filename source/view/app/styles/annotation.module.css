@@ -496,7 +496,7 @@ button.submit {
     cursor: pointer;
     color: white;
     margin-top: 6px;
-    border: 1px solid transparent;
+    border: 2px solid transparent;
     border-color: #7fae42;
     background-color: var(--vscode-editor-background);
     height: 30px;
@@ -515,7 +515,7 @@ button.cancel {
     margin-left: 10px;
     cursor: pointer;
     color: white;
-    border: 1px solid transparent;
+    border: 2px solid transparent;
     background-color: rgba(158, 158, 158, 0.651);
     height: 30px;
     transition: all 0.5s ease-in-out;

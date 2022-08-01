@@ -101,10 +101,20 @@ export interface AnchorObject {
     parentId: string
     anchored: boolean
     createdTimestamp: number
-    priorVersions?: AnchorOnCommit[] // Not in FB until commit. Rn, dynamically compute priorVersionsfrom the Commit object model on launch
-    path: CodeContext[]
+    priorVersions?: AnchorOnCommit[]
+    path?: CodeContext[]
     surroundingCode: SurroundingAnchorArea
-    //add annotation field, ridding of multiple anchors
+}
+
+// create: using re-anchor algorithm (tbd how/when to run that)
+// update: using translateChanges
+// delete: when user reattaches (either this turns into an AnchorObject or it is deleted because user didn't choose it)
+export interface PotentialAnchorObject extends AnchorObject {
+    weight: number // how likely we think this anchor point is
+    reasonSuggested: string // 'proximity to original' <-- surrounding context (AST too?) , 'similar content' <-- best match, 'parent scope' <-- AST
+    // reason suggested all inclusive
+    // combintation of reasons used under the hood --> how much of this info do we communicate?
+    // combintation of weights => overall confidence
 }
 
 export interface AnchorOnCommit {

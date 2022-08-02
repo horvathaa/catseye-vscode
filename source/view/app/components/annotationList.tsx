@@ -158,7 +158,6 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                 console.log(`function: ${operation} does not exist`)
                 break
         }
-        // console.log('Mass Operation Selected')
     }
 
     // Maybe should update to be all visible annos?
@@ -185,12 +184,6 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                 ></MassOperationsBar>
                 <List sx={{ width: '100%' }} component="div" disablePadding>
                     {annotations.map((a: Annotation) => {
-                        // console.log(selectedAnnoIds)
-                        // console.log(a)
-                        // console.log(selectedAnnoIds.includes(a))
-                        // console.log(
-                        //     selectedAnnoIds.some((anno) => anno.id == a.id)
-                        // )
                         return (
                             <ReactAnnotation
                                 key={`annotationList-${parentId}tsx-` + a.id}

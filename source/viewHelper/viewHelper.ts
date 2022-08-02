@@ -410,8 +410,9 @@ export const handleUpdateAnnotation = (
             .filter((a) => a.id !== id)
             .concat([updatedAnno])
         setAnnotationList(updatedList)
-        // if (typeof value === 'boolean' && typeof key === 'string') -- ????
-        //     view?.updateDisplay(updatedList)
+        if (typeof value === 'boolean' && typeof key === 'string') {
+            view?.updateDisplay(updatedList)
+        }
     }
 }
 

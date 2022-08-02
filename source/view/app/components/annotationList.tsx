@@ -128,26 +128,31 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                 break
             case 'merge':
                 mergeAnnotations(e, vscode, selectedAnnotations)
+                clearAnnos()
                 break
             case 'pin':
                 selectedAnnotations.map((anno: Annotation) =>
                     pinAnnotation(e, vscode, anno)
                 )
+                clearAnnos()
                 break
             case 'share':
                 selectedAnnotations.map((anno: Annotation) =>
                     shareAnnotation(e, vscode, anno)
                 )
+                clearAnnos()
                 break
             case 'resolve':
                 selectedAnnotations.map((anno: Annotation) =>
                     resolveAnnotation(e, vscode, anno)
                 )
+                clearAnnos()
                 break
             case 'delete':
                 selectedAnnotations.map((anno: Annotation) =>
                     deleteAnnotation(e, vscode, anno)
                 )
+                clearAnnos()
                 break
             default:
                 console.log(`function: ${operation} does not exist`)
@@ -159,12 +164,16 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     // Maybe should update to be all visible annos?
     const selectAllAnnos = () => {
         if (selectedAnnoIds.length == annotations.length) {
-            setSelectedAnnoIds([])
-            setSelectionStatus(Selection.none)
+            clearAnnos()
         } else {
             setSelectedAnnoIds(annotations.map((anno: Annotation) => anno.id))
             setSelectionStatus(Selection.all)
         }
+    }
+
+    const clearAnnos = () => {
+        setSelectedAnnoIds([])
+        setSelectionStatus(Selection.none)
     }
 
     return (

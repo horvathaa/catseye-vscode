@@ -10,7 +10,7 @@ import CheckIcon from '@mui/icons-material/Check'
 import DeleteIcon from '@mui/icons-material/Delete'
 import MergeIcon from '@mui/icons-material/Merge'
 import ShareIcon from '@mui/icons-material/Share'
-import PushPinIcon from '@mui/icons-material/PushPin'
+import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined'
 import { Card, Checkbox, createTheme, ThemeProvider } from '@mui/material'
 import {
     editorBackground,
@@ -90,7 +90,7 @@ const MassOperationsBar: React.FC<Props> = ({
                     <AdamiteButton
                         buttonClicked={(e) => massOperationSelected(e, 'pin')}
                         name="Pin"
-                        icon={<PushPinIcon fontSize="small" />}
+                        icon={<PushPinOutlinedIcon fontSize="small" />}
                     />
                     <AdamiteButton
                         buttonClicked={(e) => massOperationSelected(e, 'share')}

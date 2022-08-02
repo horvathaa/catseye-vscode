@@ -14,6 +14,7 @@ import AdamiteButton from './AdamiteButton'
 import { createTheme } from '@mui/material'
 import { useMediaQuery } from '@material-ui/core'
 import { breakpoints } from '../../utils/viewUtils'
+import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined'
 
 interface Props {
     expanded: boolean
@@ -107,18 +108,24 @@ const CardHeader = ({
             >
                 {expanded === true ? (
                     <AdamiteButton
-                        buttonClicked={pinAnnotation}
-                        name="Pin"
-                        icon={<PushPinIcon fontSize="small" />}
-                    />
-                ) : null}
-                {expanded === true ? (
-                    <AdamiteButton
                         buttonClicked={shareAnnotation}
                         name="Share"
                         icon={<ShareIcon fontSize="small" />}
                     />
                 ) : null}
+                {anno.selected ? (
+                    <AdamiteButton
+                        buttonClicked={pinAnnotation}
+                        name="Pin"
+                        icon={<PushPinIcon fontSize="small" />}
+                    />
+                ) : (
+                    <AdamiteButton
+                        buttonClicked={pinAnnotation}
+                        name="Pin"
+                        icon={<PushPinOutlinedIcon fontSize="small" />}
+                    />
+                )}
                 <AdamiteButton
                     buttonClicked={resolveAnnotation}
                     name="Resolve"

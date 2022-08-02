@@ -256,3 +256,9 @@ export interface AnchorsToUpdate {
     createdTimestamp: number
     anchors: AnchorObject[]
 }
+
+export enum Selection {
+    all = 'all',
+    partial = 'partial',
+    none = 'none',
+}

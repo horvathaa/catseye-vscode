@@ -52,7 +52,8 @@ interface Props {
     username: string
     userId: string
     annotationSelected: (anno: Annotation) => void
-    annotations: Annotation[]
+    annotations: Annotation[] // Likely unnecessary
+    selected: boolean
 }
 
 // TODO: Add Pin button next to edit
@@ -64,6 +65,7 @@ const ReactAnnotation: React.FC<Props> = ({
     userId,
     annotationSelected,
     annotations,
+    selected,
 }) => {
     const [anno, setAnno] = React.useState<Annotation>(annotation)
     const [expanded, setExpanded] = React.useState(false)
@@ -169,6 +171,10 @@ const ReactAnnotation: React.FC<Props> = ({
     }, [annotation])
 
     React.useEffect(() => {}, [userId])
+
+    React.useEffect(() => {
+        console.log('selected: ', selected)
+    }, [selected])
 
     const scrollInEditor = (id: string): void => {
         vscode.postMessage({
@@ -401,7 +407,11 @@ const ReactAnnotation: React.FC<Props> = ({
         >
             <ThemeProvider theme={theme}>
                 {isMedOrMore && (
-                    <Checkbox onChange={() => annotationSelected(anno)} />
+                    <Checkbox
+                        checked={selected}
+                        onChange={() => annotationSelected(anno)}
+                        inputProps={{ 'aria-label': 'controlled' }}
+                    />
                 )}
                 <Card style={cardStyle}>
                     <CollapsedCardHeader
@@ -494,78 +504,4 @@ const ReactAnnotation: React.FC<Props> = ({
     )
 }
 
-{
-    /* <div
-                key={'annotation-container' + annotation.id}
-                className={styles['Pad']}
-            >
-                <li
-                    key={'annotation-li' + annotation.id}
-                    id={annotation.id}
-                    className={cn({
-                        [styles.selected]: anno.selected,
-                        [styles.AnnotationContainer]: true,
-                    })}
-                >
-                    <div className={styles['topRow']}>
-                        <UserProfile
-                            githubUsername={anno.githubUsername}
-                            createdTimestamp={anno.createdTimestamp}
-                        />
-                        <AnnotationOperationButtons
-                            annotationId={anno.id}
-                            userId={userId}
-                            authorId={anno.authorId}
-                            replyToAnnotation={() => {
-                                setReplying(!replying)
-                            }}
-                            exportAnnotationAsComment={
-                                exportAnnotationAsComment
-                            }
-                            editAnnotation={() => {
-                                setEdit(!edit)
-                            }}
-                            deleteAnnotation={(e) => deleteAnnotation(e)}
-                            pinAnnotation={handleSelectedClick}
-                            addAnchor={addAnchor}
-                            pinned={anno.selected}
-                        />
-                    </div>
-                    <AnchorList
-                        anchors={anno.anchors}
-                        snapshotCode={snapshotCode}
-                        scrollInEditor={scrollInEditor}
-                    />
-                    <div className={styles['ContentContainer']}>
-                        {edit ? (
-                            <TextEditor
-                                content={anno.annotation}
-                                submissionHandler={updateContent}
-                                cancelHandler={cancelAnnotation}
-                                showSplitButton={true}
-                            />
-                        ) : (
-                            `${anno.annotation}`
-                        )}
-                    </div>
-                    <Snapshots
-                        snapshots={anno.codeSnapshots}
-                        anchors={anno.anchors}
-                        githubUsername={username}
-                        deleteHandler={deleteSnapshot}
-                        submissionHandler={submitSnapshot}
-                    />
-                    <Outputs outputs={anno.outputs} id={anno.id} />
-                    <ReplyContainer
-                        replying={replying}
-                        replies={anno.replies}
-                        username={username}
-                        userId={userId}
-                        submitReply={submitReply}
-                        cancelReply={() => setReplying(false)}
-                        deleteReply={deleteReply}
-                    />
-                </li>
-            </div> */
-}
 export default ReactAnnotation

@@ -18,23 +18,16 @@ import {
     vscodeTextColor,
 } from '../styles/vscodeStyles'
 import AdamiteButton from './annotationComponents/AdamiteButton'
+import { Selection } from '../../../constants/constants'
 interface Props {
     massOperationSelected: (operation: string) => void
+    selectedStatus: Selection
 }
 // Add a bell/notification
-const MassOperationsBar: React.FC<Props> = ({ massOperationSelected }) => {
-    // MUI doesn't accept CSS version of this for some reason..?
-    const cardStyle = {
-        backgroundColor: editorBackground,
-        color: vscodeTextColor,
-        margin: 4,
-        border: '1.5px',
-        borderColor: iconColor,
-        borderRadius: '4px',
-        borderStyle: 'solid',
-        padding: 5,
-        flexGrow: 1,
-    }
+const MassOperationsBar: React.FC<Props> = ({
+    massOperationSelected,
+    selectedStatus,
+}) => {
     const theme = createTheme({
         palette: {
             primary: {
@@ -80,7 +73,14 @@ const MassOperationsBar: React.FC<Props> = ({ massOperationSelected }) => {
             }}
         >
             <ThemeProvider theme={theme}>
-                <Checkbox onChange={() => massOperationSelected('select')} />
+                <Checkbox
+                    checked={selectedStatus == Selection.all}
+                    indeterminate={selectedStatus == Selection.partial}
+                    onChange={() => {
+                        console.log('checkbox selected')
+                        massOperationSelected('select')
+                    }}
+                />
                 <Card sx={{ flexGrow: 2 }}>
                     <AdamiteButton
                         buttonClicked={() => massOperationSelected('merge')}

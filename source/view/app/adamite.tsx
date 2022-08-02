@@ -397,9 +397,9 @@ const AdamitePanel: React.FC<Props> = ({
                         showKeyboardShortcuts={showKeyboardShortcuts}
                         filtersUpdated={filtersUpdated}
                     />
-                    <MassOperationsBar
+                    {/* <MassOperationsBar
                         massOperationSelected={massOperationSelected}
-                    ></MassOperationsBar>
+                    ></MassOperationsBar> */}
                     <AnnotationList
                         title=""
                         parentId="main"

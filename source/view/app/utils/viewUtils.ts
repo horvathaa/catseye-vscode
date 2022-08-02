@@ -201,6 +201,17 @@ export const sortAnnotationsByLocation = (
     return annotationList
 }
 
+declare module '@mui/material/styles' {
+    interface BreakpointOverrides {
+        xs: true
+        sm: true
+        md: true
+        lg: true
+        xl: true
+        code: true
+    }
+}
+
 export const breakpoints = {
     values: {
         xs: 0,
@@ -208,6 +219,7 @@ export const breakpoints = {
         md: 350,
         lg: 650,
         xl: 900,
+        code: 435,
     },
 }
 

@@ -21,11 +21,11 @@ const UserProfile: React.FC<Props> = ({ githubUsername, createdTimestamp }) => {
     const time: string = formatTimestamp(createdTimestamp)
 
     const theme = createTheme({
-        breakpoints: breakpoints
+        breakpoints: breakpoints,
     })
 
     const isSmOrMore = useMediaQuery(theme.breakpoints.up('sm'))
-    
+
     return (
         <div className={styles['userContainer']}>
             {userHasImage && (
@@ -37,15 +37,17 @@ const UserProfile: React.FC<Props> = ({ githubUsername, createdTimestamp }) => {
                     alt="github user profile image"
                 />
             )}
-            {isSmOrMore && <div className={styles['usernameAndTimeContainer']}>
-                <a
-                    href={'https://github.com/' + githubUsername}
-                    className={styles['username']}
-                >
-                    {githubUsername}
-                </a>
-                {time}
-            </div>}
+            {isSmOrMore && (
+                <div className={styles['usernameAndTimeContainer']}>
+                    <a
+                        href={'https://github.com/' + githubUsername}
+                        className={styles['username']}
+                    >
+                        {githubUsername}
+                    </a>
+                    {time}
+                </div>
+            )}
         </div>
     )
 }

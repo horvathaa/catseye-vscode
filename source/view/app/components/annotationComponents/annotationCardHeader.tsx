@@ -9,6 +9,9 @@ import UserProfile from './userProfile'
 import { codeColor } from '../../styles/vscodeStyles'
 import styles from '../../styles/annotation.module.css'
 import AdamiteButton from './AdamiteButton'
+import { createTheme } from '@mui/material'
+import { useMediaQuery } from '@material-ui/core'
+import { breakpoints } from '../../utils/viewUtils'
 
 interface Props {
     expanded: boolean
@@ -33,6 +36,11 @@ const CardHeader = ({
         setAnnotation(anno)
     }, [anno])
 
+    const theme = createTheme({
+        breakpoints: breakpoints,
+    })
+    const slicedText = useMediaQuery(theme.breakpoints.up('code')) ? 30 : 15
+
     const handleMenuClick = () => {}
     return (
         <div
@@ -40,7 +48,6 @@ const CardHeader = ({
                 display: 'flex',
                 flexDirection: 'row',
                 justifyContent: 'space-between',
-                flexWrap: 'wrap',
             }}
             onClick={() => setExpanded(!expanded)}
         >
@@ -65,8 +72,12 @@ const CardHeader = ({
                         <div>
                             <mark>
                                 {' '}
-                                {annotation.anchors[0]?.anchorText.slice(0, 30)}
-                                {annotation.anchors[0]?.anchorText.length > 30
+                                {annotation.anchors[0]?.anchorText.slice(
+                                    0,
+                                    slicedText
+                                )}
+                                {annotation.anchors[0]?.anchorText.length >
+                                slicedText
                                     ? '...'
                                     : ''}{' '}
                             </mark>
@@ -83,7 +94,6 @@ const CardHeader = ({
             <div
                 style={{
                     display: 'flex',
-                    flexWrap: 'wrap',
                 }}
             >
                 <AdamiteButton

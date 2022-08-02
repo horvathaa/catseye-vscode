@@ -413,7 +413,6 @@ export const handleUpdateAnnotation = (
         // if (typeof value === 'boolean' && typeof key === 'string') -- ????
         //     view?.updateDisplay(updatedList)
     }
-    console.log('updated', updatedAnno)
 }
 
 // Removes the annotation from the list, updates the annotation list in the webview, and removes the corresponding highlight

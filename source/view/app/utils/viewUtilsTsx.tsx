@@ -193,12 +193,11 @@ export const shareAnnotation = (
     anno: Annotation
 ): void => {
     e.stopPropagation()
-    console.log(anno.sharedWith)
     vscode.postMessage({
         command: 'updateAnnotation',
         annoId: anno.id,
-        key: ['sharedWith'],
-        value: anno.sharedWith === 'private' ? 'group' : 'private',
+        key: 'sharedWith',
+        value: 'group',
     })
 }
 

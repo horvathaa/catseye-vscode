@@ -18,3 +18,5 @@ How to Test the extension:
 
 -   [ ] resolve/trash permissions sometimes don't show up right for replies
 -   [ ] Types do not consistently save on edit
+-   [ ] Sort order not implemented (ideally) should sort with the most recently updated up top
+-   [ ] Merge not implemented

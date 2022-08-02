@@ -410,7 +410,11 @@ export const handleUpdateAnnotation = (
             .filter((a) => a.id !== id)
             .concat([updatedAnno])
         setAnnotationList(updatedList)
-        if (typeof value === 'boolean' && typeof key === 'string') {
+        // Update display if pinned or shared
+        if (
+            (typeof value === 'boolean' && typeof key === 'string') ||
+            key === 'sharedWith'
+        ) {
             view?.updateDisplay(updatedList)
         }
     }

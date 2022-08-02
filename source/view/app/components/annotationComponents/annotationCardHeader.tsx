@@ -52,6 +52,7 @@ const CardHeader = ({
     const slicedText: number = codeSize ? 30 : smCodeSize ? 15 : 4
 
     console.log('sliced?', slicedText)
+    console.log(anno.sharedWith)
     return (
         <div
             style={{
@@ -106,7 +107,7 @@ const CardHeader = ({
                     display: 'flex',
                 }}
             >
-                {expanded === true ? (
+                {expanded === true && anno.sharedWith != 'group' ? (
                     <AdamiteButton
                         buttonClicked={shareAnnotation}
                         name="Share"

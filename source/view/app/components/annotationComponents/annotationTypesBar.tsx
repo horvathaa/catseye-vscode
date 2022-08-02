@@ -32,8 +32,8 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
     const allTypes = Object.values(Type)
 
     React.useEffect(() => {
-        console.log('new types', currentTypes)
-        console.log('old types', types)
+        // console.log('new types', currentTypes)
+        // console.log('old types', types)
     }, [currentTypes])
 
     const typesWithIcons = {
@@ -43,7 +43,7 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
         question: <ContactSupport fontSize="small" />,
     }
 
-    console.log('types state value', types)
+    // console.log('types state value', types)
 
     const theme = createTheme({
         breakpoints: breakpoints,

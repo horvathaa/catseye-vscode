@@ -977,7 +977,8 @@ export const buildAnnotation = (
         annoObj['sharedWith'],
         annoObj['selected'],
         annoObj['needToUpdate'],
-        annoObj['types']
+        annoObj['types'],
+        annoObj['resolved']
     )
 }
 

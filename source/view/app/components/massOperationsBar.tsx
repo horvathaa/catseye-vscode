@@ -20,7 +20,7 @@ import {
 import AdamiteButton from './annotationComponents/AdamiteButton'
 import { Selection } from '../../../constants/constants'
 interface Props {
-    massOperationSelected: (operation: string) => void
+    massOperationSelected: (e: React.SyntheticEvent, operation: string) => void
     selectedStatus: Selection
 }
 // Add a bell/notification
@@ -76,34 +76,38 @@ const MassOperationsBar: React.FC<Props> = ({
                 <Checkbox
                     checked={selectedStatus == Selection.all}
                     indeterminate={selectedStatus == Selection.partial}
-                    onChange={() => {
+                    onChange={(e) => {
                         console.log('checkbox selected')
-                        massOperationSelected('select')
+                        massOperationSelected(e, 'select')
                     }}
                 />
                 <Card sx={{ flexGrow: 2 }}>
                     <AdamiteButton
-                        buttonClicked={() => massOperationSelected('merge')}
+                        buttonClicked={(e) => massOperationSelected(e, 'merge')}
                         name="Merge"
                         icon={<MergeIcon fontSize="small" />}
                     />
                     <AdamiteButton
-                        buttonClicked={() => massOperationSelected('pin')}
+                        buttonClicked={(e) => massOperationSelected(e, 'pin')}
                         name="Pin"
                         icon={<PushPinIcon fontSize="small" />}
                     />
                     <AdamiteButton
-                        buttonClicked={() => massOperationSelected('share')}
+                        buttonClicked={(e) => massOperationSelected(e, 'share')}
                         name="Share"
                         icon={<ShareIcon fontSize="small" />}
                     />
                     <AdamiteButton
-                        buttonClicked={() => massOperationSelected('resolve')}
+                        buttonClicked={(e) =>
+                            massOperationSelected(e, 'resolve')
+                        }
                         name="Resolve"
                         icon={<CheckIcon fontSize="small" />}
                     />
                     <AdamiteButton
-                        buttonClicked={() => massOperationSelected('delete')}
+                        buttonClicked={(e) =>
+                            massOperationSelected(e, 'delete')
+                        }
                         name="Delete"
                         icon={<DeleteIcon fontSize="small" />}
                     />

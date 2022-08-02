@@ -23,6 +23,13 @@ import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { useState } from 'react'
 import MassOperationsBar from './massOperationsBar'
 import { StringifyOptions } from 'querystring'
+import {
+    deleteAnnotation,
+    mergeAnnotations,
+    pinAnnotation,
+    resolveAnnotation,
+    shareAnnotation,
+} from '../utils/viewUtilsTsx'
 
 interface AnnoListProps {
     title: string
@@ -44,7 +51,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     username,
     userId,
 }) => {
-    const [selectedAnnos, setSelectedAnnos] = useState<string[]>([])
+    const [selectedAnnoIds, setSelectedAnnoIds] = useState<string[]>([])
     const [selectionStatus, setSelectionStatus] = useState<Selection>(
         Selection.none
     )
@@ -79,39 +86,68 @@ const AnnotationList: React.FC<AnnoListProps> = ({
         },
     })
 
+    const selectedAnnotations = annotations.filter((anno) =>
+        selectedAnnoIds.includes(anno.id)
+    )
+
     const annotationSelected = (anno: Annotation) => {
-        let updatedSelectedAnnos: string[]
-        if (selectedAnnos.includes(anno.id)) {
-            updatedSelectedAnnos = selectedAnnos.filter(
+        let updatedSelectedAnnoIds: string[]
+        if (selectedAnnoIds.includes(anno.id)) {
+            updatedSelectedAnnoIds = selectedAnnoIds.filter(
                 (id: string) => id !== anno.id
             )
             setSelectionStatus(
-                updatedSelectedAnnos.length == 0
+                updatedSelectedAnnoIds.length == 0
                     ? Selection.none
                     : Selection.partial
             )
         } else {
             // Can't mutate the types array like done previously!
-            // updatedSelectedAnnos = [anno].concat(selectedAnnos)
-            updatedSelectedAnnos = [anno.id].concat(selectedAnnos)
+            // updatedSelectedAnnoIds = [anno].concat(selectedAnnoIds)
+            updatedSelectedAnnoIds = [anno.id].concat(selectedAnnoIds)
             setSelectionStatus(
-                updatedSelectedAnnos.length == annotations.length
+                updatedSelectedAnnoIds.length == annotations.length
                     ? Selection.all
                     : Selection.partial
             )
         }
-        setSelectedAnnos(updatedSelectedAnnos)
+        setSelectedAnnoIds(updatedSelectedAnnoIds)
         console.log()
         console.log('UPDATE')
-        // console.log(updatedSelectedAnnos)
+        // console.log(updatedSelectedAnnoIds)
     }
 
-    const massOperationSelected = (operation: string) => {
+    const massOperationSelected = (
+        e: React.SyntheticEvent,
+        operation: string
+    ) => {
         console.log('mass operation selected')
         switch (operation) {
             case 'select':
-                console.log('select selected')
                 selectAllAnnos()
+                break
+            case 'merge':
+                mergeAnnotations(e, vscode, selectedAnnotations)
+                break
+            case 'pin':
+                selectedAnnotations.map((anno: Annotation) =>
+                    pinAnnotation(e, vscode, anno)
+                )
+                break
+            case 'share':
+                selectedAnnotations.map((anno: Annotation) =>
+                    shareAnnotation(e, vscode, anno)
+                )
+                break
+            case 'resolve':
+                selectedAnnotations.map((anno: Annotation) =>
+                    resolveAnnotation(e, vscode, anno)
+                )
+                break
+            case 'delete':
+                selectedAnnotations.map((anno: Annotation) =>
+                    deleteAnnotation(e, vscode, anno)
+                )
                 break
             default:
                 console.log(`function: ${operation} does not exist`)
@@ -122,15 +158,13 @@ const AnnotationList: React.FC<AnnoListProps> = ({
 
     // Maybe should update to be all visible annos?
     const selectAllAnnos = () => {
-        if (selectedAnnos.length == annotations.length) {
-            setSelectedAnnos([])
+        if (selectedAnnoIds.length == annotations.length) {
+            setSelectedAnnoIds([])
             setSelectionStatus(Selection.none)
         } else {
-            setSelectedAnnos(annotations.map((anno: Annotation) => anno.id))
+            setSelectedAnnoIds(annotations.map((anno: Annotation) => anno.id))
             setSelectionStatus(Selection.all)
-            // console.log('Selection status changed')
         }
-        // console.log(annotations)
     }
 
     return (
@@ -142,11 +176,11 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                 ></MassOperationsBar>
                 <List sx={{ width: '100%' }} component="div" disablePadding>
                     {annotations.map((a: Annotation) => {
-                        // console.log(selectedAnnos)
+                        // console.log(selectedAnnoIds)
                         // console.log(a)
-                        // console.log(selectedAnnos.includes(a))
+                        // console.log(selectedAnnoIds.includes(a))
                         // console.log(
-                        //     selectedAnnos.some((anno) => anno.id == a.id)
+                        //     selectedAnnoIds.some((anno) => anno.id == a.id)
                         // )
                         return (
                             <ReactAnnotation
@@ -157,7 +191,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                                 username={username}
                                 userId={userId}
                                 annotationSelected={annotationSelected}
-                                selected={selectedAnnos.includes(a.id)} // Note: Can not use selectedAnnos.includes(a) because it's not the exact same object
+                                selected={selectedAnnoIds.includes(a.id)} // Note: Can not use selectedAnnoIds.includes(a) because it's not the exact same object
                                 // https://discuss.codecademy.com/t/array-includes-val-returns-false/536661
                                 annotations={annotations}
                             />

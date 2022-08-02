@@ -201,9 +201,12 @@ const AdamitePanel: React.FC<Props> = ({
         setShowNewAnnotation(false)
     }
 
-    const massOperationSelected = (operation: string) => {
-        console.log('Mass Oepration Selected')
-    }
+    // const massOperationSelected = (
+    //     e: React.SyntheticEvent,
+    //     operation: string
+    // ) => {
+    //     console.log('Mass Oepration Selected')
+    // }
 
     // Alternative way of getting pinned files?
     console.log('annotations?', annotations)

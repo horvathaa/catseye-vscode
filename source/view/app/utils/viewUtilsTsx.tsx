@@ -147,3 +147,69 @@ export const defaultFilterOptions: FilterOptions = {
 //         name:
 //     }
 // ]
+
+export const deleteAnnotation = (
+    e: React.SyntheticEvent,
+    vscode: any,
+    anno: Annotation
+): void => {
+    e.stopPropagation()
+    vscode.postMessage({
+        command: 'deleteAnnotation',
+        annoId: anno.id,
+    })
+}
+
+export const resolveAnnotation = (
+    e: React.SyntheticEvent,
+    vscode: any,
+    anno: Annotation
+): void => {
+    e.stopPropagation()
+    vscode.postMessage({
+        command: 'resolveAnnotation',
+        annoId: anno.id,
+    })
+}
+
+export const pinAnnotation = (
+    e: React.SyntheticEvent,
+    vscode: any,
+    anno: Annotation
+): void => {
+    e.stopPropagation()
+    // Maybe need to do more by updating whole view and SelectedAnnotationsNavigations?
+    vscode.postMessage({
+        command: 'updateAnnotation',
+        annoId: anno.id,
+        key: 'selected',
+        value: !anno.selected,
+    })
+}
+
+export const shareAnnotation = (
+    e: React.SyntheticEvent,
+    vscode: any,
+    anno: Annotation
+): void => {
+    e.stopPropagation()
+    console.log(anno.sharedWith)
+    vscode.postMessage({
+        command: 'updateAnnotation',
+        annoId: anno.id,
+        key: ['sharedWith'],
+        value: anno.sharedWith === 'private' ? 'group' : 'private',
+    })
+}
+
+export const mergeAnnotations = (
+    e: React.SyntheticEvent,
+    vscode: any,
+    annos: Annotation[]
+): void => {
+    e.stopPropagation()
+    // vscode.postMessage({
+    //     command: 'resolveAnnotation',
+    //     annoId: anno.id,
+    // })
+}

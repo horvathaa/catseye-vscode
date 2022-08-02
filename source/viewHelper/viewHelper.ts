@@ -363,6 +363,7 @@ export const handleUpdateAnnotation = (
         (a) => a.id === id
     )
     if (updatedAnno) {
+        // Check for pinned
         if (typeof value === 'boolean' && typeof key === 'string') {
             updatedAnno = buildAnnotation({
                 ...updatedAnno,
@@ -412,7 +413,7 @@ export const handleUpdateAnnotation = (
         // if (typeof value === 'boolean' && typeof key === 'string') -- ????
         //     view?.updateDisplay(updatedList)
     }
-    // console.log('updated', updatedAnno);
+    console.log('updated', updatedAnno)
 }
 
 // Removes the annotation from the list, updates the annotation list in the webview, and removes the corresponding highlight
@@ -512,4 +513,38 @@ export const handleSaveAnnotationsToJson = (): void => {
 // stub for adding this function later
 export const handleShowKeyboardShortcuts = (): void => {
     return
+}
+
+// stub for adding this function later
+export const handlePinAnnotation = (id: string): void => {
+    const updatedAnno = buildAnnotation({
+        ...annotationList.filter((a) => a.id === id)[0],
+        needToUpdate: true,
+    })
+    updatedAnno.selected = !updatedAnno.selected
+
+    const updatedList = annotationList
+        .filter((a) => a.id !== id)
+        .concat([updatedAnno])
+
+    setAnnotationList(updatedList)
+
+    if (updatedAnno.selected) {
+        setSelectedAnnotationsNavigations([
+            ...selectedAnnotationsNavigations,
+            {
+                id: updatedAnno.id,
+                lastVisited: false,
+                anchorId: updatedAnno.anchors[0].anchorId,
+            },
+        ])
+    } else {
+        // Taken from handleDeleteResolveAnnotation
+        if (selectedAnnotationsNavigations.map((a) => a.id).includes(id)) {
+            setSelectedAnnotationsNavigations(
+                selectedAnnotationsNavigations.filter((n) => n.id !== id)
+            )
+        }
+    }
+    view?.updateDisplay(updatedList)
 }

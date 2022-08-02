@@ -7,6 +7,12 @@
 import * as React from 'react'
 import cn from 'classnames'
 import { breakpoints, buildAnnotation } from '../utils/viewUtils'
+import {
+    deleteAnnotation,
+    resolveAnnotation,
+    pinAnnotation,
+    shareAnnotation,
+} from '../utils/viewUtilsTsx'
 import styles from '../styles/annotation.module.css'
 import {
     Annotation,
@@ -184,7 +190,7 @@ const ReactAnnotation: React.FC<Props> = ({
         })
     }
 
-    const handleSelectedClick = (): void => {
+    const handlePinnedClick = (): void => {
         vscode.postMessage({
             command: 'updateAnnotation',
             annoId: anno.id,
@@ -206,23 +212,6 @@ const ReactAnnotation: React.FC<Props> = ({
             annoId: anno.id,
         })
     }
-
-    const deleteAnnotation = (e: React.SyntheticEvent): void => {
-        e.stopPropagation()
-        vscode.postMessage({
-            command: 'deleteAnnotation',
-            annoId: anno.id,
-        })
-    }
-
-    const resolveAnnotation = (e: React.SyntheticEvent): void => {
-        e.stopPropagation()
-        vscode.postMessage({
-            command: 'resolveAnnotation',
-            annoId: anno.id,
-        })
-    }
-
     const snapshotCode = (id: string): void => {
         vscode.postMessage({
             command: 'snapshotCode',
@@ -419,8 +408,16 @@ const ReactAnnotation: React.FC<Props> = ({
                         setExpanded={setExpanded}
                         anchored={anchored}
                         anno={anno}
-                        deleteAnnotation={(e) => deleteAnnotation(e)}
-                        resolveAnnotation={resolveAnnotation}
+                        deleteAnnotation={(e) =>
+                            deleteAnnotation(e, vscode, anno)
+                        }
+                        resolveAnnotation={(e) =>
+                            resolveAnnotation(e, vscode, anno)
+                        }
+                        pinAnnotation={(e) => pinAnnotation(e, vscode, anno)}
+                        shareAnnotation={(e) =>
+                            shareAnnotation(e, vscode, anno)
+                        }
                     />
                     <Collapse
                         in={expanded}

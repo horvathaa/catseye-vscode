@@ -3,7 +3,9 @@ import { TbAnchor, TbAnchorOff } from 'react-icons/tb'
 import IconButton from '@mui/material/IconButton'
 import CheckIcon from '@mui/icons-material/Check'
 import DeleteIcon from '@mui/icons-material/Delete'
+import ShareIcon from '@mui/icons-material/Share'
 import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined'
+import PushPinIcon from '@mui/icons-material/PushPin'
 import { Annotation } from '../../../../constants/constants'
 import UserProfile from './userProfile'
 import { codeColor } from '../../styles/vscodeStyles'
@@ -20,6 +22,8 @@ interface Props {
     anno: Annotation
     resolveAnnotation: (e: React.SyntheticEvent) => void
     deleteAnnotation: (e: React.SyntheticEvent) => void
+    pinAnnotation: (e: React.SyntheticEvent) => void
+    shareAnnotation: (e: React.SyntheticEvent) => void
 }
 
 const CardHeader = ({
@@ -29,6 +33,8 @@ const CardHeader = ({
     anno,
     resolveAnnotation,
     deleteAnnotation,
+    pinAnnotation,
+    shareAnnotation,
 }: Props) => {
     const [annotation, setAnnotation] = React.useState<Annotation>(anno)
     React.useEffect(() => {
@@ -39,9 +45,12 @@ const CardHeader = ({
     const theme = createTheme({
         breakpoints: breakpoints,
     })
-    const slicedText = useMediaQuery(theme.breakpoints.up('code')) ? 30 : 15
 
-    const handleMenuClick = () => {}
+    const codeSize = useMediaQuery(theme.breakpoints.up('code'))
+    const smCodeSize = useMediaQuery(theme.breakpoints.up('sm'))
+    const slicedText: number = codeSize ? 30 : smCodeSize ? 15 : 4
+
+    console.log('sliced?', slicedText)
     return (
         <div
             style={{
@@ -96,6 +105,20 @@ const CardHeader = ({
                     display: 'flex',
                 }}
             >
+                {expanded === true ? (
+                    <AdamiteButton
+                        buttonClicked={pinAnnotation}
+                        name="Pin"
+                        icon={<PushPinIcon fontSize="small" />}
+                    />
+                ) : null}
+                {expanded === true ? (
+                    <AdamiteButton
+                        buttonClicked={shareAnnotation}
+                        name="Share"
+                        icon={<ShareIcon fontSize="small" />}
+                    />
+                ) : null}
                 <AdamiteButton
                     buttonClicked={resolveAnnotation}
                     name="Resolve"
@@ -106,13 +129,6 @@ const CardHeader = ({
                     name="Delete"
                     icon={<DeleteIcon fontSize="small" />}
                 />
-                {expanded === true ? (
-                    <AdamiteButton
-                        buttonClicked={handleMenuClick}
-                        name="More"
-                        icon={<MoreVertOutlinedIcon fontSize="small" />}
-                    />
-                ) : null}
             </div>
         </div>
     )

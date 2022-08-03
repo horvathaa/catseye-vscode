@@ -172,6 +172,7 @@
     transition: cubic-bezier(1, 0, 0, 1);
 }
 
+
 .DropdownIcons {
     height: 1.25em;
     width: 1.25em;
@@ -541,7 +542,7 @@ button.cancel {
     border: 2px solid transparent;
     border-color: #7fae42;
     background-color: var(--vscode-editor-background);
-    height: 30px; /* TODO: check why I previously set it 27px*/
+    height: 27px; /* TODO: some reason needs to be smaller height do to submit button weirdness */
     transition: all 0.5s ease-in-out;
 }
 

@@ -7,12 +7,14 @@
 import * as React from 'react'
 import styles from '../../styles/annotation.module.css'
 import { Tooltip } from '@material-ui/core'
+import { disabledIcon } from '../../styles/vscodeStyles'
 
 interface Props {
     buttonClicked: (e: React.SyntheticEvent) => void
     name: string
     icon: React.ReactElement
     noMargin?: boolean
+    disabled?: boolean
 }
 
 const AdamiteButton: React.FC<Props> = ({
@@ -20,6 +22,7 @@ const AdamiteButton: React.FC<Props> = ({
     name,
     icon,
     noMargin: noMargin = false,
+    disabled: disabled = false,
 }) => {
     return (
         <React.Fragment>
@@ -29,6 +32,11 @@ const AdamiteButton: React.FC<Props> = ({
                     buttonClicked(e)
                 }}
                 className={styles['DropdownItemOverwrite']}
+                style={
+                    disabled
+                        ? { cursor: 'default', pointerEvents: 'none' }
+                        : undefined
+                }
             >
                 <div
                     className={styles['DropdownIconsWrapper']}

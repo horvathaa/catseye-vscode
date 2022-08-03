@@ -52,14 +52,22 @@ import { CodeContext } from '../astHelper/nodeHelper'
 let { parse } = require('what-the-diff')
 var shiki = require('shiki')
 import { simpleGit, SimpleGit } from 'simple-git'
+import {
+    getFilesInDirectory,
+    getVisibileOpenFiles,
+    getWorkInProgressFiles,
+} from '../anchorFunctions/searchHelpers'
 
 // https://www.npmjs.com/package/simple-git
-const gitDir =
+export const gitRootDir =
     vscode.workspace.workspaceFolders &&
     vscode.workspace.workspaceFolders[0].uri
         ? vscode.workspace.workspaceFolders[0].uri.fsPath
         : ''
-const git: SimpleGit = simpleGit(gitDir, { binary: 'git' })
+export const currentlyOpenDirPath = vscode.window.activeTextEditor
+    ? vscode.window.activeTextEditor.document.fileName
+    : ''
+export const git: SimpleGit = simpleGit(gitRootDir, { binary: 'git' })
 let lastSavedAnnotations: Annotation[] =
     annotationList && annotationList.length ? annotationList : []
 
@@ -532,7 +540,10 @@ export const handleSaveCloseEvent = async (
             filePath
         )
     }
-    findOpenFilesToSearch()
+    // testing purposes
+    getFilesInDirectory()
+    getVisibileOpenFiles()
+    getWorkInProgressFiles()
 }
 
 const translateSnapshotStandard = (snapshots: any[]): Snapshot[] => {
@@ -1118,59 +1129,4 @@ export const partitionAnnotationsOnSignIn = (array: any[], filter: any) => {
         return (filter(a, idx, arr) ? lastCommit : otherCommit).push(a)
     })
     return [lastCommit, otherCommit]
-}
-
-// returns currently opened files for reanchor search
-
-/* 
-WORKSPACE RECOMMENDATION: "The workspace offers support for listening to fs events 
-and for finding files. Both perform well and run outside the editor-process so that
-they should be always used instead of nodejs-equivalents."
-
-VSCODE GLOBS TOO LIMITED!
-
-start search space in set of current open files
-run alg 
-if don't find a candidate, search all modified files from git status 
-
-*/
-export const findOpenFilesToSearch = async () => {
-    const folders = vscode.workspace.workspaceFolders
-    console.log('folders', folders)
-    let filesToSearch: any[] = []
-    if (!folders) return
-    folders?.forEach(async (folder) => {
-        // let relativePattern = new vscode.RelativePattern(folder, '**/*.ts')
-        const files = await vscode.workspace.findFiles(
-            '**/*.ts',
-            '**/node_modules/**',
-            10
-        )
-        console.log('foundsomething', files)
-        // const toString = (uris: vscode.Uri[]) => uris.map((uri) => uri.fsPath)
-        filesToSearch = files.map((uris: vscode.Uri) => {
-            return uris.fsPath
-        })
-        console.log('files', filesToSearch)
-    })
-
-    // if (vscode.workspace.workspaceFolders) {
-    //     vscode.window.visibleTextEditors.forEach(
-    //         (editor: vscode.TextEditor) => {
-    //             const path = editor.document.uri.path
-    //             const fsPath = editor.document.uri.fsPath
-    //             console.log('path', path, 'fspath', fsPath)
-    //         }
-    //     )
-    // }
-
-    if (vscode.workspace.workspaceFolders) {
-        vscode.workspace.textDocuments.forEach(
-            (editor: vscode.TextDocument) => {
-                const path = editor.uri.path
-                const fsPath = editor.uri.fsPath
-                console.log('path', path, 'fspath', fsPath)
-            }
-        )
-    }
 }

@@ -134,7 +134,7 @@ export class AstHelper {
             .concat(getAnnotationsNotWithGitUrl(annotationList, gitUrl))
     }
 
-    private buildPathForAnnotation(
+    public buildPathForAnnotation(
         annotation: Annotation,
         // gitUrl: string,
         document: vscode.TextDocument

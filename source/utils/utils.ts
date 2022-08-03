@@ -275,6 +275,7 @@ export const reconstructAnnotations = (
                       )
                     : [],
             },
+            potentialReanchorSpots: [],
         }
         const adjustedAnno = {
             id: newAnnoId,
@@ -1092,6 +1093,7 @@ export const createAnchorObject = async (
                     range
                 ),
             },
+            potentialReanchorSpots: [],
         }
     } else {
         vscode.window.showInformationMessage('Must have open text editor!')
@@ -1132,4 +1134,20 @@ export const levenshteinDistance = (s: string, t: string) => {
         }
     }
     return arr[t.length][s.length]
+}
+
+export const updateAnnotationsWithAnchors = (
+    anchors: AnchorObject[]
+): Annotation[] => {
+    const annoIds = anchors.map((a) => a.parentId)
+    const matchingAnnos = annotationList.filter((a) => annoIds.includes(a.id))
+    const updatedAnnos = matchingAnnos.map((a: Annotation) => {
+        const annoAnchors = anchors.filter((anch) => anch.parentId === a.id)
+        return buildAnnotation({
+            ...a,
+            anchors: annoAnchors,
+            needToUpdate: true,
+        })
+    })
+    return updatedAnnos
 }

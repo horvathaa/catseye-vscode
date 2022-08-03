@@ -261,6 +261,7 @@ export const createNewAnnotation = async () => {
                         r
                     ),
                 },
+                potentialReanchorSpots: [],
             }
             const temp = {
                 id: newAnnoId,
@@ -338,6 +339,7 @@ export const createFileAnnotation = async (
             linesBefore: [],
             linesAfter: [],
         },
+        potentialReanchorSpots: [],
     }
     const temp = {
         id: newAnnoId,
@@ -474,6 +476,7 @@ export const addNewHighlight = (
                         r
                     ),
                 },
+                potentialReanchorSpots: [],
             }
             const temp = {
                 id: newAnnoId,

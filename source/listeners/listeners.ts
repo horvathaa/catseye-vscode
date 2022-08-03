@@ -40,7 +40,7 @@ import {
     Annotation,
     AnchorObject,
     ChangeEvent,
-    GhostAnchorObject,
+    PotentialAnchorObject,
     // Timer
 } from '../constants/constants'
 
@@ -125,14 +125,21 @@ export const handleChangeActiveTextEditor = (
 // In case where user saves or closes a window, save annotations to FireStore
 export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
     const gitUrl = utils.getStableGitHubUrl(TextDocument.uri.fsPath)
-    const updated = astHelper.updatePaths(TextDocument)
+    // const updated = astHelper.updatePaths(TextDocument)
     // get anchors
     // for each anchors call getSurroundingLinesBeforeAnchor and getSurroundingLinesAfterAnchor(TextDocument, anchor)
     // update each corresponding annotation
     const anchors = anchor.getAnchorsWithGitUrl(
         utils.getStableGitHubUrl(TextDocument.uri.fsPath)
     )
-    console.log(anchors.map((a) => computeMostSimilarAnchor(TextDocument, a)))
+    const newAnchors = anchors.map((a) =>
+        computeMostSimilarAnchor(TextDocument, a)
+    )
+    const updatedAgain = utils.updateAnnotationsWithAnchors(newAnchors)
+    const lastUpdate = updatedAgain.map((a) =>
+        astHelper.buildPathForAnnotation(a, TextDocument)
+    )
+    console.log('lmao', lastUpdate)
     // const GhostAnchor: GhostAnchorObject = anchor.computeMostSimilarAnchor()
     // const mostSimilarAnchor = anchor.computeMostSimilarAnchor(
     //     TextDocument,
@@ -148,7 +155,7 @@ export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
     // console.log('path', testPath)
     // astHelper.findMostSimilarPath(TextDocument, testPath)
     setAnnotationList(
-        utils.removeOutOfDateAnnotations(updated)
+        utils.removeOutOfDateAnnotations(lastUpdate)
         // .concat(utils.getAnnotationsNotWithGitUrl(annotationList, gitUrl))
     )
     if (vscode.workspace.workspaceFolders)

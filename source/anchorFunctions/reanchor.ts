@@ -3,8 +3,24 @@ import {
     Anchor,
     AnchorObject,
     NUM_SURROUNDING_LINES,
+    PotentialAnchorObject,
 } from '../constants/constants'
-import { levenshteinDistance, objectsEqual, removeNulls } from '../utils/utils'
+import { astHelper, gitInfo } from '../extension'
+import {
+    getFirstLineOfHtml,
+    getGithubUrl,
+    getProjectName,
+    getShikiCodeHighlighting,
+    getVisiblePath,
+    levenshteinDistance,
+    objectsEqual,
+    removeNulls,
+} from '../utils/utils'
+import {
+    createRangeFromObject,
+    getSurroundingLinesAfterAnchor,
+    getSurroundingLinesBeforeAnchor,
+} from './anchor'
 
 let currDocLength = 0
 
@@ -49,6 +65,7 @@ interface WeightedToken extends CodeToken {
 interface WeightedAnchor {
     anchor: Anchor
     weight: number
+    reasonSuggested: string
 }
 
 // consider, for anchor, using saved startOffset as starting value instead of our computed offset vals
@@ -173,10 +190,73 @@ export const computeMostSimilarAnchor = (
         anchor.anchor.startLine,
         anchor.anchor.endLine
     )
+    const projectName: string = getProjectName(document.uri.toString())
+    const visiblePath: string = vscode.workspace.workspaceFolders
+        ? getVisiblePath(projectName, document.uri.fsPath)
+        : document.uri.fsPath
 
-    console.log('newAnchors', newAnchors)
+    // https://stackoverflow.com/questions/40140149/use-async-await-with-array-map
+    // have to use Promise.all when returning an array of promises
 
-    return anchor
+    //await Promise.all(
+    const newPotentialAnchors = newAnchors.map(
+        (weightedAnchor: WeightedAnchor) => {
+            const { weight, ...restAnchor } = weightedAnchor
+            const newRange = createRangeFromObject(restAnchor.anchor)
+            const potentialAnchorText = document.getText(newRange)
+            const html = '' // should maybe bring back shiki but for now No
+            // await getShikiCodeHighlighting(
+            //     document.uri.toString(),
+            //     potentialAnchorText
+            // )
+            const newPotentialAnchor: PotentialAnchorObject = {
+                anchor: restAnchor.anchor,
+                anchorText: potentialAnchorText,
+                html,
+                gitUrl: getGithubUrl(visiblePath, projectName, false),
+                stableGitUrl: getGithubUrl(visiblePath, projectName, true),
+                visiblePath,
+                anchorPreview: '',
+                // getFirstLineOfHtml(
+                //     html,
+                //     potentialAnchorText.split('\n').length === 1
+                // )
+                filename: document.uri.toString(),
+                programmingLang: anchor.programmingLang,
+                gitRepo: gitInfo[projectName].repo,
+                gitBranch: gitInfo[projectName].branch,
+                gitCommit: gitInfo[projectName].commit,
+                anchorId: anchor.anchorId,
+                originalCode: anchor.originalCode,
+                parentId: anchor.parentId,
+                anchored: false,
+                createdTimestamp: anchor.createdTimestamp
+                    ? anchor.createdTimestamp
+                    : new Date().getTime(),
+                priorVersions: anchor.priorVersions ? anchor.priorVersions : [],
+                path: astHelper.generateCodeContextPath(newRange, document),
+                surroundingCode: {
+                    linesBefore: getSurroundingLinesBeforeAnchor(
+                        document,
+                        newRange
+                    ),
+                    linesAfter: getSurroundingLinesAfterAnchor(
+                        document,
+                        newRange
+                    ),
+                },
+                potentialReanchorSpots: [],
+                weight,
+                reasonSuggested: '',
+            }
+            return newPotentialAnchor
+        }
+    )
+    // )
+
+    // console.log('newAnchors', newAnchors)
+
+    return { ...anchor, potentialReanchorSpots: newPotentialAnchors }
 }
 
 const findMostSimilarAnchorTokenInSource = (
@@ -342,7 +422,7 @@ const compareCodeLinesByContent = (
                   // empty arrays like this is Good or not
                   {
                       token: '',
-                      weight: 0.5, // ??????
+                      weight: 0.5, // ?????? ideally this is a sort of mid-point weight
                       howSimilarIsTokenLocation: 0,
                       howManyTimesDoesTokenAppear: 0,
                       doesHaveMatch: false,
@@ -660,6 +740,7 @@ const findNewAnchorLocation = (
             endOffset: 0,
         },
         weight: 100,
+        reasonSuggested: '',
     }
     console.log('startToken', startToken)
     console.log('endToken', endToken)
@@ -696,6 +777,7 @@ const findSingleTokenAnchor = (
     let newAnchor: WeightedAnchor = {
         anchor: { startLine: 0, endLine: 0, startOffset: 0, endOffset: 0 },
         weight: 100,
+        reasonSuggested: '',
     }
     const potentialMatches = sourceCode[0].codeLine.code.filter(
         (l) => l.doesHaveMatch || l.isExactMatch || l.doesContainAnchor
@@ -771,7 +853,9 @@ const findSingleTokenAnchor = (
         // const minWeightToken = sourceCode[0].codeLine.code.find(
         //     (t) => t.weight === Math.min(...weights)
         // )
-        const minWeightToken = findMin(sourceCode[0].codeLine.code)
+        const minWeightToken: WeightedToken = findMin(
+            sourceCode[0].codeLine.code
+        )
         if (minWeightToken) {
             newAnchor.anchor.startLine = sourceCode[0].codeLine.line
             newAnchor.anchor.endLine = sourceCode[0].codeLine.line
@@ -788,6 +872,18 @@ const findSingleTokenAnchor = (
     return newAnchor
 }
 
+// need to implement at some point - should be a combo of looking at weighted tokens to see whether we found matches
+// plus need info about how similar surrounding lines of code were
+// and when we add path stuff, can include that
+// may make sense to build this string over time as opposed to doing it
+// only once we find a match
+// const getReasonSuggested = (weightedTokens: WeightedToken[]) : string => {
+//     let reason = ""
+//     const rationales = weightedTokens.map((t) => {
+
+//     })
+// }
+
 const findMultiLineAnchor = (
     sourceCode: WeightedCodeLine[],
     anchorCode: CodeLine[]
@@ -799,6 +895,7 @@ const findMultiLineAnchor = (
     let newAnchor: WeightedAnchor = {
         anchor: { startLine: 0, startOffset: 0, endLine: 0, endOffset: 0 },
         weight: 100,
+        reasonSuggested: '',
     }
 
     // may need to use these iterators if we only have bad matches for first/last token due to edit

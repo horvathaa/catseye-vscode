@@ -104,6 +104,7 @@ export interface AnchorObject {
     priorVersions?: AnchorOnCommit[] // Not in FB until commit. Rn, dynamically compute priorVersionsfrom the Commit object model on launch
     path: CodeContext[]
     surroundingCode: SurroundingAnchorArea
+    potentialReanchorSpots: PotentialAnchorObject[] // consider making optional
     //add annotation field, ridding of multiple anchors
 }
 
@@ -111,8 +112,9 @@ export interface AnchorObject {
 // update: using translateChanges
 // delete: when user reattaches (either this turns into an AnchorObject or it is deleted because user didn't choose it)
 // or parent anno is deleted OR parent anchor is deleted
-export interface GhostAnchorObject extends AnchorObject {
+export interface PotentialAnchorObject extends AnchorObject {
     weight: number // how likely we think this anchor point is
+    reasonSuggested: string // why we think this anchor point is a good choice
 }
 
 export interface AnchorOnCommit {

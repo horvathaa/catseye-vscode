@@ -119,14 +119,6 @@ const ReactAnnotation: React.FC<Props> = ({
                     },
                 },
             },
-            MuiSvgIcon: {
-                styleOverrides: {
-                    root: {
-                        backgroundColor: editorBackground,
-                        color: iconColor,
-                    },
-                },
-            },
         },
         breakpoints: breakpoints,
     })

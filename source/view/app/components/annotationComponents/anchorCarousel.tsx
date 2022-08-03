@@ -130,10 +130,13 @@ const AnchorCarousel: React.FC<Props> = ({
         pv: AnchorOnCommit | PotentialAnchorObject,
         index: number
     ) => {
-        if (index <= pv.surroundingCode.linesBefore.length) {
+        if (
+            pv.surroundingCode?.linesBefore &&
+            index < pv.surroundingCode?.linesBefore.length
+        ) {
             const lineBefore =
-                pv.surroundingCode.linesBefore[
-                    pv.surroundingCode.linesBefore.length - index
+                pv.surroundingCode?.linesBefore[
+                    pv.surroundingCode?.linesBefore.length - index
                 ]
             const length = lineBefore.length
             const tooLong = length > 60
@@ -146,7 +149,10 @@ const AnchorCarousel: React.FC<Props> = ({
         pv: AnchorOnCommit | PotentialAnchorObject,
         index: number //1
     ) => {
-        if (index < pv.surroundingCode.linesAfter.length) {
+        if (
+            pv.surroundingCode?.linesAfter &&
+            index < pv.surroundingCode?.linesAfter.length
+        ) {
             const lineAfter = pv.surroundingCode.linesAfter[index]
             const length = lineAfter.length
             const tooLong = length > 60

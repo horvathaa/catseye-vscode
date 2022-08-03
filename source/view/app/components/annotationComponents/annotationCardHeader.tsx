@@ -6,18 +6,27 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined'
 import { Annotation } from '../../../../constants/constants'
 import UserProfile from './userProfile'
-import { codeColor } from '../../styles/vscodeStyles'
 import styles from '../../styles/annotation.module.css'
+import { BiAnchor } from 'react-icons/bi'
+import { Tooltip } from '@material-ui/core'
 
 interface Props {
     expanded: boolean
     setExpanded: (e: boolean) => void
     anchored: boolean
     anno: Annotation
+    addAnchor: () => void
 }
 
-const CardHeader = ({ expanded, setExpanded, anchored, anno }: Props) => {
+const CardHeader = ({
+    expanded,
+    setExpanded,
+    anchored,
+    anno,
+    addAnchor,
+}: Props) => {
     const handleMenuClick = () => {}
+
     return (
         <div
             style={{
@@ -61,7 +70,26 @@ const CardHeader = ({ expanded, setExpanded, anchored, anno }: Props) => {
                     createdTimestamp={anno.createdTimestamp}
                 />
             )}
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'row' }}>
+                {expanded === true ? (
+                    <div
+                        onClick={(e: React.SyntheticEvent) => {
+                            e.stopPropagation()
+                            addAnchor()
+                        }}
+                        className={styles['DropdownItemOverwrite']}
+                    >
+                        <div className={styles['DropdownIconsWrapper']}>
+                            <Tooltip title="Add Anchor">
+                                <div>
+                                    <BiAnchor
+                                        className={styles['profileMenu']}
+                                    />
+                                </div>
+                            </Tooltip>
+                        </div>
+                    </div>
+                ) : null}
                 <IconButton size="small">
                     <CheckIcon />
                 </IconButton>

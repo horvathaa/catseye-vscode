@@ -152,12 +152,14 @@ export const handleAddAnchor = async (id: string): Promise<void> => {
             id,
             new vscode.Range(currentSelection.start, currentSelection.end)
         )
+        console.log('new anchor', newAnchor)
         const newAnno: Annotation = newAnchor
             ? buildAnnotation({
                   ...anno,
                   anchors: [...anno.anchors, newAnchor],
               })
             : anno
+        console.log('new annotation with anchor', newAnno)
         if (!newAnchor) {
             console.error(
                 'could not make new anchor - returning original annotation...'
@@ -166,6 +168,7 @@ export const handleAddAnchor = async (id: string): Promise<void> => {
         setAnnotationList(
             annotationList.filter((anno) => anno.id !== id).concat([newAnno])
         )
+        console.log('annotation list after setting', annotationList)
         const textEditorToHighlight: vscode.TextEditor = vscode.window
             .activeTextEditor
             ? vscode.window.activeTextEditor

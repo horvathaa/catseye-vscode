@@ -124,6 +124,13 @@ export const handleChangeActiveTextEditor = (
 export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
     const gitUrl = utils.getStableGitHubUrl(TextDocument.uri.fsPath)
     const updated = astHelper.updatePaths(TextDocument)
+
+    // const testPath = utils.getAnnotationsWithStableGitUrl(
+    //     updated,
+    //     utils.getStableGitHubUrl(TextDocument.uri.fsPath)
+    // )[4].anchors[0].path
+    // console.log('path', testPath)
+    // astHelper.findMostSimilarPath(TextDocument, testPath)
     setAnnotationList(utils.removeOutOfDateAnnotations(updated))
     if (vscode.workspace.workspaceFolders)
         utils.handleSaveCloseEvent(

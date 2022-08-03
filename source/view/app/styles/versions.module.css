@@ -1,0 +1,83 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    padding: 0;
+    margin: 0;
+}
+
+::-webkit-scrollbar {
+    width: 0px;
+    background: transparent; /* make scrollbar transparent */
+}
+
+p {
+    font-family: 'Menlo';
+    font-weight: normal;
+    font-size: 12px;
+    font-feature-settings: 'liga' 0, 'calt' 0;
+    line-height: 18px;
+    letter-spacing: 0px;
+    margin: 0px;
+}
+
+span {
+    font-family: var(--vscode-font-family);
+    font-size: 12px;
+}
+
+.AnchorContainer {
+    display: flex;
+    border: 2px solid rgb(239 255 201 / 20%);
+    border-radius: 4px;
+    padding: 2px;
+    margin: 5px;
+    box-sizing: border-box;
+}
+
+code {
+    padding: 0;
+    margin: 0;
+}
+
+button.reanchor {
+    margin: 2px;
+    border-radius: 8px;
+    padding-left: 1em;
+    padding-right: 1em;
+    cursor: pointer;
+    color: white;
+    margin-top: 6px;
+    border: 2px solid transparent;
+    border-color: #7fae42;
+    background-color: var(--vscode-editor-background);
+    height: 30px;
+}
+
+button.reanchor:hover {
+    filter: brightness(1);
+    transition: opacity 0.55s ease-in-out;
+    background-color: #7fae42;
+}
+
+button.remove {
+    margin: 2px;
+    border-radius: 8px;
+    padding-left: 1em;
+    padding-right: 1em;
+    cursor: pointer;
+    color: white;
+    margin-top: 6px;
+    border: 2px solid transparent;
+    border-color: rgba(158, 158, 158, 0.651);
+    background-color: var(--vscode-editor-background);
+    height: 30px;
+}
+
+button.remove:hover {
+    filter: brightness(1);
+    transition: opacity 0.55s ease-in-out;
+    background-color: rgba(158, 158, 158, 0.651);
+}

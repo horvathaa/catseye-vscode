@@ -17,6 +17,7 @@ import {
 } from '../../../constants/constants'
 import AnnotationOperationButtons from './annotationComponents/annotationOperationButtons'
 import AnchorList from './annotationComponents/anchorList'
+import AnchorVersions from './annotationComponents/anchorVersions'
 import TextEditor from './annotationComponents/textEditor'
 import ReplyContainer from './annotationComponents/replyContainer'
 import Outputs from './annotationComponents/outputs'
@@ -86,6 +87,14 @@ const ReactAnnotation: React.FC<Props> = ({
         },
         components: {
             MuiIconButton: {
+                styleOverrides: {
+                    root: {
+                        backgroundColor: editorBackground,
+                        color: iconColor,
+                    },
+                },
+            },
+            MuiSvgIcon: {
                 styleOverrides: {
                     root: {
                         backgroundColor: editorBackground,
@@ -365,18 +374,18 @@ const ReactAnnotation: React.FC<Props> = ({
     return (
         <>
             <ThemeProvider theme={theme}>
-                <Card style={cardStyle}>
+                <div style={cardStyle}>
                     <CollapsedCardHeader
                         expanded={expanded}
                         setExpanded={setExpanded}
                         anchored={anchored}
                         anno={anno}
+                        addAnchor={addAnchor}
                     />
                     <Collapse in={expanded} timeout="auto" unmountOnExit>
                         <CardContent>
-                            <AnchorList
+                            <AnchorVersions
                                 anchors={anno.anchors}
-                                snapshotCode={snapshotCode}
                                 scrollInEditor={scrollInEditor}
                             />
                             <div className={styles['ContentContainer']}>
@@ -435,7 +444,7 @@ const ReactAnnotation: React.FC<Props> = ({
                             </div>
                         </CardContent>
                     </Collapse>
-                </Card>
+                </div>
             </ThemeProvider>
         </>
     )

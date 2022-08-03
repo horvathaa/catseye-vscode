@@ -394,7 +394,7 @@ const AdamitePanel: React.FC<Props> = ({
                 />
             ) : null}
             {!showLogin && (
-                <>
+                <div style={{padding: "0 8px"}}>
                     <TopBar
                         saveAnnotationsToJson={saveAnnotationsToJson}
                         showKeyboardShortcuts={showKeyboardShortcuts}
@@ -413,7 +413,7 @@ const AdamitePanel: React.FC<Props> = ({
                         username={userName}
                         userId={uid}
                     />
-                </>
+                </div>
             )}
             {showLogin && <LogIn vscode={vscode} />}
         </React.Fragment>

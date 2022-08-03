@@ -285,6 +285,7 @@
 .userContainer {
     display: flex;
     padding-bottom: 6px;
+    flex-wrap: wrap;
 }
 
 .textboxContainer {

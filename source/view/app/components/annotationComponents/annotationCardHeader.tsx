@@ -15,6 +15,7 @@ import { useMediaQuery } from '@material-ui/core'
 import { breakpoints } from '../../utils/viewUtils'
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined'
 import { BiAnchor } from 'react-icons/bi'
+import AnchorIcon from '@mui/icons-material/Anchor'
 import { Tooltip } from '@material-ui/core'
 
 interface Props {
@@ -52,7 +53,7 @@ const CardHeader = ({
 
     const codeSize = useMediaQuery(theme.breakpoints.up('code'))
     const smCodeSize = useMediaQuery(theme.breakpoints.up('sm'))
-    const slicedText: number = codeSize ? 30 : smCodeSize ? 15 : 4
+    const slicedText: number = codeSize ? 30 : 15
 
     return (
         <div
@@ -103,61 +104,53 @@ const CardHeader = ({
                     createdTimestamp={annotation.createdTimestamp}
                 />
             )}
-            <div
-                style={{
-                    display: 'flex',
-                }}
-            >
-                {expanded === true && anno.sharedWith != 'group' ? (
+            {(smCodeSize || expanded) && (
+                <div
+                    style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                    }}
+                >
+                    {expanded === true && anno.sharedWith != 'group' ? (
+                        <AdamiteButton
+                            buttonClicked={shareAnnotation}
+                            name="Share"
+                            icon={<ShareIcon fontSize="small" />}
+                        />
+                    ) : null}
+                    {expanded === true ? (
+                        <AdamiteButton
+                            buttonClicked={addAnchor}
+                            name="Add Anchor"
+                            icon={<AnchorIcon fontSize="small" />}
+                        />
+                    ) : null}
+
+                    {anno.selected ? (
+                        <AdamiteButton
+                            buttonClicked={pinAnnotation}
+                            name="Pin"
+                            icon={<PushPinIcon fontSize="small" />}
+                        />
+                    ) : (
+                        <AdamiteButton
+                            buttonClicked={pinAnnotation}
+                            name="Pin"
+                            icon={<PushPinOutlinedIcon fontSize="small" />}
+                        />
+                    )}
                     <AdamiteButton
-                        buttonClicked={shareAnnotation}
-                        name="Share"
-                        icon={<ShareIcon fontSize="small" />}
+                        buttonClicked={resolveAnnotation}
+                        name="Resolve"
+                        icon={<CheckIcon fontSize="small" />}
                     />
-                ) : null}
-                {expanded === true ? (
-                    <div
-                        onClick={(e: React.SyntheticEvent) => {
-                            e.stopPropagation()
-                            addAnchor()
-                        }}
-                        className={styles['DropdownItemOverwrite']}
-                    >
-                        <div className={styles['DropdownIconsWrapper']}>
-                            <Tooltip title="Add Anchor">
-                                <div>
-                                    <BiAnchor
-                                        className={styles['profileMenu']}
-                                    />
-                                </div>
-                            </Tooltip>
-                        </div>
-                    </div>
-                ) : null}
-                {anno.selected ? (
                     <AdamiteButton
-                        buttonClicked={pinAnnotation}
-                        name="Pin"
-                        icon={<PushPinIcon fontSize="small" />}
+                        buttonClicked={deleteAnnotation}
+                        name="Delete"
+                        icon={<DeleteIcon fontSize="small" />}
                     />
-                ) : (
-                    <AdamiteButton
-                        buttonClicked={pinAnnotation}
-                        name="Pin"
-                        icon={<PushPinOutlinedIcon fontSize="small" />}
-                    />
-                )}
-                <AdamiteButton
-                    buttonClicked={resolveAnnotation}
-                    name="Resolve"
-                    icon={<CheckIcon fontSize="small" />}
-                />
-                <AdamiteButton
-                    buttonClicked={deleteAnnotation}
-                    name="Delete"
-                    icon={<DeleteIcon fontSize="small" />}
-                />
-            </div>
+                </div>
+            )}
         </div>
     )
 }

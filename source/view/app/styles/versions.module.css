@@ -12,6 +12,7 @@ body {
     width: 0px;
     background: transparent; /* make scrollbar transparent */
 }
+/* Should we be hiding scrollbar? */
 
 p {
     font-family: 'Menlo';

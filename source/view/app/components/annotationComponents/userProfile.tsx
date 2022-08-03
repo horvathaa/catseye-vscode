@@ -37,8 +37,7 @@ const UserProfile: React.FC<Props> = ({ githubUsername, createdTimestamp }) => {
                     alt="github user profile image"
                 />
             )}
-            {isSmOrMore && (
-                <div className={styles['usernameAndTimeContainer']}>
+            <div className={styles['usernameAndTimeContainer']}>
                     <a
                         href={'https://github.com/' + githubUsername}
                         className={styles['username']}
@@ -47,7 +46,6 @@ const UserProfile: React.FC<Props> = ({ githubUsername, createdTimestamp }) => {
                     </a>
                     {time}
                 </div>
-            )}
         </div>
     )
 }

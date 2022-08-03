@@ -6,6 +6,7 @@
  * buttons will show up as a dropdown menu.
  *
  */
+// NOTE: NO LONGER USED. annotationCardHeader used instead!
 import * as React from 'react'
 import AuthorOperationButtons from './authorOperationButtons'
 import {

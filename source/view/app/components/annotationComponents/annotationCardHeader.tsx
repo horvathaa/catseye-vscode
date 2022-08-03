@@ -43,7 +43,6 @@ const CardHeader = ({
 }: Props) => {
     const [annotation, setAnnotation] = React.useState<Annotation>(anno)
     React.useEffect(() => {
-        console.log('card anno', anno)
         setAnnotation(anno)
     }, [anno])
 

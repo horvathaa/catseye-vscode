@@ -1,5 +1,6 @@
 import * as ts from 'typescript'
 import * as vscode from 'vscode'
+import { AST_DEBUG } from './astHelper'
 
 export function getNodes(node: ts.Node) {
     const nodes: ts.Node[] = []
@@ -279,6 +280,7 @@ export function generatePath(
         // console.log('path??', path)
         return path
     }
-    console.error('Could not make path - could not find parent node')
+    AST_DEBUG &&
+        console.error('Could not make path - could not find parent node')
     return []
 }

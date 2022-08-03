@@ -1176,7 +1176,7 @@ if don't find a candidate, search all modified files from git status
 */
 export const findOpenFilesToSearch = async () => {
     const folders = vscode.workspace.workspaceFolders
-    console.log('folders', folders)
+    // console.log('folders', folders)
     let filesToSearch: any[] = []
     if (!folders) return
     folders?.forEach(async (folder) => {
@@ -1186,12 +1186,12 @@ export const findOpenFilesToSearch = async () => {
             '**/node_modules/**',
             10
         )
-        console.log('foundsomething', files)
+        // console.log('foundsomething', files)
         // const toString = (uris: vscode.Uri[]) => uris.map((uri) => uri.fsPath)
         filesToSearch = files.map((uris: vscode.Uri) => {
             return uris.fsPath
         })
-        console.log('files', filesToSearch)
+        // console.log('files', filesToSearch)
     })
 
     // if (vscode.workspace.workspaceFolders) {
@@ -1209,7 +1209,7 @@ export const findOpenFilesToSearch = async () => {
             (editor: vscode.TextDocument) => {
                 const path = editor.uri.path
                 const fsPath = editor.uri.fsPath
-                console.log('path', path, 'fspath', fsPath)
+                // console.log('path', path, 'fspath', fsPath)
             }
         )
     }

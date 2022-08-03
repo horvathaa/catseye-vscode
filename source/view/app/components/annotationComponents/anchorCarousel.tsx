@@ -9,6 +9,8 @@ import {
     AnchorObject,
     AnchorOnCommit,
     PotentialAnchorObject,
+    HIGH_SIMILARITY_THRESHOLD, // we are pretty confident the anchor is here
+    PASSABLE_SIMILARITY_THRESHOLD, // we are confident enough
 } from '../../../../constants/constants'
 import { disabledIcon, iconColor } from '../../styles/vscodeStyles'
 import AdamiteButton from './AdamiteButton'
@@ -125,6 +127,14 @@ const AnchorCarousel: React.FC<Props> = ({
         e.stopPropagation()
         if (pastVersions && index === pastVersions.length - 1)
             scrollInEditor(aId)
+    }
+
+    const getConfidenceString = (weight: number): string => {
+        return weight <= HIGH_SIMILARITY_THRESHOLD
+            ? 'very similar'
+            : weight <= PASSABLE_SIMILARITY_THRESHOLD
+            ? 'similar'
+            : 'weak'
     }
 
     const displayBefore = (
@@ -403,8 +413,10 @@ const AnchorCarousel: React.FC<Props> = ({
                                         <span>
                                             <i>
                                                 {' '}
-                                                {pv.weight * 100}% match in{' '}
-                                                {pv.visiblePath}
+                                                {getConfidenceString(
+                                                    pv.weight
+                                                )}{' '}
+                                                match in {pv.visiblePath}
                                             </i>
                                         </span>
                                         {pv.anchor.endLine -

@@ -29,6 +29,7 @@ interface WeightedCodeContext extends CodeContext {
     tsNode: ts.Node
 }
 
+export const AST_DEBUG = false
 export class AstHelper {
     private __sourceFiles: SourceFile[]
 
@@ -175,7 +176,7 @@ export class AstHelper {
                 path: nodeInfo.filter((p) => p.isDirectParent),
             }
         }
-        console.error('Could not create path') // only throw this error if it's a file we should bother finding i.e., js/ts file
+        AST_DEBUG && console.error('Could not create path') // only throw this error if it's a file we should bother finding i.e., js/ts file
         return anchor
     }
 

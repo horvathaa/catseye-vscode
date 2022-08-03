@@ -4,6 +4,9 @@ import {
     AnchorObject,
     NUM_SURROUNDING_LINES,
     PotentialAnchorObject,
+    HIGH_SIMILARITY_THRESHOLD, // we are pretty confident the anchor is here
+    PASSABLE_SIMILARITY_THRESHOLD, // we are confident enough
+    INCREMENT, // amount for expanding search range
 } from '../constants/constants'
 import { astHelper, gitInfo } from '../extension'
 import {
@@ -22,11 +25,10 @@ import {
     getSurroundingLinesBeforeAnchor,
 } from './anchor'
 
+// toggle to true for more console messages
+export const REANCHOR_DEBUG: boolean = false
 let currDocLength = 0
 
-const HIGH_SIMILARITY_THRESHOLD = 0.3 // we are pretty confident the anchor is here
-const PASSABLE_SIMILARITY_THRESHOLD = 0.7 // we are confident enough
-const INCREMENT = 2 // amount for expanding search range
 interface CodeToken {
     token: string
     offset: number
@@ -155,7 +157,7 @@ export const computeMostSimilarAnchor = (
 ): AnchorObject => {
     currDocLength = document.lineCount
     const sourceCode: CodeLine[] = getCodeLine(document.getText())
-    console.log('anchor', anchor)
+    REANCHOR_DEBUG && console.log('anchor', anchor)
     const anchorCode: CodeLine[] = getCodeLine(anchor.anchorText, {
         startLine: anchor.anchor.startLine,
         startOffset: anchor.anchor.startOffset,
@@ -175,10 +177,10 @@ export const computeMostSimilarAnchor = (
               startOffset: 0,
           })
         : []
-    console.log('sourceCode', sourceCode)
-    console.log('anchorCode', anchorCode)
-    console.log('surroundingAbove', surroundingAbove)
-    console.log('surroundingBelow', surroundingBelow)
+    // console.log('sourceCode', sourceCode)
+    // console.log('anchorCode', anchorCode)
+    // console.log('surroundingAbove', surroundingAbove)
+    // console.log('surroundingBelow', surroundingBelow)
     // if (findAtOriginalLocation(sourceCode, anchorCode)) {
     //     console.log('wowza')
     // }
@@ -267,10 +269,10 @@ const findMostSimilarAnchorTokenInSource = (
     // -- see if token appears in source array...? (first exact match, then includes, then levenstein min...?)
 
     const anchorToken = anchor[0]
-    console.log('anchorToken', anchorToken)
+    // console.log('anchorToken', anchorToken)
     const sourceWeighted: WeightedToken[] = source.map(
         (sourceToken: CodeToken, i: number) => {
-            console.log('sourceToken', sourceToken)
+            // console.log('sourceToken', sourceToken)
             let isExactMatch = sourceToken.token === anchorToken.token
             let doesContainAnchor = sourceToken.token.includes(
                 anchorToken.token
@@ -431,7 +433,7 @@ const compareCodeLinesByContent = (
                   },
               ]
     const weightedLine: WeightedLine = { ...source, code: weighted }
-    console.log('weightedLine', weightedLine)
+    // console.log('weightedLine', weightedLine)
     const weightedCodeLine: WeightedCodeLine = {
         codeLine: weightedLine,
         weight: computeLineWeight(weightedLine, anchor.code.length),
@@ -489,7 +491,7 @@ const createWeightedLineComparedToSource = (
     )
 
     if (comparingCode && comparingCode.length) {
-        console.log('computedSourceLines', computedSourceLines)
+        // console.log('computedSourceLines', computedSourceLines)
         if (comparingCode.length === computedSourceLines.length) {
             const weightedCodeLine: WeightedCodeLine[] =
                 computedSourceLines.map(
@@ -534,7 +536,7 @@ const createWeightedLineComparedToSource = (
         }
     }
 
-    console.error('Could not compute weight')
+    REANCHOR_DEBUG && console.error('Could not compute weight')
     return []
 }
 
@@ -604,13 +606,16 @@ const proximitySearch = (
     // console.log('surroundingAboveAnchorSearch', surroundingAboveAnchorSearch)
     // console.log('surroundingBelowAnchorSearch', surroundingBelowAnchorSearch)
 
-    debugPrintWeightedCodeLineStats(startAnchorSearch, anchorCode)
-    surroundingAboveAnchorSearch.length &&
+    REANCHOR_DEBUG &&
+        debugPrintWeightedCodeLineStats(startAnchorSearch, anchorCode)
+    REANCHOR_DEBUG &&
+        surroundingAboveAnchorSearch.length &&
         debugPrintWeightedCodeLineStats(
             surroundingAboveAnchorSearch,
             surroundingAbove
         )
-    surroundingBelowAnchorSearch.length &&
+    REANCHOR_DEBUG &&
+        surroundingBelowAnchorSearch.length &&
         debugPrintWeightedCodeLineStats(
             surroundingBelowAnchorSearch,
             surroundingBelow
@@ -647,7 +652,7 @@ const proximitySearch = (
         averageSurroundingAboveLineWeight <= HIGH_SIMILARITY_THRESHOLD &&
         averageSurroundingBelowLineWeight <= HIGH_SIMILARITY_THRESHOLD
     ) {
-        console.log('--------- HIGH SIMILARITY ----------')
+        REANCHOR_DEBUG && console.log('--------- HIGH SIMILARITY ----------')
         // find anchor start and end points + anchor range
         newAnchors = newAnchors.concat(
             findNewAnchorLocation(startAnchorSearch, anchorCode)
@@ -658,12 +663,12 @@ const proximitySearch = (
         averageSurroundingBelowLineWeight <= PASSABLE_SIMILARITY_THRESHOLD
     ) {
         // can maybe do some additional searching to find better anchor positions (probs compare against close lines)
-        console.log('-------- MEDIUM SIMILARITY ---------')
+        REANCHOR_DEBUG && console.log('-------- MEDIUM SIMILARITY ---------')
         newAnchors = newAnchors.concat(
             findNewAnchorLocation(startAnchorSearch, anchorCode)
         )
     } else {
-        console.log('-------- LOW SIMILARITY ---------')
+        REANCHOR_DEBUG && console.log('-------- LOW SIMILARITY ---------')
         const weightedAboveComparedToAnchor: (false | WeightedCodeLine)[] =
             surroundingAbove.map(
                 (line, i) =>
@@ -679,14 +684,14 @@ const proximitySearch = (
                     i < anchorCode.length &&
                     compareCodeLinesByContent(line, anchorCode[i])
             )
-        console.log(
-            'maybe in area above anchor?',
-            weightedAboveComparedToAnchor
-        )
-        console.log(
-            'maybe in area below anchor?',
-            weightedBelowComparedToAnchor
-        )
+        // console.log(
+        //     'maybe in area above anchor?',
+        //     weightedAboveComparedToAnchor
+        // )
+        // console.log(
+        //     'maybe in area below anchor?',
+        //     weightedBelowComparedToAnchor
+        // )
         // see if anchor is actually in surrounding context
         // if not - widen window
         // if still not - full doc
@@ -726,7 +731,7 @@ const findNewAnchorLocation = (
     sourceCode: WeightedCodeLine[],
     anchorCode: CodeLine[]
 ): WeightedAnchor => {
-    console.log('anchorCode?', anchorCode)
+    // console.log('anchorCode?', anchorCode)
     const startToken = anchorCode[0].code[0]
     const endToken =
         anchorCode[anchorCode.length - 1].code[
@@ -742,8 +747,8 @@ const findNewAnchorLocation = (
         weight: 100,
         reasonSuggested: '',
     }
-    console.log('startToken', startToken)
-    console.log('endToken', endToken)
+    // console.log('startToken', startToken)
+    // console.log('endToken', endToken)
     // single token anchor
     if (objectsEqual(startToken, endToken)) {
         // this should be the main case
@@ -753,7 +758,6 @@ const findNewAnchorLocation = (
         // need to search across multiple lines for our token
         else {
             const bestLine: WeightedCodeLine = findMin(sourceCode)
-            console.log('bestLine????', bestLine)
             newAnchor = findSingleTokenAnchor([bestLine], startToken)
         }
     }
@@ -790,7 +794,7 @@ const findSingleTokenAnchor = (
             newAnchor.anchor.startOffset = match.offset
             newAnchor.anchor.endOffset = match.offset + match.token.length
             newAnchor.weight = match.weight
-            console.log('cool', newAnchor)
+            // console.log('cool', newAnchor)
             return newAnchor
         } else if (match.doesContainAnchor || match.doesHaveMatch) {
             newAnchor.anchor.startLine = sourceCode[0].codeLine.line
@@ -802,11 +806,11 @@ const findSingleTokenAnchor = (
                 match.token.indexOf(startToken.token) +
                 startToken.token.length
             newAnchor.weight = match.weight
-            console.log('also cool', newAnchor)
+            // console.log('also cool', newAnchor)
             return newAnchor
         }
     } else if (potentialMatches.length > 1) {
-        console.log('potentialMatches', potentialMatches)
+        // console.log('potentialMatches', potentialMatches)
         const match = findMin(potentialMatches)
         // const weights = potentialMatches.map((t) => t.weight)
         // const match = potentialMatches.find(
@@ -819,7 +823,7 @@ const findSingleTokenAnchor = (
                 newAnchor.anchor.startOffset = match.offset
                 newAnchor.anchor.endOffset = match.offset + match.token.length
                 newAnchor.weight = match.weight
-                console.log('cool - multi match', newAnchor)
+                // console.log('cool - multi match', newAnchor)
                 return newAnchor
             } else if (match.doesContainAnchor || match.doesHaveMatch) {
                 newAnchor.anchor.startLine = sourceCode[0].codeLine.line
@@ -831,15 +835,15 @@ const findSingleTokenAnchor = (
                     match.token.indexOf(startToken.token) +
                     startToken.token.length
                 newAnchor.weight = match.weight
-                console.log('also cool - multi match', newAnchor) // in case of single character "e", this currently matches on substring of console, would be better if it matched on variable e - should prefer that option due to edit distance...?
+                // console.log('also cool - multi match', newAnchor) // in case of single character "e", this currently matches on substring of console, would be better if it matched on variable e - should prefer that option due to edit distance...?
                 return newAnchor
             } else {
-                console.log('uh oh')
+                // console.log('uh oh')
                 newAnchor.anchor.startLine = sourceCode[0].codeLine.line
                 newAnchor.anchor.endLine = sourceCode[0].codeLine.line
                 newAnchor.anchor.startOffset = match.offset
                 newAnchor.anchor.endOffset = match.offset + match.token.length
-                console.log('BAD MATCH', newAnchor)
+                // console.log('BAD MATCH', newAnchor)
                 newAnchor.weight = match.weight
                 return newAnchor
             }
@@ -848,7 +852,7 @@ const findSingleTokenAnchor = (
     // none of the anchor points either match or contain our token (not great)
     // i.e. potentialMatches.length === 0
     else {
-        console.log('WARNING - potentially bad anchor')
+        REANCHOR_DEBUG && console.log('WARNING - potentially bad anchor')
         // const weights = sourceCode[0].codeLine.code.map((c) => c.weight)
         // const minWeightToken = sourceCode[0].codeLine.code.find(
         //     (t) => t.weight === Math.min(...weights)
@@ -862,7 +866,7 @@ const findSingleTokenAnchor = (
             newAnchor.anchor.startOffset = minWeightToken.offset
             newAnchor.anchor.endOffset =
                 minWeightToken.offset + minWeightToken.token.length
-            console.log('BAD MATCH', newAnchor)
+            // console.log('BAD MATCH', newAnchor)
             newAnchor.weight = minWeightToken.weight
             return newAnchor
         } else {
@@ -907,7 +911,7 @@ const findMultiLineAnchor = (
 
     let startTokenMatches: WeightedToken[] = []
     let endTokenMatches: WeightedToken[] = []
-    console.log('sourceCode', sourceCode)
+    // console.log('sourceCode', sourceCode)
     sourceCode.forEach((l) => {
         const startMatchWeights = l.codeLine.code.flatMap((c) => {
             return { ...compareTwoTokens(c, startToken), line: l.codeLine.line }
@@ -920,12 +924,12 @@ const findMultiLineAnchor = (
         startTokenMatches = startTokenMatches.concat(...startMatchWeights)
         endTokenMatches = endTokenMatches.concat(...endMatchWeights)
     })
-    console.log('startTokenMatches', startTokenMatches)
-    console.log('endTokenMatches', endTokenMatches)
+    // console.log('startTokenMatches', startTokenMatches)
+    // console.log('endTokenMatches', endTokenMatches)
     const bestMatchStart: WeightedTokenLine = findMin(startTokenMatches)
     const bestMatchEnd: WeightedTokenLine = findMin(endTokenMatches)
-    console.log('new start', bestMatchStart)
-    console.log('new end', bestMatchEnd)
+    // console.log('new start', bestMatchStart)
+    // console.log('new end', bestMatchEnd)
 
     newAnchor.anchor.startLine = bestMatchStart.line
     newAnchor.anchor.startOffset = bestMatchStart.offset

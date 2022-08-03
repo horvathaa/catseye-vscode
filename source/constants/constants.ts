@@ -2,6 +2,7 @@ import ts = require('typescript')
 import { CodeContext } from '../astHelper/nodeHelper'
 
 // import * as vscode from 'vscode';
+// Todo: Add lastModified field (and for replies)
 export class Annotation {
     id: string
     annotation: string
@@ -228,8 +229,58 @@ export interface TsFile {
     tsSourceFile: ts.SourceFile
 }
 
+// export interface GitInfo {
+// 	author: string,
+// 	[key: string]: GitRepoInfo
+// }
+
+export interface Option {
+    name: string
+    selected: boolean
+    icon: React.ReactElement
+}
+
+export interface OptionGroup {
+    label: string
+    options: Option[]
+}
+
+export enum AuthorOptions {
+    mine = 'mine',
+    others = 'others',
+}
+
+export enum Scope {
+    file = 'File',
+    project = 'Project',
+    all = 'All',
+}
+
+export enum Sort {
+    // relevance = 'Relevance',
+    location = 'Location',
+    time = 'Time',
+}
+
+export interface FilterOptions {
+    sort: Sort
+    authorOptions: OptionGroup
+    typeOptions: OptionGroup
+    searchText: string
+    scope: Scope
+    showResolved: boolean
+    pinnedOnly: boolean
+    showProjectOnly: boolean // Could be a different interface?
+}
+
 export interface AnchorsToUpdate {
     annoId: string
     createdTimestamp: number
     anchors: AnchorObject[]
+}
+
+export enum Selection {
+    all = 'all',
+    partial = 'partial',
+    none = 'none',
 }

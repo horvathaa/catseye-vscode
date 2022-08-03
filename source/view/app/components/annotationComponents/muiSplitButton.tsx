@@ -16,6 +16,11 @@ import MenuItem from '@mui/material/MenuItem'
 import MenuList from '@mui/material/MenuList'
 import { green } from '@material-ui/core/colors'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
+import {
+    editorBackground,
+    hoverBackground,
+    hoverText,
+} from '../../styles/vscodeStyles'
 
 const options = ['Post as Private', 'Post to Collaborators']
 
@@ -48,9 +53,10 @@ const SplitButton: React.FC<Props> = ({ submissionHandler }) => {
                         borderStyle: 'solid',
                         borderWidth: '0.15em',
                         // borderColor: '#d4d4d44f',
-                        backgroundColor: green[400],
+                        color: `${editorBackground}`,
+                        backgroundColor: `${hoverText}`,
                         '&:hover': {
-                            background: green[600],
+                            background: `${hoverText}`,
                         },
                     },
                     grouped: {
@@ -63,30 +69,24 @@ const SplitButton: React.FC<Props> = ({ submissionHandler }) => {
                     root: {
                         borderStyle: 'solid',
                         borderWidth: '0.15em',
-                        fontSize: '8px',
+                        // fontSize: '8px',
                         // borderColor: '#d4d4d44f',
-                        backgroundColor: green[400],
+                        color: `${editorBackground}`,
+                        backgroundColor: `${hoverText}`,
+                        textTransform: 'none',
                         '&:hover': {
-                            background: green[600],
+                            background: `${hoverBackground}`,
                         },
-                    },
-                },
-            },
-            MuiMenu: {
-                styleOverrides: {
-                    root: {
-                        borderStyle: 'solid',
-                        borderWidth: '0.15em',
-                        borderColor: '#d4d4d44f',
                     },
                 },
             },
             MuiMenuItem: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: green[400],
+                        color: `${editorBackground}`,
+                        backgroundColor: `${hoverText}`,
                         '&:hover': {
-                            background: green[600],
+                            background: `${hoverBackground}`,
                         },
                     },
                 },
@@ -94,7 +94,12 @@ const SplitButton: React.FC<Props> = ({ submissionHandler }) => {
             MuiList: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: '#1e1e1e',
+                        backgroundColor: hoverText, // background of item on hover
+                        color: editorBackground,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        borderRadius: '4px',
+                        padding: '0 10px', // Ideally this should go in MenuItem but doesn't seem to work?
                     },
                 },
             },
@@ -142,7 +147,7 @@ const SplitButton: React.FC<Props> = ({ submissionHandler }) => {
                     ref={anchorRef}
                     aria-label="split button"
                 >
-                    <Button style={{ fontSize: '10px' }} onClick={handleClick}>
+                    <Button style={{ padding: '0 4px' }} onClick={handleClick}>
                         {options[selectedIndex]}
                     </Button>
                     <Button

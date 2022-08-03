@@ -6,7 +6,13 @@
  */
 import * as React from 'react'
 import cn from 'classnames'
-import { buildAnnotation } from '../utils/viewUtils'
+import { breakpoints, buildAnnotation } from '../utils/viewUtils'
+import {
+    deleteAnnotation,
+    resolveAnnotation,
+    pinAnnotation,
+    shareAnnotation,
+} from '../utils/viewUtilsTsx'
 import styles from '../styles/annotation.module.css'
 import {
     Annotation,
@@ -24,16 +30,27 @@ import Outputs from './annotationComponents/outputs'
 import ReplyIcon from '@mui/icons-material/Reply'
 import Snapshots from './annotationComponents/snapshots'
 import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
-import { Box, Card, CardContent, Collapse } from '@material-ui/core'
+import {
+    Box,
+    Card,
+    CardContent,
+    Collapse,
+    FormControlLabel,
+} from '@material-ui/core'
+import { Checkbox } from '@mui/material'
 import {
     codeColor,
     editorBackground,
     iconColor,
     vscodeTextColor,
+    cardStyle,
 } from '../styles/vscodeStyles'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CollapsedCardHeader from './annotationComponents/annotationCardHeader'
 import EditIcon from '@mui/icons-material/Edit'
+import AdamiteButton from './annotationComponents/AdamiteButton'
+import { useMediaQuery } from '@material-ui/core'
+import AnnotationList from './annotationList'
 
 interface Props {
     annotation: Annotation
@@ -41,14 +58,21 @@ interface Props {
     window: Window
     username: string
     userId: string
+    annotationSelected: (anno: Annotation) => void
+    annotations: Annotation[] // Likely unnecessary
+    selected: boolean
 }
 
+// TODO: Add Pin button next to edit
 const ReactAnnotation: React.FC<Props> = ({
     annotation,
     vscode,
     window,
     username,
     userId,
+    annotationSelected,
+    annotations,
+    selected,
 }) => {
     const [anno, setAnno] = React.useState<Annotation>(annotation)
     const [expanded, setExpanded] = React.useState(false)
@@ -59,16 +83,7 @@ const ReactAnnotation: React.FC<Props> = ({
     const annoRef: React.MutableRefObject<Annotation> = React.useRef(anno)
 
     // MUI doesn't accept CSS version of this for some reason..?
-    const cardStyle = {
-        backgroundColor: editorBackground,
-        color: vscodeTextColor,
-        margin: 10,
-        border: '1.5px',
-        borderColor: iconColor,
-        borderRadius: '10px',
-        borderStyle: 'solid',
-        padding: 5,
-    }
+
     const theme = createTheme({
         palette: {
             primary: {
@@ -94,16 +109,21 @@ const ReactAnnotation: React.FC<Props> = ({
                     },
                 },
             },
-            MuiSvgIcon: {
+            MuiCheckbox: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: editorBackground,
-                        color: iconColor,
+                        color: `${vscodeTextColor} !important`,
+                        '&.Mui-checked': {
+                            color: `${vscodeTextColor}`,
+                        },
                     },
                 },
             },
         },
+        breakpoints: breakpoints,
     })
+
+    const isMedOrMore = useMediaQuery(theme.breakpoints.up('md'))
 
     const handleExpandClick = () => {
         setExpanded(!expanded)
@@ -165,7 +185,7 @@ const ReactAnnotation: React.FC<Props> = ({
         })
     }
 
-    const handleSelectedClick = (): void => {
+    const handlePinnedClick = (): void => {
         vscode.postMessage({
             command: 'updateAnnotation',
             annoId: anno.id,
@@ -187,15 +207,6 @@ const ReactAnnotation: React.FC<Props> = ({
             annoId: anno.id,
         })
     }
-
-    const deleteAnnotation = (e: React.SyntheticEvent): void => {
-        e.stopPropagation()
-        vscode.postMessage({
-            command: 'deleteAnnotation',
-            annoId: anno.id,
-        })
-    }
-
     const snapshotCode = (id: string): void => {
         vscode.postMessage({
             command: 'snapshotCode',
@@ -372,17 +383,43 @@ const ReactAnnotation: React.FC<Props> = ({
     }
 
     return (
-        <>
+        <div
+            style={{
+                display: 'flex',
+                flexDirection: 'row',
+            }}
+        >
             <ThemeProvider theme={theme}>
-                <div style={cardStyle}>
+                {isMedOrMore && (
+                    <Checkbox
+                        checked={selected}
+                        onChange={() => annotationSelected(anno)}
+                        inputProps={{ 'aria-label': 'controlled' }}
+                    />
+                )}
+                <Card style={cardStyle}>
                     <CollapsedCardHeader
                         expanded={expanded}
                         setExpanded={setExpanded}
                         anchored={anchored}
                         anno={anno}
+                        deleteAnnotation={(e) =>
+                            deleteAnnotation(e, vscode, anno)
+                        }
+                        resolveAnnotation={(e) =>
+                            resolveAnnotation(e, vscode, anno)
+                        }
+                        pinAnnotation={(e) => pinAnnotation(e, vscode, anno)}
+                        shareAnnotation={(e) =>
+                            shareAnnotation(e, vscode, anno)
+                        }
                         addAnchor={addAnchor}
                     />
-                    <Collapse in={expanded} timeout="auto" unmountOnExit>
+                    <Collapse
+                        in={expanded}
+                        timeout="auto"
+                        //unmountOnExit
+                    >
                         <CardContent>
                             <AnchorVersions
                                 anchors={anno.anchors}
@@ -404,7 +441,11 @@ const ReactAnnotation: React.FC<Props> = ({
                                             justifyContent: 'space-between',
                                         }}
                                     >
-                                        <div style={{ padding: '3px' }}>
+                                        <div
+                                            className={
+                                                styles['AnnoContentContainer']
+                                            }
+                                        >
                                             {anno.annotation}
                                         </div>
 
@@ -421,13 +462,18 @@ const ReactAnnotation: React.FC<Props> = ({
                                                     updateAnnotationTypes
                                                 }
                                             />
-                                            <EditIcon
-                                                onClick={(
+                                            <AdamiteButton
+                                                buttonClicked={(
                                                     e: React.SyntheticEvent
                                                 ) => {
                                                     e.stopPropagation()
                                                     setEdit(!edit)
                                                 }}
+                                                name="Edit"
+                                                noMargin={true}
+                                                icon={
+                                                    <EditIcon fontSize="small" />
+                                                }
                                             />
                                         </div>
                                     </div>
@@ -444,84 +490,10 @@ const ReactAnnotation: React.FC<Props> = ({
                             </div>
                         </CardContent>
                     </Collapse>
-                </div>
+                </Card>
             </ThemeProvider>
-        </>
+        </div>
     )
 }
 
-{
-    /* <div
-                key={'annotation-container' + annotation.id}
-                className={styles['Pad']}
-            >
-                <li
-                    key={'annotation-li' + annotation.id}
-                    id={annotation.id}
-                    className={cn({
-                        [styles.selected]: anno.selected,
-                        [styles.AnnotationContainer]: true,
-                    })}
-                >
-                    <div className={styles['topRow']}>
-                        <UserProfile
-                            githubUsername={anno.githubUsername}
-                            createdTimestamp={anno.createdTimestamp}
-                        />
-                        <AnnotationOperationButtons
-                            annotationId={anno.id}
-                            userId={userId}
-                            authorId={anno.authorId}
-                            replyToAnnotation={() => {
-                                setReplying(!replying)
-                            }}
-                            exportAnnotationAsComment={
-                                exportAnnotationAsComment
-                            }
-                            editAnnotation={() => {
-                                setEdit(!edit)
-                            }}
-                            deleteAnnotation={(e) => deleteAnnotation(e)}
-                            pinAnnotation={handleSelectedClick}
-                            addAnchor={addAnchor}
-                            pinned={anno.selected}
-                        />
-                    </div>
-                    <AnchorList
-                        anchors={anno.anchors}
-                        snapshotCode={snapshotCode}
-                        scrollInEditor={scrollInEditor}
-                    />
-                    <div className={styles['ContentContainer']}>
-                        {edit ? (
-                            <TextEditor
-                                content={anno.annotation}
-                                submissionHandler={updateContent}
-                                cancelHandler={cancelAnnotation}
-                                showSplitButton={true}
-                            />
-                        ) : (
-                            `${anno.annotation}`
-                        )}
-                    </div>
-                    <Snapshots
-                        snapshots={anno.codeSnapshots}
-                        anchors={anno.anchors}
-                        githubUsername={username}
-                        deleteHandler={deleteSnapshot}
-                        submissionHandler={submitSnapshot}
-                    />
-                    <Outputs outputs={anno.outputs} id={anno.id} />
-                    <ReplyContainer
-                        replying={replying}
-                        replies={anno.replies}
-                        username={username}
-                        userId={userId}
-                        submitReply={submitReply}
-                        cancelReply={() => setReplying(false)}
-                        deleteReply={deleteReply}
-                    />
-                </li>
-            </div> */
-}
 export default ReactAnnotation

@@ -12,6 +12,7 @@ body {
     width: 0px;
     background: transparent; /* make scrollbar transparent */
 }
+/* Should we be hiding scrollbar? */
 
 p {
     font-family: 'Menlo';
@@ -43,14 +44,13 @@ code {
 }
 
 button.reanchor {
-    margin: 2px;
-    border-radius: 8px;
+    border-radius: 4px;
     padding-left: 1em;
     padding-right: 1em;
     cursor: pointer;
-    color: white;
-    margin-top: 6px;
-    border: 2px solid transparent;
+    color: var(--vscode-foreground);
+    margin-top: 2px;
+    border: 2px solid transparent; /* TODO: Switch between 1 and 2px*/
     border-color: #7fae42;
     background-color: var(--vscode-editor-background);
     height: 30px;
@@ -63,7 +63,17 @@ button.reanchor:hover {
 }
 
 button.remove {
-    margin: 2px;
+    border-radius: 4px;
+    padding-left: 1em;
+    padding-right: 1em;
+    cursor: pointer;
+    color: var(--vscode-foreground);
+    margin-top: 2px;
+    border: 2px solid transparent; /* TODO: Switch between 1 and 2px*/
+    border-color: rgba(158, 158, 158, 0.651);
+    background-color: var(--vscode-editor-background);
+    height: 30px;
+    /* margin: 2px;
     border-radius: 8px;
     padding-left: 1em;
     padding-right: 1em;
@@ -73,7 +83,7 @@ button.remove {
     border: 2px solid transparent;
     border-color: rgba(158, 158, 158, 0.651);
     background-color: var(--vscode-editor-background);
-    height: 30px;
+    height: 30px; */
 }
 
 button.remove:hover {

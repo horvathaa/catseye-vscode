@@ -8,6 +8,11 @@ body {
     margin: 0;
 }
 
+::-webkit-scrollbar {
+    width: 0px;
+    background: transparent; /* make scrollbar transparent */
+}
+
 p {
     font-family: 'Menlo';
     font-weight: normal;

@@ -233,7 +233,6 @@ export const objectsEqual = (o1: any, o2: any): boolean =>
           Object.keys(o1).every((p) => objectsEqual(o1[p], o2[p]))
         : o1 === o2
 
-
 // export const getAllAnnotationStableGitUrls = (
 //         annotationList: Annotation[]
 //     ): string[] => {
@@ -268,8 +267,14 @@ export const sortAnnotationsByLocation = (
     annotationList: Annotation[],
     gitUrl: string // pass
 ): Annotation[] => {
-    const inFile: Annotation[] = getAnnotationsWithStableGitUrl(annotationList, gitUrl)
-    const notInFile: Annotation[] = getAnnotationsNotWithGitUrl(annotationList, gitUrl)
+    const inFile: Annotation[] = getAnnotationsWithStableGitUrl(
+        annotationList,
+        gitUrl
+    )
+    const notInFile: Annotation[] = getAnnotationsNotWithGitUrl(
+        annotationList,
+        gitUrl
+    )
     const sortedAnchors: string[] = sortAnchorsByLocation(
         //inFile
         inFile.flatMap((a) => {
@@ -298,5 +303,7 @@ export const sortAnnotationsByTime = (
     //     return sortedAnchors.indexOf(b.id) - sortedAnchors.indexOf(a.id)
     // })
 
-    return annotationList.sort((a, b) => a.createdTimestamp - b.createdTimestamp)
+    return annotationList.sort(
+        (a, b) => b.createdTimestamp - a.createdTimestamp
+    )
 }

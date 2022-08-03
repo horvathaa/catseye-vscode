@@ -8,13 +8,14 @@ import MoreVertOutlinedIcon from '@mui/icons-material/MoreVertOutlined'
 import PushPinIcon from '@mui/icons-material/PushPin'
 import { Annotation } from '../../../../constants/constants'
 import UserProfile from './userProfile'
-import { codeColor } from '../../styles/vscodeStyles'
 import styles from '../../styles/annotation.module.css'
 import AdamiteButton from './AdamiteButton'
 import { createTheme } from '@mui/material'
 import { useMediaQuery } from '@material-ui/core'
 import { breakpoints } from '../../utils/viewUtils'
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined'
+import { BiAnchor } from 'react-icons/bi'
+import { Tooltip } from '@material-ui/core'
 
 interface Props {
     expanded: boolean
@@ -25,6 +26,7 @@ interface Props {
     deleteAnnotation: (e: React.SyntheticEvent) => void
     pinAnnotation: (e: React.SyntheticEvent) => void
     shareAnnotation: (e: React.SyntheticEvent) => void
+    addAnchor: () => void
 }
 
 const CardHeader = ({
@@ -36,6 +38,7 @@ const CardHeader = ({
     deleteAnnotation,
     pinAnnotation,
     shareAnnotation,
+    addAnchor,
 }: Props) => {
     const [annotation, setAnnotation] = React.useState<Annotation>(anno)
     React.useEffect(() => {
@@ -51,8 +54,6 @@ const CardHeader = ({
     const smCodeSize = useMediaQuery(theme.breakpoints.up('sm'))
     const slicedText: number = codeSize ? 30 : smCodeSize ? 15 : 4
 
-    console.log('sliced?', slicedText)
-    console.log(anno.sharedWith)
     return (
         <div
             style={{
@@ -113,6 +114,25 @@ const CardHeader = ({
                         name="Share"
                         icon={<ShareIcon fontSize="small" />}
                     />
+                ) : null}
+                {expanded === true ? (
+                    <div
+                        onClick={(e: React.SyntheticEvent) => {
+                            e.stopPropagation()
+                            addAnchor()
+                        }}
+                        className={styles['DropdownItemOverwrite']}
+                    >
+                        <div className={styles['DropdownIconsWrapper']}>
+                            <Tooltip title="Add Anchor">
+                                <div>
+                                    <BiAnchor
+                                        className={styles['profileMenu']}
+                                    />
+                                </div>
+                            </Tooltip>
+                        </div>
+                    </div>
                 ) : null}
                 {anno.selected ? (
                     <AdamiteButton

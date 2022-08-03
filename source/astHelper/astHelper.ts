@@ -161,7 +161,10 @@ export class AstHelper {
                     i
                 )
             })
-            return { ...anchor, path: nodeInfo.filter((p) => p.isDirectParent) }
+            return {
+                ...anchor,
+                path: nodeInfo.filter((p) => p.isDirectParent),
+            }
         }
         console.error('Could not create path')
         return anchor

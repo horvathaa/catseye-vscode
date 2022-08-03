@@ -6,7 +6,7 @@ Description:
 
 Important checks:
 
--   Make sure to have the latest version of VS Code to test extension
+-   Make sure to have the latest version of VS Code to test the extension
 -   Use npm installs.
 
 How to Test the extension:

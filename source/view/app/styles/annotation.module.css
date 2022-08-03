@@ -516,7 +516,7 @@ button.submit {
     cursor: pointer;
     color: var(--vscode-foreground);
     margin-top: 6px;
-    border: 1px solid transparent;
+    border: 2px solid transparent; /* TODO: Switch between 1 and 2px*/
     border-color: #7fae42;
     background-color: var(--vscode-editor-background);
     height: 30px;
@@ -537,10 +537,10 @@ button.cancel {
     margin-bottom: 1px;
     cursor: pointer;
     color: var(--vscode-foreground);
-    border: 1px solid transparent;
+    border: 2px solid transparent;
     border-color: #7fae42;
     background-color: var(--vscode-editor-background);
-    height: 27px;
+    height: 30px; /* TODO: check why I previously set it 27px*/
     transition: all 0.5s ease-in-out;
 }
 
@@ -551,5 +551,5 @@ button.cancel:hover {
 mark {
     background-color: #93c0ff39;
     color: var(--vscode-foreground);
-    font-family: 'Courier New';
+    font-family: 'Menlo';
 }

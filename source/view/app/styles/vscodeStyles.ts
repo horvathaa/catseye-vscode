@@ -47,6 +47,10 @@ export const textBoxBackground: string = lightenDarkenColor(
     10
 )
 
+export const disabledIcon: string = getComputedStyle(
+    document.body
+).getPropertyValue('--vscode-disabledForeground')
+
 export const adamiteGreen: string = '#7fae42'
 
 function lightenDarkenColor(col, amt) {

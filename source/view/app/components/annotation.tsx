@@ -23,6 +23,7 @@ import {
 } from '../../../constants/constants'
 import AnnotationOperationButtons from './annotationComponents/annotationOperationButtons'
 import AnchorList from './annotationComponents/anchorList'
+import AnchorVersions from './annotationComponents/anchorVersions'
 import TextEditor from './annotationComponents/textEditor'
 import ReplyContainer from './annotationComponents/replyContainer'
 import Outputs from './annotationComponents/outputs'
@@ -118,6 +119,14 @@ const ReactAnnotation: React.FC<Props> = ({
                     },
                 },
             },
+            MuiSvgIcon: {
+                styleOverrides: {
+                    root: {
+                        backgroundColor: editorBackground,
+                        color: iconColor,
+                    },
+                },
+            },
         },
         breakpoints: breakpoints,
     })
@@ -169,18 +178,12 @@ const ReactAnnotation: React.FC<Props> = ({
     }, [])
 
     React.useEffect(() => {
-        console.log('old anno', anno)
-        console.log('new annotation', annotation)
         const newAnno: Annotation = buildAnnotation(annotation)
         setAnno(newAnno)
         annoRef.current = newAnno
     }, [annotation])
 
     React.useEffect(() => {}, [userId])
-
-    React.useEffect(() => {
-        console.log('selected: ', selected)
-    }, [selected])
 
     const scrollInEditor = (id: string): void => {
         vscode.postMessage({
@@ -418,6 +421,7 @@ const ReactAnnotation: React.FC<Props> = ({
                         shareAnnotation={(e) =>
                             shareAnnotation(e, vscode, anno)
                         }
+                        addAnchor={addAnchor}
                     />
                     <Collapse
                         in={expanded}
@@ -425,9 +429,8 @@ const ReactAnnotation: React.FC<Props> = ({
                         //unmountOnExit
                     >
                         <CardContent>
-                            <AnchorList
+                            <AnchorVersions
                                 anchors={anno.anchors}
-                                snapshotCode={snapshotCode}
                                 scrollInEditor={scrollInEditor}
                             />
                             <div className={styles['ContentContainer']}>

@@ -25,6 +25,7 @@ const AnchorCarousel: React.FC<Props> = ({
     currentAnchorObject,
     scrollInEditor,
 }) => {
+    const Carousel = Slider as unknown as React.ElementType
     const [pastVersions, setPastVersions] = React.useState<
         AnchorOnCommit[] | undefined
     >(priorVersions)
@@ -195,7 +196,7 @@ const AnchorCarousel: React.FC<Props> = ({
                             height: 150,
                         }} // cannot move dimensions to CSS file or else package styles override
                     >
-                        <Slider // not sure how to resolve type issue yet 'JSX element type 'Slider' does not have any construct or call signatures.'
+                        <Carousel // not sure how to resolve type issue yet 'JSX element type 'Slider' does not have any construct or call signatures.'
                             onSlideComplete={(i: any) => {
                                 setIndex(i)
                             }}
@@ -323,7 +324,7 @@ const AnchorCarousel: React.FC<Props> = ({
                                         </div>
                                     )
                                 )}
-                        </Slider>
+                        </Carousel>
                     </div>
                     {showForward ? (
                         <IconButton onClick={forward}>
@@ -342,7 +343,7 @@ const AnchorCarousel: React.FC<Props> = ({
                         height: 150,
                     }} // cannot move dimensions to CSS file or else package styles override
                 >
-                    <Slider // not sure how to resolve type issue yet 'JSX element type 'Slider' does not have any construct or call signatures.'
+                    <Carousel // not sure how to resolve type issue yet 'JSX element type 'Carousel' does not have any construct or call signatures.'
                         onSlideComplete={(i: any) => {
                             setIndex(i)
                         }}
@@ -441,7 +442,7 @@ const AnchorCarousel: React.FC<Props> = ({
                                     </div>
                                 )
                             )}
-                    </Slider>
+                    </Carousel>
                 </div>
             ) : null}
             {potentialVersions ? (

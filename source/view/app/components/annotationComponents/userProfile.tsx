@@ -7,7 +7,8 @@
  */
 import * as React from 'react'
 import styles from '../../styles/annotation.module.css'
-import { formatTimestamp } from '../../utils/viewUtils'
+import { breakpoints, formatTimestamp } from '../../utils/viewUtils'
+import { createTheme, useMediaQuery } from '@mui/material'
 
 interface Props {
     githubUsername: string
@@ -18,6 +19,13 @@ const UserProfile: React.FC<Props> = ({ githubUsername, createdTimestamp }) => {
     const userHasImage: boolean =
         githubUsername !== undefined && githubUsername !== ''
     const time: string = formatTimestamp(createdTimestamp)
+
+    const theme = createTheme({
+        breakpoints: breakpoints,
+    })
+
+    const isSmOrMore = useMediaQuery(theme.breakpoints.up('sm'))
+
     return (
         <div className={styles['userContainer']}>
             {userHasImage && (
@@ -30,14 +38,14 @@ const UserProfile: React.FC<Props> = ({ githubUsername, createdTimestamp }) => {
                 />
             )}
             <div className={styles['usernameAndTimeContainer']}>
-                <a
-                    href={'https://github.com/' + githubUsername}
-                    className={styles['username']}
-                >
-                    {githubUsername}
-                </a>
-                {time}
-            </div>
+                    <a
+                        href={'https://github.com/' + githubUsername}
+                        className={styles['username']}
+                    >
+                        {githubUsername}
+                    </a>
+                    {time}
+                </div>
         </div>
     )
 }

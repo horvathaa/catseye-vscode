@@ -7,8 +7,24 @@
 import { VscChevronDown, VscChevronRight } from 'react-icons/vsc'
 import * as React from 'react'
 import styles from '../styles/annotation.module.css'
+import { Groups } from '@mui/icons-material'
+import PersonIcon from '@mui/icons-material/Person'
+import {
+    Annotation,
+    Type,
+    Option,
+    AuthorOptions,
+    FilterOptions,
+    OptionGroup,
+} from '../../../constants/constants'
+import { defaultSort, defaultScope } from '../utils/viewUtils'
+import BugReportIcon from '@mui/icons-material/BugReport' // Issue
+import TaskIcon from '@mui/icons-material/Task' // Task
+import AssignmentIcon from '@mui/icons-material/Assignment' // Proposal
+import { ContactSupport } from '@mui/icons-material'
+import CodeOffIcon from '@mui/icons-material/CodeOff'
 
-// toggle button used for expanding and collapsing replies, snapshots, etc.
+// toggle button used for expanding and collapsing snapshots, etc.
 export const collapseExpandToggle = (
     showing: boolean,
     obj: any[],
@@ -43,7 +59,7 @@ export const collapseExpandToggle = (
     )
 }
 
-// toggle button used for expanding and collapsing replies, snapshots, etc.
+// textual button used for expanding and collapsing replies
 export const showHideLine = (
     showing: boolean,
     length: number,
@@ -66,4 +82,133 @@ export const showHideLine = (
             <div className={styles['showHideLineButton']}>{subjectString}</div>
         </div>
     )
+}
+
+export const defaultAuthorOptions: OptionGroup = {
+    label: 'Author',
+    options: [
+        {
+            name: AuthorOptions.mine,
+            selected: true,
+            icon: <PersonIcon fontSize="small" />,
+        },
+        {
+            name: AuthorOptions.others,
+            selected: true,
+            icon: <Groups fontSize="small" />,
+        },
+    ],
+}
+
+export const defaultTypeOptions: OptionGroup = {
+    label: 'Type',
+    options: [
+        {
+            name: Type.issue,
+            selected: true,
+            icon: <BugReportIcon fontSize="small" />,
+        },
+        {
+            name: Type.proposal,
+            selected: true,
+            icon: <AssignmentIcon fontSize="small" />,
+        },
+        {
+            name: Type.task,
+            selected: true,
+            icon: <TaskIcon fontSize="small" />,
+        },
+        {
+            name: Type.question,
+            selected: true,
+            icon: <ContactSupport fontSize="small" />,
+        },
+        {
+            name: 'untyped',
+            selected: true,
+            icon: <CodeOffIcon fontSize="small" />,
+        },
+    ],
+}
+
+export const defaultFilterOptions: FilterOptions = {
+    sort: defaultSort,
+    authorOptions: defaultAuthorOptions,
+    typeOptions: defaultTypeOptions,
+    scope: defaultScope,
+    searchText: '',
+    showResolved: false,
+    pinnedOnly: false,
+    showProjectOnly: true,
+}
+
+// export const defaultTypeOptions: Option[] = [
+//     {
+//         name:
+//     }
+// ]
+
+export const deleteAnnotation = (
+    e: React.SyntheticEvent,
+    vscode: any,
+    anno: Annotation
+): void => {
+    e.stopPropagation()
+    vscode.postMessage({
+        command: 'deleteAnnotation',
+        annoId: anno.id,
+    })
+}
+
+export const resolveAnnotation = (
+    e: React.SyntheticEvent,
+    vscode: any,
+    anno: Annotation
+): void => {
+    e.stopPropagation()
+    vscode.postMessage({
+        command: 'resolveAnnotation',
+        annoId: anno.id,
+    })
+}
+
+export const pinAnnotation = (
+    e: React.SyntheticEvent,
+    vscode: any,
+    anno: Annotation
+): void => {
+    e.stopPropagation()
+    // Maybe need to do more by updating whole view and SelectedAnnotationsNavigations?
+    vscode.postMessage({
+        command: 'updateAnnotation',
+        annoId: anno.id,
+        key: 'selected',
+        value: !anno.selected,
+    })
+}
+
+export const shareAnnotation = (
+    e: React.SyntheticEvent,
+    vscode: any,
+    anno: Annotation
+): void => {
+    e.stopPropagation()
+    vscode.postMessage({
+        command: 'updateAnnotation',
+        annoId: anno.id,
+        key: 'sharedWith',
+        value: 'group',
+    })
+}
+
+export const mergeAnnotations = (
+    e: React.SyntheticEvent,
+    vscode: any,
+    annos: Annotation[]
+): void => {
+    e.stopPropagation()
+    // vscode.postMessage({
+    //     command: 'resolveAnnotation',
+    //     annoId: anno.id,
+    // })
 }

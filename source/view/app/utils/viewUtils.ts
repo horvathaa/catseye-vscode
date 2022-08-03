@@ -7,7 +7,12 @@
  *
  */
 import * as vscode from 'vscode'
-import { AnchorObject, Annotation } from '../../../constants/constants'
+import {
+    AnchorObject,
+    Annotation,
+    Scope,
+    Sort,
+} from '../../../constants/constants'
 
 const translateAnnotationAnchorStandard = (
     annoInfo: any
@@ -195,6 +200,32 @@ export const sortAnnotationsByLocation = (
 
     return annotationList
 }
+
+declare module '@mui/material/styles' {
+    interface BreakpointOverrides {
+        xs: true
+        sm: true
+        md: true
+        lg: true
+        xl: true
+        code: true
+    }
+}
+
+export const breakpoints = {
+    values: {
+        xs: 0,
+        sm: 315,
+        md: 350,
+        lg: 650,
+        xl: 900,
+        code: 435,
+    },
+}
+
+export const defaultSort = Sort.location
+
+export const defaultScope = Scope.project
 
 export const objectsEqual = (o1: any, o2: any): boolean =>
     typeof o1 === 'object' && Object.keys(o1).length > 0

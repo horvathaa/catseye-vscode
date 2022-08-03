@@ -134,7 +134,10 @@ const AnchorVersions: React.FC<Props> = ({ anchors, scrollInEditor }) => {
                 // }
                 // return null
             })}
-            <p onClick={() => setShowSuggestions(!showSuggestions)}>
+            <p
+                style={{ padding: '0 5px' }}
+                onClick={() => setShowSuggestions(!showSuggestions)}
+            >
                 {showSuggestions
                     ? 'Hide Suggestions'
                     : 'Unanchored! Show Suggestions'}

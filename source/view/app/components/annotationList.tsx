@@ -5,24 +5,15 @@
  * including pinned, current file, and current project.
  *
  */
-import { Annotation } from '../../../constants/constants'
+import { Annotation, Selection } from '../../../constants/constants'
 import {
     // getAllAnnotationFilenames,
-    // getAllAnnotationStableGitUrls,
+    getAllAnnotationStableGitUrls,
     sortAnnotationsByLocation,
 } from '../utils/viewUtils'
 import ReactAnnotation from '../components/annotation'
 import * as React from 'react'
 import List from '@mui/material/List'
-import ListItemButton from '@mui/material/ListItemButton'
-import ListItemIcon from '@mui/material/ListItemIcon'
-import ListItemText from '@mui/material/ListItemText'
-import Collapse from '@mui/material/Collapse'
-import PushPinIcon from '@mui/icons-material/PushPin'
-import ExpandLess from '@mui/icons-material/ExpandLess'
-import ExpandMore from '@mui/icons-material/ExpandMore'
-import AccountTreeIcon from '@mui/icons-material/AccountTree'
-import ArticleIcon from '@mui/icons-material/Article'
 import {
     editorBackground,
     iconColor,
@@ -30,50 +21,40 @@ import {
 } from '../styles/vscodeStyles'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { useState } from 'react'
+import MassOperationsBar from './massOperationsBar'
+import { StringifyOptions } from 'querystring'
+import {
+    deleteAnnotation,
+    mergeAnnotations,
+    pinAnnotation,
+    resolveAnnotation,
+    shareAnnotation,
+} from '../utils/viewUtilsTsx'
 
 interface AnnoListProps {
+    title: string
+    parentId: string
     annotations: Annotation[]
     vscode: any
     window: Window
-    currentFile: string
-    currentProject: string
     username: string
     userId: string
 }
 
+// NOTE: Currently types bar does not include "untyped" option
 const AnnotationList: React.FC<AnnoListProps> = ({
+    title,
+    parentId,
     annotations,
     vscode,
     window,
-    currentFile,
-    currentProject,
     username,
     userId,
 }) => {
-    const [openPinned, setOpenPinned] = useState(false)
-    const [openFile, setOpenFile] = useState(true)
-    const [openCurrProj, setCurrProj] = useState(false)
-    const [pinnedAnno, setPinnedAnno] = useState<Annotation[]>([])
-    const [fileAnno, setFileAnno] = useState<Annotation[]>([])
-    const [projAnno, setProjAnno] = useState<Annotation[]>([])
-
-    const handlePinClick = () => {
-        setOpenPinned(!openPinned)
-    }
-    const handleFileClick = () => {
-        setOpenFile(!openFile)
-    }
-    const handleCurrProjClick = () => {
-        setCurrProj(!openCurrProj)
-    }
-
-    React.useEffect(() => {
-        if (annotations.length) {
-            displayAnnotations()
-        }
-    }, [annotations]) // annotations state set in adamite.tsx
-    // React.useEffect(() => {}, [annotations])
-
+    const [selectedAnnoIds, setSelectedAnnoIds] = useState<string[]>([])
+    const [selectionStatus, setSelectionStatus] = useState<Selection>(
+        Selection.none
+    )
     const theme = createTheme({
         palette: {
             primary: {
@@ -119,135 +100,119 @@ const AnnotationList: React.FC<AnnoListProps> = ({
         },
     })
 
-    const getAnnotations = (): { [key: string]: any } => {
-        const output: { [key: string]: any } = {
-            Pinned: [],
-            'Current File': [],
-            'Current Project': [],
+    const selectedAnnotations = annotations.filter((anno) =>
+        selectedAnnoIds.includes(anno.id)
+    )
+
+    const annotationSelected = (anno: Annotation) => {
+        let updatedSelectedAnnoIds: string[]
+        if (selectedAnnoIds.includes(anno.id)) {
+            updatedSelectedAnnoIds = selectedAnnoIds.filter(
+                (id: string) => id !== anno.id
+            )
+            setSelectionStatus(
+                updatedSelectedAnnoIds.length == 0
+                    ? Selection.none
+                    : Selection.partial
+            )
+        } else {
+            // Can't mutate the types array like done previously!
+            // updatedSelectedAnnoIds = [anno].concat(selectedAnnoIds)
+            updatedSelectedAnnoIds = [anno.id].concat(selectedAnnoIds)
+            setSelectionStatus(
+                updatedSelectedAnnoIds.length == annotations.length
+                    ? Selection.all
+                    : Selection.partial
+            )
         }
-        annotations.forEach((a: Annotation) => {
-            // const annoFiles = getAllAnnotationStableGitUrls(a)
-            if (a.selected) {
-                output['Pinned'].push(a)
-                // } else if (annoFiles.includes(currentFile)) {
-                //     output['Current File'].push(a)
-            } else if (a.projectName === currentProject) {
-                output['Current Project'].push(a) // only pulls annotations since last commit?
-            }
-        })
-        return output
+        setSelectedAnnoIds(updatedSelectedAnnoIds)
+        console.log()
+        console.log('UPDATE')
+        // console.log(updatedSelectedAnnoIds)
     }
 
-    const displayAnnotations = () => {
-        const groupings = getAnnotations()
-        Object.keys(groupings).forEach((group) => {
-            let annot = groupings[group]
-            if (group === 'Pinned') {
-                setPinnedAnno(annot)
-            }
-            if (group === 'Current File') {
-                setFileAnno(annot)
-            }
-            if (group === 'Current Project') {
-                setProjAnno(annot)
-            }
-        })
+    const massOperationSelected = (
+        e: React.SyntheticEvent,
+        operation: string
+    ) => {
+        console.log('mass operation selected')
+        switch (operation) {
+            case 'select':
+                selectAllAnnos()
+                break
+            case 'merge':
+                mergeAnnotations(e, vscode, selectedAnnotations)
+                clearAnnos()
+                break
+            case 'pin':
+                selectedAnnotations.map((anno: Annotation) =>
+                    pinAnnotation(e, vscode, anno)
+                )
+                clearAnnos()
+                break
+            case 'share':
+                selectedAnnotations.map((anno: Annotation) =>
+                    shareAnnotation(e, vscode, anno)
+                )
+                clearAnnos()
+                break
+            case 'resolve':
+                selectedAnnotations.map((anno: Annotation) =>
+                    resolveAnnotation(e, vscode, anno)
+                )
+                clearAnnos()
+                break
+            case 'delete':
+                selectedAnnotations.map((anno: Annotation) =>
+                    deleteAnnotation(e, vscode, anno)
+                )
+                clearAnnos()
+                break
+            default:
+                console.log(`function: ${operation} does not exist`)
+                break
+        }
+    }
+
+    // Maybe should update to be all visible annos?
+    const selectAllAnnos = () => {
+        if (selectedAnnoIds.length == annotations.length) {
+            clearAnnos()
+        } else {
+            setSelectedAnnoIds(annotations.map((anno: Annotation) => anno.id))
+            setSelectionStatus(Selection.all)
+        }
+    }
+
+    const clearAnnos = () => {
+        setSelectedAnnoIds([])
+        setSelectionStatus(Selection.none)
     }
 
     return (
         <>
             <ThemeProvider theme={theme}>
+                <MassOperationsBar
+                    massOperationSelected={massOperationSelected}
+                    selectedStatus={selectionStatus}
+                ></MassOperationsBar>
                 <List sx={{ width: '100%' }} component="div" disablePadding>
-                    <ListItemButton
-                        style={{
-                            display: 'flex',
-                            padding: '8px 16px 8px 16px',
-                        }}
-                        onClick={handlePinClick}
-                    >
-                        <ListItemIcon>
-                            <PushPinIcon />
-                        </ListItemIcon>
-                        <ListItemText primary="Pinned" />
-                        {openPinned ? <ExpandMore /> : <ExpandLess />}
-                    </ListItemButton>
-                    <Collapse in={openPinned} timeout="auto" unmountOnExit>
-                        {pinnedAnno.length > 0 &&
-                            pinnedAnno.map((a: Annotation) => {
-                                return (
-                                    <ReactAnnotation
-                                        key={'annotationList-tsx-' + a.id}
-                                        annotation={a}
-                                        vscode={vscode}
-                                        window={window}
-                                        username={username}
-                                        userId={userId}
-                                    />
-                                )
-                            })}
-                    </Collapse>
-                </List>
-                <List sx={{ width: '100%' }} component="div" disablePadding>
-                    <ListItemButton
-                        style={{
-                            display: 'flex',
-                            padding: '8px 16px 8px 16px',
-                        }}
-                        onClick={handleFileClick}
-                    >
-                        <ListItemIcon>
-                            <ArticleIcon />
-                        </ListItemIcon>
-                        <ListItemText primary="Current File" />
-                        {openFile ? <ExpandLess /> : <ExpandMore />}
-                    </ListItemButton>
-                    <Collapse in={openFile} timeout="auto" unmountOnExit>
-                        {fileAnno.length > 0 &&
-                            sortAnnotationsByLocation(fileAnno).map(
-                                (a: Annotation) => {
-                                    return (
-                                        <ReactAnnotation
-                                            key={'annotationList-tsx-' + a.id}
-                                            annotation={a}
-                                            vscode={vscode}
-                                            window={window}
-                                            username={username}
-                                            userId={userId}
-                                        />
-                                    )
-                                }
-                            )}
-                    </Collapse>
-                </List>
-                <List sx={{ width: '100%' }} component="div" disablePadding>
-                    <ListItemButton
-                        style={{
-                            display: 'flex',
-                            padding: '8px 16px 8px 16px',
-                        }}
-                        onClick={handleCurrProjClick}
-                    >
-                        <ListItemIcon>
-                            <AccountTreeIcon />
-                        </ListItemIcon>
-                        <ListItemText primary="Current Project" />
-                        {openCurrProj ? <ExpandLess /> : <ExpandMore />}
-                    </ListItemButton>
-                    <Collapse in={openCurrProj} timeout="auto" unmountOnExit>
-                        {projAnno.length > 0 &&
-                            projAnno.map((a: Annotation) => {
-                                return (
-                                    <ReactAnnotation
-                                        key={'annotationList-tsx-' + a.id}
-                                        annotation={a}
-                                        vscode={vscode}
-                                        window={window}
-                                        username={username}
-                                        userId={userId}
-                                    />
-                                )
-                            })}
-                    </Collapse>
+                    {annotations.map((a: Annotation) => {
+                        return (
+                            <ReactAnnotation
+                                key={`annotationList-${parentId}tsx-` + a.id}
+                                annotation={a}
+                                vscode={vscode}
+                                window={window}
+                                username={username}
+                                userId={userId}
+                                annotationSelected={annotationSelected}
+                                selected={selectedAnnoIds.includes(a.id)} // Note: Can not use selectedAnnoIds.includes(a) because it's not the exact same object
+                                // https://discuss.codecademy.com/t/array-includes-val-returns-false/536661
+                                annotations={annotations}
+                            />
+                        )
+                    })}
                 </List>
             </ThemeProvider>
         </>

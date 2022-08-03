@@ -7,6 +7,7 @@ interface CssExports {
   'AnchorDescription': string;
   'AnchorListButtonContainer': string;
   'AnchorListContainer': string;
+  'AnnoContentContainer': string;
   'AnnotationContainer': string;
   'AnnotationIconsContainer': string;
   'AnnotationItem': string;
@@ -48,6 +49,7 @@ interface CssExports {
   'profileMenu': string;
   'profilePhoto': string;
   'replyContainer': string;
+  'replyContentContainer': string;
   'replyShowHide': string;
   'row': string;
   'selected': string;

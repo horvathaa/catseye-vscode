@@ -105,7 +105,7 @@ export const createView = async (context: vscode.ExtensionContext) => {
                     }
                     case 'deleteAnnotation': {
                         const { annoId } = message
-                        viewHelper.handleDeleteAnnotation(annoId)
+                        viewHelper.handleDeleteResolveAnnotation(annoId, false)
                         break
                     }
                     case 'cancelAnnotation': {
@@ -118,6 +118,18 @@ export const createView = async (context: vscode.ExtensionContext) => {
                     }
                     case 'showKeyboardShortcuts': {
                         viewHelper.handleShowKeyboardShortcuts()
+                        break
+                    }
+                    case 'resolveAnnotation': {
+                        const { annoId } = message
+                        console.log('resolveAnnotation case')
+                        viewHelper.handleDeleteResolveAnnotation(annoId, true)
+                        break
+                    }
+                    case 'shareAnnotation': {
+                        const { annoId } = message
+                        console.log('resolveAnnotation case')
+                        viewHelper.handleDeleteResolveAnnotation(annoId, true)
                         break
                     }
                     default: {

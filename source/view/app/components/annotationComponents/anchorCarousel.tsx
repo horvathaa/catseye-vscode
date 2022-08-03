@@ -10,7 +10,8 @@ import {
     AnchorOnCommit,
     PotentialAnchorObject,
 } from '../../../../constants/constants'
-import { iconColor } from '../../styles/vscodeStyles'
+import { disabledIcon, iconColor } from '../../styles/vscodeStyles'
+import AdamiteButton from './AdamiteButton'
 
 interface Props {
     priorVersions?: AnchorOnCommit[]
@@ -189,11 +190,21 @@ const AnchorCarousel: React.FC<Props> = ({
             {/* PRIOR VERISONS  */}
             {priorVersions ? (
                 <div style={{ display: 'flex', flexDirection: 'row' }}>
-                    {showBack ? (
-                        <IconButton onClick={back}>
-                            <ArrowBackIcon />
-                        </IconButton>
-                    ) : null}
+                    <AdamiteButton
+                        buttonClicked={back}
+                        name="Back"
+                        icon={
+                            <ArrowBackIcon
+                                style={
+                                    showBack
+                                        ? undefined
+                                        : { color: disabledIcon }
+                                }
+                            />
+                        }
+                        noMargin={true}
+                        disabled={!showBack}
+                    />
                     <div
                         className={styles['AnchorContainer']}
                         style={{
@@ -332,11 +343,21 @@ const AnchorCarousel: React.FC<Props> = ({
                                 )}
                         </Carousel>
                     </div>
-                    {showForward ? (
-                        <IconButton onClick={forward}>
-                            <ArrowForwardIcon />
-                        </IconButton>
-                    ) : null}
+                    <AdamiteButton
+                        buttonClicked={forward}
+                        name="Forward"
+                        icon={
+                            <ArrowForwardIcon
+                                style={
+                                    showForward
+                                        ? undefined
+                                        : { color: disabledIcon }
+                                }
+                            />
+                        }
+                        noMargin={true}
+                        disabled={!showForward}
+                    />
                 </div>
             ) : null}
             {/* POTENTIAL VERSIONS  */}
@@ -457,13 +478,24 @@ const AnchorCarousel: React.FC<Props> = ({
                         display: 'flex',
                         flexDirection: 'row',
                         justifyContent: 'center',
+                        gap: '5px',
                     }}
                 >
-                    {showBack ? (
-                        <IconButton onClick={back}>
-                            <ArrowBackIcon />
-                        </IconButton>
-                    ) : null}
+                    <AdamiteButton
+                        buttonClicked={back}
+                        name="Back"
+                        icon={
+                            <ArrowBackIcon
+                                style={
+                                    showBack
+                                        ? undefined
+                                        : { color: disabledIcon }
+                                }
+                            />
+                        }
+                        noMargin={true}
+                        disabled={!showBack}
+                    />
                     <button
                         className={styles['remove']}
                         onClick={(e: React.SyntheticEvent) => {
@@ -482,11 +514,21 @@ const AnchorCarousel: React.FC<Props> = ({
                     >
                         Reanchor
                     </button>
-                    {showForward ? (
-                        <IconButton onClick={forward}>
-                            <ArrowForwardIcon />
-                        </IconButton>
-                    ) : null}
+                    <AdamiteButton
+                        buttonClicked={forward}
+                        name="Forward"
+                        icon={
+                            <ArrowForwardIcon
+                                style={
+                                    showForward
+                                        ? undefined
+                                        : { color: disabledIcon }
+                                }
+                            />
+                        }
+                        noMargin={true}
+                        disabled={!showForward}
+                    />
                 </div>
             ) : null}
         </div>

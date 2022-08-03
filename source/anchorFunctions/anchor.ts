@@ -13,7 +13,7 @@ import {
     NUM_SURROUNDING_LINES,
 } from '../constants/constants'
 import {
-    sortAnnotationsByLocation,
+    // sortAnnotationsByLocation,
     getProjectName,
     getVisiblePath,
     getGithubUrl,
@@ -701,10 +701,8 @@ export const addHighlightsToEditor = (
             )
             valid.forEach((a: Annotation) => (a.outOfDate = false))
             // bring back annotations that are not in the file
-            const newAnnotationList: Annotation[] = sortAnnotationsByLocation(
-                valid.concat(
-                    annotationList.filter((a) => !updatedIds.includes(a.id))
-                )
+            const newAnnotationList: Annotation[] = valid.concat(
+                annotationList.filter((a) => !updatedIds.includes(a.id))
             )
 
             setAnnotationList(newAnnotationList)

@@ -60,6 +60,7 @@ const AdamitePanel: React.FC<Props> = ({
     )
     const [tabVal, setTabVal] = useState(0)
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+        console.log('switch tabs', annotations)
         setTabVal(newValue)
     }
 

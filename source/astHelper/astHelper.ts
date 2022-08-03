@@ -170,7 +170,10 @@ export class AstHelper {
                     i
                 )
             })
-            return { ...anchor, path: nodeInfo.filter((p) => p.isDirectParent) }
+            return {
+                ...anchor,
+                path: nodeInfo.filter((p) => p.isDirectParent),
+            }
         }
         console.error('Could not create path') // only throw this error if it's a file we should bother finding i.e., js/ts file
         return anchor

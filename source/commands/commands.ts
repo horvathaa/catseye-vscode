@@ -200,10 +200,22 @@ export const createNewAnnotation = async () => {
                       activeTextEditor.document.uri.fsPath
                   )
                 : activeTextEditor.document.uri.fsPath
+            const anc = anchor.createAnchorFromRange(r)
             const anchorId = uuidv4()
             const createdTimestamp = new Date().getTime()
+            const surrounding = {
+                linesBefore: anchor.getSurroundingLinesBeforeAnchor(
+                    activeTextEditor.document,
+                    r
+                ),
+                linesAfter: anchor.getSurroundingLinesAfterAnchor(
+                    activeTextEditor.document,
+                    r
+                ),
+            }
+            console.log('surrounding when creating', surrounding)
             const anchorObject: AnchorObject = {
-                anchor: anchor.createAnchorFromRange(r),
+                anchor: anc,
                 anchorText: text,
                 html,
                 filename: activeTextEditor.document.uri.toString(),
@@ -245,24 +257,20 @@ export const createNewAnnotation = async () => {
                         branchName: gitInfo[projectName]?.branch
                             ? gitInfo[projectName]?.branch
                             : '',
+                        startLine: anc.startLine,
+                        endLine: anc.endLine,
+                        path: visiblePath,
+                        surroundingCode: surrounding,
                     },
                 ],
                 path: astHelper.generateCodeContextPath(
                     r,
                     activeTextEditor.document
                 ),
-                surroundingCode: {
-                    linesBefore: anchor.getSurroundingLinesBeforeAnchor(
-                        activeTextEditor.document,
-                        r
-                    ),
-                    linesAfter: anchor.getSurroundingLinesAfterAnchor(
-                        activeTextEditor.document,
-                        r
-                    ),
-                },
                 potentialReanchorSpots: [],
+                surroundingCode: surrounding,
             }
+            console.log('anchor obj on creating anno', anchorObject)
             const temp = {
                 id: newAnnoId,
                 anchors: [anchorObject],
@@ -417,8 +425,19 @@ export const addNewHighlight = (
         .then((html) => {
             const anchorId = uuidv4()
             const createdTimestamp = new Date().getTime()
+            const anc = anchor.createAnchorFromRange(r)
+            const surrounding = {
+                linesBefore: anchor.getSurroundingLinesBeforeAnchor(
+                    activeTextEditor.document,
+                    r
+                ),
+                linesAfter: anchor.getSurroundingLinesAfterAnchor(
+                    activeTextEditor.document,
+                    r
+                ),
+            }
             const anchorObject: AnchorObject = {
-                anchor: anchor.createAnchorFromRange(r),
+                anchor: anc,
                 anchorText: text,
                 html,
                 filename: activeTextEditor.document.uri.toString(),
@@ -460,23 +479,18 @@ export const addNewHighlight = (
                         branchName: gitInfo[projectName]?.branch
                             ? gitInfo[projectName]?.branch
                             : '',
+                        startLine: anc.startLine,
+                        endLine: anc.endLine,
+                        path: visiblePath,
+                        surroundingCode: surrounding,
                     },
                 ],
                 path: astHelper.generateCodeContextPath(
                     r,
                     activeTextEditor.document
                 ),
-                surroundingCode: {
-                    linesBefore: anchor.getSurroundingLinesBeforeAnchor(
-                        activeTextEditor.document,
-                        r
-                    ),
-                    linesAfter: anchor.getSurroundingLinesAfterAnchor(
-                        activeTextEditor.document,
-                        r
-                    ),
-                },
                 potentialReanchorSpots: [],
+                surroundingCode: surrounding,
             }
             const temp = {
                 id: newAnnoId,

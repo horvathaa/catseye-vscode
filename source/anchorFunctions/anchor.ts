@@ -152,43 +152,58 @@ export const getSurroundingLinesBeforeAnchor = (
     document: vscode.TextDocument,
     anchorRange: vscode.Range
 ): string[] => {
-    let textBefore = document.getText(
-        document.validateRange(
-            new vscode.Range(
-                new vscode.Position(
-                    anchorRange.start.line - NUM_SURROUNDING_LINES,
-                    0
-                ),
-                new vscode.Position(anchorRange.start.line, 10000)
+    try {
+        // set top of new line to 0 if cannot grab -5 lines
+        const offSetFromTopOfDoc =
+            anchorRange.start.line - NUM_SURROUNDING_LINES < 0
+                ? 0
+                : anchorRange.start.line - NUM_SURROUNDING_LINES
+        let textBefore = document.getText(
+            document.validateRange(
+                new vscode.Range(
+                    new vscode.Position(offSetFromTopOfDoc, 0),
+                    new vscode.Position(anchorRange.start.line, 10000)
+                )
             )
         )
-    )
+        // console.log(addLinesWithContent(textBefore, document, anchorRange))
 
+        return textBefore.split('\n')
+    } catch (e) {
+        console.log(e)
+        console.log('could not add before')
+    }
+    return []
     // consider removing whitespace by calling above function
     // pros: more semantically-meaningful content
     // cons: may make it harder to find since we don't have a concept of how many whitespace lines we removed i.e., how far apart these lines
     // actually are from one another
-    // console.log(addLinesWithContent(textBefore, document, anchorRange))
-
-    return textBefore.split('\n')
 }
 
 export const getSurroundingLinesAfterAnchor = (
     document: vscode.TextDocument,
     anchorRange: vscode.Range
 ): string[] => {
-    const textAfter = document.getText(
-        document.validateRange(
-            new vscode.Range(
-                new vscode.Position(anchorRange.end.line, 0),
-                new vscode.Position(
-                    anchorRange.end.line + NUM_SURROUNDING_LINES,
-                    10000
+    try {
+        const textAfter = document.getText(
+            document.validateRange(
+                new vscode.Range(
+                    new vscode.Position(anchorRange.end.line, 0),
+                    new vscode.Position(
+                        anchorRange.end.line + NUM_SURROUNDING_LINES >=
+                        document.lineCount
+                            ? document.lineCount - 1
+                            : anchorRange.end.line + NUM_SURROUNDING_LINES,
+                        10000
+                    )
                 )
             )
         )
-    )
-    return textAfter.split('\n')
+        return textAfter.split('\n')
+    } catch (e) {
+        console.log(e)
+    }
+    return []
 }
 
 export const computeVsCodeRangeFromOffset = (

@@ -111,6 +111,7 @@ export const getAnnotationsOnSignIn = async (
             : []
 
     const allAnnotations = priorVersionAnnotations.concat(remainingAnnotations)
+    console.log('annotations', allAnnotations)
     return allAnnotations
 }
 
@@ -168,13 +169,18 @@ export const getPriorVersions = (
             if (!pv) pv = []
 
             if (priorVersionFromCommit) {
+                console.log('pv in commit', priorVersionFromCommit)
                 const priorVersion: AnchorOnCommit = {
                     id: priorVersionFromCommit.anchorId,
                     commitHash: commit.commit,
-                    createdTimestamp: priorVersionFromCommit.createdTimestamp,
-                    html: priorVersionFromCommit.html,
+                    createdTimestamp: priorVersionFromCommit.createdTimestamp, // not updated
+                    html: priorVersionFromCommit.html, // not updated correctly
                     anchorText: priorVersionFromCommit.anchorText,
                     branchName: commit.branchName,
+                    startLine: priorVersionFromCommit.anchor.startLine,
+                    endLine: priorVersionFromCommit.anchor.endLine,
+                    path: priorVersionFromCommit.visiblePath,
+                    surroundingCode: priorVersionFromCommit.surroundingCode,
                 }
                 pv = [...pv, { ...priorVersion }]
             }

@@ -124,6 +124,10 @@ export interface AnchorOnCommit {
     html: string
     anchorText: string
     branchName: string
+    startLine: number
+    endLine: number
+    path: string
+    surroundingCode: SurroundingAnchorArea
     // diff: string // MAYBE. Need to investigate diff packages
 }
 

@@ -39,3 +39,7 @@ export const hoverText: string = getComputedStyle(
 export const codeColor: string = getComputedStyle(
     document.body
 ).getPropertyValue('--vscode-input-foreground')
+
+export const disabledIcon: string = getComputedStyle(
+    document.body
+).getPropertyValue('--vscode-disabledForeground')

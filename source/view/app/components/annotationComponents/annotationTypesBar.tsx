@@ -58,7 +58,6 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
 
     // Concept learned from https://dev.to/christensenjoe/using-breakpoints-in-materialui-5gj0
     const isMedOrMore = useMediaQuery(theme.breakpoints.up('md'))
-    const isSmOrMore = useMediaQuery(theme.breakpoints.up('lg'))
 
     // https://mui.com/material-ui/guides/typescript/#customization-of-theme
     // could not get theme overrides to work :(

@@ -11,6 +11,7 @@ import {
     PotentialAnchorObject,
     HIGH_SIMILARITY_THRESHOLD, // we are pretty confident the anchor is here
     PASSABLE_SIMILARITY_THRESHOLD, // we are confident enough
+    ReanchorInformation,
 } from '../../../../constants/constants'
 import { disabledIcon, iconColor } from '../../styles/vscodeStyles'
 import AdamiteButton from './AdamiteButton'
@@ -20,6 +21,7 @@ interface Props {
     potentialVersions?: PotentialAnchorObject[]
     currentAnchorObject: AnchorObject
     scrollInEditor: (id: string) => void
+    requestReanchor?: (newAnchor: ReanchorInformation) => void
 }
 
 const AnchorCarousel: React.FC<Props> = ({
@@ -27,6 +29,7 @@ const AnchorCarousel: React.FC<Props> = ({
     potentialVersions,
     currentAnchorObject,
     scrollInEditor,
+    requestReanchor,
 }) => {
     const Carousel = Slider as unknown as React.ElementType
     const [pastVersions, setPastVersions] = React.useState<
@@ -184,7 +187,22 @@ const AnchorCarousel: React.FC<Props> = ({
         setFutureVersions(removedAFuture)
     }
 
+    // why "null" as an option for removedAnchor?
     const handleReanchor = (removedAnchor: PotentialAnchorObject | null) => {
+        console.log('removedAnchor', removedAnchor)
+        if (requestReanchor && removedAnchor) {
+            const reanchor: ReanchorInformation = {
+                anchor: removedAnchor.anchor,
+                anchorId: removedAnchor.anchorId,
+                stableGitUrl: removedAnchor.stableGitUrl,
+                filename: removedAnchor.filename,
+                path: removedAnchor.path,
+                gitUrl: removedAnchor.gitUrl,
+                anchorText: removedAnchor.anchorText,
+                surroundingCode: removedAnchor.surroundingCode,
+            }
+            requestReanchor(reanchor)
+        }
         // reanchor at potential object
         // set annotation.anchored === true
         return

@@ -24,6 +24,8 @@ import {
     getAnnotationsNotInFile,
     handleSaveCloseEvent,
     levenshteinDistance,
+    buildAnnotation,
+    removeNulls,
 } from '../utils/utils'
 import {
     annotationDecorations,
@@ -639,10 +641,15 @@ const createDecorationOptions = (
     })
 }
 
-interface AnnotationRange {
-    annotationId: string
+interface AnnotationRange extends AnnotationAnchorPair {
     anchorText: string
     range: vscode.Range
+    valid?: boolean
+}
+
+interface AnnotationAnchorPair {
+    annotationId: string
+    anchorId: string | string[]
 }
 
 const validateRanges = (
@@ -656,7 +663,7 @@ const validateRanges = (
         // range is already clean
         if (validRange.isEqual(r.range)) {
             r.range = validRange
-            validRanges.push(r)
+            validRanges.push({ ...r, valid: true })
         }
         // valid range is equivalent to original range so update range
         else if (
@@ -664,14 +671,39 @@ const validateRanges = (
             r.anchorText !== ''
         ) {
             r.range = validRange
-            validRanges.push(r)
+            validRanges.push({ ...r, valid: true })
         }
         // valid range is not similar so we are screwed
         else {
-            invalidRanges.push(r)
+            invalidRanges.push({ ...r, valid: false })
         }
     })
     return [validRanges, invalidRanges]
+}
+
+const getDupIds = (arr: string[]): string[] => {
+    return arr.filter((value: string, index: number, self: string[]) => {
+        return self.indexOf(value) !== index
+    })
+}
+
+const mergeAnnotationAndAnchorIds = (pairs: AnnotationAnchorPair[]) => {
+    const annoIds = pairs.map((p) => p.annotationId)
+    const uniqueIds = [...new Set(annoIds)]
+    // only dealing with unique
+    if (annoIds.length === uniqueIds.length) {
+        return pairs
+    } else {
+        const dups = getDupIds(annoIds)
+        return dups.map((id: string) => {
+            return {
+                annotationId: id,
+                anchorId: pairs
+                    .filter((p) => p.annotationId === id)
+                    .flatMap((pid) => pid.anchorId),
+            }
+        })
+    }
 }
 
 // Function to actually decorate each file with our annotation highlights
@@ -703,6 +735,7 @@ export const addHighlightsToEditor = (
             .map((a) => {
                 return {
                     annotationId: a.parentId,
+                    anchorId: a.anchorId,
                     anchorText: a.anchorText,
                     url: a.stableGitUrl,
                     filename: a.filename,
@@ -715,6 +748,7 @@ export const addHighlightsToEditor = (
                     annotationId: a.annotationId,
                     anchorText: a.anchorText,
                     range: a.range,
+                    anchorId: a.anchorId,
                 }
             })
 
@@ -725,13 +759,69 @@ export const addHighlightsToEditor = (
             const valid: Annotation[] = annotationsToHighlight.filter(
                 (a: Annotation) => validIds.includes(a.id)
             )
+
+            let unanchoredAnnotations: Annotation[] = []
+
+            if (invalidRanges.length) {
+                const invalidIds: AnnotationAnchorPair[] = invalidRanges.map(
+                    (r) => {
+                        return {
+                            annotationId: r.annotationId,
+                            anchorId: r.anchorId,
+                        }
+                    }
+                )
+
+                const mergedInvalidIds = mergeAnnotationAndAnchorIds(invalidIds)
+
+                // these annos have become unanchored
+                unanchoredAnnotations = removeNulls(
+                    mergedInvalidIds.map((a: AnnotationAnchorPair) => {
+                        const anno = annotationsToHighlight.find(
+                            (ann) => ann.id === a.annotationId
+                        )
+                        const anchors =
+                            typeof a.anchorId === 'string'
+                                ? anno?.anchors.find(
+                                      (anch) => anch.anchorId === a.anchorId
+                                  )
+                                : anno?.anchors.filter((anch) =>
+                                      a.anchorId.includes(anch.anchorId)
+                                  )
+                        if (anno && anchors) {
+                            const newAnchors = Array.isArray(anchors)
+                                ? anchors.map((anch) => {
+                                      return { ...anch, anchored: false }
+                                  })
+                                : [{ ...anchors, anchored: false }]
+                            return buildAnnotation({
+                                ...anno,
+                                anchors: anno.anchors
+                                    .filter((anch) => {
+                                        return typeof a.anchorId === 'string'
+                                            ? anch.anchorId !== a.anchorId
+                                            : !a.anchorId.includes(
+                                                  anch.anchorId
+                                              )
+                                    })
+                                    .concat(newAnchors),
+                                needToUpdate: true,
+                                // outOfDate: true,
+                            })
+                        }
+                    })
+                )
+                console.log('huh?', unanchoredAnnotations)
+                // saveOutOfDateAnnotations(invalidIds)
+            }
+
             valid.forEach((a: Annotation) => (a.outOfDate = false))
             // bring back annotations that are not in the file
             const newAnnotationList: Annotation[] = valid.concat(
                 annotationList.filter((a) => !updatedIds.includes(a.id))
             )
 
-            setAnnotationList(newAnnotationList)
+            setAnnotationList(newAnnotationList.concat(unanchoredAnnotations))
 
             try {
                 const decorationOptions: vscode.DecorationOptions[] =
@@ -741,12 +831,6 @@ export const addHighlightsToEditor = (
                 console.error("Couldn't highlight: ", error)
             }
 
-            if (invalidRanges.length) {
-                const invalidIds: string[] = invalidRanges.map(
-                    (r) => r.annotationId
-                )
-                saveOutOfDateAnnotations(invalidIds)
-            }
             // if (vscode.workspace.workspaceFolders) {
             //     view?.updateDisplay(newAnnotationList)
             // }

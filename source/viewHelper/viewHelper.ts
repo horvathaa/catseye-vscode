@@ -12,6 +12,7 @@ import {
     AnchorObject,
     Reply,
     Snapshot,
+    ReanchorInformation,
 } from '../constants/constants'
 import {
     user,
@@ -551,4 +552,53 @@ export const handlePinAnnotation = (id: string): void => {
         }
     }
     view?.updateDisplay(updatedList)
+}
+
+export const handleReanchor = (
+    annoId: string,
+    newAnchor: ReanchorInformation
+): void => {
+    // find anno to update
+    const anno = annotationList.find((a) => a.id === annoId)
+    console.log('anno we are updated', anno)
+    if (anno) {
+        // find anchor to update
+        const anchorToReplace = anno.anchors.find(
+            (a) => a.anchorId === newAnchor.anchorId
+        )
+        console.log('anchor to update', anchorToReplace)
+        if (anchorToReplace) {
+            // merge old anchor with new, reanchor information, reset potentialReanchorSpots, and mark as anchored
+            const newAnchorObj: AnchorObject = {
+                ...anchorToReplace,
+                ...newAnchor,
+                potentialReanchorSpots: [],
+                anchored: true,
+            }
+            console.log('newAnchorObj', newAnchorObj)
+            // update corresponding anno
+            const updatedAnno = buildAnnotation({
+                ...anno,
+                anchors: anno.anchors
+                    .filter((a) => a.anchorId !== newAnchor.anchorId)
+                    .concat(newAnchorObj),
+                needToUpdate: true,
+            })
+            console.log('updated', updatedAnno)
+            // update list
+            setAnnotationList(
+                annotationList
+                    .filter((a) => a.id !== anno.id)
+                    .concat(updatedAnno)
+            )
+            // if reanchor is in visible location, add new highlights
+            const currTextEditor: vscode.TextEditor =
+                vscode.window.activeTextEditor ??
+                vscode.window.visibleTextEditors[0]
+            console.log('currText', currTextEditor)
+            newAnchor.stableGitUrl ===
+                getStableGitHubUrl(currTextEditor.document.uri.fsPath) &&
+                addHighlightsToEditor(annotationList, currTextEditor)
+        }
+    }
 }

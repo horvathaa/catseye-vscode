@@ -295,7 +295,7 @@ export const handleDidChangeTextDocument = (
                             a.anchors,
                             // (a: AnchorObject) => a.filename === e.document.uri.toString()
                             (a: AnchorObject) =>
-                                a.stableGitUrl === stableGitPath
+                                a.stableGitUrl === stableGitPath && a.anchored
                         )
                     const translate: (AnchorObject | null)[] =
                         anchorsToTranslate.map((a: AnchorObject) =>
@@ -368,9 +368,9 @@ export const handleDidChangeTextDocument = (
         } else {
             setAnnotationList(
                 //utils.sortAnnotationsByLocation(
-                    annotationList
+                annotationList
                 //    )
-                )
+            )
         }
     }
 }

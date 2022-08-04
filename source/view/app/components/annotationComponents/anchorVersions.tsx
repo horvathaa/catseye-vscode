@@ -9,15 +9,21 @@ import '../../styles/versions.module.css'
 import {
     AnchorObject,
     PotentialAnchorObject,
+    ReanchorInformation,
 } from '../../../../constants/constants'
 import Carousel from './anchorCarousel'
 
 interface Props {
     anchors: AnchorObject[]
     scrollInEditor: (id: string) => void
+    requestReanchor: (newAnchor: ReanchorInformation) => void
 }
 
-const AnchorVersions: React.FC<Props> = ({ anchors, scrollInEditor }) => {
+const AnchorVersions: React.FC<Props> = ({
+    anchors,
+    scrollInEditor,
+    requestReanchor,
+}) => {
     // let dummyFuture: PotentialAnchorObject[] = [
     //     {
     //         weight: 0.5,
@@ -123,6 +129,7 @@ const AnchorVersions: React.FC<Props> = ({ anchors, scrollInEditor }) => {
                             priorVersions={anchor.priorVersions}
                             currentAnchorObject={anchor}
                             scrollInEditor={scrollInEditor}
+                            // requestReanchor={requestReanchor} - consider supporting reanchor for prior versions?
                         ></Carousel>
                     )
                 }
@@ -151,6 +158,7 @@ const AnchorVersions: React.FC<Props> = ({ anchors, scrollInEditor }) => {
                             potentialVersions={anchor.potentialReanchorSpots}
                             currentAnchorObject={anchor}
                             scrollInEditor={scrollInEditor}
+                            requestReanchor={requestReanchor}
                         ></Carousel>
                     )
                     // }

@@ -26,7 +26,7 @@ import {
 } from './anchor'
 
 // toggle to true for more console messages
-export const REANCHOR_DEBUG: boolean = false
+export const REANCHOR_DEBUG: boolean = true
 let currDocLength = 0
 
 interface CodeToken {
@@ -249,11 +249,17 @@ export const computeMostSimilarAnchor = (
                 },
                 potentialReanchorSpots: [],
                 weight,
-                reasonSuggested: '',
+                reasonSuggested: "it's close lol",
             }
             return newPotentialAnchor
         }
     )
+
+    REANCHOR_DEBUG &&
+        console.log('returning this from compute similar anchor', {
+            ...anchor,
+            potentialReanchorSpots: newPotentialAnchors,
+        })
     // )
 
     // console.log('newAnchors', newAnchors)
@@ -674,7 +680,10 @@ const proximitySearch = (
                 (line, i) =>
                     line &&
                     i < anchorCode.length &&
-                    compareCodeLinesByContent(line, anchorCode[i])
+                    compareCodeLinesByContent(
+                        line,
+                        anchorCode.length > 0 ? anchorCode[i] : anchorCode[0]
+                    )
             )
 
         const weightedBelowComparedToAnchor: (false | WeightedCodeLine)[] =
@@ -682,16 +691,23 @@ const proximitySearch = (
                 (line, i) =>
                     line &&
                     i < anchorCode.length &&
-                    compareCodeLinesByContent(line, anchorCode[i])
+                    compareCodeLinesByContent(
+                        line,
+                        anchorCode.length > 0 ? anchorCode[i] : anchorCode[0]
+                    ) // bring sliding window logic here
             )
-        // console.log(
-        //     'maybe in area above anchor?',
-        //     weightedAboveComparedToAnchor
-        // )
-        // console.log(
-        //     'maybe in area below anchor?',
-        //     weightedBelowComparedToAnchor
-        // )
+        REANCHOR_DEBUG &&
+            console.log(
+                'maybe in area above anchor?',
+                weightedAboveComparedToAnchor
+            )
+        REANCHOR_DEBUG &&
+            console.log(
+                'maybe in area below anchor?',
+                weightedBelowComparedToAnchor
+            )
+        // TODO: actually use these values i.e., finish this
+        // const areaSearch: WeightedCodeLine[] = weightedAboveComparedToAnchor.filter((anch) => typeof anch !== 'boolean')
         // see if anchor is actually in surrounding context
         // if not - widen window
         // if still not - full doc
@@ -719,7 +735,7 @@ const proximitySearch = (
     // --> if we are STILL not good
     // Widen our window to... +/- additional 5 lines and see if they seem to have our anchor line
     // IF NOT --> full doc search for best candidate location OR try and use AST to minimize search space
-
+    REANCHOR_DEBUG && console.log('returning these anchors', newAnchors)
     return newAnchors
 }
 

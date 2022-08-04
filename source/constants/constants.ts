@@ -288,3 +288,14 @@ export enum Selection {
 export const HIGH_SIMILARITY_THRESHOLD = 0.3 // we are pretty confident the anchor is here
 export const PASSABLE_SIMILARITY_THRESHOLD = 0.7 // we are confident enough
 export const INCREMENT = 2 // amount for expanding search range
+
+export interface ReanchorInformation {
+    anchorId: string
+    filename: string
+    stableGitUrl: string
+    gitUrl: string
+    anchor: Anchor
+    anchorText: string
+    path: CodeContext[]
+    surroundingCode: SurroundingAnchorArea
+}

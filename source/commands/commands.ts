@@ -132,6 +132,12 @@ export const createView = async (context: vscode.ExtensionContext) => {
                         viewHelper.handleDeleteResolveAnnotation(annoId, true)
                         break
                     }
+                    case 'reanchor': {
+                        const { annoId, newAnchor } = message
+                        console.log('reanchoring')
+                        viewHelper.handleReanchor(annoId, newAnchor)
+                        break
+                    }
                     default: {
                         break
                     }

@@ -9,8 +9,11 @@ import {
     AnchorObject,
     AnchorOnCommit,
     PotentialAnchorObject,
+    HIGH_SIMILARITY_THRESHOLD, // we are pretty confident the anchor is here
+    PASSABLE_SIMILARITY_THRESHOLD, // we are confident enough
 } from '../../../../constants/constants'
-import { iconColor } from '../../styles/vscodeStyles'
+import { disabledIcon, iconColor } from '../../styles/vscodeStyles'
+import AdamiteButton from './AdamiteButton'
 
 interface Props {
     priorVersions?: AnchorOnCommit[]
@@ -126,14 +129,25 @@ const AnchorCarousel: React.FC<Props> = ({
             scrollInEditor(aId)
     }
 
+    const getConfidenceString = (weight: number): string => {
+        return weight <= HIGH_SIMILARITY_THRESHOLD
+            ? 'very similar'
+            : weight <= PASSABLE_SIMILARITY_THRESHOLD
+            ? 'similar'
+            : 'weak'
+    }
+
     const displayBefore = (
         pv: AnchorOnCommit | PotentialAnchorObject,
         index: number
     ) => {
-        if (index <= pv.surroundingCode.linesBefore.length) {
+        if (
+            pv.surroundingCode?.linesBefore &&
+            index < pv.surroundingCode?.linesBefore?.length
+        ) {
             const lineBefore =
-                pv.surroundingCode.linesBefore[
-                    pv.surroundingCode.linesBefore.length - index
+                pv.surroundingCode?.linesBefore[
+                    pv.surroundingCode?.linesBefore?.length - index
                 ]
             const length = lineBefore.length
             const tooLong = length > 60
@@ -146,7 +160,10 @@ const AnchorCarousel: React.FC<Props> = ({
         pv: AnchorOnCommit | PotentialAnchorObject,
         index: number //1
     ) => {
-        if (index < pv.surroundingCode.linesAfter.length) {
+        if (
+            pv.surroundingCode?.linesAfter &&
+            index < pv.surroundingCode?.linesAfter.length
+        ) {
             const lineAfter = pv.surroundingCode.linesAfter[index]
             const length = lineAfter.length
             const tooLong = length > 60
@@ -183,11 +200,21 @@ const AnchorCarousel: React.FC<Props> = ({
             {/* PRIOR VERISONS  */}
             {priorVersions ? (
                 <div style={{ display: 'flex', flexDirection: 'row' }}>
-                    {showBack ? (
-                        <IconButton onClick={back}>
-                            <ArrowBackIcon />
-                        </IconButton>
-                    ) : null}
+                    <AdamiteButton
+                        buttonClicked={back}
+                        name="Back"
+                        icon={
+                            <ArrowBackIcon
+                                style={
+                                    showBack
+                                        ? undefined
+                                        : { color: disabledIcon }
+                                }
+                            />
+                        }
+                        noMargin={true}
+                        disabled={!showBack}
+                    />
                     <div
                         className={styles['AnchorContainer']}
                         style={{
@@ -326,11 +353,21 @@ const AnchorCarousel: React.FC<Props> = ({
                                 )}
                         </Carousel>
                     </div>
-                    {showForward ? (
-                        <IconButton onClick={forward}>
-                            <ArrowForwardIcon />
-                        </IconButton>
-                    ) : null}
+                    <AdamiteButton
+                        buttonClicked={forward}
+                        name="Forward"
+                        icon={
+                            <ArrowForwardIcon
+                                style={
+                                    showForward
+                                        ? undefined
+                                        : { color: disabledIcon }
+                                }
+                            />
+                        }
+                        noMargin={true}
+                        disabled={!showForward}
+                    />
                 </div>
             ) : null}
             {/* POTENTIAL VERSIONS  */}
@@ -376,8 +413,10 @@ const AnchorCarousel: React.FC<Props> = ({
                                         <span>
                                             <i>
                                                 {' '}
-                                                {pv.weight * 100}% match in{' '}
-                                                {pv.visiblePath}
+                                                {getConfidenceString(
+                                                    pv.weight
+                                                )}{' '}
+                                                match in {pv.visiblePath}
                                             </i>
                                         </span>
                                         {pv.anchor.endLine -
@@ -451,13 +490,24 @@ const AnchorCarousel: React.FC<Props> = ({
                         display: 'flex',
                         flexDirection: 'row',
                         justifyContent: 'center',
+                        gap: '5px',
                     }}
                 >
-                    {showBack ? (
-                        <IconButton onClick={back}>
-                            <ArrowBackIcon />
-                        </IconButton>
-                    ) : null}
+                    <AdamiteButton
+                        buttonClicked={back}
+                        name="Back"
+                        icon={
+                            <ArrowBackIcon
+                                style={
+                                    showBack
+                                        ? undefined
+                                        : { color: disabledIcon }
+                                }
+                            />
+                        }
+                        noMargin={true}
+                        disabled={!showBack}
+                    />
                     <button
                         className={styles['remove']}
                         onClick={(e: React.SyntheticEvent) => {
@@ -476,11 +526,21 @@ const AnchorCarousel: React.FC<Props> = ({
                     >
                         Reanchor
                     </button>
-                    {showForward ? (
-                        <IconButton onClick={forward}>
-                            <ArrowForwardIcon />
-                        </IconButton>
-                    ) : null}
+                    <AdamiteButton
+                        buttonClicked={forward}
+                        name="Forward"
+                        icon={
+                            <ArrowForwardIcon
+                                style={
+                                    showForward
+                                        ? undefined
+                                        : { color: disabledIcon }
+                                }
+                            />
+                        }
+                        noMargin={true}
+                        disabled={!showForward}
+                    />
                 </div>
             ) : null}
         </div>

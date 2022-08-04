@@ -91,9 +91,10 @@ export const initializeAnnotations = async (
 ): Promise<void> => {
     const currFilename: string | undefined =
         vscode.window.activeTextEditor?.document.uri.path.toString()
-    const annotations: Annotation[] = sortAnnotationsByLocation(
+    const annotations: Annotation[] =
+        //sortAnnotationsByLocation(
         await getAnnotationsOnSignIn(user, currentGitHubProject)
-    )
+    //)
     setAnnotationList(annotations)
     const selectedAnnotations: Annotation[] = annotations.filter(
         (a) => a.selected
@@ -283,6 +284,7 @@ export const reconstructAnnotations = (
                       )
                     : [],
             },
+            potentialReanchorSpots: [],
         }
         const adjustedAnno = {
             id: newAnnoId,
@@ -332,29 +334,6 @@ export const checkIfChangeIncludesAnchor = (
     return annotationList.filter((a: Annotation) =>
         checkIfAnnotationIncludesChange(a, text)
     )
-}
-
-const sortAnchorsByLocation = (anchors: AnchorObject[]): AnchorObject[] => {
-    return anchors.sort((a: AnchorObject, b: AnchorObject) => {
-        return b.anchor.startLine - a.anchor.startLine === 0
-            ? b.anchor.startOffset - a.anchor.startOffset
-            : b.anchor.startLine - a.anchor.startLine
-    })
-}
-
-export const sortAnnotationsByLocation = (
-    annotationList: Annotation[]
-): Annotation[] => {
-    const sortedAnchors: string[] = sortAnchorsByLocation(
-        annotationList.flatMap((a) => {
-            return a.anchors
-        })
-    ).map((a) => a.parentId)
-    annotationList.sort((a: Annotation, b: Annotation) => {
-        return sortedAnchors.indexOf(b.id) - sortedAnchors.indexOf(a.id)
-    })
-
-    return annotationList
 }
 
 const getShikiTheme = (pl: string): string => {
@@ -501,6 +480,7 @@ export const handleSaveCloseEvent = async (
         outOfDateAnnotations,
         deletedAnnotations
     )
+    // console.log('annosToSave?', annosToSave)
     const annotationsInCurrentFile =
         currentFile !== 'all'
             ? getAllAnnotationsWithGitUrlInFile(annotationList, currentFile)
@@ -583,6 +563,7 @@ export const makeObjectListFromAnnotations = (
             projectName: a.projectName ? a.projectName : '',
             githubUsername: a.githubUsername ? a.githubUsername : '',
             replies: a.replies ? a.replies : [],
+            resolved: a.resolved ? a.resolved : false,
             outputs: a.outputs ? a.outputs : [],
             codeSnapshots: a.codeSnapshots
                 ? a.codeSnapshots.length > 0 &&
@@ -660,7 +641,7 @@ const writeToFile = async (
 
 export const getStableGitHubUrl = (fsPath: string): string => {
     const projectName = getProjectName(fsPath)
-    const visPath = getVisiblePath(getProjectName(fsPath), fsPath)
+    const visPath = getVisiblePath(projectName, fsPath)
     return getGithubUrl(visPath, projectName, true)
 }
 
@@ -1009,7 +990,8 @@ export const buildAnnotation = (
         annoObj['sharedWith'],
         annoObj['selected'],
         annoObj['needToUpdate'],
-        annoObj['types']
+        annoObj['types'],
+        annoObj['resolved']
     )
 }
 
@@ -1108,6 +1090,7 @@ export const createAnchorObject = async (
                 },
             ],
             path,
+            potentialReanchorSpots: [],
             surroundingCode: surrounding,
         }
     } else {
@@ -1129,4 +1112,40 @@ export const partitionAnnotationsOnSignIn = (array: any[], filter: any) => {
         return (filter(a, idx, arr) ? lastCommit : otherCommit).push(a)
     })
     return [lastCommit, otherCommit]
+}
+
+export const levenshteinDistance = (s: string, t: string) => {
+    if (!s.length) return t.length
+    if (!t.length) return s.length
+    const arr = []
+    for (let i = 0; i <= t.length; i++) {
+        arr[i] = [i]
+        for (let j = 1; j <= s.length; j++) {
+            arr[i][j] =
+                i === 0
+                    ? j
+                    : Math.min(
+                          arr[i - 1][j] + 1,
+                          arr[i][j - 1] + 1,
+                          arr[i - 1][j - 1] + (s[j - 1] === t[i - 1] ? 0 : 1)
+                      )
+        }
+    }
+    return arr[t.length][s.length]
+}
+
+export const updateAnnotationsWithAnchors = (
+    anchors: AnchorObject[]
+): Annotation[] => {
+    const annoIds = anchors.map((a) => a.parentId)
+    const matchingAnnos = annotationList.filter((a) => annoIds.includes(a.id))
+    const updatedAnnos = matchingAnnos.map((a: Annotation) => {
+        const annoAnchors = anchors.filter((anch) => anch.parentId === a.id)
+        return buildAnnotation({
+            ...a,
+            anchors: annoAnchors,
+            needToUpdate: true,
+        })
+    })
+    return updatedAnnos
 }

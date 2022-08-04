@@ -35,7 +35,7 @@ import {
     saveAnnotations,
     removeOutOfDateAnnotations,
     buildAnnotation,
-    sortAnnotationsByLocation,
+    // sortAnnotationsByLocation,
     getProjectName,
     getShikiCodeHighlighting,
     getAllAnnotationFilenames,
@@ -329,7 +329,7 @@ export const handleCreateAnnotation = (
                     tempAnno?.anchors[0].filename
             )
             setTempAnno(null)
-            setAnnotationList(sortAnnotationsByLocation(annotationList))
+            setAnnotationList(annotationList)
             view?.updateDisplay(annotationList)
             if (text) addHighlightsToEditor(annotationList, text)
             if (willBePinned) {
@@ -366,12 +366,15 @@ export const handleUpdateAnnotation = (
         (a) => a.id === id
     )
     if (updatedAnno) {
+        // Check for pinned
         if (typeof value === 'boolean' && typeof key === 'string') {
             updatedAnno = buildAnnotation({
                 ...updatedAnno,
                 [key]: value,
                 needToUpdate: true,
-                gitCommit: gitInfo[updatedAnno.projectName].commit,
+                gitCommit: gitInfo[updatedAnno.projectName]
+                    ? gitInfo[updatedAnno.projectName].commit
+                    : updatedAnno.gitCommit,
             })
             setSelectedAnnotationsNavigations(
                 value
@@ -386,11 +389,14 @@ export const handleUpdateAnnotation = (
                     : selectedAnnotationsNavigations.filter((a) => a.id !== id)
             )
         } else if (typeof key === 'string') {
+            key === 'types' && console.log('in update', value)
             updatedAnno = buildAnnotation({
                 ...updatedAnno,
                 [key]: value,
                 needToUpdate: true,
-                gitCommit: gitInfo[updatedAnno.projectName].commit,
+                gitCommit: gitInfo[updatedAnno.projectName]
+                    ? gitInfo[updatedAnno.projectName].commit
+                    : updatedAnno.gitCommit,
             })
         } else {
             updatedAnno = buildAnnotation({
@@ -398,26 +404,40 @@ export const handleUpdateAnnotation = (
                 [key[0]]: value[key[0]],
                 [key[1]]: value[key[1]],
                 needToUpdate: true,
-                gitCommit: gitInfo[updatedAnno.projectName].commit,
+                gitCommit: gitInfo[updatedAnno.projectName]
+                    ? gitInfo[updatedAnno.projectName].commit
+                    : updatedAnno.gitCommit,
             })
         }
         const updatedList = annotationList
             .filter((a) => a.id !== id)
             .concat([updatedAnno])
         setAnnotationList(updatedList)
-        if (typeof value === 'boolean' && typeof key === 'string')
+        // Update display if pinned or shared
+        if (
+            (typeof value === 'boolean' && typeof key === 'string') ||
+            key === 'sharedWith'
+        ) {
             view?.updateDisplay(updatedList)
+        }
     }
-    // console.log('updated', updatedAnno);
 }
 
 // Removes the annotation from the list, updates the annotation list in the webview, and removes the corresponding highlight
-export const handleDeleteAnnotation = (id: string): void => {
+export const handleDeleteResolveAnnotation = (
+    id: string,
+    resolve: boolean
+): void => {
     const updatedAnno = buildAnnotation({
         ...annotationList.filter((a) => a.id === id)[0],
-        deleted: true,
         needToUpdate: true,
     })
+
+    if (resolve) {
+        updatedAnno.resolved = true
+    } else {
+        updatedAnno.deleted = true
+    }
     const updatedList = annotationList
         .filter((a) => a.id !== id)
         .concat([updatedAnno])
@@ -427,11 +447,8 @@ export const handleDeleteAnnotation = (id: string): void => {
         (v: vscode.TextEditor) =>
             annotationFiles.includes(v.document.uri.toString())
     )[0]
-    visible
-        ? setAnnotationList(
-              sortAnnotationsByLocation(removeOutOfDateAnnotations(updatedList))
-          )
-        : setAnnotationList(removeOutOfDateAnnotations(updatedList))
+
+    setAnnotationList(removeOutOfDateAnnotations(updatedList))
     view?.updateDisplay(annotationList)
     if (visible) {
         addHighlightsToEditor(annotationList, visible)
@@ -500,4 +517,38 @@ export const handleSaveAnnotationsToJson = (): void => {
 // stub for adding this function later
 export const handleShowKeyboardShortcuts = (): void => {
     return
+}
+
+// stub for adding this function later
+export const handlePinAnnotation = (id: string): void => {
+    const updatedAnno = buildAnnotation({
+        ...annotationList.filter((a) => a.id === id)[0],
+        needToUpdate: true,
+    })
+    updatedAnno.selected = !updatedAnno.selected
+
+    const updatedList = annotationList
+        .filter((a) => a.id !== id)
+        .concat([updatedAnno])
+
+    setAnnotationList(updatedList)
+
+    if (updatedAnno.selected) {
+        setSelectedAnnotationsNavigations([
+            ...selectedAnnotationsNavigations,
+            {
+                id: updatedAnno.id,
+                lastVisited: false,
+                anchorId: updatedAnno.anchors[0].anchorId,
+            },
+        ])
+    } else {
+        // Taken from handleDeleteResolveAnnotation
+        if (selectedAnnotationsNavigations.map((a) => a.id).includes(id)) {
+            setSelectedAnnotationsNavigations(
+                selectedAnnotationsNavigations.filter((n) => n.id !== id)
+            )
+        }
+    }
+    view?.updateDisplay(updatedList)
 }

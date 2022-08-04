@@ -6,10 +6,17 @@ Description:
 
 Important checks:
 
--   Make sure to have the latest version of VS Code to test extension
+-   Make sure to have the latest version of VS Code to test the extension
 -   Use npm installs.
 
 How to Test the extension:
 
--   Afer installing the files, open up "extension.ts" and use the shortcut "Fn5" to run the file.
+-   After installing the files, open up "extension.ts" and use the shortcut "Fn5" to run the file.
 -   After installing the files, run the extension.ts file on VSCode and ensure it runs on the extension tester provided by VSCode and not the Chrome tester. From there another VSCode window will appear. For Mac users, use the shortcut COMMAND+SHIFT+P (CTRL+SHIFT+P for Windows) and type in the "Adamite: Launch Adamite" command to launch the extension.
+
+## Known Bugs
+
+-   [ ] resolve/trash permissions sometimes don't show up right for replies
+-   [ ] Types do not consistently save on edit
+-   [ ] Sort order not implemented (ideally) should sort with the most recently updated up top
+-   [ ] Merge not implemented

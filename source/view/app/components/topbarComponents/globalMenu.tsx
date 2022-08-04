@@ -15,6 +15,7 @@ import {
     editorBackground,
     vscodeTextColor,
     hoverBackground,
+    hoverText,
 } from '../../styles/vscodeStyles'
 
 interface Props {
@@ -52,21 +53,12 @@ const GlobalMenu: React.FC<Props> = ({
             },
         },
         components: {
-            MuiMenu: {
-                styleOverrides: {
-                    root: {
-                        borderStyle: 'solid',
-                        borderWidth: '0.15em',
-                        borderColor: '#d4d4d44f',
-                    },
-                },
-            },
             MuiMenuItem: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: editorBackground,
+                        // backgroundColor: editorBackground, // Doesn't seem to do anything
                         '&:hover': {
-                            background: hoverBackground,
+                            // color: vscodeTextColor, // background of item on hover
                         },
                     },
                 },
@@ -74,12 +66,18 @@ const GlobalMenu: React.FC<Props> = ({
             MuiList: {
                 styleOverrides: {
                     root: {
-                        backgroundColor: editorBackground,
+                        backgroundColor: hoverText, // background of item on hover
+                        color: editorBackground,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        borderRadius: '4px',
+                        padding: '0 10px', // Ideally this should go in MenuItem but doesn't seem to work?
                     },
                 },
             },
         },
     })
+
     return (
         <>
             <ThemeProvider theme={theme}>
@@ -92,7 +90,6 @@ const GlobalMenu: React.FC<Props> = ({
                 >
                     <VscMenu
                         style={{
-                            color: 'white',
                             width: '20px',
                             height: '20px',
                         }}
@@ -106,6 +103,9 @@ const GlobalMenu: React.FC<Props> = ({
                     onClose={handleClose}
                     MenuListProps={{
                         'aria-labelledby': 'annotation-action-button',
+                    }}
+                    PaperProps={{
+                        style: { borderRadius: 4 },
                     }}
                 >
                     <MenuItem

@@ -9,41 +9,49 @@ import {
     vscodeTextColor,
 } from '../../styles/vscodeStyles'
 import { createTheme, styled } from '@mui/material/styles'
+import styles from '../../styles/annotation.module.css'
 import BugReportIcon from '@mui/icons-material/BugReport' // Issue
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark' // Question
 import TaskIcon from '@mui/icons-material/Task' // Task
 import AssignmentIcon from '@mui/icons-material/Assignment' // Proposal
 import { useMediaQuery } from '@material-ui/core'
 import { ContactSupport } from '@mui/icons-material'
+import { breakpoints } from '../../utils/viewUtils'
 
 interface TypesProps {
     currentTypes: Type[]
     editTypes: (newTypes: Type[]) => void
+    small?: boolean
 }
 
 const AnnotationTypesBar: React.FC<TypesProps> = ({
     currentTypes,
     editTypes,
+    small = true,
 }) => {
+    const [types, setTypes] = React.useState<Type[]>(currentTypes)
     const allTypes = Object.values(Type)
 
+    React.useEffect(() => {
+        // console.log('new types', currentTypes)
+        // console.log('old types', types)
+    }, [currentTypes])
+
     const typesWithIcons = {
-        issue: <BugReportIcon />,
-        proposal: <AssignmentIcon />,
-        task: <TaskIcon />,
-        question: <ContactSupport />,
+        issue: <BugReportIcon fontSize="small" />,
+        proposal: <AssignmentIcon fontSize="small" />,
+        task: <TaskIcon fontSize="small" />,
+        question: <ContactSupport fontSize="small" />,
     }
 
-    const [types, setTypes] = React.useState<Type[]>(currentTypes)
+    // console.log('types state value', types)
 
     const theme = createTheme({
-        breakpoints: {
-            values: {
-                xs: 0,
-                sm: 150,
-                md: 475,
-                lg: 650,
-                xl: 900,
+        breakpoints: breakpoints,
+        typography: {
+            allVariants: {
+                fontSize: 14,
+                color: `${vscodeTextColor}`,
+                fontFamily: 'Arial',
             },
         },
     })
@@ -79,31 +87,35 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
     const handleAnnoClick = (selectedType: Type) => {
         let updatedTypes: Type[]
         if (types.includes(selectedType)) {
-            updatedTypes = types.filter((obj) => obj !== selectedType)
+            updatedTypes = types.filter((obj: Type) => obj !== selectedType)
         } else {
-            types.push(selectedType)
-            updatedTypes = types
+            // Can't mutate the types array like done previously!
+            updatedTypes = [selectedType].concat(types)
         }
+        console.log('updated in handleAnnoClick', updatedTypes)
         setTypes(updatedTypes)
-        editTypes(types)
+        editTypes(updatedTypes)
     }
-
+    // Can we make the flex
     return (
-        <div>
+        <span>
             {allTypes.map((type: Type, id) => {
                 return (
                     <CustomChip
+                        // style={{
+                        //     display: 'flex',
+                        // }}
                         key={id}
                         label={isMedOrMore ? type : typesWithIcons[type]}
                         icon={isMedOrMore ? typesWithIcons[type] : undefined}
                         color={types.includes(type) ? 'primary' : 'default'}
                         variant={types.includes(type) ? 'default' : 'outlined'}
-                        size="small"
+                        size={small === true ? 'small' : undefined}
                         onClick={() => handleAnnoClick(type)}
                     />
                 )
             })}
-        </div>
+        </span>
     )
 }
 

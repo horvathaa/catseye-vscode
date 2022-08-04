@@ -123,6 +123,7 @@ export const getPriorVersions = (
 ): any[] => {
     let inProgressAnnos: any[] = []
     currentAnchors?.forEach((currAnchorObject: any) => {
+        // everything breaks if it doesnt find a match so this will have to do...
         const timeStamp: number = lastEditedAnnotations.find(
             (a: any) => a.id === currAnchorObject.parentId
         )
@@ -261,7 +262,6 @@ export const getUserAnnotations = (
 ): Promise<firebase.firestore.QuerySnapshot> => {
     return annotationsRef
         .where('authorId', '==', uid)
-        .where('sharedWith', '==', 'private')
         .where('deleted', '==', false)
         .where('outOfDate', '==', false)
         .get()

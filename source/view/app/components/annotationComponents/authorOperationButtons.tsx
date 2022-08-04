@@ -5,10 +5,11 @@
  *
  */
 import * as React from 'react'
-import { AiOutlineEdit } from 'react-icons/ai'
-import { BsTrash } from 'react-icons/bs'
+import EditIcon from '@mui/icons-material/Edit'
+import DeleteIcon from '@mui/icons-material/Delete'
 import styles from '../../styles/annotation.module.css'
 import { Tooltip } from '@material-ui/core'
+import AdamiteButton from './AdamiteButton'
 
 interface Props {
     editAnnotation: () => void
@@ -21,36 +22,16 @@ const AuthorOperationButtons: React.FC<Props> = ({
 }) => {
     return (
         <React.Fragment>
-            <div
-                onClick={(e: React.SyntheticEvent) => {
-                    e.stopPropagation()
-                    editAnnotation()
-                }}
-                className={styles['DropdownItemOverwrite']}
-            >
-                <div className={styles['DropdownIconsWrapper']}>
-                    <Tooltip title="Edit">
-                        <div>
-                            <AiOutlineEdit className={styles['profileMenu']} />
-                        </div>
-                    </Tooltip>
-                </div>
-            </div>
-            <div
-                onClick={(e: React.SyntheticEvent) => {
-                    e.stopPropagation()
-                    deleteAnnotation(e)
-                }}
-                className={styles['DropdownItemOverwrite']}
-            >
-                <div className={styles['DropdownIconsWrapper']}>
-                    <Tooltip title="Delete">
-                        <div>
-                            <BsTrash className={styles['profileMenu']} />
-                        </div>
-                    </Tooltip>
-                </div>
-            </div>
+            <AdamiteButton
+                buttonClicked={editAnnotation}
+                name="Edit"
+                icon={<EditIcon fontSize="small" />}
+            />
+            <AdamiteButton
+                buttonClicked={deleteAnnotation}
+                name="Delete"
+                icon={<DeleteIcon fontSize="small" />}
+            />
         </React.Fragment>
     )
 }

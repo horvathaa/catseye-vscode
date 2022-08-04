@@ -41,7 +41,6 @@ const AnchorCarousel: React.FC<Props> = ({
         React.useState<PotentialAnchorObject | null>(null)
 
     const [index, setIndex] = React.useState<number>(0)
-    console.log('pastVesions', pastVersions)
 
     React.useEffect(() => {
         pastVersions && setIndex(pastVersions?.length - 1)

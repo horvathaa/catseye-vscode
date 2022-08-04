@@ -35,7 +35,7 @@ import {
     saveAnnotations,
     removeOutOfDateAnnotations,
     buildAnnotation,
-    sortAnnotationsByLocation,
+    // sortAnnotationsByLocation,
     getProjectName,
     getShikiCodeHighlighting,
     getAllAnnotationFilenames,
@@ -329,7 +329,7 @@ export const handleCreateAnnotation = (
                     tempAnno?.anchors[0].filename
             )
             setTempAnno(null)
-            setAnnotationList(sortAnnotationsByLocation(annotationList))
+            setAnnotationList(annotationList)
             view?.updateDisplay(annotationList)
             if (text) addHighlightsToEditor(annotationList, text)
             if (willBePinned) {
@@ -447,11 +447,8 @@ export const handleDeleteResolveAnnotation = (
         (v: vscode.TextEditor) =>
             annotationFiles.includes(v.document.uri.toString())
     )[0]
-    visible
-        ? setAnnotationList(
-              sortAnnotationsByLocation(removeOutOfDateAnnotations(updatedList))
-          )
-        : setAnnotationList(removeOutOfDateAnnotations(updatedList))
+
+    setAnnotationList(removeOutOfDateAnnotations(updatedList))
     view?.updateDisplay(annotationList)
     if (visible) {
         addHighlightsToEditor(annotationList, visible)

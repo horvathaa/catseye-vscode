@@ -262,7 +262,6 @@ export const getUserAnnotations = (
 ): Promise<firebase.firestore.QuerySnapshot> => {
     return annotationsRef
         .where('authorId', '==', uid)
-        .where('sharedWith', '==', 'private')
         .where('deleted', '==', false)
         .where('outOfDate', '==', false)
         .get()

@@ -15,6 +15,7 @@ import {
     OptionGroup,
     Reply,
     Scope,
+    Sort,
 } from '../../constants/constants'
 import ReactAnnotation from './components/annotation'
 import NewAnnotation from './components/newAnnotation'
@@ -33,7 +34,11 @@ import {
 } from './styles/vscodeStyles'
 import { defaultFilterOptions } from './utils/viewUtilsTsx'
 import MassOperationsBar from './components/massOperationsBar'
-import { getAllAnnotationStableGitUrls } from './utils/viewUtils'
+import {
+    getAllAnnotationStableGitUrls,
+    sortAnnotationsByLocation,
+    sortAnnotationsByTime,
+} from './utils/viewUtils'
 
 interface Props {
     vscode: any
@@ -228,6 +233,15 @@ const AdamitePanel: React.FC<Props> = ({
         // return showResolved ? annos : annos.filter((anno) => !anno.resolved)
     }
 
+    const sortAnnotationByFilter = (
+        annos: Annotation[],
+        currSort: Sort
+    ): Annotation[] => {
+        return currSort === Sort.location
+            ? sortAnnotationsByLocation(annos, currentFile)
+            : sortAnnotationsByTime(annos)
+    }
+
     const filterScope = (annos: Annotation[], scope: Scope): Annotation[] => {
         console.log('filter scope: ', scope)
         switch (scope) {
@@ -369,18 +383,24 @@ const AdamitePanel: React.FC<Props> = ({
     const filtered: Annotation[] = annotations
         ? filterOptions.pinnedOnly
             ? pinned
-            : optionSearch(
+            : sortAnnotationByFilter(
                   optionSearch(
-                      filterResolved(
-                          filterScope(
-                              textSearch(annotations, filterOptions.searchText),
-                              filterOptions.scope
+                      optionSearch(
+                          filterResolved(
+                              filterScope(
+                                  textSearch(
+                                      annotations,
+                                      filterOptions.searchText
+                                  ),
+                                  filterOptions.scope
+                              ),
+                              filterOptions.showResolved
                           ),
-                          filterOptions.showResolved
+                          filterOptions.authorOptions
                       ),
-                      filterOptions.authorOptions
+                      filterOptions.typeOptions
                   ),
-                  filterOptions.typeOptions
+                  filterOptions.sort
               )
         : []
 

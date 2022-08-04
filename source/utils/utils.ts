@@ -276,6 +276,7 @@ export const reconstructAnnotations = (
                       )
                     : [],
             },
+            potentialReanchorSpots: [],
         }
         const adjustedAnno = {
             id: newAnnoId,
@@ -472,6 +473,7 @@ export const handleSaveCloseEvent = async (
         outOfDateAnnotations,
         deletedAnnotations
     )
+    // console.log('annosToSave?', annosToSave)
     const annotationsInCurrentFile =
         currentFile !== 'all'
             ? getAllAnnotationsWithGitUrlInFile(annotationList, currentFile)
@@ -629,7 +631,7 @@ const writeToFile = async (
 
 export const getStableGitHubUrl = (fsPath: string): string => {
     const projectName = getProjectName(fsPath)
-    const visPath = getVisiblePath(getProjectName(fsPath), fsPath)
+    const visPath = getVisiblePath(projectName, fsPath)
     return getGithubUrl(visPath, projectName, true)
 }
 
@@ -1078,6 +1080,7 @@ export const createAnchorObject = async (
                 },
             ],
             path,
+            potentialReanchorSpots: [],
             surroundingCode: surrounding,
         }
     } else {
@@ -1101,6 +1104,41 @@ export const partitionAnnotationsOnSignIn = (array: any[], filter: any) => {
     return [lastCommit, otherCommit]
 }
 
+export const levenshteinDistance = (s: string, t: string) => {
+    if (!s.length) return t.length
+    if (!t.length) return s.length
+    const arr = []
+    for (let i = 0; i <= t.length; i++) {
+        arr[i] = [i]
+        for (let j = 1; j <= s.length; j++) {
+            arr[i][j] =
+                i === 0
+                    ? j
+                    : Math.min(
+                          arr[i - 1][j] + 1,
+                          arr[i][j - 1] + 1,
+                          arr[i - 1][j - 1] + (s[j - 1] === t[i - 1] ? 0 : 1)
+                      )
+        }
+    }
+    return arr[t.length][s.length]
+}
+
+export const updateAnnotationsWithAnchors = (
+    anchors: AnchorObject[]
+): Annotation[] => {
+    const annoIds = anchors.map((a) => a.parentId)
+    const matchingAnnos = annotationList.filter((a) => annoIds.includes(a.id))
+    const updatedAnnos = matchingAnnos.map((a: Annotation) => {
+        const annoAnchors = anchors.filter((anch) => anch.parentId === a.id)
+        return buildAnnotation({
+            ...a,
+            anchors: annoAnchors,
+            needToUpdate: true,
+        })
+    })
+    return updatedAnnos
+}
 // returns currently opened files for reanchor search
 
 /* 
@@ -1117,7 +1155,7 @@ if don't find a candidate, search all modified files from git status
 */
 export const findOpenFilesToSearch = async () => {
     const folders = vscode.workspace.workspaceFolders
-    console.log('folders', folders)
+    // console.log('folders', folders)
     let filesToSearch: any[] = []
     if (!folders) return
     folders?.forEach(async (folder) => {
@@ -1127,12 +1165,12 @@ export const findOpenFilesToSearch = async () => {
             '**/node_modules/**',
             10
         )
-        console.log('foundsomething', files)
+        // console.log('foundsomething', files)
         // const toString = (uris: vscode.Uri[]) => uris.map((uri) => uri.fsPath)
         filesToSearch = files.map((uris: vscode.Uri) => {
             return uris.fsPath
         })
-        console.log('files', filesToSearch)
+        // console.log('files', filesToSearch)
     })
 
     // if (vscode.workspace.workspaceFolders) {
@@ -1150,7 +1188,7 @@ export const findOpenFilesToSearch = async () => {
             (editor: vscode.TextDocument) => {
                 const path = editor.uri.path
                 const fsPath = editor.uri.fsPath
-                console.log('path', path, 'fspath', fsPath)
+                // console.log('path', path, 'fspath', fsPath)
             }
         )
     }

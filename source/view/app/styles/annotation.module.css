@@ -553,5 +553,5 @@ button.cancel:hover {
 mark {
     background-color: #93c0ff39;
     color: var(--vscode-foreground);
-    font-family: 'Menlo';
+    font-family: Consolas, 'Menlo';
 }

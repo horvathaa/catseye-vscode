@@ -214,11 +214,11 @@ const AdamitePanel: React.FC<Props> = ({
     // }
 
     // Alternative way of getting pinned files?
-    console.log('annotations?', annotations)
+    // console.log('annotations?', annotations)
     const pinned: Annotation[] = annotations
         ? annotations.filter((anno) => anno.selected === true)
         : []
-    console.log('pinned', pinned)
+    // console.log('pinned', pinned)
 
     const filterResolved = (
         annos: Annotation[],

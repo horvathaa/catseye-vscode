@@ -23,6 +23,7 @@ import {
     getAllAnnotationStableGitUrls,
     getAnnotationsNotInFile,
     handleSaveCloseEvent,
+    levenshteinDistance,
 } from '../utils/utils'
 import {
     annotationDecorations,
@@ -189,7 +190,10 @@ export const getSurroundingLinesAfterAnchor = (
                 new vscode.Range(
                     new vscode.Position(anchorRange.end.line, 0),
                     new vscode.Position(
-                        anchorRange.end.line + NUM_SURROUNDING_LINES,
+                        anchorRange.end.line + NUM_SURROUNDING_LINES >=
+                        document.lineCount
+                            ? document.lineCount - 1
+                            : anchorRange.end.line + NUM_SURROUNDING_LINES,
                         10000
                     )
                 )
@@ -313,6 +317,14 @@ export const getAnchorsInCurrentFile = (
     return anchors
 }
 
+export const getAnchorsWithGitUrl = (gitUrl: string): AnchorObject[] => {
+    const filteredAnnos = annotationList.filter((a) =>
+        gitUrl.includes(a.gitRepo.split('.git')[1])
+    )
+    const candidateAnchors = filteredAnnos.flatMap((a) => a.anchors)
+    return candidateAnchors.filter((a) => a.stableGitUrl === gitUrl)
+}
+
 const checkIfAnchorChanged = (
     originalRange: vscode.Range,
     newRange: vscode.Range
@@ -433,15 +445,15 @@ export const translateChanges = (
         newRange = userChangedLinesBeforeStart(newRange, originalAnchor, diff)
     }
 
-    // user added new line at the front of our anchor point
+    // user added new line at or before the front of our anchor point
     // anchor point should move down
     if (
         changeRange.start.line === originalStartLine &&
         diff &&
-        changeRange.start.character === originalStartOffset &&
+        changeRange.start.character <= originalStartOffset &&
         originalEndLine === originalStartLine
     ) {
-        // console.log('newLineAtStartOffset');
+        console.log('newLineAtStartOffset')
         newRange.startLine = changeRange.end.line + diff
         newRange.endLine = changeRange.end.line + diff
         newRange.startOffset =
@@ -553,13 +565,27 @@ export const translateChanges = (
     }
 
     const originalGitCommit = anchorObject.gitCommit
-    const newRangeObj = createRangeFromObject(newRange)
+    const newRangeObj = doc.validateRange(createRangeFromObject(newRange))
+
+    console.log('hewwo', {
+        ...anchorObject,
+        anchorText: newAnchorText,
+        anchor: createAnchorFromRange(newRangeObj),
+        gitCommit:
+            checkIfAnchorChanged(originalRange, newRangeObj) ||
+            // changeOccurredInRange
+            (originalRange.start.isBefore(changeRange.start) &&
+                originalRange.end.isAfter(changeRange.end))
+                ? gitInfo[getProjectName(doc.uri.toString())].commit
+                : originalGitCommit,
+    })
 
     // update anchor object
     const newAnchor: AnchorObject = {
         ...anchorObject,
         anchorText: newAnchorText,
         anchor: newRange,
+        // update surrounding lines here or at save
         gitCommit:
             checkIfAnchorChanged(originalRange, newRangeObj) ||
             // changeOccurredInRange

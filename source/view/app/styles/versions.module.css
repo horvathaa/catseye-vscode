@@ -15,7 +15,7 @@ body {
 /* Should we be hiding scrollbar? */
 
 p {
-    font-family: 'Menlo';
+    font-family: Consolas, 'Menlo';
     font-weight: normal;
     font-size: 12px;
     font-feature-settings: 'liga' 0, 'calt' 0;

@@ -16,13 +16,20 @@ import {
 } from './nodeHelper'
 import { createRangeFromAnchorObject } from '../anchorFunctions/anchor'
 import { annotationList } from '../extension'
-
+import { safeToCompare, similarity } from './astUtils'
 interface SourceFile {
     localFileName: string
     gitUrl: string
     tsSourceFile: ts.SourceFile
 }
 
+interface WeightedCodeContext extends CodeContext {
+    weight: number
+    originalIndex: number
+    tsNode: ts.Node
+}
+
+export const AST_DEBUG = false
 export class AstHelper {
     private __sourceFiles: SourceFile[]
 
@@ -128,7 +135,7 @@ export class AstHelper {
             .concat(getAnnotationsNotWithGitUrl(annotationList, gitUrl))
     }
 
-    private buildPathForAnnotation(
+    public buildPathForAnnotation(
         annotation: Annotation,
         // gitUrl: string,
         document: vscode.TextDocument
@@ -147,6 +154,9 @@ export class AstHelper {
         // gitUrl: string
         document: vscode.TextDocument
     ): AnchorObject {
+        if (!this.isTsJsJsxTsx(document)) {
+            return anchor
+        }
         const source = this.findSourceFile(document)
         if (source) {
             const anchorRange = createRangeFromAnchorObject(anchor)
@@ -166,7 +176,7 @@ export class AstHelper {
                 path: nodeInfo.filter((p) => p.isDirectParent),
             }
         }
-        console.error('Could not create path')
+        AST_DEBUG && console.error('Could not create path') // only throw this error if it's a file we should bother finding i.e., js/ts file
         return anchor
     }
 
@@ -178,7 +188,7 @@ export class AstHelper {
         const source = this.findSourceFile(document)
         if (source) {
             const path = generatePath(source.tsSourceFile, range)
-            return path
+            const newPath = path
                 .map((p, i) => {
                     return handleNodeDataExtraction(
                         p,
@@ -190,8 +200,9 @@ export class AstHelper {
                     )
                 })
                 .filter((n) => n.isDirectParent)
+            return newPath
         }
-        console.error('Could not create CodeContext[]')
+
         return []
     }
 
@@ -210,6 +221,8 @@ export class AstHelper {
         }
     }
 
+    // https://stackoverflow.com/questions/42284139/how-to-get-a-subtree-given-a-path-from-a-tree-object
+    // consider subtree traversal
     public findMostSimilarPath(
         document: vscode.TextDocument,
         path: CodeContext[]
@@ -218,15 +231,199 @@ export class AstHelper {
         let source = this.findSourceFile(document)
         if (source) {
             const code = source.tsSourceFile.text
-            const nodes = getNodes(source.tsSourceFile)
-            const nodeData = nodes.map((n: ts.Node) => {
-                return {
-                    node: n,
-                    range: nodeToRange(n, code),
-                    children: getNodes(n),
-                    kind: ts.SyntaxKind[n.kind],
-                }
+            let newPath = []
+            let nodes: ts.Node[] = getNodes(source.tsSourceFile)
+            let i = 0
+            do {
+                const nodeData: WeightedCodeContext[] = nodes.map(
+                    (n: ts.Node, i: number) => {
+                        return {
+                            ...handleNodeDataExtraction(
+                                n,
+                                document,
+                                nodeToRange(n, code),
+                                nodes,
+                                code,
+                                i
+                            ),
+                            originalIndex: i,
+                            weight: 0,
+                            tsNode: n,
+                        }
+                    }
+                )
+                const weightedNodeData = nodeData.map((n) =>
+                    this.weighCodeContextNode(i, n, path)
+                )
+
+                const sortedNodeData = this.compareCodeContextNodes(
+                    weightedNodeData,
+                    path[i],
+                    path,
+                    i
+                )
+                newPath.push(weightedNodeData[0])
+                nodes = getNodes(nodes[sortedNodeData[0].originalIndex])
+                i += 1
+            } while (nodes.length) // this will probably need to be changed to account for cases where the new anchor is "deeper" than the old anchor
+            console.log('path???', newPath)
+        }
+    }
+
+    private compareCodeContextNodes(
+        path: WeightedCodeContext[],
+        originalNode: CodeContext,
+        originalPath: CodeContext[],
+        i: number
+    ): WeightedCodeContext[] {
+        return path.sort((a, b) => {
+            return a.weight < b.weight
+                ? -1
+                : a.weight === b.weight
+                ? this.handleTies(a, b, originalNode, originalPath, i)
+                : 1
+        })
+    }
+
+    // continue adding heuristics to this
+    private handleTies(
+        a: WeightedCodeContext,
+        b: WeightedCodeContext,
+        originalNode: CodeContext,
+        path: CodeContext[],
+        i: number
+    ): number {
+        const isBlock =
+            a.nodeType === 'Block' && b.nodeType !== 'Block' ? -1 : 0 // favor nodes that are more likely to have child nodes to explore
+
+        const weightA = path
+            .map((node: CodeContext) => {
+                return this.computeNodeToNode(node, a, i)
             })
+            .reduce((partialSum, num) => partialSum + num, 0)
+        const weightB = path
+            .map((node: CodeContext) => {
+                return this.computeNodeToNode(node, b, i)
+            })
+            .reduce((partialSum, num) => partialSum + num, 0)
+
+        return isBlock + (weightA - weightB)
+    }
+
+    private computeNodeToNode(
+        originalNode: CodeContext,
+        pathNode: WeightedCodeContext,
+        i: number
+    ): number {
+        const sameNodeType =
+            originalNode.nodeType === pathNode.nodeType ? -1 : 0
+        const identifierNameWeight =
+            safeToCompare(
+                originalNode.identifierName,
+                pathNode.identifierName
+            ) && originalNode.identifierName === pathNode.identifierName
+                ? -1
+                : safeToCompare(
+                      originalNode.identifierName,
+                      pathNode.identifierName
+                  )
+                ? -1 *
+                  similarity(
+                      originalNode.identifierName,
+                      pathNode.identifierName
+                  )
+                : 0
+        const sameIdentifierType =
+            safeToCompare(
+                originalNode.identifierType,
+                pathNode.identifierType
+            ) && originalNode.identifierType === pathNode.identifierType
+                ? -1
+                : 0
+        const identifierValue =
+            safeToCompare(
+                originalNode.identifierValue,
+                pathNode.identifierValue
+            ) && originalNode.identifierValue === pathNode.identifierValue
+                ? -1
+                : safeToCompare(
+                      originalNode.identifierValue,
+                      pathNode.identifierValue
+                  )
+                ? -1 *
+                  similarity(
+                      originalNode.identifierValue
+                          ? originalNode.identifierValue
+                          : '',
+                      pathNode.identifierValue ? pathNode.identifierValue : ''
+                  )
+                : 0 // would be better if we check whether any of the original node's values appear in the path node and weight that as stronger than 0
+
+        return (
+            sameNodeType +
+            identifierNameWeight +
+            sameIdentifierType +
+            identifierValue
+        )
+    }
+
+    private computeFuzzyPathWeight(
+        pathNode: WeightedCodeContext,
+        originalPath: CodeContext[],
+        i: number
+    ) {
+        return originalPath
+            .map((node: CodeContext) => {
+                // console.log(
+                //     'comparing this from original path',
+                //     node,
+                //     'to this (node we are currently evaluating)',
+                //     pathNode
+                // )
+                const lol = this.computeNodeToNode(node, pathNode, i)
+                // console.log('got this value', lol)
+                return lol
+            })
+            .reduce((partialSum, num) => partialSum + num, 0)
+    }
+
+    private computeWeight(
+        originalNode: CodeContext,
+        pathNode: WeightedCodeContext,
+        originalPath: CodeContext[],
+        i: number
+    ): number {
+        const fuzzyPathValue = this.computeFuzzyPathWeight(
+            pathNode,
+            originalPath,
+            i
+        )
+
+        const nodeToNodeWeight = this.computeNodeToNode(
+            originalNode,
+            pathNode,
+            i
+        )
+
+        const numChildrenToPath =
+            -1 * (originalPath.length - (getNodes(pathNode.tsNode).length - i))
+        return (
+            2 * nodeToNodeWeight + 5 * fuzzyPathValue - 1.25 * numChildrenToPath // these weights are p much arbitrary and should be changed
+        )
+    }
+
+    // smaller the value, the more similar the nodes are
+    private weighCodeContextNode(
+        i: number,
+        pathNode: WeightedCodeContext,
+        originalPath: CodeContext[]
+    ): WeightedCodeContext {
+        const originalNode = originalPath[i]
+        return {
+            ...pathNode,
+            weight: originalNode
+                ? this.computeWeight(originalNode, pathNode, originalPath, i)
+                : this.computeFuzzyPathWeight(pathNode, originalPath, i),
         }
     }
 }

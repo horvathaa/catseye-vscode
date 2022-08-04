@@ -76,6 +76,20 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                     },
                 },
             },
+            MuiListItemButton: {
+                styleOverrides: {
+                    root: {
+                        display: 'flex',
+                    },
+                },
+            },
+            MuiButtonBase: {
+                styleOverrides: {
+                    root: {
+                        display: 'flex !important',
+                    },
+                },
+            },
             MuiListItemIcon: {
                 styleOverrides: {
                     root: {

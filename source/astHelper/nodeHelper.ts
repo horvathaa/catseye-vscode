@@ -1,5 +1,6 @@
 import * as ts from 'typescript'
 import * as vscode from 'vscode'
+import { AST_DEBUG } from './astHelper'
 
 export function getNodes(node: ts.Node) {
     const nodes: ts.Node[] = []
@@ -262,7 +263,8 @@ export function generatePath(
     })
     const parent = nodeData.find((r) => r.range.contains(range))
     if (parent) {
-        let root: ts.Node[] = parent.children
+        // let root: ts.Node[] = parent.children
+        let root = [parent.node]
         let path: ts.Node[] = [parent.node]
         do {
             let candidates = root.filter((c: ts.Node) => {
@@ -275,9 +277,10 @@ export function generatePath(
             path = path.concat(...flat)
             root = flat
         } while (root.length)
-
+        // console.log('path??', path)
         return path
     }
-    console.error('Could not make path - could not find parent node')
+    AST_DEBUG &&
+        console.error('Could not make path - could not find parent node')
     return []
 }

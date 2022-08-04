@@ -9,6 +9,8 @@ import {
     AnchorObject,
     AnchorOnCommit,
     PotentialAnchorObject,
+    HIGH_SIMILARITY_THRESHOLD, // we are pretty confident the anchor is here
+    PASSABLE_SIMILARITY_THRESHOLD, // we are confident enough
 } from '../../../../constants/constants'
 import { disabledIcon, iconColor } from '../../styles/vscodeStyles'
 import AdamiteButton from './AdamiteButton'
@@ -127,17 +129,25 @@ const AnchorCarousel: React.FC<Props> = ({
             scrollInEditor(aId)
     }
 
+    const getConfidenceString = (weight: number): string => {
+        return weight <= HIGH_SIMILARITY_THRESHOLD
+            ? 'very similar'
+            : weight <= PASSABLE_SIMILARITY_THRESHOLD
+            ? 'similar'
+            : 'weak'
+    }
+
     const displayBefore = (
         pv: AnchorOnCommit | PotentialAnchorObject,
         index: number
     ) => {
         if (
-            pv.surroundingCode &&
-            index <= pv.surroundingCode.linesBefore.length
+            pv.surroundingCode?.linesBefore &&
+            index < pv.surroundingCode?.linesBefore?.length
         ) {
             const lineBefore =
-                pv.surroundingCode.linesBefore[
-                    pv.surroundingCode.linesBefore.length - index
+                pv.surroundingCode?.linesBefore[
+                    pv.surroundingCode?.linesBefore?.length - index
                 ]
             const length = lineBefore.length
             const tooLong = length > 60
@@ -151,8 +161,8 @@ const AnchorCarousel: React.FC<Props> = ({
         index: number //1
     ) => {
         if (
-            pv.surroundingCode &&
-            index < pv.surroundingCode.linesAfter.length
+            pv.surroundingCode?.linesAfter &&
+            index < pv.surroundingCode?.linesAfter.length
         ) {
             const lineAfter = pv.surroundingCode.linesAfter[index]
             const length = lineAfter.length
@@ -403,8 +413,10 @@ const AnchorCarousel: React.FC<Props> = ({
                                         <span>
                                             <i>
                                                 {' '}
-                                                {pv.weight * 100}% match in{' '}
-                                                {pv.visiblePath}
+                                                {getConfidenceString(
+                                                    pv.weight
+                                                )}{' '}
+                                                match in {pv.visiblePath}
                                             </i>
                                         </span>
                                         {pv.anchor.endLine -

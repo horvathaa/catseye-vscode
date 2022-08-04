@@ -102,20 +102,20 @@ export interface AnchorObject {
     parentId: string
     anchored: boolean
     createdTimestamp: number
-    priorVersions?: AnchorOnCommit[]
-    path?: CodeContext[]
+    priorVersions?: AnchorOnCommit[] // Not in FB until commit. Rn, dynamically compute priorVersionsfrom the Commit object model on launch
+    path: CodeContext[]
     surroundingCode: SurroundingAnchorArea
+    potentialReanchorSpots: PotentialAnchorObject[] // consider making optional
+    //add annotation field, ridding of multiple anchors
 }
 
 // create: using re-anchor algorithm (tbd how/when to run that)
 // update: using translateChanges
 // delete: when user reattaches (either this turns into an AnchorObject or it is deleted because user didn't choose it)
+// or parent anno is deleted OR parent anchor is deleted
 export interface PotentialAnchorObject extends AnchorObject {
     weight: number // how likely we think this anchor point is
-    reasonSuggested: string // 'proximity to original' <-- surrounding context (AST too?) , 'similar content' <-- best match, 'parent scope' <-- AST
-    // reason suggested all inclusive
-    // combintation of reasons used under the hood --> how much of this info do we communicate?
-    // combintation of weights => overall confidence
+    reasonSuggested: string // why we think this anchor point is a good choice
 }
 
 export interface AnchorOnCommit {
@@ -284,3 +284,7 @@ export enum Selection {
     partial = 'partial',
     none = 'none',
 }
+
+export const HIGH_SIMILARITY_THRESHOLD = 0.3 // we are pretty confident the anchor is here
+export const PASSABLE_SIMILARITY_THRESHOLD = 0.7 // we are confident enough
+export const INCREMENT = 2 // amount for expanding search range

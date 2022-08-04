@@ -279,6 +279,7 @@ export const createNewAnnotation = async () => {
                     r,
                     activeTextEditor.document
                 ),
+                potentialReanchorSpots: [],
                 surroundingCode: surrounding,
             }
             console.log('anchor obj on creating anno', anchorObject)
@@ -358,6 +359,7 @@ export const createFileAnnotation = async (
             linesBefore: [],
             linesAfter: [],
         },
+        potentialReanchorSpots: [],
     }
     const temp = {
         id: newAnnoId,
@@ -499,6 +501,7 @@ export const addNewHighlight = (
                     r,
                     activeTextEditor.document
                 ),
+                potentialReanchorSpots: [],
                 surroundingCode: surrounding,
             }
             const temp = {

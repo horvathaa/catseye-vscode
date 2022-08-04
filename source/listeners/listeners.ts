@@ -94,7 +94,7 @@ export const handleChangeActiveTextEditor = (
                 setTabSize(TextEditor.options.tabSize)
             if (TextEditor.options?.insertSpaces)
                 setInsertSpaces(TextEditor.options.insertSpaces)
-            setAnnotationList(utils.sortAnnotationsByLocation(annotationList))
+            // setAnnotationList(utils.sortAnnotationsByLocation(annotationList))
 
             const currentProject: string = utils.getProjectName(
                 TextEditor.document.uri.fsPath
@@ -356,7 +356,11 @@ export const handleDidChangeTextDocument = (
                 vscode.window.activeTextEditor
             )
         } else {
-            setAnnotationList(utils.sortAnnotationsByLocation(annotationList))
+            setAnnotationList(
+                //utils.sortAnnotationsByLocation(
+                    annotationList
+                //    )
+                )
         }
     }
 }

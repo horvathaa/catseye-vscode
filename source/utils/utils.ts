@@ -83,9 +83,10 @@ export const initializeAnnotations = async (
 ): Promise<void> => {
     const currFilename: string | undefined =
         vscode.window.activeTextEditor?.document.uri.path.toString()
-    const annotations: Annotation[] = sortAnnotationsByLocation(
+    const annotations: Annotation[] = 
+    //sortAnnotationsByLocation(
         await getAnnotationsOnSignIn(user, currentGitHubProject)
-    )
+    //)
     setAnnotationList(annotations)
     const selectedAnnotations: Annotation[] = annotations.filter(
         (a) => a.selected
@@ -326,28 +327,6 @@ export const checkIfChangeIncludesAnchor = (
     )
 }
 
-const sortAnchorsByLocation = (anchors: AnchorObject[]): AnchorObject[] => {
-    return anchors.sort((a: AnchorObject, b: AnchorObject) => {
-        return b.anchor.startLine - a.anchor.startLine === 0
-            ? b.anchor.startOffset - a.anchor.startOffset
-            : b.anchor.startLine - a.anchor.startLine
-    })
-}
-
-export const sortAnnotationsByLocation = (
-    annotationList: Annotation[]
-): Annotation[] => {
-    const sortedAnchors: string[] = sortAnchorsByLocation(
-        annotationList.flatMap((a) => {
-            return a.anchors
-        })
-    ).map((a) => a.parentId)
-    annotationList.sort((a: Annotation, b: Annotation) => {
-        return sortedAnchors.indexOf(b.id) - sortedAnchors.indexOf(a.id)
-    })
-
-    return annotationList
-}
 
 const getShikiTheme = (pl: string): string => {
     let theme

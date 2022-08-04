@@ -188,18 +188,18 @@ const sortAnchorsByLocation = (anchors: AnchorObject[]): AnchorObject[] => {
     })
 }
 
-export const sortAnnotationsByLocation = (
-    annotationList: Annotation[]
-): Annotation[] => {
-    const sortedAnchors: string[] = sortAnchorsByLocation(
-        annotationList.flatMap((a) => a.anchors)
-    ).map((a) => a.parentId)
-    annotationList.sort((a: Annotation, b: Annotation) => {
-        return sortedAnchors.indexOf(b.id) - sortedAnchors.indexOf(a.id)
-    })
+// export const sortAnnotationsByLocation = (
+//     annotationList: Annotation[]
+// ): Annotation[] => {
+//     const sortedAnchors: string[] = sortAnchorsByLocation(
+//         annotationList.flatMap((a) => a.anchors)
+//     ).map((a) => a.parentId)
+//     annotationList.sort((a: Annotation, b: Annotation) => {
+//         return sortedAnchors.indexOf(b.id) - sortedAnchors.indexOf(a.id)
+//     })
 
-    return annotationList
-}
+//     return annotationList
+// }
 
 declare module '@mui/material/styles' {
     interface BreakpointOverrides {
@@ -232,3 +232,78 @@ export const objectsEqual = (o1: any, o2: any): boolean =>
         ? Object.keys(o1).length === Object.keys(o2).length &&
           Object.keys(o1).every((p) => objectsEqual(o1[p], o2[p]))
         : o1 === o2
+
+// export const getAllAnnotationStableGitUrls = (
+//         annotationList: Annotation[]
+//     ): string[] => {
+//     return [
+//         ...new Set(
+//             annotationList.flatMap((a) => a.anchors?.map((a) => a.stableGitUrl))
+//         ),
+//     ]
+// }
+
+export const getAnnotationsWithStableGitUrl = (
+    annotationList: Annotation[],
+    stableGitUrl: string
+): Annotation[] => {
+    return annotationList.filter((a) => {
+        const annoUrls = getAllAnnotationStableGitUrls([a])
+        return annoUrls.includes(stableGitUrl)
+    })
+}
+
+export const getAnnotationsNotWithGitUrl = (
+    annotationList: Annotation[],
+    gitUrl: string
+): Annotation[] => {
+    return annotationList.filter((a) => {
+        const annoUrls = getAllAnnotationStableGitUrls([a])
+        return !annoUrls.includes(gitUrl)
+    })
+}
+
+export const sortAnnotationsByLocation = (
+    annotationList: Annotation[],
+    gitUrl: string // pass
+): Annotation[] => {
+    const inFile: Annotation[] = getAnnotationsWithStableGitUrl(
+        annotationList,
+        gitUrl
+    )
+    const notInFile: Annotation[] = getAnnotationsNotWithGitUrl(
+        annotationList,
+        gitUrl
+    )
+    const sortedAnchors: string[] = sortAnchorsByLocation(
+        //inFile
+        inFile.flatMap((a) => {
+            return a.anchors
+        })
+    ).map((a) => a.parentId)
+    //inFile
+    inFile.sort((a: Annotation, b: Annotation) => {
+        return sortedAnchors.indexOf(b.id) - sortedAnchors.indexOf(a.id)
+    })
+    notInFile.sort((a, b) => a.createdTimestamp - b.createdTimestamp)
+    // inFile.concat(notInFile)
+
+    return inFile.concat(notInFile)
+}
+
+export const sortAnnotationsByTime = (
+    annotationList: Annotation[]
+): Annotation[] => {
+    // const sortedAnchors: string[] = sortAnchorsByLocation(
+    //     annotationList.flatMap((a) => {
+    //         return a.anchors
+    //     })
+    // ).map((a) => a.parentId)
+    // annotationList.sort((a: Annotation, b: Annotation) => {
+    //     return sortedAnchors.indexOf(b.id) - sortedAnchors.indexOf(a.id)
+    // })
+
+    return annotationList.sort(
+        (a, b) => b.createdTimestamp - a.createdTimestamp
+    )
+}

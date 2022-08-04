@@ -41,6 +41,7 @@ const AnchorCarousel: React.FC<Props> = ({
         React.useState<PotentialAnchorObject | null>(null)
 
     const [index, setIndex] = React.useState<number>(0)
+    console.log('pastVesions', pastVersions)
 
     React.useEffect(() => {
         pastVersions && setIndex(pastVersions?.length - 1)
@@ -143,11 +144,11 @@ const AnchorCarousel: React.FC<Props> = ({
     ) => {
         if (
             pv.surroundingCode?.linesBefore &&
-            index < pv.surroundingCode?.linesBefore.length
+            index < pv.surroundingCode?.linesBefore?.length
         ) {
             const lineBefore =
                 pv.surroundingCode?.linesBefore[
-                    pv.surroundingCode?.linesBefore.length - index
+                    pv.surroundingCode?.linesBefore?.length - index
                 ]
             const length = lineBefore.length
             const tooLong = length > 60

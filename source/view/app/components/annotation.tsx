@@ -391,6 +391,7 @@ const ReactAnnotation: React.FC<Props> = ({
                 display: 'flex',
                 flexDirection: 'row',
             }}
+            id={anno.id}
         >
             <ThemeProvider theme={theme}>
                 {isMedOrMore && (

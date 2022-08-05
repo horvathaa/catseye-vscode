@@ -211,6 +211,7 @@ export const computeMostSimilarAnchor = (
             //     document.uri.toString(),
             //     potentialAnchorText
             // )
+            console.log('anchor in newanchors map', anchor)
             const newPotentialAnchor: PotentialAnchorObject = {
                 anchor: restAnchor.anchor,
                 anchorText: potentialAnchorText,
@@ -249,16 +250,20 @@ export const computeMostSimilarAnchor = (
                 },
                 potentialReanchorSpots: [],
                 weight,
-                reasonSuggested: "it's close lol",
+                reasonSuggested: '',
             }
             return newPotentialAnchor
         }
     )
 
+    // should remove similar anchors (maybe use weight to determine similarity? or anchor locations)
+
     REANCHOR_DEBUG &&
         console.log('returning this from compute similar anchor', {
             ...anchor,
-            potentialReanchorSpots: newPotentialAnchors,
+            potentialReanchorSpots: newPotentialAnchors.sort((a, b) =>
+                b.weight < a.weight ? -1 : 1
+            ),
         })
     // )
 
@@ -574,6 +579,33 @@ const debugPrintWeightedCodeLineStats = (
     }
 }
 
+const isWeightedCodeLine = (
+    line: CodeLine | WeightedCodeLine
+): line is WeightedCodeLine => {
+    return (line as WeightedCodeLine).codeLine !== undefined
+}
+
+const useSlidingWindow = (
+    windowVal: CodeLine[],
+    source: CodeLine[]
+): WeightedCodeLine[] => {
+    let weightedCodeLine: WeightedCodeLine[] = []
+    for (
+        let i = 0;
+        i < Math.floor(source.length / windowVal.length);
+        i += windowVal.length
+    ) {
+        const iRange = numRange(windowVal.length, i)
+        iRange.forEach((j, idx) => {
+            let sourceLine: CodeLine
+            weightedCodeLine = weightedCodeLine.concat(
+                compareCodeLinesByContent(source[j], windowVal[idx])
+            )
+        })
+    }
+    return weightedCodeLine
+}
+
 const proximitySearch = (
     sourceCode: CodeLine[],
     anchorCode: CodeLine[],
@@ -663,7 +695,8 @@ const proximitySearch = (
         newAnchors = newAnchors.concat(
             findNewAnchorLocation(startAnchorSearch, anchorCode)
         )
-    } else if (
+    }
+    if (
         averageAnchorLineWeight <= PASSABLE_SIMILARITY_THRESHOLD &&
         averageSurroundingAboveLineWeight <= PASSABLE_SIMILARITY_THRESHOLD &&
         averageSurroundingBelowLineWeight <= PASSABLE_SIMILARITY_THRESHOLD
@@ -673,44 +706,75 @@ const proximitySearch = (
         newAnchors = newAnchors.concat(
             findNewAnchorLocation(startAnchorSearch, anchorCode)
         )
-    } else {
-        REANCHOR_DEBUG && console.log('-------- LOW SIMILARITY ---------')
-        const weightedAboveComparedToAnchor: (false | WeightedCodeLine)[] =
-            surroundingAbove.map(
-                (line, i) =>
-                    line &&
-                    i < anchorCode.length &&
-                    compareCodeLinesByContent(
-                        line,
-                        anchorCode.length > 0 ? anchorCode[i] : anchorCode[0]
-                    )
-            )
+    }
+    // else { // - commenting out for testing
+    REANCHOR_DEBUG && console.log('-------- LOW SIMILARITY ---------')
+    const weightedAboveComparedToAnchor: WeightedCodeLine[] =
+        // surroundingAboveAnchorSearch.map(
+        //     (line, i) =>
+        //         line &&
+        //         // i < anchorCode.length &&
+        //         compareCodeLinesByContent(
+        //             line.codeLine,
+        //             anchorCode.length > 0 ? anchorCode[i] : anchorCode[0]
+        //         )
+        // )
+        useSlidingWindow(anchorCode, surroundingAbove)
 
-        const weightedBelowComparedToAnchor: (false | WeightedCodeLine)[] =
-            surroundingBelow.map(
-                (line, i) =>
-                    line &&
-                    i < anchorCode.length &&
-                    compareCodeLinesByContent(
-                        line,
-                        anchorCode.length > 0 ? anchorCode[i] : anchorCode[0]
-                    ) // bring sliding window logic here
-            )
+    const weightedBelowComparedToAnchor: WeightedCodeLine[] =
+        // surroundingBelowAnchorSearch.map(
+        //     (line, i) =>
+        //         line &&
+        //         // i < anchorCode.length &&
+        //         compareCodeLinesByContent(
+        //             line.codeLine,
+        //             anchorCode.length > 0 ? anchorCode[i] : anchorCode[0]
+        //         ) // bring sliding window logic here
+        // )
+        useSlidingWindow(anchorCode, surroundingBelow)
+    REANCHOR_DEBUG &&
+        console.log(
+            'maybe in area above anchor?',
+            weightedAboveComparedToAnchor
+        )
+    REANCHOR_DEBUG &&
+        console.log(
+            'maybe in area below anchor?',
+            weightedBelowComparedToAnchor
+        )
+    // TODO: actually use these values i.e., finish this
+    const areaSearch: WeightedCodeLine[] = weightedAboveComparedToAnchor.concat(
+        weightedBelowComparedToAnchor
+    )
+    const goodMatches = areaSearch.filter(
+        (l) => l.weight <= PASSABLE_SIMILARITY_THRESHOLD
+    )
+    if (goodMatches.length) {
+        // const bestLine: WeightedCodeLine = findMin(goodMatches)
+        newAnchors.push(findNewAnchorLocation(goodMatches, anchorCode))
         REANCHOR_DEBUG &&
-            console.log(
-                'maybe in area above anchor?',
-                weightedAboveComparedToAnchor
+            console.log('new anchors compared to surrounding', newAnchors)
+    } else {
+        // whole file search -- this stuff can def be refactored
+        const weightedWholeSourceComparedToAnchor: WeightedCodeLine[] =
+            useSlidingWindow(anchorCode, sourceCode)
+        const goodSourceMatches = weightedWholeSourceComparedToAnchor.filter(
+            (l) => l.weight <= PASSABLE_SIMILARITY_THRESHOLD
+        )
+        if (goodSourceMatches.length) {
+            // const bestLine: WeightedCodeLine = findMin(goodMatches)
+            newAnchors.push(
+                findNewAnchorLocation(goodSourceMatches, anchorCode)
             )
-        REANCHOR_DEBUG &&
-            console.log(
-                'maybe in area below anchor?',
-                weightedBelowComparedToAnchor
-            )
-        // TODO: actually use these values i.e., finish this
-        // const areaSearch: WeightedCodeLine[] = weightedAboveComparedToAnchor.filter((anch) => typeof anch !== 'boolean')
+            REANCHOR_DEBUG &&
+                console.log('compared to whole source', newAnchors)
+        } else {
+            REANCHOR_DEBUG && console.log('nothing')
+            newAnchors = []
+        }
+        // }
         // see if anchor is actually in surrounding context
-        // if not - widen window
-        // if still not - full doc
+        // if not - full doc
         // if STILL not - mark as unknown + look at AST to try and find appropriate potential matches
     }
 

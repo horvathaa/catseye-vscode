@@ -82,6 +82,12 @@ export const getAnnotationsOnSignIn = async (
             (a: any) => a.gitCommit === lastCommit
         )
 
+    console.log(
+        'lastEditedAnnotations',
+        lastEditedAnnotations,
+        'unedited',
+        uneditedAnnotations
+    )
     const populatedAnnoWithAnchorsWithPV: any[] = getPriorVersions(
         currentAnchors,
         lastEditedAnnotations,

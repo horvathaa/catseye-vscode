@@ -285,6 +285,7 @@ export enum Selection {
     none = 'none',
 }
 
+export const EXACT_MATCH_THRESHOLD = 0.15
 export const HIGH_SIMILARITY_THRESHOLD = 0.3 // we are pretty confident the anchor is here
 export const PASSABLE_SIMILARITY_THRESHOLD = 0.7 // we are confident enough
 export const INCREMENT = 2 // amount for expanding search range

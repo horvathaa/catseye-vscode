@@ -6,7 +6,8 @@ import {
     PotentialAnchorObject,
     HIGH_SIMILARITY_THRESHOLD, // we are pretty confident the anchor is here
     PASSABLE_SIMILARITY_THRESHOLD, // we are confident enough
-    INCREMENT, // amount for expanding search range
+    INCREMENT,
+    EXACT_MATCH_THRESHOLD, // amount for expanding search range
 } from '../constants/constants'
 import { astHelper, gitInfo } from '../extension'
 import {
@@ -26,7 +27,7 @@ import {
 } from './anchor'
 
 // toggle to true for more console messages
-export const REANCHOR_DEBUG: boolean = false
+export const REANCHOR_DEBUG: boolean = true
 let currDocLength = 0
 
 interface CodeToken {
@@ -184,7 +185,7 @@ export const computeMostSimilarAnchor = (
     // if (findAtOriginalLocation(sourceCode, anchorCode)) {
     //     console.log('wowza')
     // }
-    const newAnchors = proximitySearch(
+    const searchedAnchors: AnchorSearchResult = proximitySearch(
         sourceCode,
         anchorCode,
         surroundingAbove,
@@ -201,7 +202,7 @@ export const computeMostSimilarAnchor = (
     // have to use Promise.all when returning an array of promises
 
     //await Promise.all(
-    const newPotentialAnchors = newAnchors.map(
+    const newPotentialAnchors = searchedAnchors.newAnchors.map(
         (weightedAnchor: WeightedAnchor) => {
             const { weight, ...restAnchor } = weightedAnchor
             const newRange = createRangeFromObject(restAnchor.anchor)
@@ -541,12 +542,12 @@ const createWeightedLineComparedToSource = (
 }
 
 const debugPrintWeightedCodeLineStats = (
-    wcl: WeightedCodeLine[],
-    comparator: CodeLine[]
+    wcl: WeightedCodeLine[], // weighted line
+    comparator: CodeLine[] // original code text
 ): void => {
     console.log('BEGIN DEBUG')
-    console.log('Lines', wcl)
-    console.log('Comparing Against', comparator)
+    console.log('Lines', wcl) // new
+    console.log('Comparing Against', comparator) // old
     const weights = wcl.map((l) => l.weight)
     console.log(
         'Average Similarity',
@@ -568,6 +569,11 @@ const debugPrintWeightedCodeLineStats = (
     }
 }
 
+interface AnchorSearchResult {
+    newAnchors: WeightedAnchor[] // length will always be 1 when reanchor true
+    reanchor: boolean
+}
+
 const proximitySearch = (
     sourceCode: CodeLine[],
     anchorCode: CodeLine[],
@@ -575,7 +581,7 @@ const proximitySearch = (
     surroundingBelow: CodeLine[],
     startLine: number,
     endLine: number
-): WeightedAnchor[] => {
+): AnchorSearchResult => {
     const startAnchorSearch: WeightedCodeLine[] = removeNulls(
         createWeightedLineComparedToSource(
             sourceCode,
@@ -646,56 +652,83 @@ const proximitySearch = (
             : 0
 
     let newAnchors: WeightedAnchor[] = []
-    // Nailed the location
+    //  Nailed the location, AUTO REANCHOR
     if (
-        averageAnchorLineWeight <= HIGH_SIMILARITY_THRESHOLD &&
-        averageSurroundingAboveLineWeight <= HIGH_SIMILARITY_THRESHOLD &&
-        averageSurroundingBelowLineWeight <= HIGH_SIMILARITY_THRESHOLD
+        bestMatchWithUnionOfAverages(
+            averageAnchorLineWeight,
+            averageSurroundingAboveLineWeight,
+            averageSurroundingBelowLineWeight,
+            EXACT_MATCH_THRESHOLD
+        ) === true
     ) {
-        REANCHOR_DEBUG && console.log('--------- HIGH SIMILARITY ----------')
-        // find anchor start and end points + anchor range
+        REANCHOR_DEBUG &&
+            console.log(
+                '--------- AUTO REANCHOR, VERY HIGH SIMILARITY ----------'
+            )
         newAnchors = newAnchors.concat(
             findNewAnchorLocation(startAnchorSearch, anchorCode)
         )
-    } else if (
-        averageAnchorLineWeight <= PASSABLE_SIMILARITY_THRESHOLD &&
-        averageSurroundingAboveLineWeight <= PASSABLE_SIMILARITY_THRESHOLD &&
-        averageSurroundingBelowLineWeight <= PASSABLE_SIMILARITY_THRESHOLD
-    ) {
-        // can maybe do some additional searching to find better anchor positions (probs compare against close lines)
-        REANCHOR_DEBUG && console.log('-------- MEDIUM SIMILARITY ---------')
-        newAnchors = newAnchors.concat(
-            findNewAnchorLocation(startAnchorSearch, anchorCode)
-        )
+        return { newAnchors: newAnchors, reanchor: true }
     } else {
-        REANCHOR_DEBUG && console.log('-------- LOW SIMILARITY ---------')
-        const weightedAboveComparedToAnchor: (false | WeightedCodeLine)[] =
-            surroundingAbove.map(
-                (line, i) =>
-                    line &&
-                    i < anchorCode.length &&
-                    compareCodeLinesByContent(line, anchorCode[i])
+        // BUILD SUGGESTION ANCHORS
+        if (
+            bestMatchWithUnionOfAverages(
+                averageAnchorLineWeight,
+                averageSurroundingAboveLineWeight,
+                averageSurroundingBelowLineWeight,
+                HIGH_SIMILARITY_THRESHOLD
+            ) === true ||
+            bestMatchWithSurroundingToken() == true
+        ) {
+            REANCHOR_DEBUG &&
+                console.log('--------- HIGH SIMILARITY ----------')
+            // find anchor start and end points + anchor range
+            newAnchors = newAnchors.concat(
+                findNewAnchorLocation(startAnchorSearch, anchorCode)
             )
+        }
+        if (
+            averageAnchorLineWeight <= PASSABLE_SIMILARITY_THRESHOLD &&
+            averageSurroundingAboveLineWeight <=
+                PASSABLE_SIMILARITY_THRESHOLD &&
+            averageSurroundingBelowLineWeight <= PASSABLE_SIMILARITY_THRESHOLD
+        ) {
+            // can maybe do some additional searching to find better anchor positions (probs compare against close lines)
+            REANCHOR_DEBUG &&
+                console.log('-------- MEDIUM SIMILARITY ---------')
+            newAnchors = newAnchors.concat(
+                findNewAnchorLocation(startAnchorSearch, anchorCode)
+            )
+        } else {
+            REANCHOR_DEBUG && console.log('-------- LOW SIMILARITY ---------')
+            const weightedAboveComparedToAnchor: (false | WeightedCodeLine)[] =
+                surroundingAbove.map(
+                    (line, i) =>
+                        line &&
+                        i < anchorCode.length &&
+                        compareCodeLinesByContent(line, anchorCode[i])
+                )
 
-        const weightedBelowComparedToAnchor: (false | WeightedCodeLine)[] =
-            surroundingBelow.map(
-                (line, i) =>
-                    line &&
-                    i < anchorCode.length &&
-                    compareCodeLinesByContent(line, anchorCode[i])
-            )
-        // console.log(
-        //     'maybe in area above anchor?',
-        //     weightedAboveComparedToAnchor
-        // )
-        // console.log(
-        //     'maybe in area below anchor?',
-        //     weightedBelowComparedToAnchor
-        // )
-        // see if anchor is actually in surrounding context
-        // if not - widen window
-        // if still not - full doc
-        // if STILL not - mark as unknown + look at AST to try and find appropriate potential matches
+            const weightedBelowComparedToAnchor: (false | WeightedCodeLine)[] =
+                surroundingBelow.map(
+                    (line, i) =>
+                        line &&
+                        i < anchorCode.length &&
+                        compareCodeLinesByContent(line, anchorCode[i])
+                )
+            // console.log(
+            //     'maybe in area above anchor?',
+            //     weightedAboveComparedToAnchor
+            // )
+            // console.log(
+            //     'maybe in area below anchor?',
+            //     weightedBelowComparedToAnchor
+            // )
+            // see if anchor is actually in surrounding context
+            // if not - widen window
+            // if still not - full doc
+            // if STILL not - mark as unknown + look at AST to try and find appropriate potential matches
+        }
     }
 
     // generated an anchor
@@ -720,12 +753,39 @@ const proximitySearch = (
     // Widen our window to... +/- additional 5 lines and see if they seem to have our anchor line
     // IF NOT --> full doc search for best candidate location OR try and use AST to minimize search space
 
-    return newAnchors
+    return { newAnchors: newAnchors, reanchor: false }
+}
+
+const bestMatchWithUnionOfAverages = (
+    averageAnchorLineWeight: number,
+    averageSurroundingAboveLineWeight: number,
+    averageSurroundingBelowLineWeight: number,
+    threshold: number
+): boolean => {
+    if (
+        averageAnchorLineWeight <= threshold &&
+        averageSurroundingAboveLineWeight <= threshold &&
+        averageSurroundingBelowLineWeight <= threshold
+    ) {
+        return true
+    }
+    return false
+}
+
+const bestMatchWithSurroundingToken = (): boolean => {
+    // LEFT OFF HERE @SHANNON FINISH THIS
+    return false
 }
 
 // interface SourceToken extends CodeToken {
 //     line: number
 // }
+
+const findMin = (array: any[]): any => {
+    const weights = array.map((c) => c.weight)
+    const min = array.find((t) => t.weight === Math.min(...weights))
+    return min
+}
 
 const findNewAnchorLocation = (
     sourceCode: WeightedCodeLine[],
@@ -766,12 +826,6 @@ const findNewAnchorLocation = (
         newAnchor = findMultiLineAnchor(sourceCode, anchorCode)
     }
     return newAnchor
-}
-
-const findMin = (array: any[]): any => {
-    const weights = array.map((c) => c.weight)
-    const min = array.find((t) => t.weight === Math.min(...weights))
-    return min
 }
 
 const findSingleTokenAnchor = (

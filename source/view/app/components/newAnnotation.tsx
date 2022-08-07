@@ -18,6 +18,7 @@ import {
 } from '../styles/vscodeStyles'
 import styles from '../styles/annotation.module.css'
 import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
+import { Type } from '../../../constants/constants'
 
 interface SynProps {
     html: string
@@ -37,6 +38,7 @@ const NewAnnotation: React.FC<Props> = ({
     vscode,
     notifyDone = () => {},
 }) => {
+    const [types, setTypes] = React.useState<Type[]>([])
     const theme = createTheme({
         palette: {
             primary: {
@@ -94,23 +96,12 @@ const NewAnnotation: React.FC<Props> = ({
             anno: annoContent,
             shareWith,
             willBePinned,
+            types,
         })
     }
 
-    const updateAnnotationTypes = (types: Type[]): void => {
-        const updatedTypes = types
-        const newAnno: Annotation = buildAnnotation({
-            ...anno,
-            type: updatedTypes,
-        })
-        setAnno(newAnno)
-        annoRef.current = newAnno
-        vscode.postMessage({
-            command: 'updateAnnotation',
-            annoId: anno.id,
-            key: 'types',
-            value: updatedTypes,
-        })
+    const updateAnnotationTypes = (newTypes: Type[]): void => {
+        setTypes(newTypes)
     }
 
     // return (
@@ -145,15 +136,15 @@ const NewAnnotation: React.FC<Props> = ({
                             scrollInEditor={scrollInEditor}
                         /> */}
                         <div className={styles['ContentContainer']}>
+                            <AnnotationTypesBar
+                                currentTypes={types}
+                                editTypes={updateAnnotationTypes}
+                            />
                             <TextEditor
                                 content={''}
                                 submissionHandler={createAnnotation}
                                 cancelHandler={cancelAnnotation}
                                 showSplitButton={true}
-                            />
-                            <AnnotationTypesBar
-                                currentTypes={anno.types}
-                                editTypes={updateAnnotationTypes}
                             />
                         </div>
                         {/* <ReplyContainer

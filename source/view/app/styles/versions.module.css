@@ -31,7 +31,7 @@ span {
 
 .AnchorContainer {
     display: flex;
-    border: 2px solid rgb(239 255 201 / 20%);
+    border: 1.5px solid var(--vscode-editor-foreground);
     border-radius: 4px;
     padding: 2px;
     margin: 5px;

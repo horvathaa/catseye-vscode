@@ -172,7 +172,6 @@
     transition: cubic-bezier(1, 0, 0, 1);
 }
 
-
 .DropdownIcons {
     height: 1.25em;
     width: 1.25em;
@@ -292,7 +291,7 @@
 .textboxContainer {
     display: block;
     /* border-radius: 8px;
-    border: 2px solid rgb(239 255 201 / 20%); */
+    border: 1.5px solid var(--vscode-editor-foreground); */
     margin-top: 8px;
     margin-bottom: 4px;
 }
@@ -375,7 +374,7 @@
 }
 
 .AnchorContainer {
-    border: 2px solid rgb(239 255 201 / 20%);
+    border: 1.5px solid var(--vscode-editor-foreground);
     padding: 8px 4px 0px 10px;
     border-radius: 4px;
     overflow: scroll;
@@ -427,7 +426,7 @@
 
 .ContentContainer {
     margin: 10px 0px;
-    border: 2px solid rgb(239 255 201 / 20%);
+    border: 1.5px solid var(--vscode-editor-foreground);
     border-radius: 4px;
     font-family: var(--vscode-font-family);
     overflow-wrap: anywhere;
@@ -437,7 +436,7 @@
 
 .AnnoContentContainer {
     margin: 5px 0px;
-    border: 1px solid rgb(239 255 201 / 20%);
+    border: 1.5px solid var(--vscode-editor-foreground);
     border-radius: 4px;
     font-family: var(--vscode-font-family);
     overflow-wrap: anywhere;

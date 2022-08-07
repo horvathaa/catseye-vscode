@@ -12,6 +12,7 @@ import {
     AnchorObject,
     Reply,
     Snapshot,
+    Type,
 } from '../constants/constants'
 import {
     user,
@@ -309,7 +310,8 @@ export const handleExportAnnotationAsComment = async (
 export const handleCreateAnnotation = (
     annotationContent: string,
     shareWith: string,
-    willBePinned: boolean
+    willBePinned: boolean,
+    types: Type[]
 ): void => {
     if (!tempAnno) return
     getShikiCodeHighlighting(
@@ -322,6 +324,7 @@ export const handleCreateAnnotation = (
             newAnno.selected = willBePinned
             newAnno.sharedWith = shareWith
             newAnno.anchors[0].html = html
+            newAnno.types = types
             setAnnotationList(annotationList.concat([newAnno]))
             const text = vscode.window.visibleTextEditors?.find(
                 (doc) =>

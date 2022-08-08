@@ -67,88 +67,88 @@ export const computeRangeFromOffset = (
     return newAnchor
 }
 
-const addLinesWithContent = (
-    textBefore: string,
-    document: vscode.TextDocument,
-    anchorRange: vscode.Range
-): string[] => {
-    let textToSplit = textBefore
-    let contentLines: string[] = textBefore
-        .split('\n')
-        .filter((t) => t.trim().length !== 0)
-    let startPosition: number =
-        anchorRange.start.line - NUM_SURROUNDING_LINES + 1 - contentLines.length
-    // let initialStart = startPosition
-    let endPosition: number = anchorRange.start.line
-    let initialEnd = endPosition
-    let finalStart: number = 0
-    // let finalEnd: number = 0
-    console.log('start?', startPosition)
-    console.log('contentLines before loop', contentLines)
-    let numRemovedWhiteSpace: number = textBefore
-        .split('\n')
-        .filter((t) => t.trim().length === 0).length
-    // startPosition = anchorRange.start.line - (NUM_SURROUNDING_LINES + 1 - contentLines.length)
-    // endPosition = anchorRange.start.line - NUM_SURROUNDING_LINES
-    // if we have whitespace-only lines, get lines before that are not whitespace
-    while (
-        contentLines.length < NUM_SURROUNDING_LINES + 1 &&
-        endPosition !== 0
-    ) {
-        console.log('in while - start', startPosition, 'end', endPosition)
-        textToSplit = document.getText(
-            document.validateRange(
-                new vscode.Range(
-                    new vscode.Position(startPosition, 0),
-                    new vscode.Position(endPosition, 10000)
-                )
-            )
-        )
-        contentLines.splice(
-            0,
-            0,
-            ...textToSplit.split('\n').filter((t) => t.trim().length !== 0)
-        )
-        contentLines = [
-            ...new Set(contentLines.map((l) => l.replace(/\s+/g, ''))),
-        ]
-        console.log('contentLines', contentLines)
-        console.log('textToSplit', textToSplit)
-        const whitespace = textToSplit
-            .split('\n')
-            .filter((t) => t.trim().length === 0).length
-        numRemovedWhiteSpace += whitespace
-        finalStart = startPosition
-        // finalEnd = endPosition
-        endPosition = startPosition
-        startPosition = startPosition - whitespace
-    }
-    if (contentLines.length > NUM_SURROUNDING_LINES + 1) {
-        console.log(
-            'contentLines',
-            contentLines,
-            'math',
-            contentLines.length - NUM_SURROUNDING_LINES - 1
-        )
-        contentLines.splice(0, contentLines.length - NUM_SURROUNDING_LINES - 1)
-    }
+// const addLinesWithContent = (
+//     textBefore: string,
+//     document: vscode.TextDocument,
+//     anchorRange: vscode.Range
+// ): string[] => {
+//     let textToSplit = textBefore
+//     let contentLines: string[] = textBefore
+//         .split('\n')
+//         .filter((t) => t.trim().length !== 0)
+//     let startPosition: number =
+//         anchorRange.start.line - NUM_SURROUNDING_LINES + 1 - contentLines.length
+//     // let initialStart = startPosition
+//     let endPosition: number = anchorRange.start.line
+//     let initialEnd = endPosition
+//     let finalStart: number = 0
+//     // let finalEnd: number = 0
+//     console.log('start?', startPosition)
+//     console.log('contentLines before loop', contentLines)
+//     let numRemovedWhiteSpace: number = textBefore
+//         .split('\n')
+//         .filter((t) => t.trim().length === 0).length
+//     // startPosition = anchorRange.start.line - (NUM_SURROUNDING_LINES + 1 - contentLines.length)
+//     // endPosition = anchorRange.start.line - NUM_SURROUNDING_LINES
+//     // if we have whitespace-only lines, get lines before that are not whitespace
+//     while (
+//         contentLines.length < NUM_SURROUNDING_LINES + 1 &&
+//         endPosition !== 0
+//     ) {
+//         console.log('in while - start', startPosition, 'end', endPosition)
+//         textToSplit = document.getText(
+//             document.validateRange(
+//                 new vscode.Range(
+//                     new vscode.Position(startPosition, 0),
+//                     new vscode.Position(endPosition, 10000)
+//                 )
+//             )
+//         )
+//         contentLines.splice(
+//             0,
+//             0,
+//             ...textToSplit.split('\n').filter((t) => t.trim().length !== 0)
+//         )
+//         contentLines = [
+//             ...new Set(contentLines.map((l) => l.replace(/\s+/g, ''))),
+//         ]
+//         console.log('contentLines', contentLines)
+//         console.log('textToSplit', textToSplit)
+//         const whitespace = textToSplit
+//             .split('\n')
+//             .filter((t) => t.trim().length === 0).length
+//         numRemovedWhiteSpace += whitespace
+//         finalStart = startPosition
+//         // finalEnd = endPosition
+//         endPosition = startPosition
+//         startPosition = startPosition - whitespace
+//     }
+//     if (contentLines.length > NUM_SURROUNDING_LINES + 1) {
+//         console.log(
+//             'contentLines',
+//             contentLines,
+//             'math',
+//             contentLines.length - NUM_SURROUNDING_LINES - 1
+//         )
+//         contentLines.splice(0, contentLines.length - NUM_SURROUNDING_LINES - 1)
+//     }
 
-    console.log(
-        'removed',
-        document
-            .getText(
-                document.validateRange(
-                    new vscode.Range(
-                        new vscode.Position(finalStart, 0),
-                        new vscode.Position(initialEnd, 10000)
-                    )
-                )
-            )
-            .split('\n')
-            .filter((t) => t.trim().length === 0).length
-    )
-    return contentLines
-}
+//     console.log(
+//         'removed',
+//         document
+//             .getText(
+//                 document.validateRange(
+//                     new vscode.Range(
+//                         new vscode.Position(finalStart, 0),
+//                         new vscode.Position(initialEnd, 10000)
+//                     )
+//                 )
+//             )
+//             .split('\n')
+//             .filter((t) => t.trim().length === 0).length
+//     )
+//     return contentLines
+// }
 
 export const getSurroundingLinesBeforeAnchor = (
     document: vscode.TextDocument,
@@ -763,56 +763,10 @@ export const addHighlightsToEditor = (
             let unanchoredAnnotations: Annotation[] = []
 
             if (invalidRanges.length) {
-                const invalidIds: AnnotationAnchorPair[] = invalidRanges.map(
-                    (r) => {
-                        return {
-                            annotationId: r.annotationId,
-                            anchorId: r.anchorId,
-                        }
-                    }
+                unanchoredAnnotations = handleInvalidAnchors(
+                    invalidRanges,
+                    annotationsToHighlight
                 )
-
-                const mergedInvalidIds = mergeAnnotationAndAnchorIds(invalidIds)
-
-                // these annos have become unanchored
-                unanchoredAnnotations = removeNulls(
-                    mergedInvalidIds.map((a: AnnotationAnchorPair) => {
-                        const anno = annotationsToHighlight.find(
-                            (ann) => ann.id === a.annotationId
-                        )
-                        const anchors =
-                            typeof a.anchorId === 'string'
-                                ? anno?.anchors.find(
-                                      (anch) => anch.anchorId === a.anchorId
-                                  )
-                                : anno?.anchors.filter((anch) =>
-                                      a.anchorId.includes(anch.anchorId)
-                                  )
-                        if (anno && anchors) {
-                            const newAnchors = Array.isArray(anchors)
-                                ? anchors.map((anch) => {
-                                      return { ...anch, anchored: false }
-                                  })
-                                : [{ ...anchors, anchored: false }]
-                            return buildAnnotation({
-                                ...anno,
-                                anchors: anno.anchors
-                                    .filter((anch) => {
-                                        return typeof a.anchorId === 'string'
-                                            ? anch.anchorId !== a.anchorId
-                                            : !a.anchorId.includes(
-                                                  anch.anchorId
-                                              )
-                                    })
-                                    .concat(newAnchors),
-                                needToUpdate: true,
-                                // outOfDate: true,
-                            })
-                        }
-                    })
-                )
-                console.log('huh?', unanchoredAnnotations)
-                // saveOutOfDateAnnotations(invalidIds)
             }
 
             valid.forEach((a: Annotation) => (a.outOfDate = false))
@@ -843,4 +797,56 @@ export const addHighlightsToEditor = (
         view?.updateDisplay(annotationList) // update that list is empty ?
         text?.setDecorations(annotationDecorations, [])
     }
+}
+
+const handleInvalidAnchors = (
+    invalidRanges: AnnotationRange[],
+    annotationsToHighlight: Annotation[]
+) => {
+    let unanchoredAnnotations: Annotation[] = []
+    const invalidIds: AnnotationAnchorPair[] = invalidRanges.map((r) => {
+        return {
+            annotationId: r.annotationId,
+            anchorId: r.anchorId,
+        }
+    })
+
+    const mergedInvalidIds = mergeAnnotationAndAnchorIds(invalidIds)
+
+    // these annos have become unanchored
+    unanchoredAnnotations = removeNulls(
+        mergedInvalidIds.map((a: AnnotationAnchorPair) => {
+            const anno = annotationsToHighlight.find(
+                (ann) => ann.id === a.annotationId
+            )
+            const anchors =
+                typeof a.anchorId === 'string'
+                    ? anno?.anchors.find((anch) => anch.anchorId === a.anchorId)
+                    : anno?.anchors.filter((anch) =>
+                          a.anchorId.includes(anch.anchorId)
+                      )
+            if (anno && anchors) {
+                const newAnchors = Array.isArray(anchors)
+                    ? anchors.map((anch) => {
+                          return { ...anch, anchored: false }
+                      })
+                    : [{ ...anchors, anchored: false }]
+                return buildAnnotation({
+                    ...anno,
+                    anchors: anno.anchors
+                        .filter((anch) => {
+                            return typeof a.anchorId === 'string'
+                                ? anch.anchorId !== a.anchorId
+                                : !a.anchorId.includes(anch.anchorId)
+                        })
+                        .concat(newAnchors),
+                    needToUpdate: true,
+                    // outOfDate: true,
+                })
+            }
+        })
+    )
+    console.log('huh?', unanchoredAnnotations)
+    return unanchoredAnnotations
+    // saveOutOfDateAnnotations(invalidIds)
 }

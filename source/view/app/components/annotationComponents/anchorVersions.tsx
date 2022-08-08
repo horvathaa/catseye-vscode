@@ -64,22 +64,30 @@ const AnchorVersions: React.FC<Props> = ({
                 anchor.priorVersions && anchor.priorVersions.reverse()
                 if (anchor.priorVersions) {
                     return (
-                        <Carousel
-                            key={anchor.anchorId + i + '-pv'}
-                            priorVersions={anchor.priorVersions}
-                            currentAnchorObject={anchor}
-                            scrollInEditor={scrollInEditor}
-                            // requestReanchor={requestReanchor} - consider supporting reanchor for prior versions?
-                        ></Carousel>
+                        <>
+                            <Carousel
+                                key={anchor.anchorId + i + '-pv'}
+                                priorVersions={anchor.priorVersions}
+                                currentAnchorObject={anchor}
+                                scrollInEditor={scrollInEditor}
+                                // requestReanchor={requestReanchor} - consider supporting reanchor for prior versions?
+                            ></Carousel>
+                            {anchor.potentialReanchorSpots &&
+                            anchor.potentialReanchorSpots.length
+                                ? showPotentialAnchors(anchor)
+                                : null}
+                        </>
                     )
                 }
-                if (
-                    anchor.potentialReanchorSpots &&
-                    anchor.potentialReanchorSpots.length &&
-                    !anchor.anchored
-                ) {
-                    return showPotentialAnchors(anchor)
-                }
+                // if (
+                //     anchor.potentialReanchorSpots &&
+                //     anchor.potentialReanchorSpots.length
+                //     // &&
+                //     // !anchor.anchored
+                // ) {
+                //     console.log('hewwo???')
+                //     return showPotentialAnchors(anchor)
+                // }
                 return null
                 // if (!anchor.anchored) {
                 // return (

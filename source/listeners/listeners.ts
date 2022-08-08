@@ -381,7 +381,6 @@ export const handleDidChangeTextEditorSelection = async (
 ): Promise<void> => {
     const { selections, textEditor } = e
     const activeSelection = selections[0]
-    console.log('activeSelection', activeSelection)
     if (!activeSelection.start.isEqual(activeSelection.end)) {
         let createAnnotationWebviewLink: vscode.MarkdownString =
             new vscode.MarkdownString()

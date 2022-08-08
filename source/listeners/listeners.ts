@@ -6,7 +6,6 @@
  */
 
 import * as vscode from 'vscode'
-import * as ts from 'typescript'
 import {
     annotationList,
     copiedAnnotations,
@@ -80,8 +79,10 @@ export const handleChangeVisibleTextEditors = (
     if (view) {
         textEditors.forEach((t) => {
             anchor.addHighlightsToEditor(annotationsToHighlight, t)
-            !astHelper.checkIsSourceFileIsWatched(t.document) &&
-                astHelper.addSourceFile(t.document)
+            const shouldWatchFile =
+                !astHelper.checkIsSourceFileIsWatched(t.document) &&
+                astHelper.isTsJsJsxTsx(t.document)
+            shouldWatchFile && astHelper.addSourceFile(t.document)
         })
     }
 }

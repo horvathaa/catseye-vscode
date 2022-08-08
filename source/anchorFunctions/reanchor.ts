@@ -157,6 +157,7 @@ export const computeMostSimilarAnchor = (
 ): AnchorObject => {
     currDocLength = document.lineCount
     const sourceCode: CodeLine[] = getCodeLine(document.getText())
+    REANCHOR_DEBUG && console.log('source', sourceCode)
     REANCHOR_DEBUG && console.log('anchor', anchor)
     const anchorCode: CodeLine[] = getCodeLine(anchor.anchorText, {
         startLine: anchor.anchor.startLine,
@@ -171,12 +172,14 @@ export const computeMostSimilarAnchor = (
               startOffset: 0,
           })
         : []
+    REANCHOR_DEBUG && console.log('surroundingAbove', surroundingAbove)
     const surroundingBelow = anchor.surroundingCode
         ? getCodeLine(anchor.surroundingCode.linesAfter.join('\n'), {
               startLine: anchor.anchor.endLine,
               startOffset: 0,
           })
         : []
+    REANCHOR_DEBUG && console.log('surroundingAbove', surroundingBelow)
     // console.log('sourceCode', sourceCode)
     // console.log('anchorCode', anchorCode)
     // console.log('surroundingAbove', surroundingAbove)
@@ -418,6 +421,7 @@ const computeLineWeight = (
         return l.weight
     })
 
+    // need a better way of handling empty lines -- maybe assign some special value that we ignore when computing weights (e.g., make weight: number | boolean and have false be the weight?)
     return totals.length ? totals.reduce((a, b) => a + b) / totals.length : 0.3 // if there are no tokens to compute weight of, that most likely means it is whitespace, in which case it should be ignored/not affect weight strongly. instead of 0, it would be nice to somehow make this have no weight at all
 }
 
@@ -501,6 +505,9 @@ const createWeightedLineComparedToSource = (
         range
     )
 
+    REANCHOR_DEBUG && console.log('comparing code', comparingCode)
+    REANCHOR_DEBUG && console.log('computedSourceLines', computedSourceLines)
+
     if (comparingCode && comparingCode.length) {
         // console.log('computedSourceLines', computedSourceLines)
         if (comparingCode.length === computedSourceLines.length) {
@@ -523,7 +530,7 @@ const createWeightedLineComparedToSource = (
 
                 return weightedCodeLine
             } else {
-                let weightedCodeLine: WeightedCodeLine[] = []
+                let weightedCodeLines: WeightedCodeLine[] = []
                 for (
                     let i = 0;
                     i <
@@ -534,7 +541,7 @@ const createWeightedLineComparedToSource = (
                 ) {
                     const iRange = numRange(comparingCode.length, i)
                     iRange.forEach((j, idx) => {
-                        weightedCodeLine = weightedCodeLine.concat(
+                        weightedCodeLines = weightedCodeLines.concat(
                             compareCodeLinesByContent(
                                 sourceCode[j],
                                 comparingCode[idx]
@@ -542,8 +549,11 @@ const createWeightedLineComparedToSource = (
                         )
                     })
                 }
-                return weightedCodeLine
+                return weightedCodeLines
             }
+        } else {
+            //
+            return useSlidingWindow(computedSourceLines, comparingCode)
         }
     }
 
@@ -585,11 +595,30 @@ const isWeightedCodeLine = (
     return (line as WeightedCodeLine).codeLine !== undefined
 }
 
+const makeCodeLineFromWeightedCodeLine = (
+    weightedCodeLine: WeightedCodeLine
+): CodeLine => {
+    return {
+        code: weightedCodeLine.codeLine.code,
+        line: weightedCodeLine.codeLine.line,
+    }
+}
+
+// little worried that this may perform poorly when line arrays are similar but are just off by one
+// may make more sense to find best match compared to first line then iterate from that point (e.g., ok line 1 matches line 5, lets see if line 2 matches line 6, etc.)
 const useSlidingWindow = (
     windowVal: CodeLine[],
     source: CodeLine[]
 ): WeightedCodeLine[] => {
     let weightedCodeLine: WeightedCodeLine[] = []
+    console.log('windowVal - should be anchor', windowVal)
+    console.log('source', source)
+    console.log(
+        'iterators - len',
+        Math.floor(source.length / windowVal.length),
+        'increment',
+        windowVal.length
+    )
     for (
         let i = 0;
         i < Math.floor(source.length / windowVal.length);
@@ -622,6 +651,18 @@ const proximitySearch = (
             anchorCode.length
         )
     )
+    REANCHOR_DEBUG &&
+        console.log(
+            'hewwo????',
+            createWeightedLineComparedToSource(
+                sourceCode,
+                surroundingAbove,
+                startLine - NUM_SURROUNDING_LINES > 0
+                    ? startLine - NUM_SURROUNDING_LINES
+                    : 0,
+                NUM_SURROUNDING_LINES
+            )
+        )
     const surroundingAboveAnchorSearch: WeightedCodeLine[] = removeNulls(
         createWeightedLineComparedToSource(
             sourceCode,
@@ -709,6 +750,11 @@ const proximitySearch = (
     }
     // else { // - commenting out for testing
     REANCHOR_DEBUG && console.log('-------- LOW SIMILARITY ---------')
+    REANCHOR_DEBUG &&
+        console.log(
+            'surroundingAboveAnchorSearch',
+            surroundingAboveAnchorSearch
+        )
     const weightedAboveComparedToAnchor: WeightedCodeLine[] =
         // surroundingAboveAnchorSearch.map(
         //     (line, i) =>
@@ -719,7 +765,12 @@ const proximitySearch = (
         //             anchorCode.length > 0 ? anchorCode[i] : anchorCode[0]
         //         )
         // )
-        useSlidingWindow(anchorCode, surroundingAbove)
+        useSlidingWindow(
+            anchorCode,
+            surroundingAboveAnchorSearch.map((wcl) =>
+                makeCodeLineFromWeightedCodeLine(wcl)
+            )
+        )
 
     const weightedBelowComparedToAnchor: WeightedCodeLine[] =
         // surroundingBelowAnchorSearch.map(
@@ -731,7 +782,12 @@ const proximitySearch = (
         //             anchorCode.length > 0 ? anchorCode[i] : anchorCode[0]
         //         ) // bring sliding window logic here
         // )
-        useSlidingWindow(anchorCode, surroundingBelow)
+        useSlidingWindow(
+            anchorCode,
+            surroundingBelowAnchorSearch.map((wcl) =>
+                makeCodeLineFromWeightedCodeLine(wcl)
+            )
+        )
     REANCHOR_DEBUG &&
         console.log(
             'maybe in area above anchor?',

@@ -19,6 +19,8 @@ import {
 import styles from '../styles/annotation.module.css'
 import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
 import { Type } from '../../../constants/constants'
+import AdamiteButton from './annotationComponents/AdamiteButton'
+import AnchorIcon from '@mui/icons-material/Anchor'
 
 interface SynProps {
     html: string
@@ -104,22 +106,14 @@ const NewAnnotation: React.FC<Props> = ({
         setTypes(newTypes)
     }
 
-    // return (
-    //     <div className={annoStyles['Pad']}>
-    //         <div
-    //             className={annoStyles['AnnotationContainer']}
-    //             id="NewAnnotation"
-    //         >
-    //             <Syntax html={selection} />
-    //             <TextEditor
-    //                 content={''}
-    //                 submissionHandler={createAnnotation}
-    //                 cancelHandler={cancelAnnotation}
-    //                 showSplitButton={true}
-    //             />
-    //         </div>
-    //     </div>
-    // )
+    const addAnchor = (): void => {
+        console.log('We should add an anchor using the specified methods here!')
+        // vscode.postMessage({
+        //     command: 'addAnchor',
+        //     annoId: anno.id,
+        // })
+    }
+
     return (
         <div
             style={{
@@ -131,15 +125,26 @@ const NewAnnotation: React.FC<Props> = ({
                 <Card style={cardStyle}>
                     <CardContent>
                         <Syntax html={selection} />
-                        {/* <AnchorVersions
-                            anchors={anno.anchors}
-                            scrollInEditor={scrollInEditor}
-                        /> */}
+
                         <div className={styles['ContentContainer']}>
-                            <AnnotationTypesBar
-                                currentTypes={types}
-                                editTypes={updateAnnotationTypes}
-                            />
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    justifyContent: 'space-between',
+                                }}
+                            >
+                                <AnnotationTypesBar
+                                    currentTypes={types}
+                                    editTypes={updateAnnotationTypes}
+                                />
+                                <AdamiteButton
+                                    buttonClicked={addAnchor}
+                                    name="Add Anchor"
+                                    icon={<AnchorIcon fontSize="small" />}
+                                />
+                            </div>
+
                             <TextEditor
                                 content={''}
                                 submissionHandler={createAnnotation}

@@ -10,6 +10,7 @@ import {
 } from '../constants/constants'
 import { astHelper, gitInfo } from '../extension'
 import {
+    arrayUniqueByKey,
     getFirstLineOfHtml,
     getGithubUrl,
     getProjectName,
@@ -50,6 +51,9 @@ interface WeightedCodeLine {
     weight: number
 }
 
+interface AuditedWeightedCodeLine extends WeightedCodeLine {
+    line: number
+}
 interface WeightedTokenLine extends WeightedToken {
     line: number
 }
@@ -509,6 +513,17 @@ const computeLineDifferenceScore = (
     return total
 }
 
+const checkIfCodeIsJustNonAlphanumericCharacters = (
+    code: CodeLine | WeightedLine
+): boolean => {
+    return !(
+        code.code
+            .map((t) => t.token)
+            .join('')
+            .match(/\W+/g)?.length === code.code.length
+    )
+}
+
 const computeDifferenceBetweenLines = (
     source: CodeLine,
     anchor: CodeLine
@@ -531,17 +546,17 @@ const computeDifferenceBetweenLines = (
                 .join('')
                 .match(/\W+/g)?.length === anchor.code.length
         )
-    console.log(
-        'source in comput line diff',
-        source,
-        'anchor in comput line diff',
-        anchor,
-        'regex',
-        source.code
-            .map((t) => t.token)
-            .join('')
-            .match(/\W+/g)
-    )
+    // console.log(
+    //     'source in comput line diff',
+    //     source,
+    //     'anchor in comput line diff',
+    //     anchor,
+    //     'regex',
+    //     source.code
+    //         .map((t) => t.token)
+    //         .join('')
+    //         .match(/\W+/g)
+    // )
     return computeLineDifferenceScore(
         lineEditDistance,
         numTokenDifference,
@@ -555,7 +570,7 @@ const compareCodeLinesByContent = (
     source: CodeLine,
     anchor: CodeLine
 ): WeightedCodeLine => {
-    console.log('source', source, 'anchor', anchor)
+    // console.log('source', source, 'anchor', anchor)
     const weighted: WeightedToken[] =
         anchor.code.length > 1
             ? compareSimilarityOfTokens(
@@ -586,7 +601,7 @@ const compareCodeLinesByContent = (
                   //   },
               ]
     const weightAtLineLevel = computeDifferenceBetweenLines(source, anchor)
-    console.log('weightAtLineLevel', weightAtLineLevel)
+    // console.log('weightAtLineLevel', weightAtLineLevel)
     const weightedLine: WeightedLine = { ...source, code: weighted }
     // console.log('weightedLine', weightedLine)
     const weightedCodeLine: WeightedCodeLine = {
@@ -785,12 +800,6 @@ const useSlidingWindow = (
     let weightedCodeLine: WeightedCodeLine[] = []
     const weightableSource = source.filter((l) => !l.isEmptyLine)
     const weightableWindowVal = windowVal.filter((l) => !l.isEmptyLine)
-    console.log(
-        'weightableSource',
-        weightableSource,
-        'weightableWindow',
-        weightableWindowVal
-    )
     for (
         let i = 0;
         i < Math.floor(weightableSource.length / weightableWindowVal.length);
@@ -799,11 +808,6 @@ const useSlidingWindow = (
         const iRange = numRange(weightableWindowVal.length, i)
         iRange.forEach((j, idx) => {
             let sourceLine: CodeLine
-            console.log('sliding window source', weightableSource[j])
-            console.log(
-                'sliding window weightableWindowVal',
-                weightableWindowVal[idx]
-            )
             weightedCodeLine = weightedCodeLine.concat(
                 // !source[j].isEmptyLine && !windowVal[idx].isEmptyLine
                 // ?
@@ -864,32 +868,59 @@ const handleLowSimilarityMatch = (
         (l) => l.weight <= PASSABLE_SIMILARITY_THRESHOLD
     )
     console.log('goodMatches', goodMatches)
-    if (goodMatches.length) {
+    // if (goodMatches.length) {
+    //     // const bestLine: WeightedCodeLine = findMin(goodMatches)
+    //     newAnchors.push(findNewAnchorLocation(goodMatches, anchorCode))
+    //     REANCHOR_DEBUG &&
+    //         console.log('new anchors compared to surrounding', newAnchors)
+    // } else {
+    // whole file search -- this stuff can def be refactored
+    const weightedWholeSourceComparedToAnchor: WeightedCodeLine[] =
+        useSlidingWindow(anchorCode, sourceCode)
+    const goodSourceMatches = weightedWholeSourceComparedToAnchor
+        .filter((l) => l.weight <= PASSABLE_SIMILARITY_THRESHOLD)
+        .concat(goodMatches)
+        .sort((a, b) => a.weight - b.weight)
+    console.log('pwease', goodSourceMatches)
+    if (goodSourceMatches.length) {
         // const bestLine: WeightedCodeLine = findMin(goodMatches)
-        newAnchors.push(findNewAnchorLocation(goodMatches, anchorCode))
-        REANCHOR_DEBUG &&
-            console.log('new anchors compared to surrounding', newAnchors)
-    } else {
-        // whole file search -- this stuff can def be refactored
-        const weightedWholeSourceComparedToAnchor: WeightedCodeLine[] =
-            useSlidingWindow(anchorCode, sourceCode)
-        const goodSourceMatches = weightedWholeSourceComparedToAnchor.filter(
-            (l) => l.weight <= PASSABLE_SIMILARITY_THRESHOLD
+        const anchorsToSuggest =
+            goodSourceMatches.length > 10
+                ? goodSourceMatches.slice(0, 10)
+                : goodSourceMatches
+        console.log('hewwo???', suggestionAudit(anchorsToSuggest))
+        const auditedAnchorsToSuggest: WeightedCodeLine[] = arrayUniqueByKey(
+            suggestionAudit(anchorsToSuggest),
+            'line'
         )
-        if (goodSourceMatches.length) {
-            // const bestLine: WeightedCodeLine = findMin(goodMatches)
-            newAnchors.push(
-                findNewAnchorLocation(goodSourceMatches, anchorCode)
-            )
-            REANCHOR_DEBUG &&
-                console.log('compared to whole source', newAnchors)
-        } else {
-            REANCHOR_DEBUG && console.log('nothing')
-            newAnchors = []
-        }
+        console.log('audited post', auditedAnchorsToSuggest)
+        newAnchors.push(
+            findNewAnchorLocation(auditedAnchorsToSuggest, anchorCode)
+        )
+        REANCHOR_DEBUG && console.log('compared to whole source', newAnchors)
+    } else {
+        REANCHOR_DEBUG && console.log('nothing')
+        newAnchors = []
     }
+    //}
 
-    return newAnchors
+    return newAnchors.sort((a, b) => a.weight - b.weight)
+}
+
+// would be better to not have garbage recommendations but that's LIFE!!!!!!!!
+const suggestionAudit = (
+    wcls: WeightedCodeLine[]
+): AuditedWeightedCodeLine[] => {
+    return wcls
+        .filter((wcl) => {
+            return (
+                wcl.codeLine.code.length &&
+                checkIfCodeIsJustNonAlphanumericCharacters(wcl.codeLine)
+            )
+        })
+        .map((wcl) => {
+            return { ...wcl, line: wcl.codeLine.line }
+        })
 }
 
 const proximitySearch = (
@@ -1101,6 +1132,7 @@ const findNewAnchorLocation = (
     if (objectsEqual(startToken, endToken)) {
         // this should be the main case
         if (sourceCode.length === 1) {
+            console.log('what???')
             newAnchor = findSingleTokenAnchor(sourceCode, startToken)
         }
         // need to search across multiple lines for our token
@@ -1114,6 +1146,7 @@ const findNewAnchorLocation = (
     }
     // single line anchor
     else {
+        console.log('multiline???')
         newAnchor = findMultiLineAnchor(sourceCode, anchorCode)
     }
     console.log('returning this', newAnchor)
@@ -1134,6 +1167,30 @@ const stupidFindMin = (array: any[]): any => {
     return min
 }
 
+const makeAnchorFromWeightedCodeLine = (
+    startWcl: WeightedCodeLine,
+    endWcl?: WeightedCodeLine,
+    startMatch?: WeightedToken,
+    endMatch?: WeightedToken
+): WeightedAnchor => {
+    const startToken = startMatch ? startMatch : startWcl.codeLine.code[0]
+    const endToken = endMatch
+        ? endMatch
+        : endWcl
+        ? endWcl.codeLine.code[endWcl.codeLine.code.length - 1]
+        : startWcl.codeLine.code[startWcl.codeLine.code.length - 1]
+    return {
+        anchor: {
+            startLine: startWcl.codeLine.line,
+            endLine: endWcl ? endWcl.codeLine.line : startWcl.codeLine.line,
+            startOffset: startToken.offset,
+            endOffset: endToken.offset + endToken.token.length,
+        },
+        weight: endWcl ? startWcl.weight + endWcl.weight / 2 : startWcl.weight,
+        reasonSuggested: '',
+    }
+}
+
 const findSingleTokenAnchor = (
     sourceCode: WeightedCodeLine[],
     startToken: CodeToken
@@ -1149,23 +1206,33 @@ const findSingleTokenAnchor = (
     if (potentialMatches.length === 1) {
         const match = potentialMatches[0]
         if (match.isExactMatch) {
-            newAnchor.anchor.startLine = sourceCode[0].codeLine.line
-            newAnchor.anchor.endLine = sourceCode[0].codeLine.line
-            newAnchor.anchor.startOffset = match.offset
-            newAnchor.anchor.endOffset = match.offset + match.token.length
-            newAnchor.weight = match.weight
+            newAnchor = makeAnchorFromWeightedCodeLine(
+                sourceCode[0],
+                undefined,
+                match
+            )
+            // newAnchor.anchor.startLine = sourceCode[0].codeLine.line
+            // newAnchor.anchor.endLine = sourceCode[0].codeLine.line
+            // newAnchor.anchor.startOffset = match.offset
+            // newAnchor.anchor.endOffset = match.offset + match.token.length
+            // newAnchor.weight = match.weight
             // console.log('cool', newAnchor)
             return newAnchor
         } else if (match.doesContainAnchor || match.doesHaveMatch) {
-            newAnchor.anchor.startLine = sourceCode[0].codeLine.line
-            newAnchor.anchor.endLine = sourceCode[0].codeLine.line
-            newAnchor.anchor.startOffset =
-                match.offset + match.token.indexOf(startToken.token)
-            newAnchor.anchor.endOffset =
-                match.offset +
-                match.token.indexOf(startToken.token) +
-                startToken.token.length
-            newAnchor.weight = match.weight
+            // newAnchor.anchor.startLine = sourceCode[0].codeLine.line
+            // newAnchor.anchor.endLine = sourceCode[0].codeLine.line
+            // newAnchor.anchor.startOffset =
+            //     match.offset + match.token.indexOf(startToken.token)
+            // newAnchor.anchor.endOffset =
+            //     match.offset +
+            //     match.token.indexOf(startToken.token) +
+            //     startToken.token.length
+            // newAnchor.weight = match.weight
+            newAnchor = makeAnchorFromWeightedCodeLine(
+                sourceCode[0],
+                undefined,
+                match
+            )
             // console.log('also cool', newAnchor)
             return newAnchor
         }

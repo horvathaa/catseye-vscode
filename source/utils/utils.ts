@@ -63,6 +63,12 @@ const git: SimpleGit = simpleGit(gitDir, { binary: 'git' })
 let lastSavedAnnotations: Annotation[] =
     annotationList && annotationList.length ? annotationList : []
 
+export const arrayUniqueByKey = (array: any, key: string): any[] => [
+    ...new Map(
+        array.map((item: { [key: string]: any }) => [item[key], item])
+    ).values(),
+]
+
 // https://stackoverflow.com/questions/27030/comparing-arrays-of-objects-in-javascript
 export const objectsEqual = (o1: any, o2: any): boolean =>
     typeof o1 === 'object' && Object.keys(o1).length > 0
@@ -83,8 +89,8 @@ export const initializeAnnotations = async (
 ): Promise<void> => {
     const currFilename: string | undefined =
         vscode.window.activeTextEditor?.document.uri.path.toString()
-    const annotations: Annotation[] = 
-    //sortAnnotationsByLocation(
+    const annotations: Annotation[] =
+        //sortAnnotationsByLocation(
         await getAnnotationsOnSignIn(user, currentGitHubProject)
     //)
     setAnnotationList(annotations)
@@ -327,7 +333,6 @@ export const checkIfChangeIncludesAnchor = (
         checkIfAnnotationIncludesChange(a, text)
     )
 }
-
 
 const getShikiTheme = (pl: string): string => {
     let theme

@@ -767,6 +767,7 @@ const proximitySearch = (
 }
 
 const bestMatchWithUnionOfAverages = (
+    // TO DO: test cases
     averageAnchorLineWeight: number,
     averageSurroundingAboveLineWeight: number,
     averageSurroundingBelowLineWeight: number,
@@ -784,6 +785,7 @@ const bestMatchWithUnionOfAverages = (
 }
 
 const bestMatchInSurroundingLinesByContent = (
+    // TO DO: test cases
     surroundingAbove: CodeLine[],
     surroundingBelow: CodeLine[],
     anchorCode: CodeLine[],

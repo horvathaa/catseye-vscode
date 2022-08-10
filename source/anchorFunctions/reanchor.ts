@@ -286,10 +286,6 @@ const findMostSimilarAnchorTokenInSource = (
             let howSimilarIsTokenLocation =
                 anchorToken.offset - sourceToken.offset
 
-            console.log('isExactMatch', isExactMatch)
-            console.log('doesContainAnchor', doesContainAnchor)
-            console.log('editDistance', editDistance)
-
             const tempToken = {
                 ...sourceToken,
                 editDistance,
@@ -678,26 +674,33 @@ const proximitySearch = (
     } else {
         // BUILD SUGGESTION ANCHORS
         if (
-            bestMatchWithUnionOfAverages(
-                // what cases do these capture?
-                averageAnchorLineWeight,
+            bestMatchWithUnionOfAboveBelow(
                 averageSurroundingAboveLineWeight,
                 averageSurroundingBelowLineWeight,
                 HIGH_SIMILARITY_THRESHOLD
-            ) === true ||
-            bestMatchInSurroundingLinesByContent(
-                surroundingAbove,
-                surroundingBelow,
-                anchorCode,
-                HIGH_SIMILARITY_THRESHOLD
-            ) == true
+            ) === true
         ) {
             REANCHOR_DEBUG &&
                 console.log('--------- HIGH SIMILARITY ----------')
-            // find anchor start and end points + anchor range
             newAnchors = newAnchors.concat(
                 findNewAnchorLocation(startAnchorSearch, anchorCode)
             )
+        } else {
+            // TO DO - EXPAND SEARCH
+            if (
+                bestMatchInSurroundingLinesByContent(
+                    surroundingAbove,
+                    surroundingBelow,
+                    anchorCode,
+                    PASSABLE_SIMILARITY_THRESHOLD
+                ) === true
+            ) {
+                REANCHOR_DEBUG &&
+                    console.log('--------- MID SIMILARITY ----------')
+                newAnchors = newAnchors.concat(
+                    findNewAnchorLocation(startAnchorSearch, anchorCode)
+                )
+            }
         }
         // if (
         //     averageAnchorLineWeight <= PASSABLE_SIMILARITY_THRESHOLD &&
@@ -766,8 +769,8 @@ const proximitySearch = (
     return { newAnchors: newAnchors, reanchor: false }
 }
 
+// minor anchor text + surrounding changes
 const bestMatchWithUnionOfAverages = (
-    // TO DO: test cases
     averageAnchorLineWeight: number,
     averageSurroundingAboveLineWeight: number,
     averageSurroundingBelowLineWeight: number,
@@ -784,13 +787,31 @@ const bestMatchWithUnionOfAverages = (
     return false
 }
 
+// anchor text changed + surrounding did not
+const bestMatchWithUnionOfAboveBelow = (
+    averageSurroundingAboveLineWeight: number,
+    averageSurroundingBelowLineWeight: number,
+    threshold: number
+): boolean => {
+    if (
+        averageSurroundingAboveLineWeight <= threshold &&
+        averageSurroundingBelowLineWeight <= threshold
+    ) {
+        console.log('found union of above below')
+        return true
+    }
+    return false
+}
+
+// do we ever hit this case? rn this is pretty useless
+// edit this to take in
 const bestMatchInSurroundingLinesByContent = (
-    // TO DO: test cases
     surroundingAbove: CodeLine[],
     surroundingBelow: CodeLine[],
     anchorCode: CodeLine[],
     threshold: number
 ): boolean => {
+    console.log('anchor code', anchorCode)
     const weightedAboveComparedToAnchor: (false | WeightedCodeLine)[] =
         surroundingAbove.reverse().map(
             //reverse to start search from OG line
@@ -807,19 +828,25 @@ const bestMatchInSurroundingLinesByContent = (
                 i < anchorCode.length &&
                 compareCodeLinesByContent(code, anchorCode[anchorEndIndex])
         )
-    // console.log('maybe in area above anchor?', weightedAboveComparedToAnchor)
-    // console.log('maybe in area below anchor?', weightedBelowComparedToAnchor)
+    console.log('maybe in area above anchor?', weightedAboveComparedToAnchor)
+    console.log('maybe in area below anchor?', weightedBelowComparedToAnchor)
 
-    const filterAbove = weightedAboveComparedToAnchor.filter((c) => c !== false)
-    const filterBelow = weightedBelowComparedToAnchor.filter((c) => c !== false)
-    const aboveMin = findMin(filterAbove)
-    const belowMin = findMin(filterBelow)
+    let filterAbove = weightedAboveComparedToAnchor.filter((c) => c !== false)
+    let filterBelow = weightedBelowComparedToAnchor.filter((c) => c !== false)
+    let aboveMin = findMin(filterAbove)
+    let belowMin = findMin(filterBelow)
+    filterAbove = filterAbove.filter((c) => c !== aboveMin)
+    filterBelow = filterBelow.filter((c) => c !== belowMin)
+    aboveMin = findMin(filterAbove)
+    belowMin = findMin(filterBelow)
+
     const bestMatch = Math.min(aboveMin.weight, belowMin.weight)
+    console.log('above best match', aboveMin)
+    console.log('below best match', belowMin)
     if (bestMatch <= threshold) {
-        console.log('found surrounding content match')
+        console.log('found surrounding content match', bestMatch)
         return true
     }
-
     return false
 }
 
@@ -837,7 +864,6 @@ const findNewAnchorLocation = (
     sourceCode: WeightedCodeLine[],
     anchorCode: CodeLine[]
 ): WeightedAnchor => {
-    // console.log('anchorCode?', anchorCode)
     const startToken = anchorCode[0].code[0]
     const endToken =
         anchorCode[anchorCode.length - 1].code[
@@ -871,6 +897,7 @@ const findNewAnchorLocation = (
     else {
         newAnchor = findMultiLineAnchor(sourceCode, anchorCode)
     }
+    console.log('new anchor', newAnchor)
     return newAnchor
 }
 
@@ -1026,10 +1053,13 @@ const findMultiLineAnchor = (
     })
     // console.log('startTokenMatches', startTokenMatches)
     // console.log('endTokenMatches', endTokenMatches)
+
     const bestMatchStart: WeightedTokenLine = findMin(startTokenMatches)
-    const bestMatchEnd: WeightedTokenLine = findMin(endTokenMatches)
-    // console.log('new start', bestMatchStart)
-    // console.log('new end', bestMatchEnd)
+    const bestMatchEnd: WeightedTokenLine = findMin(endTokenMatches.reverse())
+    // if don't add reverse, will grab first min, not necessarily the last token of a multiline anchor (esp if all anchor text changed)
+
+    console.log('new start', bestMatchStart)
+    console.log('new end', bestMatchEnd)
 
     newAnchor.anchor.startLine = bestMatchStart.line
     newAnchor.anchor.startOffset = bestMatchStart.offset

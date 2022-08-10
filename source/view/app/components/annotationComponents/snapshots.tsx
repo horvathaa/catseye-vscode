@@ -67,6 +67,7 @@ export const Snapshot: React.FC<SnapshotProps> = ({
                     submissionHandler={submissionHandler}
                     cancelHandler={() => setEditing(false)}
                     showSplitButton={false}
+                    placeholder={'Add snapshot comment'}
                 />
             ) : (
                 `${snapshot.comment}`

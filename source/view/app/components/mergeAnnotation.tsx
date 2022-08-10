@@ -32,17 +32,22 @@ const Syntax: React.FC<SynProps> = ({ html }) => {
     return <code dangerouslySetInnerHTML={{ __html: html }}></code>
 }
 interface Props {
-    selection: string 
     vscode: any
     notifyDone: () => void
+    username: string
+    userId: string
+    annotations: Annotation[]
 }
 
 const NewAnnotation: React.FC<Props> = ({
-    selection,
     vscode,
+    username,
+    userId,
     notifyDone = () => {},
+    annotations = [],
 }) => {
     const [types, setTypes] = React.useState<Type[]>([])
+    const [replies, setReplies] = React.useState<Reply[]>([])
     const theme = createTheme({
         palette: {
             primary: {
@@ -116,6 +121,25 @@ const NewAnnotation: React.FC<Props> = ({
         // })
     }
 
+    const deleteReply = (id: string): void => {
+        const updatedReply = {
+            ...replies.filter((r) => r.id === id)[0],
+            deleted: true,
+        }
+        const updatedReplies = replies
+            .filter((r) => r.id !== id)
+            .concat([updatedReply])
+        setReplies(updatedReplies)
+    }
+
+    const submitReply = (reply: Reply): void => {
+        const replyIds: string[] = replies.map((r) => r.id)
+        const updatedReplies: Reply[] = replyIds.includes(reply.id)
+            ? replies.filter((r) => r.id !== reply.id).concat([reply])
+            : replies.concat([reply])
+        setReplies(updatedReplies)
+    }
+
     return (
         <div
             style={{
@@ -126,7 +150,6 @@ const NewAnnotation: React.FC<Props> = ({
             <ThemeProvider theme={theme}>
                 <Card style={cardStyle}>
                     <CardContent>
-                        <Syntax html={selection} />
 
                         <div className={styles['ContentContainer']}>
                             <div
@@ -155,9 +178,37 @@ const NewAnnotation: React.FC<Props> = ({
                                 focus={true}
                                 placeholder={'Add annotation text'}
                             />
+                            <ReplyContainer
+                                replying={true}
+                                replies={replies}
+                                username={username}
+                                userId={userId}
+                                submitReply={submitReply}
+                                cancelReply={() => {}}
+                                deleteReply={deleteReply}
+                                focus={false}
+                            />
                         </div>
                     </CardContent>
                 </Card>
+                <List sx={{ width: '100%' }} component="div" disablePadding>
+                    {annotations.map((a: Annotation) => {
+                        return (
+                            <ReactAnnotation
+                                key={`annotationList-${parentId}tsx-` + a.id}
+                                annotation={a}
+                                vscode={vscode}
+                                window={window}
+                                username={username}
+                                userId={userId}
+                                annotationSelected={annotationSelected}
+                                selected={selectedAnnoIds.includes(a.id)} // Note: Can not use selectedAnnoIds.includes(a) because it's not the exact same object
+                                // https://discuss.codecademy.com/t/array-includes-val-returns-false/536661
+                                annotations={annotations}
+                            />
+                        )
+                    })}
+                </List>
             </ThemeProvider>
         </div>
     )

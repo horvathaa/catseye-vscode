@@ -19,6 +19,7 @@ interface Props {
     submitReply: (reply: Reply) => void
     cancelReply: () => void
     deleteReply: (id: string) => void
+    focus?: boolean
 }
 
 const MAX_NUM_REPLIES = 3
@@ -31,6 +32,7 @@ const ReplyContainer: React.FC<Props> = ({
     submitReply,
     cancelReply,
     deleteReply,
+    focus = true,
 }) => {
     const [showMoreReplies, setShowMoreReplies] = React.useState<boolean>(false)
     const activeReplies = replies.filter((r) => !r.deleted)
@@ -84,6 +86,7 @@ const ReplyContainer: React.FC<Props> = ({
                 createdTimestamp={new Date().getTime()}
                 submissionHandler={createReply}
                 cancelHandler={cancelReply}
+                focus={focus}
             />
         </div>
     )

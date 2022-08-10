@@ -274,7 +274,6 @@ const ReactAnnotation: React.FC<Props> = ({
             value: updatedReplies,
         })
         setReplying(false)
-        // TODO: End of this function should result to clearing of annotation
     }
 
     const deleteReply = (id: string): void => {
@@ -427,12 +426,25 @@ const ReactAnnotation: React.FC<Props> = ({
                             />
                             <div className={styles['ContentContainer']}>
                                 {edit ? (
-                                    <TextEditor
-                                        content={anno.annotation}
-                                        submissionHandler={updateContent}
-                                        cancelHandler={cancelAnnotation}
-                                        showSplitButton={true}
-                                    />
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            justifyContent: 'space-between',
+                                        }}
+                                    >
+                                        <AnnotationTypesBar
+                                            currentTypes={anno.types}
+                                            editTypes={updateAnnotationTypes}
+                                        />
+                                        <TextEditor
+                                            content={anno.annotation}
+                                            submissionHandler={updateContent}
+                                            cancelHandler={cancelAnnotation}
+                                            showSplitButton={true}
+                                            placeholder={'Add annotation text'}
+                                        />
+                                    </div>
                                 ) : (
                                     <div
                                         style={{
@@ -441,14 +453,6 @@ const ReactAnnotation: React.FC<Props> = ({
                                             justifyContent: 'space-between',
                                         }}
                                     >
-                                        <div
-                                            className={
-                                                styles['AnnoContentContainer']
-                                            }
-                                        >
-                                            {anno.annotation}
-                                        </div>
-
                                         <div
                                             style={{
                                                 display: 'flex',
@@ -469,12 +473,19 @@ const ReactAnnotation: React.FC<Props> = ({
                                                     e.stopPropagation()
                                                     setEdit(!edit)
                                                 }}
-                                                name="Edit"
+                                                name="Edit Text"
                                                 noMargin={true}
                                                 icon={
                                                     <EditIcon fontSize="small" />
                                                 }
                                             />
+                                        </div>
+                                        <div
+                                            className={
+                                                styles['AnnoContentContainer']
+                                            }
+                                        >
+                                            {anno.annotation}
                                         </div>
                                     </div>
                                 )}

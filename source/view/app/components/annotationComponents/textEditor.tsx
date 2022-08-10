@@ -29,6 +29,8 @@ interface Props {
     cancelHandler: () => void
     showSplitButton: boolean
     showCancel?: boolean
+    focus?: boolean
+    placeholder?: string
 }
 // Having default props is weirdly supported in React, this way means showCancel is an optional
 // See: https://dev.to/bytebodger/default-props-in-react-typescript-2o5o
@@ -38,6 +40,8 @@ const TextEditor: React.FC<Props> = ({
     cancelHandler,
     showSplitButton,
     showCancel = true,
+    focus = true,
+    placeholder = '',
 }) => {
     const [text, setText] = React.useState<any>(content)
     const [willBePinned, setWillBePinned] = React.useState<boolean>(false)
@@ -127,7 +131,8 @@ const TextEditor: React.FC<Props> = ({
                 minRows={1}
                 className={styles['textbox']}
                 style={{ backgroundColor: textBoxBackground }}
-                autoFocus
+                autoFocus={focus}
+                placeholder={placeholder}
                 value={
                     typeof text === 'string'
                         ? text

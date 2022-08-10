@@ -24,6 +24,7 @@ interface Props {
     submissionHandler: (reply: ReplyInterface) => void
     cancelHandler: () => void
     deleteHandler?: (id: string) => void
+    focus?: boolean
 }
 
 export const Reply: React.FC<Props> = ({
@@ -38,6 +39,7 @@ export const Reply: React.FC<Props> = ({
     submissionHandler,
     cancelHandler,
     deleteHandler,
+    focus,
 }) => {
     const [editing, setEditing] = React.useState<boolean>(false)
     const [reply, setReply] = React.useState({
@@ -86,7 +88,9 @@ export const Reply: React.FC<Props> = ({
                     </div>
                 )}
             </div>
-            <div className={styles['replyContentContainer']}>{replyContent}</div>
+            <div className={styles['replyContentContainer']}>
+                {replyContent}
+            </div>
         </div>
     )
     // Ideally createdTimestamp is updated on Submit for creation (might be happening)
@@ -97,6 +101,8 @@ export const Reply: React.FC<Props> = ({
             cancelHandler={cancelHandler}
             showSplitButton={false}
             showCancel={false}
+            focus={focus}
+            placeholder={'Add reply'}
         />
     ) : (
         // This shouldn't update created Timestamp, maybe have a new edit time field though

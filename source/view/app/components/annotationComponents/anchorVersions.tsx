@@ -122,7 +122,7 @@ const AnchorVersions: React.FC<Props> = ({ anchors, scrollInEditor }) => {
                             key={i}
                             priorVersions={anchor.priorVersions}
                             currentAnchorObject={anchor}
-                            scrollInEditor={scrollInEditor}
+                            handleSelected={scrollInEditor}
                         ></Carousel>
                     )
                 }
@@ -150,7 +150,7 @@ const AnchorVersions: React.FC<Props> = ({ anchors, scrollInEditor }) => {
                             key={i}
                             potentialVersions={anchor.potentialReanchorSpots}
                             currentAnchorObject={anchor}
-                            scrollInEditor={scrollInEditor}
+                            handleSelected={scrollInEditor}
                         ></Carousel>
                     )
                     // }

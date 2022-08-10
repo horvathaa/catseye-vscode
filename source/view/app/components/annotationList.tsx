@@ -39,6 +39,7 @@ interface AnnoListProps {
     window: Window
     username: string
     userId: string
+    consolidateAnnos: (anno: Annotation[]) => void // If bug, maybe need to be just ids
 }
 
 // NOTE: Currently types bar does not include "untyped" option
@@ -50,6 +51,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     window,
     username,
     userId,
+    consolidateAnnos
 }) => {
     const [selectedAnnoIds, setSelectedAnnoIds] = useState<string[]>([])
     const [selectionStatus, setSelectionStatus] = useState<Selection>(
@@ -126,8 +128,6 @@ const AnnotationList: React.FC<AnnoListProps> = ({
             )
         }
         setSelectedAnnoIds(updatedSelectedAnnoIds)
-        console.log()
-        console.log('UPDATE')
         // console.log(updatedSelectedAnnoIds)
     }
 
@@ -141,7 +141,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                 selectAllAnnos()
                 break
             case 'merge':
-                mergeAnnotations(e, vscode, selectedAnnotations)
+                consolidateAnnos(selectedAnnotations)
                 clearAnnos()
                 break
             case 'pin':
@@ -210,6 +210,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                                 selected={selectedAnnoIds.includes(a.id)} // Note: Can not use selectedAnnoIds.includes(a) because it's not the exact same object
                                 // https://discuss.codecademy.com/t/array-includes-val-returns-false/536661
                                 annotations={annotations}
+                                allowSelection={true}
                             />
                         )
                     })}

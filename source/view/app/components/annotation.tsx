@@ -58,9 +58,10 @@ interface Props {
     window: Window
     username: string
     userId: string
-    annotationSelected: (anno: Annotation) => void
-    annotations: Annotation[] // Likely unnecessary
-    selected: boolean
+    annotationSelected?: (anno: Annotation) => void
+    annotations?: Annotation[] // Likely unnecessary
+    selected?: boolean
+    allowSelection?: boolean
 }
 
 // TODO: Add Pin button next to edit
@@ -73,6 +74,7 @@ const ReactAnnotation: React.FC<Props> = ({
     annotationSelected,
     annotations,
     selected,
+    allowSelection = false,
 }) => {
     const [anno, setAnno] = React.useState<Annotation>(annotation)
     const [expanded, setExpanded] = React.useState(false)
@@ -389,7 +391,7 @@ const ReactAnnotation: React.FC<Props> = ({
             }}
         >
             <ThemeProvider theme={theme}>
-                {isMedOrMore && (
+                {isMedOrMore && allowSelection && (
                     <Checkbox
                         checked={selected}
                         onChange={() => annotationSelected(anno)}

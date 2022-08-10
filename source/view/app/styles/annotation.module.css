@@ -374,13 +374,13 @@
 }
 
 .AnchorContainer {
+    display: flex;
     border: 1.5px solid var(--vscode-editor-foreground);
-    padding: 8px 4px 0px 10px;
     border-radius: 4px;
-    overflow: scroll;
-    box-shadow: none;
-    border-color: var(--vscode-badge-background);
-    transition: all 0.5s ease-in-out;
+    padding: 2px;
+    margin: 5px;
+    box-sizing: border-box;
+    flex-grow: 1;
 }
 
 .AnchorContainer:hover {
@@ -426,7 +426,7 @@
 
 .ContentContainer {
     margin: 10px 0px;
-    border: 1.5px solid var(--vscode-editor-foreground);
+    border: 1px solid var(--vscode-editor-foreground);
     border-radius: 4px;
     font-family: var(--vscode-font-family);
     overflow-wrap: anywhere;
@@ -436,7 +436,7 @@
 
 .AnnoContentContainer {
     margin: 5px 0px;
-    border: 1.5px solid var(--vscode-editor-foreground);
+    border: 1px solid var(--vscode-editor-foreground);
     border-radius: 4px;
     font-family: var(--vscode-font-family);
     overflow-wrap: anywhere;
@@ -553,4 +553,21 @@ mark {
     background-color: #93c0ff39;
     color: var(--vscode-foreground);
     font-family: Consolas, 'Menlo';
+}
+
+.SelectableContainer {
+    display: flex;
+    border: 1.5px solid var(--vscode-editor-foreground);
+    border-radius: 4px;
+    padding: 2px;
+    margin: 5px;
+    box-sizing: border-box;
+}
+/* 
+.SelectableContainer:hover {
+    box-shadow: 0.5px 0.5px 5px 0.5px #dcdcdc;
+} */
+
+.ReferenceContainer {
+    
 }

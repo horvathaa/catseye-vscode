@@ -25,6 +25,8 @@ interface CssExports {
   'OutputHTMLContainer': string;
   'OutputsContainer': string;
   'Pad': string;
+  'ReferenceContainer': string;
+  'SelectableContainer': string;
   'TitleContainer': string;
   'active': string;
   'arrowBox': string;

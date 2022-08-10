@@ -39,6 +39,7 @@ import {
     sortAnnotationsByLocation,
     sortAnnotationsByTime,
 } from './utils/viewUtils'
+import MergeAnnotations from './components/mergeAnnotations'
 
 interface Props {
     vscode: any
@@ -63,6 +64,7 @@ const AdamitePanel: React.FC<Props> = ({
     const [uid, setUserId] = useState(window.userId ? window.userId : '')
     const [selection, setSelection] = useState('')
     const [showNewAnnotation, setShowNewAnnotation] = useState(false)
+    const [annosToConsolidate, setAnnosToConsolidate] = useState([])
     const [filterOptions, setFilterOptions] =
         React.useState<FilterOptions>(defaultFilterOptions)
     const [currentProject, setCurrentProject] = useState(
@@ -204,6 +206,11 @@ const AdamitePanel: React.FC<Props> = ({
 
     const notifyDone = (): void => {
         setShowNewAnnotation(false)
+    }
+
+    const notifyMergeDone = (): void => {
+        setAnnosToConsolidate([])
+        // setShowMergeAnnotation(false)
     }
 
     // const massOperationSelected = (
@@ -404,6 +411,10 @@ const AdamitePanel: React.FC<Props> = ({
               )
         : []
 
+    const consolidateAnnos = (annos: Annotation[]) => {
+        setAnnosToConsolidate(annos)
+    }
+
     return (
         <React.Fragment>
             {showNewAnnotation ? (
@@ -411,6 +422,15 @@ const AdamitePanel: React.FC<Props> = ({
                     selection={selection}
                     vscode={vscode}
                     notifyDone={notifyDone}
+                />
+            ) : null}
+            {annosToConsolidate.length > 0 ? (
+                <MergeAnnotations
+                    vscode={vscode}
+                    username={username}
+                    userId={userId}
+                    notifyDone={notifyMergeDone}
+                    annotations={annosToConsolidate}
                 />
             ) : null}
             {!showLogin && (
@@ -432,6 +452,7 @@ const AdamitePanel: React.FC<Props> = ({
                         window={window}
                         username={userName}
                         userId={uid}
+                        consolidateAnnos={consolidateAnnos}
                     />
                 </div>
             )}

@@ -16,12 +16,12 @@ interface Props {
     id?: string | undefined
     replyContent?: string | undefined
     createdTimestamp: number
-    githubUsername: string
-    userId: string
+    githubUsername?: string
+    userId?: string
     deleted?: boolean
     authorId: string
     replying: boolean
-    submissionHandler: (reply: ReplyInterface) => void
+    submissionHandler?: (reply: ReplyInterface) => void
     cancelHandler: () => void
     deleteHandler?: (id: string) => void
     focus?: boolean
@@ -31,14 +31,14 @@ export const Reply: React.FC<Props> = ({
     id = undefined,
     replyContent = undefined,
     createdTimestamp,
-    githubUsername,
-    userId,
+    githubUsername = undefined,
+    userId = undefined,
     authorId,
     replying,
     deleted,
-    submissionHandler,
+    submissionHandler = undefined,
     cancelHandler,
-    deleteHandler,
+    deleteHandler = undefined,
     focus,
 }) => {
     const [editing, setEditing] = React.useState<boolean>(false)

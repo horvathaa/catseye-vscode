@@ -207,6 +207,7 @@ export const mergeAnnotations = (
     annos: Annotation[]
 ): void => {
     e.stopPropagation()
+    
     // vscode.postMessage({
     //     command: 'resolveAnnotation',
     //     annoId: anno.id,

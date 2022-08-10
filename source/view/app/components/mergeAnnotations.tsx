@@ -4,7 +4,8 @@
  * Component that's rendered when the user is authoring a new annotation.
  *
  */
-import { Card, CardContent, List, useMediaQuery } from '@material-ui/core'
+import { Card, CardContent, useMediaQuery } from '@material-ui/core'
+import List from '@mui/material/List'
 import * as React from 'react'
 import annoStyles from '../styles/annotation.module.css'
 import TextEditor from './annotationComponents/textEditor'
@@ -23,14 +24,8 @@ import AdamiteButton from './annotationComponents/AdamiteButton'
 import AnchorIcon from '@mui/icons-material/Anchor'
 import ReplyContainer from './annotationComponents/replyContainer'
 import ReactAnnotation from './annotation'
+import AnnotationReference from './annotationReference'
 
-interface SynProps {
-    html: string
-}
-
-const Syntax: React.FC<SynProps> = ({ html }) => {
-    return <code dangerouslySetInnerHTML={{ __html: html }}></code>
-}
 interface Props {
     vscode: any
     notifyDone: () => void
@@ -39,7 +34,7 @@ interface Props {
     annotations: Annotation[]
 }
 
-const NewAnnotation: React.FC<Props> = ({
+const MergeAnnotations: React.FC<Props> = ({
     vscode,
     username,
     userId,
@@ -140,6 +135,10 @@ const NewAnnotation: React.FC<Props> = ({
         setReplies(updatedReplies)
     }
 
+    const partSelected = (type: string, object: any) => {
+        console.log('part selected')
+    }
+
     return (
         <div
             style={{
@@ -150,7 +149,6 @@ const NewAnnotation: React.FC<Props> = ({
             <ThemeProvider theme={theme}>
                 <Card style={cardStyle}>
                     <CardContent>
-
                         <div className={styles['ContentContainer']}>
                             <div
                                 style={{
@@ -190,28 +188,21 @@ const NewAnnotation: React.FC<Props> = ({
                             />
                         </div>
                     </CardContent>
+                    <List sx={{ width: '100%' }} component="div" disablePadding>
+                        {annotations.map((a: Annotation) => {
+                            return (
+                                <AnnotationReference
+                                    key={`merge-tsx-` + a.id}
+                                    annotation={a}
+                                    partSelected={partSelected}
+                                />
+                            )
+                        })}
+                    </List>
                 </Card>
-                <List sx={{ width: '100%' }} component="div" disablePadding>
-                    {annotations.map((a: Annotation) => {
-                        return (
-                            <ReactAnnotation
-                                key={`annotationList-${parentId}tsx-` + a.id}
-                                annotation={a}
-                                vscode={vscode}
-                                window={window}
-                                username={username}
-                                userId={userId}
-                                annotationSelected={annotationSelected}
-                                selected={selectedAnnoIds.includes(a.id)} // Note: Can not use selectedAnnoIds.includes(a) because it's not the exact same object
-                                // https://discuss.codecademy.com/t/array-includes-val-returns-false/536661
-                                annotations={annotations}
-                            />
-                        )
-                    })}
-                </List>
             </ThemeProvider>
         </div>
     )
 }
 
-export default NewAnnotation
+export default MergeAnnotations

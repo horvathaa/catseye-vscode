@@ -19,14 +19,14 @@ interface Props {
     priorVersions?: AnchorOnCommit[]
     potentialVersions?: PotentialAnchorObject[]
     currentAnchorObject: AnchorObject
-    scrollInEditor: (id: string) => void
+    handleSelected: (id: string) => void
 }
 
 const AnchorCarousel: React.FC<Props> = ({
     priorVersions,
     potentialVersions,
     currentAnchorObject,
-    scrollInEditor,
+    handleSelected,
 }) => {
     const Carousel = Slider as unknown as React.ElementType
     const [pastVersions, setPastVersions] = React.useState<
@@ -126,7 +126,7 @@ const AnchorCarousel: React.FC<Props> = ({
     const handleClick = (e: React.SyntheticEvent, aId: string): void => {
         e.stopPropagation()
         if (pastVersions && index === pastVersions.length - 1)
-            scrollInEditor(aId)
+            handleSelected(aId)
     }
 
     const getConfidenceString = (weight: number): string => {

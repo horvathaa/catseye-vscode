@@ -1,4 +1,4 @@
-import ts = require('typescript')
+import * as ts from 'typescript'
 import { CodeContext } from '../astHelper/nodeHelper'
 
 // import * as vscode from 'vscode';

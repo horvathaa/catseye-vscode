@@ -299,3 +299,7 @@ export interface ReanchorInformation {
     path: CodeContext[]
     surroundingCode: SurroundingAnchorArea
 }
+
+const x = () => {
+    console.log('hi')
+}

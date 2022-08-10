@@ -37,6 +37,7 @@ let currDocLength = 0
 interface CodeToken {
     token: string
     offset: number
+    line?: number // sometimes we need to know what line the token is on *shrug*
 }
 interface CodeLine {
     code: CodeToken[] | WeightedToken[]
@@ -242,6 +243,56 @@ export const computeMostSimilarAnchor = (
             return newPotentialAnchor
         }
     )
+
+    let bestAnchor = newPotentialAnchors[0]
+    const anchorCopy: Anchor = Object.create(bestAnchor.anchor)
+    // see if bestanchor is a substring of original anchor
+    // maybe do whitespace cleanup here
+    // if (
+    //     anchor.anchorText.includes(bestAnchor.anchorText) &&
+    //     anchor.anchorText !== bestAnchor.anchorText
+    // ) {
+    const lines = getRangeOfCodeBetweenLines(
+        sourceCode,
+        bestAnchor.anchor.startLine,
+        currDocLength - bestAnchor.anchor.startLine
+    )
+    console.log(
+        'checking...',
+        checkIfJoiningLinesMakesAnchor(lines, anchorCode)
+    )
+    // this is fucked up
+    if (checkIfJoiningLinesMakesAnchor(lines, anchorCode)) {
+        const flatCopyAnchor = flattenCodeLine(anchorCode)
+        const flatCopySource = flattenCodeLine(lines)
+        const idx = flatCopyAnchor.code.length
+        const tokens = flatCopySource.code.slice(0, idx)
+        console.log('flat anchor', flatCopyAnchor)
+        console.log('source tokens', tokens)
+        if (
+            !flatCopyAnchor.code.every((t, i) => {
+                return objectsEqual(t, tokens[i])
+            })
+        ) {
+            const expandedAnchor: Anchor = {
+                startLine: tokens[0].line
+                    ? tokens[0].line
+                    : anchorCopy.startLine,
+                startOffset: tokens[0].offset,
+                endLine: tokens[idx - 1].line
+                    ? (tokens[idx - 1].line as number) // stupid hack because VS Code is being a bitch -- our ternary should ensure that it is not undefined (which is the only other possible value)
+                    : anchorCopy.endLine,
+                endOffset:
+                    tokens[idx - 1].offset + tokens[idx - 1].token.length,
+            }
+            console.log('expandedAnchor', expandedAnchor)
+            bestAnchor = {
+                ...bestAnchor,
+                anchor: expandedAnchor,
+            }
+        }
+    }
+    // }
 
     // should remove similar anchors (maybe use weight to determine similarity? or anchor locations)
 
@@ -1232,6 +1283,45 @@ const compareTwoTokens = (
     return getWeightOfToken(tempToken)
 }
 
+// code: CodeToken[] | WeightedToken[]
+// line: number
+// isEmptyLine: boolean
+
+const flattenCodeLine = (lines: CodeLine[]): CodeLine => {
+    let flattenedLine: CodeLine = {
+        ...lines[0],
+        code: lines[0].code.map((t) => {
+            return { ...t, line: lines[0].line }
+        }),
+    }
+    lines.forEach((cl, i) => {
+        if (i !== 0) {
+            const newCode = cl.code.map((t) => {
+                return { ...t, line: cl.line }
+            })
+            flattenedLine.code = [...flattenedLine.code, ...newCode]
+        }
+    })
+    flattenedLine = {
+        ...flattenedLine,
+        code: flattenedLine.code.filter((c) => c.token !== ''),
+    }
+    return flattenedLine
+}
+
+const checkIfJoiningLinesMakesAnchor = (
+    source: CodeLine[],
+    anchor: CodeLine[]
+): boolean => {
+    const flattenedSourceLine = flattenCodeLine(source)
+    console.log('hewwo???', flattenedSourceLine)
+    const flattenedAnchorLine = flattenCodeLine(anchor)
+    console.log('flat anchor', flattenedAnchorLine)
+    return flattenedAnchorLine.code.every(
+        (c, i) => c.token === flattenedSourceLine.code[i].token
+    )
+}
+
 // maybe had this for re-factoring??
 // const findTokenMatch = (tokens: WeightedToken[]): WeightedToken => {
 //     const potentialMatches = tokens.filter(
@@ -1248,3 +1338,6 @@ const compareTwoTokens = (
 //         }
 //     }
 // }
+
+// what to do if edit makes a single line or single token anchor into a multi-line anchor?
+// algorithm will most likely select part of the anchor, but not the whole anchor

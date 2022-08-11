@@ -263,7 +263,6 @@ export function generatePath(
     })
     const parent = nodeData.find((r) => r.range.contains(range))
     if (parent) {
-        // let root: ts.Node[] = parent.children
         let root = [parent.node]
         let path: ts.Node[] = [parent.node]
         do {
@@ -277,7 +276,6 @@ export function generatePath(
             path = path.concat(...flat)
             root = flat
         } while (root.length)
-        // console.log('path??', path)
         return path
     }
     AST_DEBUG &&

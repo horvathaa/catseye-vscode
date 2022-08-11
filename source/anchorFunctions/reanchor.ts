@@ -190,7 +190,7 @@ export const computeMostSimilarAnchor = (
     // have to use Promise.all when returning an array of promises
 
     //await Promise.all(
-    const newPotentialAnchors = newAnchors.map(
+    let newPotentialAnchors = newAnchors.map(
         (weightedAnchor: WeightedAnchor) => {
             const { weight, ...restAnchor } = weightedAnchor
             const newRange = createRangeFromObject(restAnchor.anchor)
@@ -243,55 +243,12 @@ export const computeMostSimilarAnchor = (
             return newPotentialAnchor
         }
     )
-
-    let bestAnchor = newPotentialAnchors[0]
-    const anchorCopy: Anchor = Object.create(bestAnchor.anchor)
-    // see if bestanchor is a substring of original anchor
-    // maybe do whitespace cleanup here
-    // if (
-    //     anchor.anchorText.includes(bestAnchor.anchorText) &&
-    //     anchor.anchorText !== bestAnchor.anchorText
-    // ) {
-    const lines = getRangeOfCodeBetweenLines(
+    newPotentialAnchors = getPotentialExpandedAnchor(
+        newPotentialAnchors,
         sourceCode,
-        bestAnchor.anchor.startLine,
-        currDocLength - bestAnchor.anchor.startLine
+        anchorCode
     )
-    console.log(
-        'checking...',
-        checkIfJoiningLinesMakesAnchor(lines, anchorCode)
-    )
-    // this is fucked up
-    if (checkIfJoiningLinesMakesAnchor(lines, anchorCode)) {
-        const flatCopyAnchor = flattenCodeLine(anchorCode)
-        const flatCopySource = flattenCodeLine(lines)
-        const idx = flatCopyAnchor.code.length
-        const tokens = flatCopySource.code.slice(0, idx)
-        console.log('flat anchor', flatCopyAnchor)
-        console.log('source tokens', tokens)
-        if (
-            !flatCopyAnchor.code.every((t, i) => {
-                return objectsEqual(t, tokens[i])
-            })
-        ) {
-            const expandedAnchor: Anchor = {
-                startLine: tokens[0].line
-                    ? tokens[0].line
-                    : anchorCopy.startLine,
-                startOffset: tokens[0].offset,
-                endLine: tokens[idx - 1].line
-                    ? (tokens[idx - 1].line as number) // stupid hack because VS Code is being a bitch -- our ternary should ensure that it is not undefined (which is the only other possible value)
-                    : anchorCopy.endLine,
-                endOffset:
-                    tokens[idx - 1].offset + tokens[idx - 1].token.length,
-            }
-            console.log('expandedAnchor', expandedAnchor)
-            bestAnchor = {
-                ...bestAnchor,
-                anchor: expandedAnchor,
-            }
-        }
-    }
+
     // }
 
     // should remove similar anchors (maybe use weight to determine similarity? or anchor locations)
@@ -1309,6 +1266,74 @@ const flattenCodeLine = (lines: CodeLine[]): CodeLine => {
     return flattenedLine
 }
 
+const getPotentialExpandedAnchor = (
+    newPotentialAnchors: PotentialAnchorObject[],
+    sourceCode: CodeLine[],
+    anchorCode: CodeLine[]
+) => {
+    let bestAnchor = newPotentialAnchors[0]
+    const anchorCopy: Anchor = { ...bestAnchor.anchor }
+    // see if bestanchor is a substring of original anchor
+    // maybe do whitespace cleanup here
+    // if (
+    //     anchor.anchorText.includes(bestAnchor.anchorText) &&
+    //     anchor.anchorText !== bestAnchor.anchorText
+    // ) {
+    const lines = getRangeOfCodeBetweenLines(
+        sourceCode,
+        bestAnchor.anchor.startLine,
+        currDocLength - bestAnchor.anchor.startLine
+    )
+    console.log(
+        'checking...',
+        checkIfJoiningLinesMakesAnchor(lines, anchorCode)
+    )
+    // this is fucked up -- these mostly just make sense for multi-line anchors
+    if (checkIfJoiningLinesMakesAnchor(lines, anchorCode)) {
+        const flatCopyAnchor = flattenCodeLine(anchorCode)
+        const flatCopySource = flattenCodeLine(lines)
+        const idx = flatCopyAnchor.code.length
+        const tokens = flatCopySource.code.slice(0, idx)
+        console.log('flat anchor', flatCopyAnchor)
+        console.log('source tokens', tokens)
+        if (
+            // every token is same but the lines/offsets are different
+            !flatCopyAnchor.code.every((t, i) => {
+                return objectsEqual(t, tokens[i])
+            })
+        ) {
+            const expandedAnchor = makeAnchorFromTokens(tokens, idx, anchorCopy)
+            console.log('expandedAnchor', expandedAnchor)
+            bestAnchor = {
+                ...bestAnchor,
+                anchor: expandedAnchor,
+            }
+            newPotentialAnchors.splice(0, 1, bestAnchor) // hate mutating an array in place but wahtever
+        }
+    } else if (
+        checkIfAnchorJustHadStuffPutInTheMiddleSomewhere(lines, anchorCode)
+    ) {
+        const flatCopyAnchor = flattenCodeLine(anchorCode)
+        const flatCopySource = flattenCodeLine(lines)
+        const justAnchorTokens = flatCopyAnchor.code.map((t) => t.token)
+        const justSourceTokens = flatCopySource.code.map((t) => t.token)
+        const idx =
+            justSourceTokens.lastIndexOf(
+                justAnchorTokens[justAnchorTokens.length - 1]
+            ) + 1 // lastIndex is not inclusive
+        const tokens = flatCopySource.code.slice(0, idx)
+        const expandedAnchor = makeAnchorFromTokens(tokens, idx, anchorCopy)
+        console.log('expandedAnchor in else if', expandedAnchor)
+        bestAnchor = {
+            ...bestAnchor,
+            anchor: expandedAnchor,
+        }
+        newPotentialAnchors.splice(0, 1, bestAnchor)
+        //
+    }
+    return newPotentialAnchors
+}
+
 const checkIfJoiningLinesMakesAnchor = (
     source: CodeLine[],
     anchor: CodeLine[]
@@ -1320,6 +1345,31 @@ const checkIfJoiningLinesMakesAnchor = (
     return flattenedAnchorLine.code.every(
         (c, i) => c.token === flattenedSourceLine.code[i].token
     )
+}
+
+// bad name!
+const checkIfAnchorJustHadStuffPutInTheMiddleSomewhere = (
+    source: CodeLine[],
+    anchor: CodeLine[]
+): boolean => {
+    const justSourceTokens = flattenCodeLine(source).code.map((t) => t.token)
+    const justAnchorTokens = flattenCodeLine(anchor).code.map((t) => t.token)
+    return justAnchorTokens.every((t) => justSourceTokens.includes(t))
+}
+
+const makeAnchorFromTokens = (
+    tokens: CodeToken[],
+    len: number,
+    backup: Anchor
+): Anchor => {
+    return {
+        startLine: tokens[0].line ? tokens[0].line : backup.startLine,
+        startOffset: tokens[0].offset,
+        endLine: tokens[len - 1].line
+            ? (tokens[len - 1].line as number) // stupid hack because VS Code is being a bitch -- our ternary should ensure that it is not undefined (which is the only other possible value)
+            : backup.endLine,
+        endOffset: tokens[len - 1].offset + tokens[len - 1].token.length,
+    }
 }
 
 // maybe had this for re-factoring??

@@ -2,6 +2,7 @@
 // Please do not change this file!
 interface CssExports {
   'AnchorContainer': string;
+  'codeStyle': string;
   'reanchor': string;
   'remove': string;
 }

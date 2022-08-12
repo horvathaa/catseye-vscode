@@ -12,6 +12,7 @@ import {
     HIGH_SIMILARITY_THRESHOLD, // we are pretty confident the anchor is here
     PASSABLE_SIMILARITY_THRESHOLD, // we are confident enough
     ReanchorInformation,
+    AnchorType,
 } from '../../../../constants/constants'
 import { disabledIcon, iconColor } from '../../styles/vscodeStyles'
 import AdamiteButton from './AdamiteButton'
@@ -176,6 +177,70 @@ const AnchorCarousel: React.FC<Props> = ({
         return null
     }
 
+    const displayAnchorText = (
+        pv: AnchorOnCommit | PotentialAnchorObject
+    ): React.ReactElement => {
+        switch (pv.anchorType) {
+            case AnchorType.partialLine:
+                const wholeLine: string = pv.surroundingCode.linesAfter[0]
+                const indexOfAnchor = wholeLine.indexOf(pv.anchorText)
+                const endIndx = indexOfAnchor + pv.anchorText.length
+                const partialLines = [
+                    wholeLine.slice(0, indexOfAnchor),
+                    wholeLine.slice(indexOfAnchor, endIndx),
+                    wholeLine.slice(endIndx),
+                ]
+                console.log('partialLines', partialLines)
+                return (
+                    <>
+                        {partialLines.map((a, i) => {
+                            if (i !== 1) {
+                                return (
+                                    <span
+                                        className={styles.codeStyle}
+                                        style={{ opacity: '0.825' }}
+                                    >
+                                        {a}
+                                    </span>
+                                )
+                            } else {
+                                return <b className={styles.codeStyle}>{a}</b>
+                            }
+                        })}
+                    </>
+                )
+            case AnchorType.oneline:
+                return (
+                    <>
+                        {' '}
+                        {pv.anchorText.length > 60
+                            ? pv.anchorText.slice(0, 60)
+                            : pv.anchorText}
+                        {pv.anchorText.length > 60 ? '...' : null}
+                    </>
+                )
+            case AnchorType.multiline:
+                const multiLines = pv.anchorText.split('\n')
+                return (
+                    <>
+                        {multiLines.map((a) => {
+                            return (
+                                <p>
+                                    <b>
+                                        {a.length > 60
+                                            ? a.slice(0, 60) + '...'
+                                            : a}
+                                    </b>
+                                </p>
+                            )
+                        })}
+                    </>
+                )
+            default:
+                return <b>{pv.anchorText}</b>
+        }
+    }
+
     // only handles frontend options
     const handleRemoveSuggestion = (
         removedAnchor: PotentialAnchorObject | null
@@ -185,6 +250,7 @@ const AnchorCarousel: React.FC<Props> = ({
             futureVersions.filter((pv: PotentialAnchorObject) => {
                 return removedAnchor?.anchorId !== pv.anchorId
             })
+        // TODO: connect to backend
         setFutureVersions(removedAFuture)
     }
 
@@ -328,19 +394,9 @@ const AnchorCarousel: React.FC<Props> = ({
                                                         {displayBefore(pv, 2)}
                                                     </p>
                                                     <p>
-                                                        <b>
-                                                            {pv.anchorText
-                                                                .length > 60
-                                                                ? pv.anchorText.slice(
-                                                                      0,
-                                                                      60
-                                                                  )
-                                                                : pv.anchorText}
-                                                            {pv.anchorText
-                                                                .length > 60
-                                                                ? '...'
-                                                                : null}
-                                                        </b>
+                                                        {/* <b> */}
+                                                        {displayAnchorText(pv)}
+                                                        {/* </b> */}
                                                     </p>
                                                     <p
                                                         style={{
@@ -474,21 +530,7 @@ const AnchorCarousel: React.FC<Props> = ({
                                                 <p style={{ opacity: '0.7' }}>
                                                     {displayBefore(pv, 2)}
                                                 </p>
-                                                <p>
-                                                    <b>
-                                                        {pv.anchorText.length >
-                                                        60
-                                                            ? pv.anchorText.slice(
-                                                                  0,
-                                                                  60
-                                                              )
-                                                            : pv.anchorText}
-                                                        {pv.anchorText.length >
-                                                        60
-                                                            ? '...'
-                                                            : null}
-                                                    </b>
-                                                </p>
+                                                <p>{displayAnchorText(pv)}</p>
                                                 <p style={{ opacity: '0.7' }}>
                                                     {displayAfter(pv, 1)}
                                                 </p>

@@ -188,8 +188,6 @@ export const getAnchorType = (
                 )
             )
             .trim()
-        console.log('acnhorText', anchorText)
-        console.log('docText', docText)
         if (anchorText !== docText || anchorText.length < docText.length) {
             return AnchorType.partialLine
         } else {

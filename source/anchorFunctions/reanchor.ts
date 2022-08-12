@@ -1284,10 +1284,10 @@ const getPotentialExpandedAnchor = (
         bestAnchor.anchor.startLine,
         currDocLength - bestAnchor.anchor.startLine
     )
-    console.log(
-        'checking...',
-        checkIfJoiningLinesMakesAnchor(lines, anchorCode)
-    )
+    // console.log(
+    //     'checking...',
+    //     checkIfJoiningLinesMakesAnchor(lines, anchorCode)
+    // )
     // this is fucked up -- these mostly just make sense for multi-line anchors
     if (checkIfJoiningLinesMakesAnchor(lines, anchorCode)) {
         const flatCopyAnchor = flattenCodeLine(anchorCode)

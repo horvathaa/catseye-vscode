@@ -49,6 +49,7 @@ import {
     saveAnnotations,
     saveOutOfDateAnnotations,
 } from '../firebase/functions/functions'
+import { computeMostSimilarAnchor } from './reanchor'
 
 // Used for finding new anchor point given copy/paste operation
 // Given offsetData generated at the time of copying (offset being where the anchor is relative to the beginning of the user's selection)
@@ -765,7 +766,8 @@ export const addHighlightsToEditor = (
             if (invalidRanges.length) {
                 unanchoredAnnotations = handleInvalidAnchors(
                     invalidRanges,
-                    annotationsToHighlight
+                    annotationsToHighlight,
+                    text.document
                 )
             }
 
@@ -801,7 +803,8 @@ export const addHighlightsToEditor = (
 
 const handleInvalidAnchors = (
     invalidRanges: AnnotationRange[],
-    annotationsToHighlight: Annotation[]
+    annotationsToHighlight: Annotation[],
+    document: vscode.TextDocument
 ) => {
     let unanchoredAnnotations: Annotation[] = []
     const invalidIds: AnnotationAnchorPair[] = invalidRanges.map((r) => {
@@ -831,6 +834,9 @@ const handleInvalidAnchors = (
                           return { ...anch, anchored: false }
                       })
                     : [{ ...anchors, anchored: false }]
+                const anchorsWithPotentialAnchors = newAnchors.map((a) =>
+                    computeMostSimilarAnchor(document, a)
+                )
                 return buildAnnotation({
                     ...anno,
                     anchors: anno.anchors
@@ -839,14 +845,14 @@ const handleInvalidAnchors = (
                                 ? anch.anchorId !== a.anchorId
                                 : !a.anchorId.includes(anch.anchorId)
                         })
-                        .concat(newAnchors),
+                        .concat(anchorsWithPotentialAnchors),
                     needToUpdate: true,
                     // outOfDate: true,
                 })
             }
         })
     )
-    console.log('huh?', unanchoredAnnotations)
+    // console.log('huh?', unanchoredAnnotations)
     return unanchoredAnnotations
     // saveOutOfDateAnnotations(invalidIds)
 }

@@ -33,7 +33,10 @@ import {
     astHelper,
 } from '../extension'
 import * as anchor from '../anchorFunctions/anchor'
-import { computeMostSimilarAnchor } from '../anchorFunctions/reanchor'
+import {
+    computeMostSimilarAnchor,
+    REANCHOR_DEBUG,
+} from '../anchorFunctions/reanchor'
 import * as utils from '../utils/utils'
 import {
     Annotation,
@@ -129,10 +132,17 @@ export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
     const anchors = anchor.getAnchorsWithGitUrl(
         utils.getStableGitHubUrl(TextDocument.uri.fsPath)
     )
-    const newAnchors = anchors.map((a) =>
-        computeMostSimilarAnchor(TextDocument, a)
+    let updatedAgain = utils.getAnnotationsWithStableGitUrl(
+        annotationList,
+        gitUrl
     )
-    const updatedAgain = utils.updateAnnotationsWithAnchors(newAnchors)
+    if (REANCHOR_DEBUG) {
+        const newAnchors = anchors.map((a) =>
+            computeMostSimilarAnchor(TextDocument, a)
+        )
+        updatedAgain = utils.updateAnnotationsWithAnchors(newAnchors)
+    }
+
     const lastUpdate = updatedAgain.map((a) =>
         astHelper.buildPathForAnnotation(a, TextDocument)
     )

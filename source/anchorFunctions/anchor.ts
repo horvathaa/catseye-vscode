@@ -570,19 +570,6 @@ export const translateChanges = (
     const originalGitCommit = anchorObject.gitCommit
     const newRangeObj = doc.validateRange(createRangeFromObject(newRange))
 
-    console.log('hewwo', {
-        ...anchorObject,
-        anchorText: newAnchorText,
-        anchor: createAnchorFromRange(newRangeObj),
-        gitCommit:
-            checkIfAnchorChanged(originalRange, newRangeObj) ||
-            // changeOccurredInRange
-            (originalRange.start.isBefore(changeRange.start) &&
-                originalRange.end.isAfter(changeRange.end))
-                ? gitInfo[getProjectName(doc.uri.toString())].commit
-                : originalGitCommit,
-    })
-
     // update anchor object
     const newAnchor: AnchorObject = {
         ...anchorObject,

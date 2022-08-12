@@ -1274,28 +1274,19 @@ const getPotentialExpandedAnchor = (
     let bestAnchor = newPotentialAnchors[0]
     const anchorCopy: Anchor = { ...bestAnchor.anchor }
     // see if bestanchor is a substring of original anchor
-    // maybe do whitespace cleanup here
-    // if (
-    //     anchor.anchorText.includes(bestAnchor.anchorText) &&
-    //     anchor.anchorText !== bestAnchor.anchorText
-    // ) {
+
     const lines = getRangeOfCodeBetweenLines(
         sourceCode,
         bestAnchor.anchor.startLine,
         currDocLength - bestAnchor.anchor.startLine
     )
-    // console.log(
-    //     'checking...',
-    //     checkIfJoiningLinesMakesAnchor(lines, anchorCode)
-    // )
-    // this is fucked up -- these mostly just make sense for multi-line anchors
+
+    //  these mostly just make sense for multi-line anchors
     if (checkIfJoiningLinesMakesAnchor(lines, anchorCode)) {
         const flatCopyAnchor = flattenCodeLine(anchorCode)
         const flatCopySource = flattenCodeLine(lines)
         const idx = flatCopyAnchor.code.length
         const tokens = flatCopySource.code.slice(0, idx)
-        console.log('flat anchor', flatCopyAnchor)
-        console.log('source tokens', tokens)
         if (
             // every token is same but the lines/offsets are different
             !flatCopyAnchor.code.every((t, i) => {
@@ -1303,7 +1294,6 @@ const getPotentialExpandedAnchor = (
             })
         ) {
             const expandedAnchor = makeAnchorFromTokens(tokens, idx, anchorCopy)
-            console.log('expandedAnchor', expandedAnchor)
             bestAnchor = {
                 ...bestAnchor,
                 anchor: expandedAnchor,
@@ -1323,13 +1313,11 @@ const getPotentialExpandedAnchor = (
             ) + 1 // lastIndex is not inclusive
         const tokens = flatCopySource.code.slice(0, idx)
         const expandedAnchor = makeAnchorFromTokens(tokens, idx, anchorCopy)
-        console.log('expandedAnchor in else if', expandedAnchor)
         bestAnchor = {
             ...bestAnchor,
             anchor: expandedAnchor,
         }
         newPotentialAnchors.splice(0, 1, bestAnchor)
-        //
     }
     return newPotentialAnchors
 }
@@ -1339,9 +1327,7 @@ const checkIfJoiningLinesMakesAnchor = (
     anchor: CodeLine[]
 ): boolean => {
     const flattenedSourceLine = flattenCodeLine(source)
-    console.log('hewwo???', flattenedSourceLine)
     const flattenedAnchorLine = flattenCodeLine(anchor)
-    console.log('flat anchor', flattenedAnchorLine)
     return flattenedAnchorLine.code.every(
         (c, i) => c.token === flattenedSourceLine.code[i].token
     )
@@ -1388,6 +1374,3 @@ const makeAnchorFromTokens = (
 //         }
 //     }
 // }
-
-// what to do if edit makes a single line or single token anchor into a multi-line anchor?
-// algorithm will most likely select part of the anchor, but not the whole anchor

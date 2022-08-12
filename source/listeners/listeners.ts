@@ -126,33 +126,52 @@ export const handleChangeActiveTextEditor = (
     setActiveEditor(TextEditor)
 }
 
-// In case where user saves or closes a window, save annotations to FireStore
-export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
-    const gitUrl = utils.getStableGitHubUrl(TextDocument.uri.fsPath)
+const updateAnnotationsAnchorsOnSave = (
+    document: vscode.TextDocument
+): Annotation[] => {
+    const gitUrl = utils.getStableGitHubUrl(document.uri.fsPath)
     const anchors = anchor.getAnchorsWithGitUrl(
-        utils.getStableGitHubUrl(TextDocument.uri.fsPath)
+        utils.getStableGitHubUrl(document.uri.fsPath)
     )
-    let updatedAgain = utils.getAnnotationsWithStableGitUrl(
+    let initialAnnotations = utils.getAnnotationsWithStableGitUrl(
         annotationList,
         gitUrl
     )
     if (REANCHOR_DEBUG) {
         const newAnchors = anchors.map((a) =>
-            computeMostSimilarAnchor(TextDocument, a)
+            computeMostSimilarAnchor(document, a)
         )
-        updatedAgain = utils.updateAnnotationsWithAnchors(newAnchors)
+        initialAnnotations = utils.updateAnnotationsWithAnchors(newAnchors)
     }
 
-    const lastUpdate = updatedAgain.map((a) =>
-        astHelper.buildPathForAnnotation(a, TextDocument)
+    const annosWithNewSurroundingContext: Annotation[] =
+        utils.updateAnnotationsWithAnchors(
+            anchors.map((a): AnchorObject => {
+                return {
+                    ...a,
+                    surroundingCode: anchor.getSurroundingCodeArea(document, a),
+                }
+            })
+        )
+
+    return annosWithNewSurroundingContext.map((a) =>
+        astHelper.buildPathForAnnotation(a, document)
     )
+}
+
+// In case where user saves or closes a window, save annotations to FireStore
+export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
+    const gitUrl = utils.getStableGitHubUrl(TextDocument.uri.fsPath)
+    const updatedAnnotations: Annotation[] =
+        updateAnnotationsAnchorsOnSave(TextDocument)
     setAnnotationList(
         utils.removeOutOfDateAnnotations(
-            lastUpdate.concat(
+            updatedAnnotations.concat(
                 utils.getAnnotationsNotWithGitUrl(annotationList, gitUrl)
             )
         )
     )
+    view?.updateDisplay(annotationList, gitUrl)
     if (vscode.workspace.workspaceFolders)
         utils.handleSaveCloseEvent(
             annotationList,

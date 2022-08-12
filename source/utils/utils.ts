@@ -13,11 +13,14 @@ import {
     Snapshot,
     stringToShikiThemes,
     CommitObject,
+    AnchorType,
 } from '../constants/constants'
 import {
     computeRangeFromOffset,
     computeVsCodeRangeFromOffset,
     createAnchorFromRange,
+    getAnchorType,
+    getSurroundingCodeArea,
     getSurroundingLinesAfterAnchor,
     getSurroundingLinesBeforeAnchor,
 } from '../anchorFunctions/anchor'
@@ -268,21 +271,19 @@ export const reconstructAnnotations = (
                       vscode.window.activeTextEditor.document
                   )
                 : [],
-            surroundingCode: {
-                linesBefore: vscode.window.activeTextEditor
-                    ? getSurroundingLinesBeforeAnchor(
-                          vscode.window.activeTextEditor.document,
-                          newAnchorRange
-                      )
-                    : [],
-                linesAfter: vscode.window.activeTextEditor
-                    ? getSurroundingLinesAfterAnchor(
-                          vscode.window.activeTextEditor.document,
-                          newAnchorRange
-                      )
-                    : [],
-            },
+            surroundingCode: vscode.window.activeTextEditor
+                ? getSurroundingCodeArea(
+                      vscode.window.activeTextEditor.document,
+                      newAnchorRange
+                  )
+                : { linesBefore: [], linesAfter: [] },
             potentialReanchorSpots: [],
+            anchorType: vscode.window.activeTextEditor
+                ? getAnchorType(
+                      a.anchor,
+                      vscode.window.activeTextEditor.document
+                  )
+                : AnchorType.partialLine,
         }
         const adjustedAnno = {
             id: newAnnoId,
@@ -1042,6 +1043,8 @@ export const createAnchorObject = async (
                 range
             ),
         }
+        const newAnchor = createAnchorFromRange(range)
+        const anchorType = getAnchorType(newAnchor, textEditor.document)
         return {
             parentId: annoId,
             anchorId: anchorId,
@@ -1060,7 +1063,7 @@ export const createAnchorObject = async (
             gitCommit: gitInfo[projectName]?.commit
                 ? gitInfo[projectName]?.commit
                 : 'localChange',
-            anchor: createAnchorFromRange(range),
+            anchor: newAnchor,
             programmingLang,
             filename,
             visiblePath,
@@ -1082,11 +1085,13 @@ export const createAnchorObject = async (
                     endLine: anc.endLine,
                     path: visiblePath,
                     surroundingCode: surrounding,
+                    anchorType,
                 },
             ],
             path,
             potentialReanchorSpots: [],
             surroundingCode: surrounding,
+            anchorType,
         }
     } else {
         vscode.window.showInformationMessage('Must have open text editor!')

@@ -22,6 +22,8 @@ import {
 } from '../utils/utils'
 import {
     createRangeFromObject,
+    getAnchorType,
+    getSurroundingCodeArea,
     getSurroundingLinesAfterAnchor,
     getSurroundingLinesBeforeAnchor,
 } from './anchor'
@@ -226,19 +228,11 @@ export const computeMostSimilarAnchor = (
                     : new Date().getTime(),
                 priorVersions: anchor.priorVersions ? anchor.priorVersions : [],
                 path: astHelper.generateCodeContextPath(newRange, document),
-                surroundingCode: {
-                    linesBefore: getSurroundingLinesBeforeAnchor(
-                        document,
-                        newRange
-                    ),
-                    linesAfter: getSurroundingLinesAfterAnchor(
-                        document,
-                        newRange
-                    ),
-                },
+                surroundingCode: getSurroundingCodeArea(document, newRange),
                 potentialReanchorSpots: [],
                 weight,
                 reasonSuggested: '',
+                anchorType: getAnchorType(restAnchor.anchor, document), // can probably use this to help us reanchor too
             }
             return newPotentialAnchor
         }

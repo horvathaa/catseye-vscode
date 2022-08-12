@@ -21,7 +21,7 @@ import {
     setSelectedAnnotationsNavigations,
     astHelper,
 } from '../extension'
-import { AnchorObject, Annotation } from '../constants/constants'
+import { AnchorObject, AnchorType, Annotation } from '../constants/constants'
 import * as anchor from '../anchorFunctions/anchor'
 import * as vscode from 'vscode'
 import * as utils from '../utils/utils'
@@ -221,17 +221,15 @@ export const createNewAnnotation = async () => {
             const anc = anchor.createAnchorFromRange(r)
             const anchorId = uuidv4()
             const createdTimestamp = new Date().getTime()
-            const surrounding = {
-                linesBefore: anchor.getSurroundingLinesBeforeAnchor(
-                    activeTextEditor.document,
-                    r
-                ),
-                linesAfter: anchor.getSurroundingLinesAfterAnchor(
-                    activeTextEditor.document,
-                    r
-                ),
-            }
-            console.log('surrounding when creating', surrounding)
+            const surrounding = anchor.getSurroundingCodeArea(
+                activeTextEditor.document,
+                r
+            )
+            const anchorType = anchor.getAnchorType(
+                anc,
+                activeTextEditor.document
+            )
+
             const anchorObject: AnchorObject = {
                 anchor: anc,
                 anchorText: text,
@@ -279,6 +277,7 @@ export const createNewAnnotation = async () => {
                         endLine: anc.endLine,
                         path: visiblePath,
                         surroundingCode: surrounding,
+                        anchorType,
                     },
                 ],
                 path: astHelper.generateCodeContextPath(
@@ -287,6 +286,7 @@ export const createNewAnnotation = async () => {
                 ),
                 potentialReanchorSpots: [],
                 surroundingCode: surrounding,
+                anchorType,
             }
             console.log('anchor obj on creating anno', anchorObject)
             const temp = {
@@ -366,6 +366,7 @@ export const createFileAnnotation = async (
             linesAfter: [],
         },
         potentialReanchorSpots: [],
+        anchorType: AnchorType.file,
     }
     const temp = {
         id: newAnnoId,
@@ -444,16 +445,14 @@ export const addNewHighlight = (
             const anchorId = uuidv4()
             const createdTimestamp = new Date().getTime()
             const anc = anchor.createAnchorFromRange(r)
-            const surrounding = {
-                linesBefore: anchor.getSurroundingLinesBeforeAnchor(
-                    activeTextEditor.document,
-                    r
-                ),
-                linesAfter: anchor.getSurroundingLinesAfterAnchor(
-                    activeTextEditor.document,
-                    r
-                ),
-            }
+            const surrounding = anchor.getSurroundingCodeArea(
+                activeTextEditor.document,
+                r
+            )
+            const anchorType = anchor.getAnchorType(
+                anc,
+                activeTextEditor.document
+            )
             const anchorObject: AnchorObject = {
                 anchor: anc,
                 anchorText: text,
@@ -501,6 +500,7 @@ export const addNewHighlight = (
                         endLine: anc.endLine,
                         path: visiblePath,
                         surroundingCode: surrounding,
+                        anchorType,
                     },
                 ],
                 path: astHelper.generateCodeContextPath(
@@ -509,6 +509,7 @@ export const addNewHighlight = (
                 ),
                 potentialReanchorSpots: [],
                 surroundingCode: surrounding,
+                anchorType,
             }
             const temp = {
                 id: newAnnoId,

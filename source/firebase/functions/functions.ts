@@ -187,6 +187,7 @@ export const getPriorVersions = (
                     endLine: priorVersionFromCommit.anchor.endLine,
                     path: priorVersionFromCommit.visiblePath,
                     surroundingCode: priorVersionFromCommit.surroundingCode,
+                    anchorType: priorVersionFromCommit.anchorType,
                 }
                 pv = [...pv, { ...priorVersion }]
             }

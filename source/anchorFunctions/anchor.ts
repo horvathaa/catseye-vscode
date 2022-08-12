@@ -11,6 +11,8 @@ import {
     AnchorObject,
     Anchor,
     NUM_SURROUNDING_LINES,
+    SurroundingAnchorArea,
+    AnchorType,
 } from '../constants/constants'
 import {
     // sortAnnotationsByLocation,
@@ -150,6 +152,51 @@ export const computeRangeFromOffset = (
 //     )
 //     return contentLines
 // }
+
+export const isAnchorObject = (a: any): a is AnchorObject => {
+    return a.hasOwnProperty('anchorText')
+}
+
+export const getSurroundingCodeArea = (
+    document: vscode.TextDocument,
+    anchorInfo: AnchorObject | vscode.Range
+): SurroundingAnchorArea => {
+    const anchorRange = isAnchorObject(anchorInfo)
+        ? createRangeFromAnchorObject(anchorInfo)
+        : anchorInfo
+    return {
+        linesAfter: getSurroundingLinesAfterAnchor(document, anchorRange),
+        linesBefore: getSurroundingLinesBeforeAnchor(document, anchorRange),
+    }
+}
+
+export const getAnchorType = (
+    anchor: Anchor,
+    document: vscode.TextDocument
+): AnchorType => {
+    const isSingleOrPartial = anchor.startLine === anchor.endLine
+    if (!isSingleOrPartial) {
+        return AnchorType.multiline
+    } else {
+        const anchorText = document
+            .getText(createRangeFromObject(anchor))
+            .trim()
+        const docText = document
+            .getText(
+                document.validateRange(
+                    new vscode.Range(anchor.startLine, 0, anchor.endLine, 10000)
+                )
+            )
+            .trim()
+        console.log('acnhorText', anchorText)
+        console.log('docText', docText)
+        if (anchorText !== docText || anchorText.length < docText.length) {
+            return AnchorType.partialLine
+        } else {
+            return AnchorType.oneline
+        }
+    }
+}
 
 export const getSurroundingLinesBeforeAnchor = (
     document: vscode.TextDocument,

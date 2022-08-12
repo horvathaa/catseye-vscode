@@ -84,6 +84,13 @@ export interface SurroundingAnchorArea {
     linesAfter: string[]
 }
 
+export enum AnchorType {
+    partialLine = 'PartialLine',
+    oneline = 'OneLine',
+    multiline = 'MultiLine',
+    file = 'File',
+}
+
 export interface AnchorObject {
     anchor: Anchor
     anchorText: string
@@ -106,6 +113,7 @@ export interface AnchorObject {
     path: CodeContext[]
     surroundingCode: SurroundingAnchorArea
     potentialReanchorSpots: PotentialAnchorObject[] // consider making optional
+    anchorType: AnchorType
     //add annotation field, ridding of multiple anchors
 }
 
@@ -129,6 +137,7 @@ export interface AnchorOnCommit {
     endLine: number
     path: string
     surroundingCode: SurroundingAnchorArea
+    anchorType: AnchorType
     // diff: string // MAYBE. Need to investigate diff packages
 }
 

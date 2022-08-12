@@ -63,6 +63,7 @@ const AnchorCarousel: React.FC<Props> = ({
                 endLine: currentAnchorObject.anchor.endLine,
                 path: currentAnchorObject.visiblePath,
                 surroundingCode: currentAnchorObject.surroundingCode,
+                anchorType: currentAnchorObject.anchorType,
             }
             const foundCurrentAnchorToDisplay: boolean =
                 priorVersions.find((pv) => pv.id === pseudoPriorVersion.id)

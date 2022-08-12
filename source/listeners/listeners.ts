@@ -381,6 +381,9 @@ export const handleDidChangeTextDocument = (
                     setTempAnno({ ...tempAnno, anchors: [newAnchor] })
             }
         }
+        let shouldRefreshDisplay: boolean = translatedAnnotations.some(
+            (a) => a.needToUpdate
+        )
 
         const notUpdatedAnnotations: Annotation[] =
             utils.getAnnotationsNotWithGitUrl(annotationList, stableGitPath)
@@ -395,6 +398,11 @@ export const handleDidChangeTextDocument = (
                 newAnnotationList,
                 vscode.window.activeTextEditor
             )
+            shouldRefreshDisplay &&
+                view.updateDisplay(
+                    newAnnotationList,
+                    utils.getStableGitHubUrl(e.document.uri.fsPath)
+                )
         } else {
             setAnnotationList(
                 //utils.sortAnnotationsByLocation(

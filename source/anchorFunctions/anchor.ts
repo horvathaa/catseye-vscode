@@ -52,6 +52,7 @@ import {
     saveOutOfDateAnnotations,
 } from '../firebase/functions/functions'
 import { computeMostSimilarAnchor } from './reanchor'
+import { refreshFoldingRanges } from '../foldingRangeProvider/foldingRangeProvider'
 
 // Used for finding new anchor point given copy/paste operation
 // Given offsetData generated at the time of copying (offset being where the anchor is relative to the beginning of the user's selection)
@@ -815,6 +816,7 @@ export const addHighlightsToEditor = (
                 const decorationOptions: vscode.DecorationOptions[] =
                     createDecorationOptions(validRanges, newAnnotationList)
                 text.setDecorations(annotationDecorations, decorationOptions)
+                refreshFoldingRanges()
             } catch (error) {
                 console.error("Couldn't highlight: ", error)
             }

@@ -190,7 +190,6 @@ const AnchorCarousel: React.FC<Props> = ({
                     wholeLine.slice(indexOfAnchor, endIndx),
                     wholeLine.slice(endIndx),
                 ]
-                console.log('partialLines', partialLines)
                 return (
                     <>
                         {partialLines.map((a, i) => {

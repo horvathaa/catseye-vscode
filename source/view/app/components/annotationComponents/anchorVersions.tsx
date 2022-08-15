@@ -52,15 +52,11 @@ const AnchorVersions: React.FC<Props> = ({
                 )}
             </>
         )
-        // }
-        // return null
-        // })
     }
 
     return (
         <div>
             {anchors.map((anchor: AnchorObject, i) => {
-                console.log('anchor????', anchor)
                 anchor.priorVersions && anchor.priorVersions.reverse()
                 if (anchor.priorVersions) {
                     return (
@@ -79,22 +75,7 @@ const AnchorVersions: React.FC<Props> = ({
                         </>
                     )
                 }
-                // if (
-                //     anchor.potentialReanchorSpots &&
-                //     anchor.potentialReanchorSpots.length
-                //     // &&
-                //     // !anchor.anchored
-                // ) {
-                //     console.log('hewwo???')
-                //     return showPotentialAnchors(anchor)
-                // }
                 return null
-                // if (!anchor.anchored) {
-                // return (
-                // put show/hide here
-                // )
-                // }
-                // return null
             })}
         </div>
     )

@@ -154,6 +154,18 @@ const ReactAnnotation: React.FC<Props> = ({
                     }
                 }
                 break
+            case 'scrollToAnno':
+                const annoDiv: HTMLElement | null = document.getElementById(
+                    message.payload.id
+                )
+                if (message.payload.id !== anno.id || !annoDiv) return
+                !expanded && setExpanded(true)
+                annoDiv.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                    inline: 'center',
+                })
+                return
         }
     }
 

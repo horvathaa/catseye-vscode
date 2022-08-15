@@ -17,6 +17,7 @@ import * as utils from './utils/utils'
 import * as debug from './debug/debug'
 import ViewLoader from './view/ViewLoader'
 import { AstHelper } from './astHelper/astHelper'
+import { catseyeFoldingRangeProvider } from './foldingRangeProvider/foldingRangeProvider'
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports
 export const gitApi = gitExtension?.getAPI(1)
 console.log('gitApi', gitApi)
@@ -250,11 +251,21 @@ export function activate(context: vscode.ExtensionContext) {
     // let copyDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', commands.overriddenClipboardCopyAction);
     // let cutDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCutAction', commands.overriddenClipboardCutAction);
 
+    /*************************************************************************************/
+    /******************************************* MISC ************************************/
+    /*************************************************************************************/
+
     vscode.commands.executeCommand(
         'setContext',
         'adamite.showAnchorMenuOptions',
         true
     )
+
+    // let foldingRangeProviderDisposable =
+    //     vscode.languages.registerFoldingRangeProvider(
+    //         '*',
+    //         catseyeFoldingRangeProvider
+    //     )
 
     /*************************************************************************************/
     /**************************************** DISPOSABLES ********************************/
@@ -279,6 +290,8 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(scrollDisposable)
     // context.subscriptions.push(copyDisposable);
     // context.subscriptions.push(cutDisposable);
+
+    // context.subscriptions.push(foldingRangeProviderDisposable)
 }
 
 // // this method is called when your extension is deactivated

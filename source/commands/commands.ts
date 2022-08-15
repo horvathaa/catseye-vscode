@@ -29,6 +29,10 @@ import ViewLoader from '../view/ViewLoader'
 import * as viewHelper from '../viewHelper/viewHelper'
 import { v4 as uuidv4 } from 'uuid'
 import { initializeAuth } from '../authHelper/authHelper'
+import {
+    catseyeFoldingRangeProvider,
+    refreshFoldingRanges,
+} from '../foldingRangeProvider/foldingRangeProvider'
 
 // on launch, create auth session and sign in to FireStore
 export const init = async () => {
@@ -54,6 +58,12 @@ export const createView = async (context: vscode.ExtensionContext) => {
             context.extensionPath
         )
         setView(newView)
+        let foldingRangeProviderDisposable =
+            vscode.languages.registerFoldingRangeProvider(
+                '*',
+                catseyeFoldingRangeProvider
+            )
+        context.subscriptions.push(foldingRangeProviderDisposable)
         if (newView) {
             /***********************************************************************************/
             /**************************************** VIEW LISTENERS ******************************/
@@ -160,6 +170,8 @@ export const createView = async (context: vscode.ExtensionContext) => {
             newView._panel?.onDidDispose(
                 (e: void) => {
                     viewHelper.handleOnDidDispose()
+                    foldingRangeProviderDisposable.dispose()
+                    refreshFoldingRanges()
                 },
                 null,
                 context.subscriptions

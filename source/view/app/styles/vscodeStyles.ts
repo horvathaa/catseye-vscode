@@ -53,7 +53,8 @@ export const disabledIcon: string = getComputedStyle(
 
 export const adamiteGreen: string = '#7fae42'
 
-function lightenDarkenColor(col, amt) {
+// TODO: whoever added this code should define better types here
+function lightenDarkenColor(col: any, amt: any) {
     var usePound = false
 
     if (col[0] == '#') {

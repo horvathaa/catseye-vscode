@@ -44,6 +44,7 @@ export let currentGitHubCommit: string = ''
 export let changes: ChangeEvent[] = []
 export let numChangeEventsCompleted = 0
 export let tsFiles: TsFile[] = []
+export let trackedFiles: vscode.TextDocument[] = []
 export let astHelper: AstHelper = new AstHelper()
 
 export const annotationDecorations =
@@ -166,6 +167,12 @@ export const incrementNumChangeEventsCompleted = (): void => {
     numChangeEventsCompleted++
 }
 
+export const setTrackedFiles = (
+    newTrackedFiles: vscode.TextDocument | vscode.TextDocument[]
+): void => {
+    trackedFiles = trackedFiles.concat(newTrackedFiles)
+}
+
 // this method is called when the extension is activated
 // the extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -205,6 +212,10 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.workspace.onDidChangeTextDocument(
             eventHandlers.handleDidChangeTextDocument
         )
+
+    // let didOpenTextDocumentDisposable = vscode.workspace.onDidOpenTextDocument(
+    //     eventHandlers.handleDidOpenTextDocument
+    // )
 
     let didStartDebugSessionDisposable = vscode.debug.onDidStartDebugSession(
         debug.handleOnDidStartDebugSession
@@ -250,11 +261,21 @@ export function activate(context: vscode.ExtensionContext) {
     // let copyDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', commands.overriddenClipboardCopyAction);
     // let cutDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCutAction', commands.overriddenClipboardCutAction);
 
+    /*************************************************************************************/
+    /******************************************* MISC ************************************/
+    /*************************************************************************************/
+
     vscode.commands.executeCommand(
         'setContext',
         'adamite.showAnchorMenuOptions',
         true
     )
+
+    // let foldingRangeProviderDisposable =
+    //     vscode.languages.registerFoldingRangeProvider(
+    //         '*',
+    //         catseyeFoldingRangeProvider
+    //     )
 
     /*************************************************************************************/
     /**************************************** DISPOSABLES ********************************/
@@ -267,6 +288,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(didSaveListenerDisposable)
     context.subscriptions.push(didCloseListenerDisposable)
     context.subscriptions.push(didChangeTextDocumentDisposable)
+    // context.subscriptions.push(didOpenTextDocumentDisposable)
     context.subscriptions.push(didStartDebugSessionDisposable)
 
     context.subscriptions.push(createViewDisposable)
@@ -279,6 +301,8 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(scrollDisposable)
     // context.subscriptions.push(copyDisposable);
     // context.subscriptions.push(cutDisposable);
+
+    // context.subscriptions.push(foldingRangeProviderDisposable)
 }
 
 // // this method is called when your extension is deactivated

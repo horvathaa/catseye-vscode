@@ -106,43 +106,6 @@ const AdamitePanel: React.FC<Props> = ({
                     inline: 'center',
                 })
                 return
-            case 'scrollToAnno':
-                const annoDiv: HTMLElement | null = document.getElementById(
-                    message.payload.id
-                )
-                const currentFileDiv: Element | null | undefined =
-                    document.getElementById('Current File')?.nextElementSibling
-                const selectedDiv: Element | null | undefined =
-                    document.getElementById('Pinned')?.nextElementSibling
-                if (
-                    currentFileDiv &&
-                    currentFileDiv.contains(annoDiv) &&
-                    !currentFileDiv?.classList.contains(styles['showing'])
-                ) {
-                    currentFileDiv?.classList.remove(styles['hiding'])
-                    currentFileDiv?.classList.add(styles['showing'])
-                } else if (
-                    selectedDiv &&
-                    selectedDiv.contains(annoDiv) &&
-                    !selectedDiv?.classList.contains(styles['showing'])
-                ) {
-                    selectedDiv?.classList.remove(styles['hiding'])
-                    selectedDiv?.classList.add(styles['showing'])
-                }
-                if (annoDiv?.classList.contains(annoStyles['outOfFocus'])) {
-                    annoDiv?.classList.remove(annoStyles['outOfFocus'])
-                }
-                annoDiv?.classList.add(annoStyles['inFocus'])
-                annoDiv?.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center',
-                    inline: 'center',
-                })
-                setTimeout(() => {
-                    annoDiv?.classList.remove(annoStyles['inFocus'])
-                    annoDiv?.classList.add(annoStyles['outOfFocus'])
-                }, 3000)
-                return
         }
     }
 

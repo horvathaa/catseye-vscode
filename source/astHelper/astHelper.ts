@@ -63,7 +63,7 @@ export class AstHelper {
         }
     }
 
-    private isTsJsJsxTsx(document: vscode.TextDocument) {
+    public isTsJsJsxTsx(document: vscode.TextDocument) {
         return (
             [
                 'typescript',

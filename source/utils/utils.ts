@@ -13,13 +13,18 @@ import {
     Snapshot,
     stringToShikiThemes,
     CommitObject,
+    AnchorType,
 } from '../constants/constants'
 import {
     computeRangeFromOffset,
     computeVsCodeRangeFromOffset,
     createAnchorFromRange,
+    getAnchorsWithGitUrl,
+    getAnchorType,
+    getSurroundingCodeArea,
     getSurroundingLinesAfterAnchor,
     getSurroundingLinesBeforeAnchor,
+    validateAnchor,
 } from '../anchorFunctions/anchor'
 import {
     gitInfo,
@@ -40,6 +45,8 @@ import {
     setCurrentGitHubCommit,
     currentGitHubCommit,
     astHelper,
+    trackedFiles,
+    setTrackedFiles,
 } from '../extension'
 import * as vscode from 'vscode'
 import { v4 as uuidv4 } from 'uuid'
@@ -52,6 +59,9 @@ import { CodeContext } from '../astHelper/nodeHelper'
 let { parse } = require('what-the-diff')
 var shiki = require('shiki')
 import { simpleGit, SimpleGit } from 'simple-git'
+
+import { computeMostSimilarAnchor } from '../anchorFunctions/reanchor'
+
 import {
     getFilesInDirectory,
     getVisibileOpenFiles,
@@ -70,6 +80,12 @@ export const currentlyOpenDirPath = vscode.window.activeTextEditor
 export const git: SimpleGit = simpleGit(gitRootDir, { binary: 'git' })
 let lastSavedAnnotations: Annotation[] =
     annotationList && annotationList.length ? annotationList : []
+
+export const arrayUniqueByKey = (array: any, key: string): any[] => [
+    ...new Map(
+        array.map((item: { [key: string]: any }) => [item[key], item])
+    ).values(),
+]
 
 // https://stackoverflow.com/questions/27030/comparing-arrays-of-objects-in-javascript
 export const objectsEqual = (o1: any, o2: any): boolean =>
@@ -270,21 +286,19 @@ export const reconstructAnnotations = (
                       vscode.window.activeTextEditor.document
                   )
                 : [],
-            surroundingCode: {
-                linesBefore: vscode.window.activeTextEditor
-                    ? getSurroundingLinesBeforeAnchor(
-                          vscode.window.activeTextEditor.document,
-                          newAnchorRange
-                      )
-                    : [],
-                linesAfter: vscode.window.activeTextEditor
-                    ? getSurroundingLinesAfterAnchor(
-                          vscode.window.activeTextEditor.document,
-                          newAnchorRange
-                      )
-                    : [],
-            },
+            surroundingCode: vscode.window.activeTextEditor
+                ? getSurroundingCodeArea(
+                      vscode.window.activeTextEditor.document,
+                      newAnchorRange
+                  )
+                : { linesBefore: [], linesAfter: [] },
             potentialReanchorSpots: [],
+            anchorType: vscode.window.activeTextEditor
+                ? getAnchorType(
+                      a.anchor,
+                      vscode.window.activeTextEditor.document
+                  )
+                : AnchorType.partialLine,
         }
         const adjustedAnno = {
             id: newAnnoId,
@@ -1047,6 +1061,8 @@ export const createAnchorObject = async (
                 range
             ),
         }
+        const newAnchor = createAnchorFromRange(range)
+        const anchorType = getAnchorType(newAnchor, textEditor.document)
         return {
             parentId: annoId,
             anchorId: anchorId,
@@ -1065,7 +1081,7 @@ export const createAnchorObject = async (
             gitCommit: gitInfo[projectName]?.commit
                 ? gitInfo[projectName]?.commit
                 : 'localChange',
-            anchor: createAnchorFromRange(range),
+            anchor: newAnchor,
             programmingLang,
             filename,
             visiblePath,
@@ -1087,11 +1103,13 @@ export const createAnchorObject = async (
                     endLine: anc.endLine,
                     path: visiblePath,
                     surroundingCode: surrounding,
+                    anchorType,
                 },
             ],
             path,
             potentialReanchorSpots: [],
             surroundingCode: surrounding,
+            anchorType,
         }
     } else {
         vscode.window.showInformationMessage('Must have open text editor!')
@@ -1135,10 +1153,13 @@ export const levenshteinDistance = (s: string, t: string) => {
 }
 
 export const updateAnnotationsWithAnchors = (
-    anchors: AnchorObject[]
+    anchors: AnchorObject[],
+    annosWithAnchors?: Annotation[]
 ): Annotation[] => {
     const annoIds = anchors.map((a) => a.parentId)
-    const matchingAnnos = annotationList.filter((a) => annoIds.includes(a.id))
+    const matchingAnnos = annosWithAnchors
+        ? annosWithAnchors.filter((a) => annoIds.includes(a.id))
+        : annotationList.filter((a) => annoIds.includes(a.id))
     const updatedAnnos = matchingAnnos.map((a: Annotation) => {
         const annoAnchors = anchors.filter((anch) => anch.parentId === a.id)
         return buildAnnotation({
@@ -1148,4 +1169,127 @@ export const updateAnnotationsWithAnchors = (
         })
     })
     return updatedAnnos
+}
+
+// returns currently opened files for reanchor search
+
+/* 
+WORKSPACE RECOMMENDATION: "The workspace offers support for listening to fs events 
+and for finding files. Both perform well and run outside the editor-process so that
+they should be always used instead of nodejs-equivalents."
+
+VSCODE GLOBS TOO LIMITED!
+
+start search space in set of current open files
+run alg 
+if don't find a candidate, search all modified files from git status 
+
+*/
+export const findOpenFilesToSearch = async () => {
+    const folders = vscode.workspace.workspaceFolders
+    // console.log('folders', folders)
+    let filesToSearch: any[] = []
+    if (!folders) return
+    folders?.forEach(async (folder) => {
+        // let relativePattern = new vscode.RelativePattern(folder, '**/*.ts')
+        const files = await vscode.workspace.findFiles(
+            '**/*.ts',
+            '**/node_modules/**',
+            10
+        )
+        // console.log('foundsomething', files)
+        // const toString = (uris: vscode.Uri[]) => uris.map((uri) => uri.fsPath)
+        filesToSearch = files.map((uris: vscode.Uri) => {
+            return uris.fsPath
+        })
+        // console.log('files', filesToSearch)
+    })
+
+    // if (vscode.workspace.workspaceFolders) {
+    //     vscode.window.visibleTextEditors.forEach(
+    //         (editor: vscode.TextEditor) => {
+    //             const path = editor.document.uri.path
+    //             const fsPath = editor.document.uri.fsPath
+    //             console.log('path', path, 'fspath', fsPath)
+    //         }
+    //     )
+    // }
+
+    if (vscode.workspace.workspaceFolders) {
+        vscode.workspace.textDocuments.forEach(
+            (editor: vscode.TextDocument) => {
+                const path = editor.uri.path
+                const fsPath = editor.uri.fsPath
+                // console.log('path', path, 'fspath', fsPath)
+            }
+        )
+    }
+}
+
+export const shouldTrackFile = (document: vscode.TextDocument): boolean => {
+    const trackedUris = trackedFiles.map((f) => f.uri.fsPath)
+    return !trackedUris.includes(document.uri.fsPath)
+}
+
+export const getAnnotationsInTextDocument = (
+    document: vscode.TextDocument,
+    annotations?: Annotation[]
+): Annotation[] => {
+    const gitUrl = getStableGitHubUrl(document.uri.fsPath)
+    return getAnnotationsWithStableGitUrl(
+        annotations ? annotations : annotationList,
+        gitUrl
+    )
+}
+
+export const getAnchorsInTextDocument = (
+    document: vscode.TextDocument
+): AnchorObject[] => {
+    const gitUrl = getStableGitHubUrl(document.uri.fsPath)
+    return getAnchorsWithGitUrl(gitUrl)
+}
+
+export const addFileToTrack = (document: vscode.TextDocument): void => {
+    if (!checkIfFileIsTracked(document)) {
+        setTrackedFiles([...trackedFiles, document])
+        handleAuditNewFile(document)
+    }
+}
+
+export const checkIfFileIsTracked = (
+    document: vscode.TextDocument
+): boolean => {
+    return trackedFiles.map((a) => a.uri.fsPath).includes(document.uri.fsPath)
+}
+
+export const handleAuditNewFile = (document: vscode.TextDocument): void => {
+    const anchors = getAnchorsInTextDocument(document)
+    const annos = getAnnotationsInTextDocument(document)
+    let updatedAnnoIds: string[] = []
+    if (
+        anchors.length &&
+        annos.length &&
+        !anchors.every((a: AnchorObject) => validateAnchor(a, document))
+    ) {
+        const updatedAnchors: AnchorObject[] = anchors
+            .filter((a: AnchorObject) => !validateAnchor(a, document))
+            .map((a: AnchorObject): AnchorObject => {
+                return {
+                    ...computeMostSimilarAnchor(document, a),
+                    anchored: false,
+                }
+            })
+        const updatedAnnos = updateAnnotationsWithAnchors(updatedAnchors, annos)
+        updatedAnnoIds = updatedAnnoIds.concat([
+            ...new Set(updatedAnnos.map((a) => a.id)),
+        ])
+        setAnnotationList(
+            annotationList
+                .filter((a) => !updatedAnnoIds.includes(a.id))
+                .concat(updatedAnnos)
+        )
+        if (view) {
+            view.updateDisplay(annotationList)
+        }
+    }
 }

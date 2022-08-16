@@ -11,6 +11,9 @@ import {
     AnchorObject,
     Anchor,
     NUM_SURROUNDING_LINES,
+    SurroundingAnchorArea,
+    AnchorType,
+    PotentialAnchorObject,
 } from '../constants/constants'
 import {
     // sortAnnotationsByLocation,
@@ -24,6 +27,10 @@ import {
     getAnnotationsNotInFile,
     handleSaveCloseEvent,
     levenshteinDistance,
+    buildAnnotation,
+    removeNulls,
+    partition,
+    objectsEqual,
 } from '../utils/utils'
 import {
     annotationDecorations,
@@ -47,6 +54,8 @@ import {
     saveAnnotations,
     saveOutOfDateAnnotations,
 } from '../firebase/functions/functions'
+import { computeMostSimilarAnchor } from './reanchor'
+import { refreshFoldingRanges } from '../foldingRangeProvider/foldingRangeProvider'
 
 // Used for finding new anchor point given copy/paste operation
 // Given offsetData generated at the time of copying (offset being where the anchor is relative to the beginning of the user's selection)
@@ -65,87 +74,233 @@ export const computeRangeFromOffset = (
     return newAnchor
 }
 
-const addLinesWithContent = (
-    textBefore: string,
-    document: vscode.TextDocument,
-    anchorRange: vscode.Range
-): string[] => {
-    let textToSplit = textBefore
-    let contentLines: string[] = textBefore
-        .split('\n')
-        .filter((t) => t.trim().length !== 0)
-    let startPosition: number =
-        anchorRange.start.line - NUM_SURROUNDING_LINES + 1 - contentLines.length
-    // let initialStart = startPosition
-    let endPosition: number = anchorRange.start.line
-    let initialEnd = endPosition
-    let finalStart: number = 0
-    // let finalEnd: number = 0
-    console.log('start?', startPosition)
-    console.log('contentLines before loop', contentLines)
-    let numRemovedWhiteSpace: number = textBefore
-        .split('\n')
-        .filter((t) => t.trim().length === 0).length
-    // startPosition = anchorRange.start.line - (NUM_SURROUNDING_LINES + 1 - contentLines.length)
-    // endPosition = anchorRange.start.line - NUM_SURROUNDING_LINES
-    // if we have whitespace-only lines, get lines before that are not whitespace
-    while (
-        contentLines.length < NUM_SURROUNDING_LINES + 1 &&
-        endPosition !== 0
-    ) {
-        console.log('in while - start', startPosition, 'end', endPosition)
-        textToSplit = document.getText(
-            document.validateRange(
-                new vscode.Range(
-                    new vscode.Position(startPosition, 0),
-                    new vscode.Position(endPosition, 10000)
-                )
+export const connectPotentialAnchorsToAnchors = (
+    pas: PotentialAnchorObject[],
+    anchors: AnchorObject[]
+): AnchorObject[] => {
+    let newAnchors: AnchorObject[] = anchors
+    const anchorIds: string[] = []
+    pas.forEach((p: PotentialAnchorObject) => {
+        const anchor = newAnchors.find((a) => a.anchorId === p.anchorId)
+        if (anchor) {
+            const updatedPotentialReanchorSpots = [
+                ...anchor.potentialReanchorSpots.filter(
+                    (a) => a.paoId !== p.paoId
+                ),
+                p,
+            ]
+            newAnchors = [
+                ...newAnchors.filter((a) => a.anchorId !== anchor.anchorId),
+                {
+                    ...anchor,
+                    potentialReanchorSpots: updatedPotentialReanchorSpots,
+                },
+            ]
+            anchorIds.push(anchor.anchorId)
+        } else {
+            console.log(
+                "could not find potential anchor object's anchor -- returning pa"
             )
-        )
-        contentLines.splice(
-            0,
-            0,
-            ...textToSplit.split('\n').filter((t) => t.trim().length !== 0)
-        )
-        contentLines = [
-            ...new Set(contentLines.map((l) => l.replace(/\s+/g, ''))),
-        ]
-        console.log('contentLines', contentLines)
-        console.log('textToSplit', textToSplit)
-        const whitespace = textToSplit
-            .split('\n')
-            .filter((t) => t.trim().length === 0).length
-        numRemovedWhiteSpace += whitespace
-        finalStart = startPosition
-        // finalEnd = endPosition
-        endPosition = startPosition
-        startPosition = startPosition - whitespace
-    }
-    if (contentLines.length > NUM_SURROUNDING_LINES + 1) {
-        console.log(
-            'contentLines',
-            contentLines,
-            'math',
-            contentLines.length - NUM_SURROUNDING_LINES - 1
-        )
-        contentLines.splice(0, contentLines.length - NUM_SURROUNDING_LINES - 1)
-    }
+        }
+    })
+    return newAnchors.concat(
+        anchors.filter((a) => !anchorIds.includes(a.anchorId))
+    )
+}
 
-    console.log(
-        'removed',
-        document
+export const handleUpdatingTranslatedAnnotations = (
+    a: Annotation,
+    stableGitPath: string,
+    change: vscode.TextDocumentContentChangeEvent,
+    diff: number,
+    e: vscode.TextDocumentChangeEvent
+): Annotation => {
+    const [anchorsToTranslate, anchorsNotToTranslate] = partition(
+        a.anchors,
+        // (a: AnchorObject) => a.filename === e.document.uri.toString()
+        (a: AnchorObject) => a.stableGitUrl === stableGitPath && a.anchored
+    )
+    const potentialAnchorsToTranslate = a.anchors
+        .flatMap((a) => a.potentialReanchorSpots)
+        .filter(
+            (anch: PotentialAnchorObject) => anch.stableGitUrl === stableGitPath
+        )
+
+    const translate: (AnchorObject | null)[] = anchorsToTranslate.map(
+        (a: AnchorObject) =>
+            translateChanges(
+                a,
+                change.range,
+                change.text.length,
+                diff,
+                change.rangeLength,
+                e.document,
+                change.text
+            )
+    )
+    const translatedAnchors = removeNulls(translate)
+    const translatedPotentialAnchors: PotentialAnchorObject[] = removeNulls(
+        potentialAnchorsToTranslate.map((a: PotentialAnchorObject) => {
+            translateChanges(
+                a,
+                change.range,
+                change.text.length,
+                diff,
+                change.rangeLength,
+                e.document,
+                change.text
+            )
+        })
+    )
+    const needToUpdate = translatedAnchors.some((t) => {
+        const anchor = anchorsToTranslate.find(
+            (o: AnchorObject) => t.anchorId === o.anchorId
+        )
+        return (
+            !objectsEqual(anchor.anchor, t.anchor) ||
+            t.anchorText !== anchor.anchorText
+        )
+    })
+    const gitCommit: string | undefined = translatedAnchors.find((t) => {
+        return t.gitCommit === gitInfo[a.projectName].commit
+    })?.gitCommit
+    const originalGitCommit = a.gitCommit
+    const updatedAnchors = connectPotentialAnchorsToAnchors(
+        translatedPotentialAnchors,
+        translatedAnchors.concat(anchorsNotToTranslate)
+    )
+    return buildAnnotation({
+        ...a,
+        needToUpdate,
+        gitCommit: gitCommit ? gitCommit : originalGitCommit,
+        anchors: updatedAnchors,
+    })
+}
+
+// const addLinesWithContent = (
+//     textBefore: string,
+//     document: vscode.TextDocument,
+//     anchorRange: vscode.Range
+// ): string[] => {
+//     let textToSplit = textBefore
+//     let contentLines: string[] = textBefore
+//         .split('\n')
+//         .filter((t) => t.trim().length !== 0)
+//     let startPosition: number =
+//         anchorRange.start.line - NUM_SURROUNDING_LINES + 1 - contentLines.length
+//     // let initialStart = startPosition
+//     let endPosition: number = anchorRange.start.line
+//     let initialEnd = endPosition
+//     let finalStart: number = 0
+//     // let finalEnd: number = 0
+//     console.log('start?', startPosition)
+//     console.log('contentLines before loop', contentLines)
+//     let numRemovedWhiteSpace: number = textBefore
+//         .split('\n')
+//         .filter((t) => t.trim().length === 0).length
+//     // startPosition = anchorRange.start.line - (NUM_SURROUNDING_LINES + 1 - contentLines.length)
+//     // endPosition = anchorRange.start.line - NUM_SURROUNDING_LINES
+//     // if we have whitespace-only lines, get lines before that are not whitespace
+//     while (
+//         contentLines.length < NUM_SURROUNDING_LINES + 1 &&
+//         endPosition !== 0
+//     ) {
+//         console.log('in while - start', startPosition, 'end', endPosition)
+//         textToSplit = document.getText(
+//             document.validateRange(
+//                 new vscode.Range(
+//                     new vscode.Position(startPosition, 0),
+//                     new vscode.Position(endPosition, 10000)
+//                 )
+//             )
+//         )
+//         contentLines.splice(
+//             0,
+//             0,
+//             ...textToSplit.split('\n').filter((t) => t.trim().length !== 0)
+//         )
+//         contentLines = [
+//             ...new Set(contentLines.map((l) => l.replace(/\s+/g, ''))),
+//         ]
+//         console.log('contentLines', contentLines)
+//         console.log('textToSplit', textToSplit)
+//         const whitespace = textToSplit
+//             .split('\n')
+//             .filter((t) => t.trim().length === 0).length
+//         numRemovedWhiteSpace += whitespace
+//         finalStart = startPosition
+//         // finalEnd = endPosition
+//         endPosition = startPosition
+//         startPosition = startPosition - whitespace
+//     }
+//     if (contentLines.length > NUM_SURROUNDING_LINES + 1) {
+//         console.log(
+//             'contentLines',
+//             contentLines,
+//             'math',
+//             contentLines.length - NUM_SURROUNDING_LINES - 1
+//         )
+//         contentLines.splice(0, contentLines.length - NUM_SURROUNDING_LINES - 1)
+//     }
+
+//     console.log(
+//         'removed',
+//         document
+//             .getText(
+//                 document.validateRange(
+//                     new vscode.Range(
+//                         new vscode.Position(finalStart, 0),
+//                         new vscode.Position(initialEnd, 10000)
+//                     )
+//                 )
+//             )
+//             .split('\n')
+//             .filter((t) => t.trim().length === 0).length
+//     )
+//     return contentLines
+// }
+
+export const isAnchorObject = (a: any): a is AnchorObject => {
+    return a.hasOwnProperty('anchorText')
+}
+
+export const getSurroundingCodeArea = (
+    document: vscode.TextDocument,
+    anchorInfo: AnchorObject | vscode.Range
+): SurroundingAnchorArea => {
+    const anchorRange = isAnchorObject(anchorInfo)
+        ? createRangeFromAnchorObject(anchorInfo)
+        : anchorInfo
+    return {
+        linesAfter: getSurroundingLinesAfterAnchor(document, anchorRange),
+        linesBefore: getSurroundingLinesBeforeAnchor(document, anchorRange),
+    }
+}
+
+export const getAnchorType = (
+    anchor: Anchor,
+    document: vscode.TextDocument
+): AnchorType => {
+    const isSingleOrPartial = anchor.startLine === anchor.endLine
+    if (!isSingleOrPartial) {
+        return AnchorType.multiline
+    } else {
+        const anchorText = document
+            .getText(createRangeFromObject(anchor))
+            .trim()
+        const docText = document
             .getText(
                 document.validateRange(
-                    new vscode.Range(
-                        new vscode.Position(finalStart, 0),
-                        new vscode.Position(initialEnd, 10000)
-                    )
+                    new vscode.Range(anchor.startLine, 0, anchor.endLine, 10000)
                 )
             )
-            .split('\n')
-            .filter((t) => t.trim().length === 0).length
-    )
-    return contentLines
+            .trim()
+        if (anchorText !== docText || anchorText.length < docText.length) {
+            return AnchorType.partialLine
+        } else {
+            return AnchorType.oneline
+        }
+    }
 }
 
 export const getSurroundingLinesBeforeAnchor = (
@@ -567,19 +722,6 @@ export const translateChanges = (
     const originalGitCommit = anchorObject.gitCommit
     const newRangeObj = doc.validateRange(createRangeFromObject(newRange))
 
-    console.log('hewwo', {
-        ...anchorObject,
-        anchorText: newAnchorText,
-        anchor: createAnchorFromRange(newRangeObj),
-        gitCommit:
-            checkIfAnchorChanged(originalRange, newRangeObj) ||
-            // changeOccurredInRange
-            (originalRange.start.isBefore(changeRange.start) &&
-                originalRange.end.isAfter(changeRange.end))
-                ? gitInfo[getProjectName(doc.uri.toString())].commit
-                : originalGitCommit,
-    })
-
     // update anchor object
     const newAnchor: AnchorObject = {
         ...anchorObject,
@@ -639,10 +781,15 @@ const createDecorationOptions = (
     })
 }
 
-interface AnnotationRange {
-    annotationId: string
+interface AnnotationRange extends AnnotationAnchorPair {
     anchorText: string
     range: vscode.Range
+    valid?: boolean
+}
+
+interface AnnotationAnchorPair {
+    annotationId: string
+    anchorId: string | string[]
 }
 
 const validateRanges = (
@@ -656,7 +803,7 @@ const validateRanges = (
         // range is already clean
         if (validRange.isEqual(r.range)) {
             r.range = validRange
-            validRanges.push(r)
+            validRanges.push({ ...r, valid: true })
         }
         // valid range is equivalent to original range so update range
         else if (
@@ -664,15 +811,46 @@ const validateRanges = (
             r.anchorText !== ''
         ) {
             r.range = validRange
-            validRanges.push(r)
+            validRanges.push({ ...r, valid: true })
         }
         // valid range is not similar so we are screwed
         else {
-            invalidRanges.push(r)
+            invalidRanges.push({ ...r, valid: false })
         }
     })
     return [validRanges, invalidRanges]
 }
+
+const getDupIds = (arr: string[]): string[] => {
+    return arr.filter((value: string, index: number, self: string[]) => {
+        return self.indexOf(value) !== index
+    })
+}
+
+const mergeAnnotationAndAnchorIds = (pairs: AnnotationAnchorPair[]) => {
+    const annoIds = pairs.map((p) => p.annotationId)
+    const uniqueIds = [...new Set(annoIds)]
+    // only dealing with unique
+    if (annoIds.length === uniqueIds.length) {
+        return pairs
+    } else {
+        const dups = getDupIds(annoIds)
+        return dups.map((id: string) => {
+            return {
+                annotationId: id,
+                anchorId: pairs
+                    .filter((p) => p.annotationId === id)
+                    .flatMap((pid) => pid.anchorId),
+            }
+        })
+    }
+}
+// when to MARK an anchor as broken?
+// -- on highlight
+// when to COMPUTE broken anchors' reattachment points?
+// -- on git checkout/pull
+// -- on user request
+//
 
 // Function to actually decorate each file with our annotation highlights
 export const addHighlightsToEditor = (
@@ -703,6 +881,7 @@ export const addHighlightsToEditor = (
             .map((a) => {
                 return {
                     annotationId: a.parentId,
+                    anchorId: a.anchorId,
                     anchorText: a.anchorText,
                     url: a.stableGitUrl,
                     filename: a.filename,
@@ -715,6 +894,7 @@ export const addHighlightsToEditor = (
                     annotationId: a.annotationId,
                     anchorText: a.anchorText,
                     range: a.range,
+                    anchorId: a.anchorId,
                 }
             })
 
@@ -725,28 +905,35 @@ export const addHighlightsToEditor = (
             const valid: Annotation[] = annotationsToHighlight.filter(
                 (a: Annotation) => validIds.includes(a.id)
             )
+
+            let unanchoredAnnotations: Annotation[] = []
+
+            if (invalidRanges.length) {
+                unanchoredAnnotations = handleInvalidAnchors(
+                    invalidRanges,
+                    annotationsToHighlight,
+                    text.document
+                )
+            }
+
             valid.forEach((a: Annotation) => (a.outOfDate = false))
             // bring back annotations that are not in the file
             const newAnnotationList: Annotation[] = valid.concat(
                 annotationList.filter((a) => !updatedIds.includes(a.id))
             )
 
-            setAnnotationList(newAnnotationList)
+            setAnnotationList(newAnnotationList.concat(unanchoredAnnotations))
+            unanchoredAnnotations.length && view?.updateDisplay(annotationList)
 
             try {
                 const decorationOptions: vscode.DecorationOptions[] =
                     createDecorationOptions(validRanges, newAnnotationList)
                 text.setDecorations(annotationDecorations, decorationOptions)
+                refreshFoldingRanges()
             } catch (error) {
                 console.error("Couldn't highlight: ", error)
             }
 
-            if (invalidRanges.length) {
-                const invalidIds: string[] = invalidRanges.map(
-                    (r) => r.annotationId
-                )
-                saveOutOfDateAnnotations(invalidIds)
-            }
             // if (vscode.workspace.workspaceFolders) {
             //     view?.updateDisplay(newAnnotationList)
             // }
@@ -759,4 +946,74 @@ export const addHighlightsToEditor = (
         view?.updateDisplay(annotationList) // update that list is empty ?
         text?.setDecorations(annotationDecorations, [])
     }
+}
+
+const handleInvalidAnchors = (
+    invalidRanges: AnnotationRange[],
+    annotationsToHighlight: Annotation[],
+    document: vscode.TextDocument
+) => {
+    let unanchoredAnnotations: Annotation[] = []
+    const invalidIds: AnnotationAnchorPair[] = invalidRanges.map((r) => {
+        return {
+            annotationId: r.annotationId,
+            anchorId: r.anchorId,
+        }
+    })
+
+    const mergedInvalidIds = mergeAnnotationAndAnchorIds(invalidIds)
+
+    // these annos have become unanchored
+    unanchoredAnnotations = removeNulls(
+        mergedInvalidIds.map((a: AnnotationAnchorPair) => {
+            const anno = annotationsToHighlight.find(
+                (ann) => ann.id === a.annotationId
+            )
+            const anchors =
+                typeof a.anchorId === 'string'
+                    ? anno?.anchors.find((anch) => anch.anchorId === a.anchorId)
+                    : anno?.anchors.filter((anch) =>
+                          a.anchorId.includes(anch.anchorId)
+                      )
+            if (anno && anchors) {
+                // should change this to only compute potential anchors for NEWLY unanchored annotations
+                // other anchors should just have their suggestions be updated in translateChanges (or maybe we already do that?)
+                const newAnchors = Array.isArray(anchors)
+                    ? anchors.map((anch) => {
+                          return { ...anch, anchored: false }
+                      })
+                    : [{ ...anchors, anchored: false }]
+                // const anchorsWithPotentialAnchors = newAnchors.map((a) =>
+                //     computeMostSimilarAnchor(document, a)
+                // )
+                return buildAnnotation({
+                    ...anno,
+                    anchors: anno.anchors
+                        .filter((anch) => {
+                            return typeof a.anchorId === 'string'
+                                ? anch.anchorId !== a.anchorId
+                                : !a.anchorId.includes(anch.anchorId)
+                        })
+                        .concat(newAnchors), // for now, just mark as not anchored
+                    needToUpdate: true,
+                    // outOfDate: true,
+                })
+            }
+        })
+    )
+    // console.log('huh?', unanchoredAnnotations)
+    return unanchoredAnnotations
+    // saveOutOfDateAnnotations(invalidIds)
+}
+
+// confirm whether our anchor is consistent with what is in its document
+export const validateAnchor = (
+    a: AnchorObject,
+    document: vscode.TextDocument
+): boolean => {
+    const range = createRangeFromAnchorObject(a)
+    return (
+        document.validateRange(range).isEqual(range) &&
+        document.getText(range) === a.anchorText
+    )
 }

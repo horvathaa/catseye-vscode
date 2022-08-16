@@ -5,7 +5,7 @@
  * Components the annotation renders are in annotationComponents/
  */
 import * as React from 'react'
-import cn from 'classnames'
+// import cn from 'classnames'
 import { breakpoints, buildAnnotation } from '../utils/viewUtils'
 import {
     deleteAnnotation,
@@ -20,26 +20,22 @@ import {
     Reply,
     Snapshot,
     Type,
+    ReanchorInformation,
+    Anchor,
 } from '../../../constants/constants'
-import AnnotationOperationButtons from './annotationComponents/annotationOperationButtons'
-import AnchorList from './annotationComponents/anchorList'
+// import AnnotationOperationButtons from './annotationComponents/annotationOperationButtons'
+// import AnchorList from './annotationComponents/anchorList'
 import AnchorVersions from './annotationComponents/anchorVersions'
 import TextEditor from './annotationComponents/textEditor'
 import ReplyContainer from './annotationComponents/replyContainer'
-import Outputs from './annotationComponents/outputs'
-import ReplyIcon from '@mui/icons-material/Reply'
-import Snapshots from './annotationComponents/snapshots'
+// import Outputs from './annotationComponents/outputs'
+// import ReplyIcon from '@mui/icons-material/Reply'
+// import Snapshots from './annotationComponents/snapshots'
 import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
-import {
-    Box,
-    Card,
-    CardContent,
-    Collapse,
-    FormControlLabel,
-} from '@material-ui/core'
+import { Card, CardContent, Collapse } from '@material-ui/core'
 import { Checkbox } from '@mui/material'
 import {
-    codeColor,
+    // codeColor,
     editorBackground,
     iconColor,
     vscodeTextColor,
@@ -50,7 +46,7 @@ import CollapsedCardHeader from './annotationComponents/annotationCardHeader'
 import EditIcon from '@mui/icons-material/Edit'
 import AdamiteButton from './annotationComponents/AdamiteButton'
 import { useMediaQuery } from '@material-ui/core'
-import AnnotationList from './annotationList'
+// import AnnotationList from './annotationList'
 
 interface Props {
     annotation: Annotation
@@ -125,9 +121,9 @@ const ReactAnnotation: React.FC<Props> = ({
 
     const isMedOrMore = useMediaQuery(theme.breakpoints.up('md'))
 
-    const handleExpandClick = () => {
-        setExpanded(!expanded)
-    }
+    // const handleExpandClick = () => {
+    //     setExpanded(!expanded)
+    // }
 
     const handleIncomingMessages = (e: MessageEvent<any>) => {
         const message = e.data
@@ -159,6 +155,18 @@ const ReactAnnotation: React.FC<Props> = ({
                     }
                 }
                 break
+            case 'scrollToAnno':
+                const annoDiv: HTMLElement | null = document.getElementById(
+                    message.payload.id
+                )
+                if (message.payload.id !== anno.id || !annoDiv) return
+                !expanded && setExpanded(true)
+                annoDiv.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                    inline: 'center',
+                })
+                return
         }
     }
 
@@ -185,6 +193,19 @@ const ReactAnnotation: React.FC<Props> = ({
         })
     }
 
+    const scrollToRange = (
+        anchor: Anchor,
+        filename: string,
+        gitUrl: string
+    ): void => {
+        vscode.postMessage({
+            command: 'scrollToRange',
+            anchor,
+            filename,
+            gitUrl,
+        })
+    }
+
     const handlePinnedClick = (): void => {
         vscode.postMessage({
             command: 'updateAnnotation',
@@ -198,6 +219,14 @@ const ReactAnnotation: React.FC<Props> = ({
         vscode.postMessage({
             command: 'exportAnnotationAsComment',
             annoId: anno.id,
+        })
+    }
+
+    const requestReanchor = (newAnchor: ReanchorInformation): void => {
+        vscode.postMessage({
+            command: 'reanchor',
+            annoId: anno.id,
+            newAnchor,
         })
     }
 
@@ -388,6 +417,7 @@ const ReactAnnotation: React.FC<Props> = ({
                 display: 'flex',
                 flexDirection: 'row',
             }}
+            id={anno.id}
         >
             <ThemeProvider theme={theme}>
                 {isMedOrMore && (
@@ -424,6 +454,8 @@ const ReactAnnotation: React.FC<Props> = ({
                             <AnchorVersions
                                 anchors={anno.anchors}
                                 scrollInEditor={scrollInEditor}
+                                requestReanchor={requestReanchor}
+                                scrollToRange={scrollToRange}
                             />
                             <div className={styles['ContentContainer']}>
                                 {edit ? (

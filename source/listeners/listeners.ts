@@ -6,7 +6,6 @@
  */
 
 import * as vscode from 'vscode'
-import * as ts from 'typescript'
 import {
     annotationList,
     copiedAnnotations,
@@ -34,7 +33,10 @@ import {
     astHelper,
 } from '../extension'
 import * as anchor from '../anchorFunctions/anchor'
-import { computeMostSimilarAnchor } from '../anchorFunctions/reanchor'
+import {
+    computeMostSimilarAnchor,
+    REANCHOR_DEBUG,
+} from '../anchorFunctions/reanchor'
 import * as utils from '../utils/utils'
 import {
     Annotation,
@@ -77,11 +79,15 @@ export const handleChangeVisibleTextEditors = (
     })
 
     if (!annotationsToHighlight.length) return
+    // console.log('textEditors', textEditors)
+    // console.log('docs?', vscode.workspace.textDocuments)
     if (view) {
         textEditors.forEach((t) => {
             anchor.addHighlightsToEditor(annotationsToHighlight, t)
-            !astHelper.checkIsSourceFileIsWatched(t.document) &&
-                astHelper.addSourceFile(t.document)
+            const shouldWatchFile =
+                !astHelper.checkIsSourceFileIsWatched(t.document) &&
+                astHelper.isTsJsJsxTsx(t.document)
+            shouldWatchFile && astHelper.addSourceFile(t.document)
         })
     }
 }
@@ -115,6 +121,8 @@ export const handleChangeActiveTextEditor = (
             }
 
             astHelper.addSourceFile(TextEditor.document)
+            console.log('ADD FILE TO TRACK IN ACTIVE TEXT EDITOR')
+            utils.addFileToTrack(TextEditor.document)
             if (user && vscode.workspace.workspaceFolders)
                 view?.updateDisplay(undefined, gitUrl, currentProject)
         }
@@ -122,26 +130,52 @@ export const handleChangeActiveTextEditor = (
     setActiveEditor(TextEditor)
 }
 
+const updateAnnotationsAnchorsOnSave = (
+    document: vscode.TextDocument
+): Annotation[] => {
+    const gitUrl = utils.getStableGitHubUrl(document.uri.fsPath)
+    const anchors = anchor.getAnchorsWithGitUrl(
+        utils.getStableGitHubUrl(document.uri.fsPath)
+    )
+    let initialAnnotations = utils.getAnnotationsWithStableGitUrl(
+        annotationList,
+        gitUrl
+    )
+    if (REANCHOR_DEBUG) {
+        const newAnchors = anchors.map((a) =>
+            computeMostSimilarAnchor(document, a)
+        )
+        initialAnnotations = utils.updateAnnotationsWithAnchors(newAnchors)
+    }
+
+    const annosWithNewSurroundingContext: Annotation[] =
+        utils.updateAnnotationsWithAnchors(
+            anchors.map((a): AnchorObject => {
+                return {
+                    ...a,
+                    surroundingCode: anchor.getSurroundingCodeArea(document, a),
+                }
+            })
+        )
+
+    return annosWithNewSurroundingContext.map((a) =>
+        astHelper.buildPathForAnnotation(a, document)
+    )
+}
+
 // In case where user saves or closes a window, save annotations to FireStore
 export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
     const gitUrl = utils.getStableGitHubUrl(TextDocument.uri.fsPath)
-    const anchors = anchor.getAnchorsWithGitUrl(
-        utils.getStableGitHubUrl(TextDocument.uri.fsPath)
-    )
-    const newAnchors = anchors.map((a) =>
-        computeMostSimilarAnchor(TextDocument, a)
-    )
-    const updatedAgain = utils.updateAnnotationsWithAnchors(newAnchors)
-    const lastUpdate = updatedAgain.map((a) =>
-        astHelper.buildPathForAnnotation(a, TextDocument)
-    )
+    const updatedAnnotations: Annotation[] =
+        updateAnnotationsAnchorsOnSave(TextDocument)
     setAnnotationList(
         utils.removeOutOfDateAnnotations(
-            lastUpdate.concat(
+            updatedAnnotations.concat(
                 utils.getAnnotationsNotWithGitUrl(annotationList, gitUrl)
             )
         )
     )
+    view?.updateDisplay(annotationList, gitUrl)
     if (vscode.workspace.workspaceFolders)
         utils.handleSaveCloseEvent(
             annotationList,
@@ -290,46 +324,13 @@ export const handleDidChangeTextDocument = (
             // mark any annotation that has changed for saving to FireStore
             translatedAnnotations = utils.removeOutOfDateAnnotations(
                 translatedAnnotations.map((a: Annotation) => {
-                    const [anchorsToTranslate, anchorsNotToTranslate] =
-                        utils.partition(
-                            a.anchors,
-                            // (a: AnchorObject) => a.filename === e.document.uri.toString()
-                            (a: AnchorObject) =>
-                                a.stableGitUrl === stableGitPath
-                        )
-                    const translate: (AnchorObject | null)[] =
-                        anchorsToTranslate.map((a: AnchorObject) =>
-                            anchor.translateChanges(
-                                a,
-                                change.range,
-                                change.text.length,
-                                diff,
-                                change.rangeLength,
-                                e.document,
-                                change.text
-                            )
-                        )
-                    const translatedAnchors = utils.removeNulls(translate)
-                    const needToUpdate = translatedAnchors.some((t) => {
-                        const anchor = anchorsToTranslate.find(
-                            (o: AnchorObject) => t.anchorId === o.anchorId
-                        )
-                        return !utils.objectsEqual(anchor.anchor, t.anchor)
-                    })
-                    const gitCommit: string | undefined =
-                        translatedAnchors.find((t) => {
-                            return t.gitCommit === gitInfo[a.projectName].commit
-                        })?.gitCommit
-                    const originalGitCommit = a.gitCommit
-                    return utils.buildAnnotation({
-                        ...a,
-                        needToUpdate,
-                        gitCommit: gitCommit ? gitCommit : originalGitCommit,
-                        anchors: [
-                            ...translatedAnchors,
-                            ...anchorsNotToTranslate,
-                        ],
-                    })
+                    return anchor.handleUpdatingTranslatedAnnotations(
+                        a,
+                        stableGitPath,
+                        change,
+                        diff,
+                        e
+                    )
                 })
             )
 
@@ -351,6 +352,9 @@ export const handleDidChangeTextDocument = (
                     setTempAnno({ ...tempAnno, anchors: [newAnchor] })
             }
         }
+        let shouldRefreshDisplay: boolean = translatedAnnotations.some(
+            (a) => a.needToUpdate
+        )
 
         const notUpdatedAnnotations: Annotation[] =
             utils.getAnnotationsNotWithGitUrl(annotationList, stableGitPath)
@@ -365,12 +369,17 @@ export const handleDidChangeTextDocument = (
                 newAnnotationList,
                 vscode.window.activeTextEditor
             )
+            shouldRefreshDisplay &&
+                view.updateDisplay(
+                    newAnnotationList,
+                    utils.getStableGitHubUrl(e.document.uri.fsPath)
+                )
         } else {
             setAnnotationList(
                 //utils.sortAnnotationsByLocation(
-                    annotationList
+                annotationList
                 //    )
-                )
+            )
         }
     }
 }
@@ -380,7 +389,6 @@ export const handleDidChangeTextEditorSelection = async (
 ): Promise<void> => {
     const { selections, textEditor } = e
     const activeSelection = selections[0]
-
     if (!activeSelection.start.isEqual(activeSelection.end)) {
         let createAnnotationWebviewLink: vscode.MarkdownString =
             new vscode.MarkdownString()
@@ -396,7 +404,13 @@ export const handleDidChangeTextEditorSelection = async (
             },
         ]
         textEditor.setDecorations(floatingDecorations, decOpts)
+    } else {
+        textEditor.setDecorations(floatingDecorations, [])
     }
 
     return
 }
+
+// export const handleDidOpenTextDocument = (e: vscode.TextDocument): void => {
+//     console.log('hewwo???', e)
+// }

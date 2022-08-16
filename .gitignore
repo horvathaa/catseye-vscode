@@ -31,3 +31,6 @@ secrets.*.js
 
 # zip
 *.zip
+
+# ignore annotations 
+/test.json

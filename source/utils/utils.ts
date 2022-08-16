@@ -59,15 +59,25 @@ import { CodeContext } from '../astHelper/nodeHelper'
 let { parse } = require('what-the-diff')
 var shiki = require('shiki')
 import { simpleGit, SimpleGit } from 'simple-git'
+
 import { computeMostSimilarAnchor } from '../anchorFunctions/reanchor'
 
+import {
+    getFilesInDirectory,
+    getVisibileOpenFiles,
+    getWorkInProgressFiles,
+} from '../anchorFunctions/searchHelpers'
+
 // https://www.npmjs.com/package/simple-git
-const gitDir =
+export const gitRootDir =
     vscode.workspace.workspaceFolders &&
     vscode.workspace.workspaceFolders[0].uri
         ? vscode.workspace.workspaceFolders[0].uri.fsPath
         : ''
-const git: SimpleGit = simpleGit(gitDir, { binary: 'git' })
+export const currentlyOpenDirPath = vscode.window.activeTextEditor
+    ? vscode.window.activeTextEditor.document.fileName
+    : ''
+export const git: SimpleGit = simpleGit(gitRootDir, { binary: 'git' })
 let lastSavedAnnotations: Annotation[] =
     annotationList && annotationList.length ? annotationList : []
 
@@ -524,7 +534,10 @@ export const handleSaveCloseEvent = async (
             filePath
         )
     }
-    findOpenFilesToSearch()
+    // testing purposes
+    getFilesInDirectory()
+    getVisibileOpenFiles()
+    getWorkInProgressFiles()
 }
 
 const translateSnapshotStandard = (snapshots: any[]): Snapshot[] => {
@@ -1157,6 +1170,7 @@ export const updateAnnotationsWithAnchors = (
     })
     return updatedAnnos
 }
+
 // returns currently opened files for reanchor search
 
 /* 

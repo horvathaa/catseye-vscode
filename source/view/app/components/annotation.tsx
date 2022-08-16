@@ -21,6 +21,7 @@ import {
     Snapshot,
     Type,
     ReanchorInformation,
+    Anchor,
 } from '../../../constants/constants'
 // import AnnotationOperationButtons from './annotationComponents/annotationOperationButtons'
 // import AnchorList from './annotationComponents/anchorList'
@@ -189,6 +190,19 @@ const ReactAnnotation: React.FC<Props> = ({
             command: 'scrollInEditor',
             id: anno.id,
             anchorId: id,
+        })
+    }
+
+    const scrollToRange = (
+        anchor: Anchor,
+        filename: string,
+        gitUrl: string
+    ): void => {
+        vscode.postMessage({
+            command: 'scrollToRange',
+            anchor,
+            filename,
+            gitUrl,
         })
     }
 
@@ -441,6 +455,7 @@ const ReactAnnotation: React.FC<Props> = ({
                                 anchors={anno.anchors}
                                 scrollInEditor={scrollInEditor}
                                 requestReanchor={requestReanchor}
+                                scrollToRange={scrollToRange}
                             />
                             <div className={styles['ContentContainer']}>
                                 {edit ? (

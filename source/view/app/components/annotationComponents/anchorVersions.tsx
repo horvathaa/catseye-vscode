@@ -7,6 +7,7 @@
 import * as React from 'react'
 import '../../styles/versions.module.css'
 import {
+    Anchor,
     AnchorObject,
     PotentialAnchorObject,
     ReanchorInformation,
@@ -17,12 +18,14 @@ interface Props {
     anchors: AnchorObject[]
     scrollInEditor: (id: string) => void
     requestReanchor: (newAnchor: ReanchorInformation) => void
+    scrollToRange: (anchor: Anchor, filename: string, gitUrl: string) => void
 }
 
 const AnchorVersions: React.FC<Props> = ({
     anchors,
     scrollInEditor,
     requestReanchor,
+    scrollToRange,
 }) => {
     const [showSuggestions, setShowSuggestions] = React.useState<boolean>(true)
 
@@ -47,6 +50,7 @@ const AnchorVersions: React.FC<Props> = ({
                         potentialVersions={anchor.potentialReanchorSpots}
                         currentAnchorObject={anchor}
                         scrollInEditor={scrollInEditor}
+                        scrollToRange={scrollToRange}
                         requestReanchor={requestReanchor}
                     ></Carousel>
                 )}
@@ -66,6 +70,7 @@ const AnchorVersions: React.FC<Props> = ({
                                 priorVersions={anchor.priorVersions}
                                 currentAnchorObject={anchor}
                                 scrollInEditor={scrollInEditor}
+                                scrollToRange={scrollToRange}
                                 // requestReanchor={requestReanchor} - consider supporting reanchor for prior versions?
                             ></Carousel>
                             {anchor.potentialReanchorSpots &&

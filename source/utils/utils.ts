@@ -19,10 +19,12 @@ import {
     computeRangeFromOffset,
     computeVsCodeRangeFromOffset,
     createAnchorFromRange,
+    getAnchorsWithGitUrl,
     getAnchorType,
     getSurroundingCodeArea,
     getSurroundingLinesAfterAnchor,
     getSurroundingLinesBeforeAnchor,
+    validateAnchor,
 } from '../anchorFunctions/anchor'
 import {
     gitInfo,
@@ -43,6 +45,8 @@ import {
     setCurrentGitHubCommit,
     currentGitHubCommit,
     astHelper,
+    trackedFiles,
+    setTrackedFiles,
 } from '../extension'
 import * as vscode from 'vscode'
 import { v4 as uuidv4 } from 'uuid'
@@ -55,6 +59,7 @@ import { CodeContext } from '../astHelper/nodeHelper'
 let { parse } = require('what-the-diff')
 var shiki = require('shiki')
 import { simpleGit, SimpleGit } from 'simple-git'
+import { computeMostSimilarAnchor } from '../anchorFunctions/reanchor'
 
 // https://www.npmjs.com/package/simple-git
 const gitDir =
@@ -1135,10 +1140,13 @@ export const levenshteinDistance = (s: string, t: string) => {
 }
 
 export const updateAnnotationsWithAnchors = (
-    anchors: AnchorObject[]
+    anchors: AnchorObject[],
+    annosWithAnchors?: Annotation[]
 ): Annotation[] => {
     const annoIds = anchors.map((a) => a.parentId)
-    const matchingAnnos = annotationList.filter((a) => annoIds.includes(a.id))
+    const matchingAnnos = annosWithAnchors
+        ? annosWithAnchors.filter((a) => annoIds.includes(a.id))
+        : annotationList.filter((a) => annoIds.includes(a.id))
     const updatedAnnos = matchingAnnos.map((a: Annotation) => {
         const annoAnchors = anchors.filter((anch) => anch.parentId === a.id)
         return buildAnnotation({
@@ -1201,5 +1209,79 @@ export const findOpenFilesToSearch = async () => {
                 // console.log('path', path, 'fspath', fsPath)
             }
         )
+    }
+}
+
+export const shouldTrackFile = (document: vscode.TextDocument): boolean => {
+    const trackedUris = trackedFiles.map((f) => f.uri.fsPath)
+    return !trackedUris.includes(document.uri.fsPath)
+}
+
+export const getAnnotationsInTextDocument = (
+    document: vscode.TextDocument,
+    annotations?: Annotation[]
+): Annotation[] => {
+    const gitUrl = getStableGitHubUrl(document.uri.fsPath)
+    return getAnnotationsWithStableGitUrl(
+        annotations ? annotations : annotationList,
+        gitUrl
+    )
+}
+
+export const getAnchorsInTextDocument = (
+    document: vscode.TextDocument
+): AnchorObject[] => {
+    const gitUrl = getStableGitHubUrl(document.uri.fsPath)
+    return getAnchorsWithGitUrl(gitUrl)
+}
+
+export const addFileToTrack = (document: vscode.TextDocument): void => {
+    if (!checkIfFileIsTracked(document)) {
+        setTrackedFiles([...trackedFiles, document])
+        console.log('adding n auditing file')
+        handleAuditNewFile(document)
+    }
+}
+
+export const checkIfFileIsTracked = (
+    document: vscode.TextDocument
+): boolean => {
+    return trackedFiles.map((a) => a.uri.fsPath).includes(document.uri.fsPath)
+}
+
+export const handleAuditNewFile = (document: vscode.TextDocument): void => {
+    const anchors = getAnchorsInTextDocument(document)
+    const annos = getAnnotationsInTextDocument(document)
+    console.log(
+        `\n\n----------- AUDIT NEW FILE ${document.uri.fsPath}----------\n\n`
+    )
+    let updatedAnnoIds: string[] = []
+    if (
+        anchors.length &&
+        annos.length &&
+        !anchors.every((a: AnchorObject) => validateAnchor(a, document))
+    ) {
+        console.log('\n-------------STARTING MAP------------\n')
+        const updatedAnchors: AnchorObject[] = anchors
+            .filter((a: AnchorObject) => !validateAnchor(a, document))
+            .map((a: AnchorObject): AnchorObject => {
+                return {
+                    ...computeMostSimilarAnchor(document, a),
+                    anchored: false,
+                }
+            })
+        console.log('\n-------------ENDING MAP------------\n')
+        const updatedAnnos = updateAnnotationsWithAnchors(updatedAnchors, annos)
+        updatedAnnoIds = updatedAnnoIds.concat([
+            ...new Set(updatedAnnos.map((a) => a.id)),
+        ])
+        setAnnotationList(
+            annotationList
+                .filter((a) => !updatedAnnoIds.includes(a.id))
+                .concat(updatedAnnos)
+        )
+        if (view) {
+            view.updateDisplay(annotationList)
+        }
     }
 }

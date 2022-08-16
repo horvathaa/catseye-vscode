@@ -13,6 +13,7 @@ import {
     NUM_SURROUNDING_LINES,
     SurroundingAnchorArea,
     AnchorType,
+    PotentialAnchorObject,
 } from '../constants/constants'
 import {
     // sortAnnotationsByLocation,
@@ -28,6 +29,8 @@ import {
     levenshteinDistance,
     buildAnnotation,
     removeNulls,
+    partition,
+    objectsEqual,
 } from '../utils/utils'
 import {
     annotationDecorations,
@@ -69,6 +72,109 @@ export const computeRangeFromOffset = (
     }
 
     return newAnchor
+}
+
+export const connectPotentialAnchorsToAnchors = (
+    pas: PotentialAnchorObject[],
+    anchors: AnchorObject[]
+): AnchorObject[] => {
+    let newAnchors: AnchorObject[] = anchors
+    const anchorIds: string[] = []
+    pas.forEach((p: PotentialAnchorObject) => {
+        const anchor = newAnchors.find((a) => a.anchorId === p.anchorId)
+        if (anchor) {
+            const updatedPotentialReanchorSpots = [
+                ...anchor.potentialReanchorSpots.filter(
+                    (a) => a.paoId !== p.paoId
+                ),
+                p,
+            ]
+            newAnchors = [
+                ...newAnchors.filter((a) => a.anchorId !== anchor.anchorId),
+                {
+                    ...anchor,
+                    potentialReanchorSpots: updatedPotentialReanchorSpots,
+                },
+            ]
+            anchorIds.push(anchor.anchorId)
+        } else {
+            console.log(
+                "could not find potential anchor object's anchor -- returning pa"
+            )
+        }
+    })
+    return newAnchors.concat(
+        anchors.filter((a) => !anchorIds.includes(a.anchorId))
+    )
+}
+
+export const handleUpdatingTranslatedAnnotations = (
+    a: Annotation,
+    stableGitPath: string,
+    change: vscode.TextDocumentContentChangeEvent,
+    diff: number,
+    e: vscode.TextDocumentChangeEvent
+): Annotation => {
+    const [anchorsToTranslate, anchorsNotToTranslate] = partition(
+        a.anchors,
+        // (a: AnchorObject) => a.filename === e.document.uri.toString()
+        (a: AnchorObject) => a.stableGitUrl === stableGitPath && a.anchored
+    )
+    const potentialAnchorsToTranslate = a.anchors
+        .flatMap((a) => a.potentialReanchorSpots)
+        .filter(
+            (anch: PotentialAnchorObject) => anch.stableGitUrl === stableGitPath
+        )
+
+    const translate: (AnchorObject | null)[] = anchorsToTranslate.map(
+        (a: AnchorObject) =>
+            translateChanges(
+                a,
+                change.range,
+                change.text.length,
+                diff,
+                change.rangeLength,
+                e.document,
+                change.text
+            )
+    )
+    const translatedAnchors = removeNulls(translate)
+    const translatedPotentialAnchors: PotentialAnchorObject[] = removeNulls(
+        potentialAnchorsToTranslate.map((a: PotentialAnchorObject) => {
+            translateChanges(
+                a,
+                change.range,
+                change.text.length,
+                diff,
+                change.rangeLength,
+                e.document,
+                change.text
+            )
+        })
+    )
+    const needToUpdate = translatedAnchors.some((t) => {
+        const anchor = anchorsToTranslate.find(
+            (o: AnchorObject) => t.anchorId === o.anchorId
+        )
+        return (
+            !objectsEqual(anchor.anchor, t.anchor) ||
+            t.anchorText !== anchor.anchorText
+        )
+    })
+    const gitCommit: string | undefined = translatedAnchors.find((t) => {
+        return t.gitCommit === gitInfo[a.projectName].commit
+    })?.gitCommit
+    const originalGitCommit = a.gitCommit
+    const updatedAnchors = connectPotentialAnchorsToAnchors(
+        translatedPotentialAnchors,
+        translatedAnchors.concat(anchorsNotToTranslate)
+    )
+    return buildAnnotation({
+        ...a,
+        needToUpdate,
+        gitCommit: gitCommit ? gitCommit : originalGitCommit,
+        anchors: updatedAnchors,
+    })
 }
 
 // const addLinesWithContent = (
@@ -739,6 +845,12 @@ const mergeAnnotationAndAnchorIds = (pairs: AnnotationAnchorPair[]) => {
         })
     }
 }
+// when to MARK an anchor as broken?
+// -- on highlight
+// when to COMPUTE broken anchors' reattachment points?
+// -- on git checkout/pull
+// -- on user request
+//
 
 // Function to actually decorate each file with our annotation highlights
 export const addHighlightsToEditor = (
@@ -811,6 +923,7 @@ export const addHighlightsToEditor = (
             )
 
             setAnnotationList(newAnnotationList.concat(unanchoredAnnotations))
+            unanchoredAnnotations.length && view?.updateDisplay(annotationList)
 
             try {
                 const decorationOptions: vscode.DecorationOptions[] =
@@ -863,14 +976,16 @@ const handleInvalidAnchors = (
                           a.anchorId.includes(anch.anchorId)
                       )
             if (anno && anchors) {
+                // should change this to only compute potential anchors for NEWLY unanchored annotations
+                // other anchors should just have their suggestions be updated in translateChanges (or maybe we already do that?)
                 const newAnchors = Array.isArray(anchors)
                     ? anchors.map((anch) => {
                           return { ...anch, anchored: false }
                       })
                     : [{ ...anchors, anchored: false }]
-                const anchorsWithPotentialAnchors = newAnchors.map((a) =>
-                    computeMostSimilarAnchor(document, a)
-                )
+                // const anchorsWithPotentialAnchors = newAnchors.map((a) =>
+                //     computeMostSimilarAnchor(document, a)
+                // )
                 return buildAnnotation({
                     ...anno,
                     anchors: anno.anchors
@@ -879,7 +994,7 @@ const handleInvalidAnchors = (
                                 ? anch.anchorId !== a.anchorId
                                 : !a.anchorId.includes(anch.anchorId)
                         })
-                        .concat(anchorsWithPotentialAnchors),
+                        .concat(newAnchors), // for now, just mark as not anchored
                     needToUpdate: true,
                     // outOfDate: true,
                 })
@@ -889,4 +1004,16 @@ const handleInvalidAnchors = (
     // console.log('huh?', unanchoredAnnotations)
     return unanchoredAnnotations
     // saveOutOfDateAnnotations(invalidIds)
+}
+
+// confirm whether our anchor is consistent with what is in its document
+export const validateAnchor = (
+    a: AnchorObject,
+    document: vscode.TextDocument
+): boolean => {
+    const range = createRangeFromAnchorObject(a)
+    return (
+        document.validateRange(range).isEqual(range) &&
+        document.getText(range) === a.anchorText
+    )
 }

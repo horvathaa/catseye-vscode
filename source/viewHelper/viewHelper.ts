@@ -13,6 +13,7 @@ import {
     Reply,
     Snapshot,
     ReanchorInformation,
+    Anchor,
 } from '../constants/constants'
 import {
     user,
@@ -49,6 +50,7 @@ import {
     addHighlightsToEditor,
     createAnchorFromRange,
     createRangeFromAnchorObject,
+    createRangeFromObject,
     createRangesFromAnnotation,
     updateAnchorInAnchorObject,
 } from '../anchorFunctions/anchor'
@@ -197,6 +199,63 @@ const getLocalPathFromGitHubUrl = async (url: string): Promise<string> => {
     return files[0].toString()
 }
 
+const scroll = (
+    range: vscode.Range,
+    filename: string,
+    gitUrl: string
+): void => {
+    const text = vscode.window.visibleTextEditors?.find(
+        (doc) => doc.document.uri.toString() === filename
+    ) // maybe switch to textDocuments
+    if (!text) {
+        vscode.workspace.openTextDocument(vscode.Uri.parse(filename)).then(
+            (doc: vscode.TextDocument) => {
+                vscode.window.showTextDocument(doc, {
+                    preserveFocus: true,
+                    preview: true,
+                    selection: range,
+                    viewColumn:
+                        view?._panel?.viewColumn === vscode.ViewColumn.One
+                            ? vscode.ViewColumn.Two
+                            : vscode.ViewColumn.One,
+                })
+                view?.updateDisplay(annotationList, filename)
+            },
+            async (reason: any) => {
+                console.error('rejected', reason)
+                const uri = await getLocalPathFromGitHubUrl(gitUrl) // this only works if the user has the specified github project open in vs code :-/
+                vscode.workspace
+                    .openTextDocument(vscode.Uri.parse(uri))
+                    .then((doc: vscode.TextDocument) => {
+                        vscode.window.showTextDocument(doc, {
+                            preserveFocus: true,
+                            preview: true,
+                            selection: range,
+                            viewColumn:
+                                view?._panel?.viewColumn ===
+                                vscode.ViewColumn.One
+                                    ? vscode.ViewColumn.Two
+                                    : vscode.ViewColumn.One,
+                        })
+                        view?.updateDisplay(annotationList, gitUrl)
+                    })
+            }
+        )
+        // fallback
+    } else {
+        text.revealRange(range, 1)
+    }
+}
+
+export const handleScrollToRange = (
+    anchor: Anchor,
+    filename: string,
+    gitUrl: string
+) => {
+    const range = createRangeFromObject(anchor)
+    scroll(range, filename, gitUrl)
+}
+
 // Navigate to the selected anchor's location
 export const handleScrollInEditor = async (
     id: string,
@@ -210,55 +269,7 @@ export const handleScrollInEditor = async (
     )
     if (anno && anchorObj) {
         const range = createRangeFromAnchorObject(anchorObj)
-        const text = vscode.window.visibleTextEditors?.find(
-            (doc) => doc.document.uri.toString() === anchorObj.filename
-        ) // maybe switch to textDocuments
-        if (!text) {
-            vscode.workspace
-                .openTextDocument(vscode.Uri.parse(anchorObj.filename))
-                .then(
-                    (doc: vscode.TextDocument) => {
-                        vscode.window.showTextDocument(doc, {
-                            preserveFocus: true,
-                            preview: true,
-                            selection: range,
-                            viewColumn:
-                                view?._panel?.viewColumn ===
-                                vscode.ViewColumn.One
-                                    ? vscode.ViewColumn.Two
-                                    : vscode.ViewColumn.One,
-                        })
-                        view?.updateDisplay(annotationList, anchorObj.filename)
-                    },
-                    async (reason: any) => {
-                        console.error('rejected', reason)
-                        const uri = await getLocalPathFromGitHubUrl(
-                            anchorObj.stableGitUrl
-                        ) // this only works if the user has the specified github project open in vs code :-/
-                        vscode.workspace
-                            .openTextDocument(vscode.Uri.parse(uri))
-                            .then((doc: vscode.TextDocument) => {
-                                vscode.window.showTextDocument(doc, {
-                                    preserveFocus: true,
-                                    preview: true,
-                                    selection: range,
-                                    viewColumn:
-                                        view?._panel?.viewColumn ===
-                                        vscode.ViewColumn.One
-                                            ? vscode.ViewColumn.Two
-                                            : vscode.ViewColumn.One,
-                                })
-                                view?.updateDisplay(
-                                    annotationList,
-                                    anchorObj.stableGitUrl
-                                )
-                            })
-                    }
-                )
-            // fallback
-        } else {
-            text.revealRange(range, 1)
-        }
+        scroll(range, anchorObj.filename, anchorObj.stableGitUrl)
     }
 }
 

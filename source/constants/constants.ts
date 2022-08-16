@@ -124,6 +124,13 @@ export interface AnchorObject {
 export interface PotentialAnchorObject extends AnchorObject {
     weight: number // how likely we think this anchor point is
     reasonSuggested: string // why we think this anchor point is a good choice
+    paoId: string
+}
+
+export const isPotentialAnchorObject = (
+    obj: any
+): obj is PotentialAnchorObject => {
+    return obj.hasOwnProperty('reasonSuggested')
 }
 
 export interface AnchorOnCommit {

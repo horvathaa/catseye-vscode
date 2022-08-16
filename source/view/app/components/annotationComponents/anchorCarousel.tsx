@@ -9,12 +9,18 @@ import {
     AnchorObject,
     AnchorOnCommit,
     PotentialAnchorObject,
+    isPotentialAnchorObject,
     HIGH_SIMILARITY_THRESHOLD, // we are pretty confident the anchor is here
     PASSABLE_SIMILARITY_THRESHOLD, // we are confident enough
     ReanchorInformation,
     AnchorType,
+    Anchor,
 } from '../../../../constants/constants'
-import { disabledIcon, iconColor } from '../../styles/vscodeStyles'
+import {
+    disabledIcon,
+    iconColor,
+    vscodeBorderColor,
+} from '../../styles/vscodeStyles'
 import AdamiteButton from './AdamiteButton'
 
 interface Props {
@@ -22,6 +28,7 @@ interface Props {
     potentialVersions?: PotentialAnchorObject[]
     currentAnchorObject: AnchorObject
     scrollInEditor: (id: string) => void
+    scrollToRange: (anchor: Anchor, filename: string, gitUrl: string) => void
     requestReanchor?: (newAnchor: ReanchorInformation) => void
 }
 
@@ -30,6 +37,7 @@ const AnchorCarousel: React.FC<Props> = ({
     potentialVersions,
     currentAnchorObject,
     scrollInEditor,
+    scrollToRange,
     requestReanchor,
 }) => {
     const Carousel = Slider as unknown as React.ElementType
@@ -128,8 +136,16 @@ const AnchorCarousel: React.FC<Props> = ({
         }
     }
 
-    const handleClick = (e: React.SyntheticEvent, aId: string): void => {
+    // change to support navigating to potential re-anchor points
+    const handleClick = (
+        e: React.SyntheticEvent,
+        aId: string,
+        pv: PotentialAnchorObject | undefined = undefined
+    ): void => {
         e.stopPropagation()
+        if (pv && isPotentialAnchorObject(pv)) {
+            scrollToRange(pv.anchor, pv.filename, pv.stableGitUrl)
+        }
         if (pastVersions && index === pastVersions.length - 1)
             scrollInEditor(aId)
     }
@@ -481,7 +497,7 @@ const AnchorCarousel: React.FC<Props> = ({
                                         }} // same as AnchorContainer ^^
                                         key={index}
                                         onClick={(e) => {
-                                            handleClick(e, pv.anchorId)
+                                            handleClick(e, pv.anchorId, pv)
                                         }}
                                     >
                                         <span>

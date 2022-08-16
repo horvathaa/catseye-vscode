@@ -79,6 +79,8 @@ export const handleChangeVisibleTextEditors = (
     })
 
     if (!annotationsToHighlight.length) return
+    // console.log('textEditors', textEditors)
+    // console.log('docs?', vscode.workspace.textDocuments)
     if (view) {
         textEditors.forEach((t) => {
             anchor.addHighlightsToEditor(annotationsToHighlight, t)
@@ -119,6 +121,8 @@ export const handleChangeActiveTextEditor = (
             }
 
             astHelper.addSourceFile(TextEditor.document)
+            console.log('ADD FILE TO TRACK IN ACTIVE TEXT EDITOR')
+            utils.addFileToTrack(TextEditor.document)
             if (user && vscode.workspace.workspaceFolders)
                 view?.updateDisplay(undefined, gitUrl, currentProject)
         }
@@ -320,46 +324,13 @@ export const handleDidChangeTextDocument = (
             // mark any annotation that has changed for saving to FireStore
             translatedAnnotations = utils.removeOutOfDateAnnotations(
                 translatedAnnotations.map((a: Annotation) => {
-                    const [anchorsToTranslate, anchorsNotToTranslate] =
-                        utils.partition(
-                            a.anchors,
-                            // (a: AnchorObject) => a.filename === e.document.uri.toString()
-                            (a: AnchorObject) =>
-                                a.stableGitUrl === stableGitPath && a.anchored
-                        )
-                    const translate: (AnchorObject | null)[] =
-                        anchorsToTranslate.map((a: AnchorObject) =>
-                            anchor.translateChanges(
-                                a,
-                                change.range,
-                                change.text.length,
-                                diff,
-                                change.rangeLength,
-                                e.document,
-                                change.text
-                            )
-                        )
-                    const translatedAnchors = utils.removeNulls(translate)
-                    const needToUpdate = translatedAnchors.some((t) => {
-                        const anchor = anchorsToTranslate.find(
-                            (o: AnchorObject) => t.anchorId === o.anchorId
-                        )
-                        return !utils.objectsEqual(anchor.anchor, t.anchor)
-                    })
-                    const gitCommit: string | undefined =
-                        translatedAnchors.find((t) => {
-                            return t.gitCommit === gitInfo[a.projectName].commit
-                        })?.gitCommit
-                    const originalGitCommit = a.gitCommit
-                    return utils.buildAnnotation({
-                        ...a,
-                        needToUpdate,
-                        gitCommit: gitCommit ? gitCommit : originalGitCommit,
-                        anchors: [
-                            ...translatedAnchors,
-                            ...anchorsNotToTranslate,
-                        ],
-                    })
+                    return anchor.handleUpdatingTranslatedAnnotations(
+                        a,
+                        stableGitPath,
+                        change,
+                        diff,
+                        e
+                    )
                 })
             )
 
@@ -439,3 +410,7 @@ export const handleDidChangeTextEditorSelection = async (
 
     return
 }
+
+// export const handleDidOpenTextDocument = (e: vscode.TextDocument): void => {
+//     console.log('hewwo???', e)
+// }

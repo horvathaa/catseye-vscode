@@ -20,6 +20,8 @@ import {
     selectedAnnotationsNavigations,
     setSelectedAnnotationsNavigations,
     astHelper,
+    trackedFiles,
+    setTrackedFiles,
 } from '../extension'
 import { AnchorObject, AnchorType, Annotation } from '../constants/constants'
 import * as anchor from '../anchorFunctions/anchor'
@@ -33,15 +35,23 @@ import {
     catseyeFoldingRangeProvider,
     refreshFoldingRanges,
 } from '../foldingRangeProvider/foldingRangeProvider'
+import { computeMostSimilarAnchor } from '../anchorFunctions/reanchor'
 
 // on launch, create auth session and sign in to FireStore
 export const init = async () => {
     adamiteLog.appendLine('Calling init')
     await initializeAuth()
-
+    trackAndAuditFilesOnLaunch()
     if (view) {
         view._panel?.reveal()
     }
+}
+
+export const trackAndAuditFilesOnLaunch = (): void => {
+    const docs = vscode.window.visibleTextEditors.map((t) => t.document)
+    docs.forEach((document: vscode.TextDocument) => {
+        utils.addFileToTrack(document)
+    })
 }
 
 // Creates Adamite side panel and sets up its listeners
@@ -73,6 +83,11 @@ export const createView = async (context: vscode.ExtensionContext) => {
                     case 'scrollInEditor': {
                         const { id, anchorId } = message
                         viewHelper.handleScrollInEditor(id, anchorId)
+                        break
+                    }
+                    case 'scrollToRange': {
+                        const { anchor, filename, gitUrl } = message
+                        viewHelper.handleScrollToRange(anchor, filename, gitUrl)
                         break
                     }
                     case 'emailAndPassReceived': {

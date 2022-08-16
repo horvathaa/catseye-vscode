@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid'
 import * as vscode from 'vscode'
 import {
     Anchor,
@@ -6,7 +7,8 @@ import {
     PotentialAnchorObject,
     HIGH_SIMILARITY_THRESHOLD, // we are pretty confident the anchor is here
     PASSABLE_SIMILARITY_THRESHOLD, // we are confident enough
-    INCREMENT, // amount for expanding search range
+    INCREMENT,
+    AnchorType, // amount for expanding search range
 } from '../constants/constants'
 import { astHelper, gitInfo } from '../extension'
 import {
@@ -58,12 +60,26 @@ interface WeightedCodeLine {
     weight: number
 }
 
+interface WeightedCodeLineRange {
+    codeLines: WeightedCodeLine[]
+    startLine: number
+    endLine: number
+    weight: number
+}
+
 interface AuditedWeightedCodeLine extends WeightedCodeLine {
     line: number
 }
 interface WeightedTokenLine extends WeightedToken {
     line: number
 }
+
+interface IteratedCodeToken extends CodeToken {
+    line: number
+    idxOfToken: number
+    idxOfLine: number
+}
+
 interface WeightedToken extends CodeToken {
     howManyTimesDoesTokenAppear?: number
     howSimilarIsTokenOffset?: number
@@ -122,7 +138,7 @@ const getCodeLine = (text: string, start?: StartPosition): CodeLine[] => {
 }
 
 function numRange(size: number, startAt: number = 0): number[] {
-    return [...Array(size).keys()].map((i) => i + startAt)
+    return size >= 0 ? [...Array(size).keys()].map((i) => i + startAt) : []
 }
 
 const getCodeAtLine = (cl: CodeLine[], l: number): CodeLine | undefined => {
@@ -149,7 +165,9 @@ export const computeMostSimilarAnchor = (
     document: vscode.TextDocument,
     anchor: AnchorObject
 ): AnchorObject => {
+    console.log('\n\n----------- RUNNING COMPUTE MOST SIMILAR----------\n\n')
     currDocLength = document.lineCount
+    console.log('original anchor', anchor)
     const sourceCode: CodeLine[] = getCodeLine(document.getText())
     REANCHOR_DEBUG && console.log('source', sourceCode)
     REANCHOR_DEBUG && console.log('anchor', anchor)
@@ -157,6 +175,7 @@ export const computeMostSimilarAnchor = (
         startLine: anchor.anchor.startLine,
         startOffset: anchor.anchor.startOffset,
     })
+    console.log('computed anchorcode', anchorCode)
     const surroundingAbove = anchor.surroundingCode
         ? getCodeLine(anchor.surroundingCode.linesBefore.join('\n'), {
               startLine:
@@ -181,8 +200,12 @@ export const computeMostSimilarAnchor = (
         surroundingAbove,
         surroundingBelow,
         anchor.anchor.startLine,
-        anchor.anchor.endLine
+        anchor.anchor.endLine,
+        anchor.anchorType
     )
+    if (!newAnchors.length) {
+        return anchor
+    }
     const projectName: string = getProjectName(document.uri.toString())
     const visiblePath: string = vscode.workspace.workspaceFolders
         ? getVisiblePath(projectName, document.uri.fsPath)
@@ -233,15 +256,21 @@ export const computeMostSimilarAnchor = (
                 weight,
                 reasonSuggested: '',
                 anchorType: getAnchorType(restAnchor.anchor, document), // can probably use this to help us reanchor too
+                paoId: uuidv4(),
             }
             return newPotentialAnchor
         }
     )
+
+    console.log('newPotentialAnchors', newPotentialAnchors)
+
     newPotentialAnchors = getPotentialExpandedAnchor(
         newPotentialAnchors,
         sourceCode,
         anchorCode
     )
+
+    console.log('lol?', newPotentialAnchors)
 
     // }
 
@@ -254,6 +283,10 @@ export const computeMostSimilarAnchor = (
                 b.weight < a.weight ? -1 : 1
             ),
         })
+    console.log('hewwwo????', {
+        ...anchor,
+        potentialReanchorSpots: newPotentialAnchors,
+    })
 
     return { ...anchor, potentialReanchorSpots: newPotentialAnchors }
 }
@@ -265,7 +298,8 @@ const proximitySearch = (
     surroundingAbove: CodeLine[],
     surroundingBelow: CodeLine[],
     startLine: number,
-    endLine: number
+    endLine: number,
+    anchorType: AnchorType
 ): WeightedAnchor[] => {
     // looks at location where anchor used to be (e.g., line 269)
     const startAnchorSearch: WeightedCodeLine[] = removeNulls(
@@ -341,6 +375,17 @@ const proximitySearch = (
             : 100
 
     let newAnchors: WeightedAnchor[] = []
+
+    if (anchorType === AnchorType.multiline) {
+        let test = useSlidingWindowWeightedRange(anchorCode, sourceCode)
+        const decent = test
+            .filter((t) => t.weight < PASSABLE_SIMILARITY_THRESHOLD)
+            .sort((a, b) => a.weight - b.weight)
+        console.log('TEST!!!!!!!!!!!!!!!!!!!!', decent)
+        newAnchors = newAnchors.concat(
+            decent.map((d) => createWeightedAnchorFromWeightedRange(d))
+        )
+    }
     // Nailed the location -- everything is very similar
     if (
         averageAnchorLineWeight <= HIGH_SIMILARITY_THRESHOLD &&
@@ -349,9 +394,11 @@ const proximitySearch = (
     ) {
         REANCHOR_DEBUG && console.log('--------- HIGH SIMILARITY ----------')
         // find anchor start and end points + anchor range
+        console.log('high similarity - search space', startAnchorSearch)
         newAnchors = newAnchors.concat(
             findNewAnchorLocation(startAnchorSearch, anchorCode)
         )
+        console.log('new anchors after high', newAnchors)
     }
     // additionally search if area is just okay
     if (
@@ -361,9 +408,11 @@ const proximitySearch = (
     ) {
         // can maybe do some additional searching to find better anchor positions (probs compare against close lines)
         REANCHOR_DEBUG && console.log('-------- MEDIUM SIMILARITY ---------')
+        console.log('medium', startAnchorSearch)
         newAnchors = newAnchors.concat(
             findNewAnchorLocation(startAnchorSearch, anchorCode)
         )
+        console.log('new anchors after medium', newAnchors)
     }
     // else { // - commenting out for testing
     REANCHOR_DEBUG && console.log('-------- LOW SIMILARITY ---------')
@@ -372,6 +421,7 @@ const proximitySearch = (
             'surroundingAboveAnchorSearch',
             surroundingAboveAnchorSearch
         )
+
     // then look across whole file
     newAnchors = newAnchors.concat(
         handleLowSimilarityMatch(
@@ -381,9 +431,14 @@ const proximitySearch = (
             surroundingBelowAnchorSearch
         )
     )
+    console.log('new anchors after low', newAnchors)
 
     // sort by likelihood that this is correct anchor and return
     REANCHOR_DEBUG && console.log('returning these anchors', newAnchors)
+    console.log(
+        'sorted new anchors',
+        newAnchors.sort((a, b) => a.weight - b.weight)
+    )
     return newAnchors.sort((a, b) => a.weight - b.weight)
 }
 
@@ -772,24 +827,10 @@ const createWeightedLineComparedToSource = (
                 return weightedCodeLine
             } else {
                 let weightedCodeLines: WeightedCodeLine[] = []
-                for (
-                    let i = 0;
-                    i <
-                    Math.floor(
-                        computedSourceLines.length / comparingCode.length
-                    );
-                    i += comparingCode.length
-                ) {
-                    const iRange = numRange(comparingCode.length, i)
-                    iRange.forEach((j, idx) => {
-                        weightedCodeLines = weightedCodeLines.concat(
-                            compareCodeLinesByContent(
-                                sourceCode[j],
-                                comparingCode[idx]
-                            )
-                        )
-                    })
-                }
+                weightedCodeLines = useSlidingWindow(
+                    comparingCode,
+                    computedSourceLines
+                )
                 return weightedCodeLines
             }
         } else {
@@ -858,20 +899,55 @@ const useSlidingWindow = (
     let weightedCodeLine: WeightedCodeLine[] = []
     const weightableSource = source.filter((l) => !l.isEmptyLine)
     const weightableWindowVal = windowVal.filter((l) => !l.isEmptyLine)
+    for (let i = 0; i < weightableSource.length; i++) {
+        const iRange = numRange(weightableWindowVal.length, i)
+        iRange[iRange.length - 1] < weightableSource.length - 1 &&
+            iRange.forEach((j, idx) => {
+                weightedCodeLine = weightedCodeLine.concat(
+                    compareCodeLinesByContent(
+                        weightableSource[j],
+                        weightableWindowVal[idx]
+                    )
+                )
+            })
+    }
+    return weightedCodeLine
+}
+
+const useSlidingWindowWeightedRange = (
+    windowVal: CodeLine[],
+    source: CodeLine[]
+): WeightedCodeLineRange[] => {
+    let weightedCodeLine: WeightedCodeLineRange[] = []
+    const weightableSource = source.filter((l) => !l.isEmptyLine)
+    const weightableWindowVal = windowVal.filter((l) => !l.isEmptyLine)
     for (
         let i = 0;
-        i < Math.floor(weightableSource.length / weightableWindowVal.length);
-        i += weightableWindowVal.length
+        i < weightableSource.length - weightableWindowVal.length;
+        i++
     ) {
+        let weightedRange: WeightedCodeLineRange = {
+            codeLines: [],
+            startLine: weightableSource[i].line,
+            endLine:
+                i + weightableWindowVal.length < weightableSource.length
+                    ? weightableSource[i + weightableWindowVal.length].line
+                    : weightableSource[weightableSource.length - 1].line,
+            weight: 100,
+        }
         const iRange = numRange(weightableWindowVal.length, i)
-        iRange.forEach((j, idx) => {
-            weightedCodeLine = weightedCodeLine.concat(
-                compareCodeLinesByContent(
-                    weightableSource[j],
-                    weightableWindowVal[idx]
+        iRange[iRange.length - 1] < weightableSource.length - 1 &&
+            iRange.forEach((j, idx) => {
+                weightedRange.codeLines.push(
+                    compareCodeLinesByContent(
+                        weightableSource[j],
+                        weightableWindowVal[idx]
+                    )
                 )
-            )
-        })
+            })
+        const weights = weightedRange.codeLines.map((l) => l.weight)
+        weightedRange.weight = weights.reduce((a, b) => a + b) / weights.length
+        weightedCodeLine.push(weightedRange)
     }
     return weightedCodeLine
 }
@@ -921,6 +997,8 @@ const handleLowSimilarityMatch = (
         (l) => l.weight <= PASSABLE_SIMILARITY_THRESHOLD
     )
 
+    console.log('goodmatches', goodMatches)
+
     // compare against whole file
     // (tbd if we should just always do this or only if goodMatches returns [])
     const weightedWholeSourceComparedToAnchor: WeightedCodeLine[] =
@@ -929,6 +1007,7 @@ const handleLowSimilarityMatch = (
         .filter((l) => l.weight <= PASSABLE_SIMILARITY_THRESHOLD)
         .concat(goodMatches)
         .sort((a, b) => a.weight - b.weight)
+    console.log('goodSourceMatches', goodSourceMatches)
     if (goodSourceMatches.length) {
         // make sure we're not suggesting a whole bunch of things
         const anchorsToSuggest =
@@ -940,6 +1019,11 @@ const handleLowSimilarityMatch = (
             suggestionAudit(anchorsToSuggest),
             'line'
         )
+        if (!auditedAnchorsToSuggest.length) {
+            // we only had junk suggestions :-(
+            return []
+        }
+        console.log('audited', auditedAnchorsToSuggest)
         // add anchors -- this will favor the best match in the array
         newAnchors.push(
             findNewAnchorLocation(auditedAnchorsToSuggest, anchorCode)
@@ -1012,6 +1096,26 @@ const handleTokenTies = (wts: WeightedToken[]): WeightedToken => {
     return closer[0]
 }
 
+const createWeightedAnchorFromWeightedRange = (
+    wcr: WeightedCodeLineRange
+): WeightedAnchor => {
+    const weightedAnchor: WeightedAnchor = {
+        anchor: {
+            startLine: wcr.startLine,
+            startOffset: wcr.codeLines[0].codeLine.code[0].offset,
+            endLine: wcr.endLine,
+            endOffset:
+                wcr.codeLines[wcr.codeLines.length - 1].codeLine.code[
+                    wcr.codeLines[wcr.codeLines.length - 1].codeLine.code
+                        .length - 1
+                ].offset,
+        },
+        weight: wcr.weight,
+        reasonSuggested: 'multi-line',
+    }
+    return weightedAnchor
+}
+
 const findNewAnchorLocation = (
     sourceCode: WeightedCodeLine[],
     anchorCode: CodeLine[]
@@ -1033,8 +1137,19 @@ const findNewAnchorLocation = (
         reasonSuggested: '',
     }
 
+    console.log(
+        'anchorCode',
+        anchorCode,
+        'sourcecode',
+        sourceCode,
+        'start',
+        startToken,
+        'end',
+        endToken
+    )
+
     // single token anchor
-    if (objectsEqual(startToken, endToken)) {
+    if (startToken && endToken && objectsEqual(startToken, endToken)) {
         // this should be the main case
         if (sourceCode.length === 1) {
             newAnchor = findSingleTokenAnchor(sourceCode, startToken)
@@ -1120,6 +1235,139 @@ const findSingleTokenAnchor = (
     return newAnchor
 }
 
+const moveForwardThroughCodeLine = (
+    lastLine: number,
+    lastOffset: number,
+    code: CodeLine[]
+): IteratedCodeToken => {
+    //
+    const lines = code.map((l) => l.line)
+    const lineAtLastLine = getCodeAtLine(code, lastLine)
+    const lineIdx = lines.indexOf(lastLine)
+    if (lineAtLastLine) {
+        const offsets = lineAtLastLine.code.map((t) => t.offset)
+        const indexOfLastOffset = offsets.indexOf(lastOffset)
+        if (indexOfLastOffset !== -1) {
+            return indexOfLastOffset < offsets.length - 1
+                ? {
+                      ...lineAtLastLine.code[indexOfLastOffset + 1],
+                      line: lastLine,
+                      idxOfLine: lineIdx,
+                      idxOfToken: indexOfLastOffset + 1,
+                  }
+                : lineIdx < lines.length - 1 && lineIdx !== -1
+                ? {
+                      ...code[lineIdx + 1].code[0],
+                      idxOfLine: lineIdx + 1,
+                      line: lines[lineIdx + 1],
+                      idxOfToken: 0,
+                  }
+                : {
+                      ...code[0].code[0],
+                      idxOfLine: 0,
+                      line: lines[0],
+                      idxOfToken: 0,
+                  } // wrap back around -- maybe not ideal
+        }
+        // if can't find index - go to next line?
+        else {
+            return lineIdx !== -1 && lineIdx < lines.length - 1
+                ? {
+                      ...code[lineIdx + 1].code[0],
+                      line: lines[lineIdx + 1],
+                      idxOfLine: lineIdx + 1,
+                      idxOfToken: 0,
+                  }
+                : {
+                      ...code[0].code[0],
+                      idxOfLine: 0,
+                      line: lines[0],
+                      idxOfToken: 0,
+                  }
+        }
+    } else {
+        return {
+            ...code[0].code[0],
+            idxOfLine: 0,
+            line: lines[0],
+            idxOfToken: 0,
+        }
+    }
+}
+
+const getLinesWithContent = (code: CodeLine[]): CodeLine[] => {
+    return code.filter((c) => c.code.length)
+}
+
+const moveBackwardsThroughCodeLine = (
+    lastLine: number,
+    lastOffset: number,
+    code: CodeLine[]
+): IteratedCodeToken => {
+    //
+    let codeToEvaluate = getLinesWithContent(code)
+    const lines = codeToEvaluate.map((l) => l.line)
+    const lineAtLastLine = getCodeAtLine(codeToEvaluate, lastLine)
+    const lineIdx = lines.indexOf(lastLine)
+    if (lineAtLastLine) {
+        const offsets = lineAtLastLine.code.map((t) => t.offset)
+        const indexOfLastOffset = offsets.indexOf(lastOffset)
+        if (indexOfLastOffset !== -1) {
+            return indexOfLastOffset > 0
+                ? {
+                      ...lineAtLastLine.code[indexOfLastOffset - 1],
+                      line: lastLine,
+                      idxOfLine: lineIdx,
+                      idxOfToken: indexOfLastOffset - 1,
+                  }
+                : lineIdx > 0 && lineIdx !== -1
+                ? {
+                      ...codeToEvaluate[lineIdx - 1].code[
+                          codeToEvaluate[lineIdx - 1].code.length - 1
+                      ],
+                      idxOfLine: lineIdx - 1,
+                      line: lines[lineIdx - 1],
+                      idxOfToken: codeToEvaluate[lineIdx - 1].code.length - 1,
+                  }
+                : {
+                      ...codeToEvaluate[0].code[0],
+                      idxOfLine: 0,
+                      line: lines[0],
+                      idxOfToken: 0,
+                  } // wrap back around -- maybe not ideal
+        }
+        // if can't find index - go to next line?
+        else {
+            return lineIdx !== -1 && lineIdx > 0
+                ? {
+                      ...codeToEvaluate[lineIdx - 1].code[
+                          codeToEvaluate[lineIdx - 1].code.length - 1
+                      ],
+                      idxOfLine: lineIdx - 1,
+                      line: lines[lineIdx - 1],
+                      idxOfToken: codeToEvaluate[lineIdx - 1].code.length - 1,
+                  }
+                : {
+                      ...codeToEvaluate[0].code[0],
+                      idxOfLine: 0,
+                      line: lines[0],
+                      idxOfToken: 0,
+                  }
+        }
+    } else {
+        return {
+            ...codeToEvaluate[0].code[0],
+            idxOfLine: 0,
+            line: lines[0],
+            idxOfToken: 0,
+        }
+    }
+}
+
+const isIteratedCodeToken = (token: any): token is IteratedCodeToken => {
+    return token.hasOwnProperty('idxOfToken')
+}
+
 const findMultiLineAnchor = (
     sourceCode: WeightedCodeLine[],
     anchorCode: CodeLine[]
@@ -1138,12 +1386,49 @@ const findMultiLineAnchor = (
     // that removed those tokens from source
     // e.g., could increment startTokenIdx to look and see if second token appears even tho first was removed
 
-    const startToken = anchorCode[startLineIdx].code[startTokenIdx]
-    const endToken = anchorCode[endLineIdx].code[endTokenIdx]
+    let startToken: CodeToken | IteratedCodeToken =
+        anchorCode[startLineIdx].code[startTokenIdx]
+    while (!startToken) {
+        startToken = moveForwardThroughCodeLine(
+            anchorCode[startLineIdx].line,
+            startTokenIdx,
+            anchorCode
+        )
+        if (isIteratedCodeToken(startToken)) {
+            startLineIdx = startToken.idxOfLine
+            startTokenIdx = startToken.idxOfToken
+        } else {
+            break
+        }
+    }
+    let endToken = anchorCode[endLineIdx].code[endTokenIdx]
+    while (!endToken) {
+        endToken = moveBackwardsThroughCodeLine(
+            anchorCode[endLineIdx].line,
+            endTokenIdx,
+            anchorCode
+        )
+        if (isIteratedCodeToken(endToken)) {
+            endLineIdx = endToken.idxOfLine
+            endTokenIdx = endToken.idxOfToken
+        } else {
+            break
+        }
+    }
+
+    console.log('start token', startToken, 'endToken', endToken)
 
     let startTokenMatches: WeightedToken[] = []
     let endTokenMatches: WeightedToken[] = []
+    console.log('what?', sourceCode)
     sourceCode.forEach((l) => {
+        console.log(' l.codeLine.line', l.codeLine.line)
+        console.log(
+            'uh-startline',
+            anchorCode[startLineIdx],
+            'endline',
+            anchorCode[endLineIdx]
+        )
         const startMatchWeights = l.codeLine.code.flatMap((c) => {
             return {
                 ...compareTwoTokens(
@@ -1179,8 +1464,9 @@ const findMultiLineAnchor = (
     })
 
     const bestMatchStart: WeightedTokenLine = stupidFindMin(startTokenMatches)
+    console.log('bestmatchstart', bestMatchStart)
     const bestMatchEnd: WeightedTokenLine = stupidFindMin(endTokenMatches)
-
+    console.log('bestMatchEnd', bestMatchEnd)
     newAnchor.anchor.startLine = bestMatchStart.line
     newAnchor.anchor.startOffset = bestMatchStart.offset
     newAnchor.anchor.endLine = bestMatchEnd.line

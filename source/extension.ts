@@ -17,7 +17,6 @@ import * as utils from './utils/utils'
 import * as debug from './debug/debug'
 import ViewLoader from './view/ViewLoader'
 import { AstHelper } from './astHelper/astHelper'
-import { catseyeFoldingRangeProvider } from './foldingRangeProvider/foldingRangeProvider'
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports
 export const gitApi = gitExtension?.getAPI(1)
 console.log('gitApi', gitApi)
@@ -45,6 +44,7 @@ export let currentGitHubCommit: string = ''
 export let changes: ChangeEvent[] = []
 export let numChangeEventsCompleted = 0
 export let tsFiles: TsFile[] = []
+export let trackedFiles: vscode.TextDocument[] = []
 export let astHelper: AstHelper = new AstHelper()
 
 export const annotationDecorations =
@@ -167,6 +167,12 @@ export const incrementNumChangeEventsCompleted = (): void => {
     numChangeEventsCompleted++
 }
 
+export const setTrackedFiles = (
+    newTrackedFiles: vscode.TextDocument | vscode.TextDocument[]
+): void => {
+    trackedFiles = trackedFiles.concat(newTrackedFiles)
+}
+
 // this method is called when the extension is activated
 // the extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -206,6 +212,10 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.workspace.onDidChangeTextDocument(
             eventHandlers.handleDidChangeTextDocument
         )
+
+    // let didOpenTextDocumentDisposable = vscode.workspace.onDidOpenTextDocument(
+    //     eventHandlers.handleDidOpenTextDocument
+    // )
 
     let didStartDebugSessionDisposable = vscode.debug.onDidStartDebugSession(
         debug.handleOnDidStartDebugSession
@@ -278,6 +288,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(didSaveListenerDisposable)
     context.subscriptions.push(didCloseListenerDisposable)
     context.subscriptions.push(didChangeTextDocumentDisposable)
+    // context.subscriptions.push(didOpenTextDocumentDisposable)
     context.subscriptions.push(didStartDebugSessionDisposable)
 
     context.subscriptions.push(createViewDisposable)

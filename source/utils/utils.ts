@@ -1238,7 +1238,6 @@ export const getAnchorsInTextDocument = (
 export const addFileToTrack = (document: vscode.TextDocument): void => {
     if (!checkIfFileIsTracked(document)) {
         setTrackedFiles([...trackedFiles, document])
-        console.log('adding n auditing file')
         handleAuditNewFile(document)
     }
 }
@@ -1252,16 +1251,12 @@ export const checkIfFileIsTracked = (
 export const handleAuditNewFile = (document: vscode.TextDocument): void => {
     const anchors = getAnchorsInTextDocument(document)
     const annos = getAnnotationsInTextDocument(document)
-    console.log(
-        `\n\n----------- AUDIT NEW FILE ${document.uri.fsPath}----------\n\n`
-    )
     let updatedAnnoIds: string[] = []
     if (
         anchors.length &&
         annos.length &&
         !anchors.every((a: AnchorObject) => validateAnchor(a, document))
     ) {
-        console.log('\n-------------STARTING MAP------------\n')
         const updatedAnchors: AnchorObject[] = anchors
             .filter((a: AnchorObject) => !validateAnchor(a, document))
             .map((a: AnchorObject): AnchorObject => {
@@ -1270,7 +1265,6 @@ export const handleAuditNewFile = (document: vscode.TextDocument): void => {
                     anchored: false,
                 }
             })
-        console.log('\n-------------ENDING MAP------------\n')
         const updatedAnnos = updateAnnotationsWithAnchors(updatedAnchors, annos)
         updatedAnnoIds = updatedAnnoIds.concat([
             ...new Set(updatedAnnos.map((a) => a.id)),

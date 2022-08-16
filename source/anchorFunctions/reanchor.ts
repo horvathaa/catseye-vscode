@@ -165,9 +165,12 @@ export const computeMostSimilarAnchor = (
     document: vscode.TextDocument,
     anchor: AnchorObject
 ): AnchorObject => {
-    console.log('\n\n----------- RUNNING COMPUTE MOST SIMILAR----------\n\n')
+    REANCHOR_DEBUG &&
+        console.log(
+            '\n\n----------- RUNNING COMPUTE MOST SIMILAR----------\n\n'
+        )
     currDocLength = document.lineCount
-    console.log('original anchor', anchor)
+    REANCHOR_DEBUG && console.log('original anchor', anchor)
     const sourceCode: CodeLine[] = getCodeLine(document.getText())
     REANCHOR_DEBUG && console.log('source', sourceCode)
     REANCHOR_DEBUG && console.log('anchor', anchor)
@@ -175,7 +178,7 @@ export const computeMostSimilarAnchor = (
         startLine: anchor.anchor.startLine,
         startOffset: anchor.anchor.startOffset,
     })
-    console.log('computed anchorcode', anchorCode)
+    REANCHOR_DEBUG && console.log('computed anchorcode', anchorCode)
     const surroundingAbove = anchor.surroundingCode
         ? getCodeLine(anchor.surroundingCode.linesBefore.join('\n'), {
               startLine:
@@ -262,7 +265,7 @@ export const computeMostSimilarAnchor = (
         }
     )
 
-    console.log('newPotentialAnchors', newPotentialAnchors)
+    REANCHOR_DEBUG && console.log('newPotentialAnchors', newPotentialAnchors)
 
     newPotentialAnchors = getPotentialExpandedAnchor(
         newPotentialAnchors,
@@ -270,7 +273,7 @@ export const computeMostSimilarAnchor = (
         anchorCode
     )
 
-    console.log('lol?', newPotentialAnchors)
+    REANCHOR_DEBUG && console.log('lol?', newPotentialAnchors)
 
     // }
 
@@ -283,10 +286,11 @@ export const computeMostSimilarAnchor = (
                 b.weight < a.weight ? -1 : 1
             ),
         })
-    console.log('hewwwo????', {
-        ...anchor,
-        potentialReanchorSpots: newPotentialAnchors,
-    })
+    REANCHOR_DEBUG &&
+        console.log('hewwwo????', {
+            ...anchor,
+            potentialReanchorSpots: newPotentialAnchors,
+        })
 
     return { ...anchor, potentialReanchorSpots: newPotentialAnchors }
 }
@@ -377,11 +381,12 @@ const proximitySearch = (
     let newAnchors: WeightedAnchor[] = []
 
     if (anchorType === AnchorType.multiline) {
+        // probably can do more here
         let test = useSlidingWindowWeightedRange(anchorCode, sourceCode)
         const decent = test
             .filter((t) => t.weight < PASSABLE_SIMILARITY_THRESHOLD)
             .sort((a, b) => a.weight - b.weight)
-        console.log('TEST!!!!!!!!!!!!!!!!!!!!', decent)
+        REANCHOR_DEBUG && console.log('TEST!!!!!!!!!!!!!!!!!!!!', decent)
         newAnchors = newAnchors.concat(
             decent.map((d) => createWeightedAnchorFromWeightedRange(d))
         )
@@ -394,11 +399,12 @@ const proximitySearch = (
     ) {
         REANCHOR_DEBUG && console.log('--------- HIGH SIMILARITY ----------')
         // find anchor start and end points + anchor range
-        console.log('high similarity - search space', startAnchorSearch)
+        REANCHOR_DEBUG &&
+            console.log('high similarity - search space', startAnchorSearch)
         newAnchors = newAnchors.concat(
             findNewAnchorLocation(startAnchorSearch, anchorCode)
         )
-        console.log('new anchors after high', newAnchors)
+        REANCHOR_DEBUG && console.log('new anchors after high', newAnchors)
     }
     // additionally search if area is just okay
     if (
@@ -408,11 +414,11 @@ const proximitySearch = (
     ) {
         // can maybe do some additional searching to find better anchor positions (probs compare against close lines)
         REANCHOR_DEBUG && console.log('-------- MEDIUM SIMILARITY ---------')
-        console.log('medium', startAnchorSearch)
+        REANCHOR_DEBUG && console.log('medium', startAnchorSearch)
         newAnchors = newAnchors.concat(
             findNewAnchorLocation(startAnchorSearch, anchorCode)
         )
-        console.log('new anchors after medium', newAnchors)
+        REANCHOR_DEBUG && console.log('new anchors after medium', newAnchors)
     }
     // else { // - commenting out for testing
     REANCHOR_DEBUG && console.log('-------- LOW SIMILARITY ---------')
@@ -431,14 +437,15 @@ const proximitySearch = (
             surroundingBelowAnchorSearch
         )
     )
-    console.log('new anchors after low', newAnchors)
+    REANCHOR_DEBUG && console.log('new anchors after low', newAnchors)
 
     // sort by likelihood that this is correct anchor and return
     REANCHOR_DEBUG && console.log('returning these anchors', newAnchors)
-    console.log(
-        'sorted new anchors',
-        newAnchors.sort((a, b) => a.weight - b.weight)
-    )
+    REANCHOR_DEBUG &&
+        console.log(
+            'sorted new anchors',
+            newAnchors.sort((a, b) => a.weight - b.weight)
+        )
     return newAnchors.sort((a, b) => a.weight - b.weight)
 }
 
@@ -997,7 +1004,7 @@ const handleLowSimilarityMatch = (
         (l) => l.weight <= PASSABLE_SIMILARITY_THRESHOLD
     )
 
-    console.log('goodmatches', goodMatches)
+    REANCHOR_DEBUG && console.log('goodmatches', goodMatches)
 
     // compare against whole file
     // (tbd if we should just always do this or only if goodMatches returns [])
@@ -1007,7 +1014,7 @@ const handleLowSimilarityMatch = (
         .filter((l) => l.weight <= PASSABLE_SIMILARITY_THRESHOLD)
         .concat(goodMatches)
         .sort((a, b) => a.weight - b.weight)
-    console.log('goodSourceMatches', goodSourceMatches)
+    REANCHOR_DEBUG && console.log('goodSourceMatches', goodSourceMatches)
     if (goodSourceMatches.length) {
         // make sure we're not suggesting a whole bunch of things
         const anchorsToSuggest =
@@ -1023,7 +1030,7 @@ const handleLowSimilarityMatch = (
             // we only had junk suggestions :-(
             return []
         }
-        console.log('audited', auditedAnchorsToSuggest)
+        REANCHOR_DEBUG && console.log('audited', auditedAnchorsToSuggest)
         // add anchors -- this will favor the best match in the array
         newAnchors.push(
             findNewAnchorLocation(auditedAnchorsToSuggest, anchorCode)
@@ -1137,16 +1144,17 @@ const findNewAnchorLocation = (
         reasonSuggested: '',
     }
 
-    console.log(
-        'anchorCode',
-        anchorCode,
-        'sourcecode',
-        sourceCode,
-        'start',
-        startToken,
-        'end',
-        endToken
-    )
+    REANCHOR_DEBUG &&
+        console.log(
+            'anchorCode',
+            anchorCode,
+            'sourcecode',
+            sourceCode,
+            'start',
+            startToken,
+            'end',
+            endToken
+        )
 
     // single token anchor
     if (startToken && endToken && objectsEqual(startToken, endToken)) {
@@ -1416,19 +1424,21 @@ const findMultiLineAnchor = (
         }
     }
 
-    console.log('start token', startToken, 'endToken', endToken)
+    REANCHOR_DEBUG &&
+        console.log('start token', startToken, 'endToken', endToken)
 
     let startTokenMatches: WeightedToken[] = []
     let endTokenMatches: WeightedToken[] = []
-    console.log('what?', sourceCode)
+    REANCHOR_DEBUG && console.log('what?', sourceCode)
     sourceCode.forEach((l) => {
-        console.log(' l.codeLine.line', l.codeLine.line)
-        console.log(
-            'uh-startline',
-            anchorCode[startLineIdx],
-            'endline',
-            anchorCode[endLineIdx]
-        )
+        REANCHOR_DEBUG && console.log(' l.codeLine.line', l.codeLine.line)
+        REANCHOR_DEBUG &&
+            console.log(
+                'uh-startline',
+                anchorCode[startLineIdx],
+                'endline',
+                anchorCode[endLineIdx]
+            )
         const startMatchWeights = l.codeLine.code.flatMap((c) => {
             return {
                 ...compareTwoTokens(
@@ -1464,9 +1474,9 @@ const findMultiLineAnchor = (
     })
 
     const bestMatchStart: WeightedTokenLine = stupidFindMin(startTokenMatches)
-    console.log('bestmatchstart', bestMatchStart)
+    REANCHOR_DEBUG && console.log('bestmatchstart', bestMatchStart)
     const bestMatchEnd: WeightedTokenLine = stupidFindMin(endTokenMatches)
-    console.log('bestMatchEnd', bestMatchEnd)
+    REANCHOR_DEBUG && console.log('bestMatchEnd', bestMatchEnd)
     newAnchor.anchor.startLine = bestMatchStart.line
     newAnchor.anchor.startOffset = bestMatchStart.offset
     newAnchor.anchor.endLine = bestMatchEnd.line

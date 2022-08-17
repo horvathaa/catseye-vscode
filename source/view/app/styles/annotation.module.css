@@ -377,6 +377,7 @@
 .AnchorContainer {
     display: flex;
     border: 1.5px solid var(--vscode-editor-foreground);
+    border-color: #94ce9b63;
     border-radius: 4px;
     padding: 2px;
     margin: 5px;
@@ -427,8 +428,8 @@
 
 .ContentContainer {
     margin: 10px 0px;
-    border: 1px solid var(--vscode-editor-foreground);
-    border-radius: 4px;
+    /* border: 1px solid var(--vscode-editor-foreground); */
+    border-radius: 8px;
     font-family: var(--vscode-font-family);
     overflow-wrap: anywhere;
     /* font-size: 1.138em; */
@@ -442,7 +443,7 @@
     font-family: var(--vscode-font-family);
     overflow-wrap: anywhere;
     font-size: 1.15em;
-    padding: 2px 3px;
+    padding: 6px 7px;
 }
 
 .collapseExpandButton {

@@ -32,10 +32,53 @@ span {
 .AnchorContainer {
     display: flex;
     border: 1.5px solid var(--vscode-editor-foreground);
+    flex-direction: column;
+    border-color: #94ce9b63;
     border-radius: 4px;
-    padding: 2px;
+    padding: 10px;
     margin: 5px;
     box-sizing: border-box;
+    flex-grow: 1;
+    margin-left: 1.75rem;
+    margin-right: 1.75rem;
+}
+
+.AnchorContainer.Suggestion {
+    margin-left: 2rem;
+    margin-top: 0.25rem;
+    margin-right: 2rem;
+    margin-bottom: 0.25rem;
+    border-color: #dcdcaa5e;
+}
+
+.AnchorCode {
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    align-items: flex-start;
+    color: #7fae42;
+    overflow: scroll;
+    margin-top: 10px;
+}
+
+.SuggestionTitle {
+    padding: 0px 5px;
+    padding-bottom: 4px;
+    font-size: 1rem;
+    font-style: italic;
+}
+
+.AnchorCode.Suggestion {
+    color: #dcdcaa;
+}
+
+.AnchorWrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.AnchorWrapper.Suggestions {
+    padding: 1rem;
 }
 
 code {

@@ -83,16 +83,18 @@ const ReactAnnotation: React.FC<Props> = ({
     const [anchored, setAnchored] = React.useState(true) // change later
 
     const annoRef: React.MutableRefObject<Annotation> = React.useRef(anno)
-
+    const tryingSomethingNew = 'rgb(48 47 47)'
     // MUI doesn't accept CSS version of this for some reason..?
 
     const theme = createTheme({
         palette: {
             primary: {
-                main: `${editorBackground}`,
+                // main: `${editorBackground}`,
+                main: `${tryingSomethingNew}`,
             },
             background: {
-                paper: `${editorBackground}`,
+                // paper: `${editorBackground}`,
+                paper: `${tryingSomethingNew}`,
             },
         },
         typography: {
@@ -118,6 +120,14 @@ const ReactAnnotation: React.FC<Props> = ({
                         '&.Mui-checked': {
                             color: `${vscodeTextColor}`,
                         },
+                    },
+                },
+            },
+            MuiCardContent: {
+                styleOverrides: {
+                    root: {
+                        paddingLeft: 12,
+                        paddingRight: 12,
                     },
                 },
             },
@@ -491,13 +501,17 @@ const ReactAnnotation: React.FC<Props> = ({
                                                 }
                                             />
                                         </div>
-                                        <div
-                                            className={
-                                                styles['AnnoContentContainer']
-                                            }
-                                        >
-                                            {anno.annotation}
-                                        </div>
+                                        {anno.annotation.length > 0 ? (
+                                            <div
+                                                className={
+                                                    styles[
+                                                        'AnnoContentContainer'
+                                                    ]
+                                                }
+                                            >
+                                                {anno.annotation}
+                                            </div>
+                                        ) : null}
                                     </div>
                                 )}
                                 <ReplyContainer

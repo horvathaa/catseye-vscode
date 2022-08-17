@@ -11,13 +11,14 @@ import {
     PotentialAnchorObject,
 } from '../../../../constants/constants'
 import Carousel from './anchorCarousel'
-
+import styles from '../../styles/versions.module.css'
 interface Props {
     anchors: AnchorObject[]
     scrollInEditor: (id: string) => void
 }
 
 const AnchorVersions: React.FC<Props> = ({ anchors, scrollInEditor }) => {
+    console.log('rendering anchor versions', anchors)
     // let dummyFuture: PotentialAnchorObject[] = [
     //     {
     //         weight: 0.5,
@@ -135,8 +136,8 @@ const AnchorVersions: React.FC<Props> = ({ anchors, scrollInEditor }) => {
                 // return null
             })}
             <p
-                style={{ padding: '0 5px' }}
                 onClick={() => setShowSuggestions(!showSuggestions)}
+                className={styles['SuggestionTitle']}
             >
                 {showSuggestions
                     ? 'Hide Suggestions'

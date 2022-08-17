@@ -79,6 +79,32 @@ const AnnotationReference: React.FC<Props> = ({ annotation, partSelected }) => {
         console.log('SELECTED')
     }
 
+    const handleMouseSelection = (event: React.MouseEvent, part: string) => {
+        event.stopPropagation()
+        const selectedText = document.getSelection().toString()
+        console.log('event', event)
+        if (selectedText.length) {
+            if (part === 'anchor') {
+                const ids: string[] = (
+                    event.target as HTMLDivElement
+                ).parentElement.id.split('%')
+                partSelected(part, {
+                    anchorId: ids[1],
+                    annotationId: ids[0],
+                    text: selectedText,
+                })
+            } else {
+                partSelected(part, selectedText)
+            }
+        }
+    }
+
+    // React.useEffect(() => {
+    //     document.addEventListener('mouseup', handleMouseSelection)
+    //     return () =>
+    //         document.removeEventListener('mouseup', handleMouseSelection)
+    // }, [])
+
     return (
         <div>
             <ThemeProvider theme={theme}>
@@ -86,7 +112,6 @@ const AnnotationReference: React.FC<Props> = ({ annotation, partSelected }) => {
                     <CardContent>
                         Anchors
                         {annotation.anchors.map((anchor: AnchorObject, i) => {
-                            console.log(anchor.anchorId)
                             anchor.priorVersions &&
                                 anchor.priorVersions.reverse()
                             if (anchor.priorVersions) {
@@ -101,6 +126,11 @@ const AnnotationReference: React.FC<Props> = ({ annotation, partSelected }) => {
                                             display: 'flex',
                                             flexDirection: 'row',
                                         }}
+                                        id={
+                                            anchor.parentId +
+                                            '%' +
+                                            anchor.anchorId
+                                        }
                                     >
                                         {isMedOrMore && (
                                             <Checkbox
@@ -124,6 +154,12 @@ const AnnotationReference: React.FC<Props> = ({ annotation, partSelected }) => {
                                             }
                                             className={
                                                 styles['AnchorContainer']
+                                            }
+                                            onMouseUp={(e) =>
+                                                handleMouseSelection(
+                                                    e,
+                                                    'anchor'
+                                                )
                                             }
                                             // style={{
                                             //     display: 'flex',
@@ -160,7 +196,12 @@ const AnnotationReference: React.FC<Props> = ({ annotation, partSelected }) => {
                             // }
                             // return null
                         })}
-                        <div className={styles['SelectableContainer']}>
+                        <div
+                            className={styles['SelectableContainer']}
+                            onMouseUp={(e) =>
+                                handleMouseSelection(e, 'annotation')
+                            }
+                        >
                             {annotation.annotation}
                         </div>
                         {/* To Include, Annotation types */}

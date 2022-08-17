@@ -15,6 +15,7 @@ import { Reply as ReplyInterface } from '../../../../constants/constants'
 interface Props {
     id?: string | undefined
     replyContent?: string | undefined
+    lastEditTime?: number | undefined
     createdTimestamp: number
     githubUsername?: string
     userId?: string
@@ -36,6 +37,7 @@ export const Reply: React.FC<Props> = ({
     authorId,
     replying,
     deleted,
+    lastEditTime = undefined,
     submissionHandler = undefined,
     cancelHandler,
     deleteHandler = undefined,
@@ -49,6 +51,7 @@ export const Reply: React.FC<Props> = ({
         githubUsername,
         authorId,
         deleted: deleted ? deleted : false,
+        lastEditTime: lastEditTime ? lastEditTime : createdTimestamp,
     })
 
     React.useEffect(() => {
@@ -76,6 +79,7 @@ export const Reply: React.FC<Props> = ({
                 <UserProfile
                     githubUsername={githubUsername}
                     createdTimestamp={createdTimestamp}
+                    lastEditTime={lastEditTime}
                 />
                 {authorId === userId && (
                     <div className={styles['buttonRow']}>

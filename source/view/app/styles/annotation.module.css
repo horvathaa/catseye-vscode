@@ -280,6 +280,7 @@
     text-decoration: none;
     color: inherit;
     cursor: pointer;
+    align-self: flex-start;
 }
 
 .userContainer {
@@ -569,5 +570,4 @@ mark {
 } */
 
 .ReferenceContainer {
-    
 }

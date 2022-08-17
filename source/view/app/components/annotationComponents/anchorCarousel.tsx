@@ -14,6 +14,7 @@ import {
 } from '../../../../constants/constants'
 import { disabledIcon, iconColor } from '../../styles/vscodeStyles'
 import AdamiteButton from './AdamiteButton'
+import { formatTimestamp } from '../../utils/viewUtils'
 
 interface Props {
     priorVersions?: AnchorOnCommit[]
@@ -277,6 +278,14 @@ const AnchorCarousel: React.FC<Props> = ({
                                                     {pv.commitHash.slice(0, 6)}
                                                 </span>
                                             )}
+                                            <span>
+                                                <i>
+                                                    made on{' '}
+                                                    {formatTimestamp(
+                                                        pv.createdTimestamp
+                                                    )}
+                                                </i>
+                                            </span>
                                             <div
                                                 style={{
                                                     display: 'flex',

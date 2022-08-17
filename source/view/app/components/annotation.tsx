@@ -258,14 +258,18 @@ const ReactAnnotation: React.FC<Props> = ({
     }
 
     const submitReply = (reply: Reply): void => {
+        const lastEditTime = new Date().getTime()
         const replyIds: string[] = anno.replies?.map((r) => r.id)
+        const newReply = { ...reply, lastEditTime }
+
         // TODO: Here we should maybe sort by created and replacing instead of just concatenating
         const updatedReplies: Reply[] = replyIds.includes(reply.id)
-            ? anno.replies.filter((r) => r.id !== reply.id).concat([reply])
-            : anno.replies.concat([reply])
+            ? anno.replies.filter((r) => r.id !== reply.id).concat([newReply])
+            : anno.replies.concat([newReply])
         const newAnno: Annotation = buildAnnotation({
             ...anno,
             replies: updatedReplies,
+            lastEditTime,
         })
         setAnno(newAnno)
         annoRef.current = newAnno
@@ -279,9 +283,11 @@ const ReactAnnotation: React.FC<Props> = ({
     }
 
     const deleteReply = (id: string): void => {
+        const lastEditTime = new Date().getTime()
         const updatedReply = {
             ...anno.replies.filter((r) => r.id === id)[0],
             deleted: true,
+            lastEditTime,
         }
         const updatedReplies = anno.replies
             .filter((r) => r.id !== id)
@@ -289,6 +295,7 @@ const ReactAnnotation: React.FC<Props> = ({
         const newAnno: Annotation = buildAnnotation({
             ...anno,
             replies: updatedReplies,
+            lastEditTime,
         })
         setAnno(newAnno)
         annoRef.current = newAnno
@@ -348,6 +355,7 @@ const ReactAnnotation: React.FC<Props> = ({
         const newAnno: Annotation = buildAnnotation({
             ...anno,
             type: updatedTypes,
+            lastEditTime: new Date().getTime(),
         })
         setAnno(newAnno)
         annoRef.current = newAnno
@@ -367,6 +375,7 @@ const ReactAnnotation: React.FC<Props> = ({
             ...anno,
             annotation: newAnnoContent,
             shareWith,
+            lastEditTime: new Date().getTime(),
         })
         setAnno(newAnno)
         annoRef.current = newAnno

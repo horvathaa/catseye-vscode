@@ -9,7 +9,11 @@ import List from '@mui/material/List'
 import * as React from 'react'
 import annoStyles from '../styles/annotation.module.css'
 import TextEditor from './annotationComponents/textEditor'
-import { breakpoints } from '../utils/viewUtils'
+import {
+    breakpoints,
+    buildAnnotation,
+    buildEmptyAnnotation,
+} from '../utils/viewUtils'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import {
     editorBackground,
@@ -19,7 +23,12 @@ import {
 } from '../styles/vscodeStyles'
 import styles from '../styles/annotation.module.css'
 import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
-import { Annotation, Reply, Type } from '../../../constants/constants'
+import {
+    AnchorObject,
+    Annotation,
+    Reply,
+    Type,
+} from '../../../constants/constants'
 import AdamiteButton from './annotationComponents/AdamiteButton'
 import AnchorIcon from '@mui/icons-material/Anchor'
 import ReplyContainer from './annotationComponents/replyContainer'
@@ -41,6 +50,9 @@ const MergeAnnotations: React.FC<Props> = ({
     notifyDone = () => {},
     annotations = [],
 }) => {
+    const [newAnnotation, setNewAnnotation] = React.useState<Annotation>(
+        buildEmptyAnnotation()
+    )
     const [types, setTypes] = React.useState<Type[]>([])
     const [replies, setReplies] = React.useState<Reply[]>([])
     const theme = createTheme({
@@ -89,18 +101,22 @@ const MergeAnnotations: React.FC<Props> = ({
         })
     }
 
-    const createAnnotation = (
+    const mergeAnnotations = (
         annoContent: string,
         shareWith: string | undefined,
         willBePinned: boolean | undefined
     ) => {
         notifyDone()
-        vscode.postMessage({
-            command: 'createAnnotation',
-            anno: annoContent,
+        const { annotation } = newAnnotation
+        const annoToPass = buildAnnotation({
+            ...newAnnotation,
+            annotation: annotation + '\n' + annoContent,
             shareWith,
-            willBePinned,
-            types,
+            selected: willBePinned,
+        })
+        vscode.postMessage({
+            command: 'mergeAnnotation',
+            anno: annoToPass,
         })
     }
 
@@ -136,7 +152,67 @@ const MergeAnnotations: React.FC<Props> = ({
     }
 
     const partSelected = (type: string, object: any) => {
-        console.log('part selected')
+        switch (type) {
+            case 'annotation':
+                const { annotation } = newAnnotation
+                setNewAnnotation(
+                    buildAnnotation({
+                        ...newAnnotation,
+                        annotation:
+                            annotation !== ''
+                                ? annotation + '\n' + object
+                                : object,
+                    })
+                )
+                break
+            case 'anchor':
+                // would be better to use text in order to grab subset of anchor
+                // could use tokenization that we use for reanchoring to create offset tokens
+                const { anchorId, annotationId, text } = object
+                const anchorToCopy = annotations
+                    .find((a) => a.id === annotationId)
+                    .anchors.find((a) => a.anchorId === anchorId)
+                setNewAnnotation(
+                    buildAnnotation({
+                        ...newAnnotation,
+                        anchors: newAnnotation.anchors.concat(anchorToCopy),
+                    })
+                )
+                break
+        }
+    }
+
+    const renderNewAnnotationContent = (): React.ReactElement => {
+        const annotationSplitOnNewline = newAnnotation.annotation.split('\n')
+        return (
+            <div>
+                {annotationSplitOnNewline.map((annotation) => {
+                    return (
+                        <div className={styles['AnnoContentContainer']}>
+                            {annotation}
+                        </div>
+                    )
+                })}
+            </div>
+        )
+    }
+
+    const renderAnchors = (): React.ReactElement => {
+        return (
+            <div>
+                {newAnnotation.anchors.map((a) => {
+                    const anchorTextSplitOnNewline = a.anchorText.split('\n')
+                    return (
+                        <div>
+                            {' '}
+                            {anchorTextSplitOnNewline.map((t) => {
+                                return <pre>{t}</pre>
+                            })}{' '}
+                        </div>
+                    )
+                })}
+            </div>
+        )
     }
 
     return (
@@ -167,10 +243,15 @@ const MergeAnnotations: React.FC<Props> = ({
                                     icon={<AnchorIcon fontSize="small" />}
                                 />
                             </div>
-
+                            {newAnnotation.anchors.length > 0
+                                ? renderAnchors()
+                                : null}
+                            {newAnnotation.annotation !== ''
+                                ? renderNewAnnotationContent()
+                                : null}
                             <TextEditor
                                 content={''}
-                                submissionHandler={createAnnotation}
+                                submissionHandler={mergeAnnotations}
                                 cancelHandler={cancelAnnotation}
                                 showSplitButton={true}
                                 focus={true}

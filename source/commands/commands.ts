@@ -133,6 +133,10 @@ export const createView = async (context: vscode.ExtensionContext) => {
                         viewHelper.handleDeleteResolveAnnotation(annoId, true)
                         break
                     }
+                    case 'mergeAnnotation': {
+                        const { anno } = message
+                        viewHelper.handleMergeAnnotation(anno)
+                    }
                     default: {
                         break
                     }
@@ -226,7 +230,6 @@ export const createNewAnnotation = async () => {
                     r
                 ),
             }
-            console.log('surrounding when creating', surrounding)
             const anchorObject: AnchorObject = {
                 anchor: anc,
                 anchorText: text,
@@ -283,14 +286,13 @@ export const createNewAnnotation = async () => {
                 potentialReanchorSpots: [],
                 surroundingCode: surrounding,
             }
-            console.log('anchor obj on creating anno', anchorObject)
             const temp = {
                 id: newAnnoId,
                 anchors: [anchorObject],
                 annotation: '',
                 deleted: false,
                 outOfDate: false,
-                createdTimestamp: new Date().getTime(),
+                createdTimestamp: createdTimestamp,
                 authorId: user?.uid,
                 gitRepo: gitInfo[projectName]?.repo
                     ? gitInfo[projectName]?.repo
@@ -309,6 +311,7 @@ export const createNewAnnotation = async () => {
                 sharedWith: 'private',
                 selected: false,
                 needToUpdate: true,
+                lastEditTime: createdTimestamp,
             }
             setTempAnno(utils.buildAnnotation(temp))
             view?.createNewAnno(html, annotationList)
@@ -332,6 +335,7 @@ export const createFileAnnotation = async (
     const visiblePath: string = vscode.workspace.workspaceFolders
         ? utils.getVisiblePath(projectName, context.fsPath)
         : context.fsPath
+    const createdTimestamp = new Date().getTime()
     const anchorObject: AnchorObject = {
         anchor: { startLine: 0, endLine: 0, startOffset: 0, endOffset: 0 },
         anchorText: visiblePath,
@@ -353,7 +357,7 @@ export const createFileAnnotation = async (
         parentId: newAnnoId,
         programmingLang,
         anchored: true,
-        createdTimestamp: new Date().getTime(),
+        createdTimestamp,
         priorVersions: [],
         path: [],
         surroundingCode: {
@@ -368,7 +372,7 @@ export const createFileAnnotation = async (
         annotation: '',
         deleted: false,
         outOfDate: false,
-        createdTimestamp: new Date().getTime(),
+        createdTimestamp,
         authorId: user?.uid,
         gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : '',
         gitBranch: gitInfo[projectName]?.branch
@@ -385,6 +389,7 @@ export const createFileAnnotation = async (
         sharedWith: 'private',
         selected: false,
         needToUpdate: true,
+        lastEditTime: createdTimestamp,
     }
     setTempAnno(utils.buildAnnotation(temp))
     view?.createNewAnno(visiblePath, annotationList)
@@ -511,7 +516,7 @@ export const addNewHighlight = (
                 annotation: '',
                 deleted: false,
                 outOfDate: false,
-                createdTimestamp: new Date().getTime(),
+                createdTimestamp,
                 authorId: user?.uid,
                 gitRepo: gitInfo[projectName]?.repo
                     ? gitInfo[projectName]?.repo
@@ -530,6 +535,7 @@ export const addNewHighlight = (
                 sharedWith: 'private',
                 selected: selected ? selected : false,
                 needToUpdate: true,
+                lastEditTime: createdTimestamp,
             }
             setAnnotationList(
                 annotationList.concat([utils.buildAnnotation(temp)])

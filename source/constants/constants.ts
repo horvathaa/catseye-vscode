@@ -24,7 +24,7 @@ export class Annotation {
     needToUpdate: boolean
     types: Type[]
     resolved: boolean
-
+    lastEditTime: number
     constructor(
         id: string,
         annotation: string,
@@ -44,6 +44,7 @@ export class Annotation {
         sharedWith: string,
         selected: boolean,
         needToUpdate: boolean,
+        lastEditTime: number,
         types?: Type[],
         resolved?: boolean
     ) {
@@ -67,6 +68,7 @@ export class Annotation {
         this.needToUpdate = needToUpdate
         this.types = types ?? []
         this.resolved = resolved ?? false
+        this.lastEditTime = lastEditTime
     }
 }
 
@@ -169,6 +171,7 @@ export interface Reply {
     githubUsername: string
     id: string
     replyContent: string
+    lastEditTime: number
 }
 
 export const stringToShikiThemes: { [key: string]: string } = {

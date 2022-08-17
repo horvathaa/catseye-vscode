@@ -67,6 +67,7 @@ export const getAnnotationsOnSignIn = async (
     const dataAnnotations = getListFromSnapshots(userAnnotationDocs).concat(
         getListFromSnapshots(collaboratorAnnotationDocs)
     )
+
     const allCommits: CommitObject[] = getListFromSnapshots(
         await getCommitsByProject(currentGitProject)
     )
@@ -111,7 +112,7 @@ export const getAnnotationsOnSignIn = async (
             : []
 
     const allAnnotations = priorVersionAnnotations.concat(remainingAnnotations)
-    console.log('annotations', allAnnotations)
+
     return allAnnotations
 }
 

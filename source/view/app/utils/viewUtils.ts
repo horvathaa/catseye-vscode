@@ -68,6 +68,8 @@ export const buildAnnotation = (
         annoInfo.hasOwnProperty('anchorText')
     ) {
         annoObj = translateAnnotationAnchorStandard(annoInfo)
+    } else if (!annoInfo.hasOwnProperty('lastEditTime')) {
+        annoObj = { ...annoInfo, lastEditTime: new Date().getTime() }
     } else {
         annoObj = annoInfo
     }
@@ -91,7 +93,9 @@ export const buildAnnotation = (
         annoObj['sharedWith'],
         annoObj['selected'],
         annoObj['needToUpdate'],
-        annoObj['types']
+        annoObj['lastEditTime'],
+        annoObj['types'],
+        annoObj['resolved']
     )
 }
 
@@ -306,4 +310,31 @@ export const sortAnnotationsByTime = (
     return annotationList.sort(
         (a, b) => b.createdTimestamp - a.createdTimestamp
     )
+}
+
+export const buildEmptyAnnotation = (): Annotation => {
+    const createdTimestamp = new Date().getTime()
+    return buildAnnotation({
+        id: '',
+        annotation: '',
+        anchors: [],
+        deleted: false,
+        outOfDate: false,
+        authorId: '',
+        createdTimestamp,
+        gitRepo: '',
+        gitCommit: '',
+        gitBranch: '',
+        projectName: '',
+        githubUsername: '',
+        replies: [],
+        outputs: [],
+        codeSnapshots: [],
+        sharedWith: 'private',
+        selected: false,
+        needToUpdate: false,
+        lastEditTime: createdTimestamp,
+        types: [],
+        resolved: false,
+    })
 }

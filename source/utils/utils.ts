@@ -245,6 +245,7 @@ export const reconstructAnnotations = (
             changeRange,
             a.offsetInCopy
         )
+        const createdTimestamp = new Date().getTime()
         const anchorObject: AnchorObject = {
             anchor: computeRangeFromOffset(changeRange, a.offsetInCopy),
             anchorText: a.anchor.anchorText,
@@ -262,7 +263,7 @@ export const reconstructAnnotations = (
             originalCode: a.anchor.originalCode,
             parentId: newAnnoId,
             anchored: true,
-            createdTimestamp: new Date().getTime(),
+            createdTimestamp,
             priorVersions: a.anchor.priorVersions, //could append the most recent place, but commit based for now
             path: vscode.window.activeTextEditor
                 ? astHelper.generateCodeContextPath(
@@ -293,7 +294,7 @@ export const reconstructAnnotations = (
             deleted: false,
             outOfDate: false,
             authorId: a.anno.authorId,
-            createdTimestamp: new Date().getTime(),
+            createdTimestamp,
             gitRepo: gitInfo[projectName]?.repo, // a.anno.gitRepo,
             gitBranch: gitInfo[projectName]?.branch,
             gitCommit: gitInfo[projectName]?.commit,
@@ -305,6 +306,7 @@ export const reconstructAnnotations = (
             sharedWith: a.anno.sharedWith,
             selected: a.anno.selected,
             needToUpdate: true,
+            lastEditTime: createdTimestamp,
         }
 
         return buildAnnotation(adjustedAnno)
@@ -574,6 +576,9 @@ export const makeObjectListFromAnnotations = (
             sharedWith: a.sharedWith ? a.sharedWith : 'private',
             selected: a.selected ? a.selected : false,
             types: a.types ? a.types : [],
+            lastEditTime: a.lastEditTime
+                ? a.lastEditTime
+                : new Date().getTime(),
         }
     })
 }
@@ -967,6 +972,8 @@ export const buildAnnotation = (
         annoInfo.hasOwnProperty('anchorText')
     ) {
         annoObj = translateAnnotationAnchorStandard(annoInfo)
+    } else if (!annoInfo.hasOwnProperty('lastEditTime')) {
+        annoObj = { ...annoInfo, lastEditTime: new Date().getTime() }
     } else {
         annoObj = annoInfo
     }
@@ -990,6 +997,7 @@ export const buildAnnotation = (
         annoObj['sharedWith'],
         annoObj['selected'],
         annoObj['needToUpdate'],
+        annoObj['lastEditTime'],
         annoObj['types'],
         annoObj['resolved']
     )
@@ -1148,4 +1156,31 @@ export const updateAnnotationsWithAnchors = (
         })
     })
     return updatedAnnos
+}
+
+export const buildEmptyAnnotation = (): Annotation => {
+    const createdTimestamp = new Date().getTime()
+    return buildAnnotation({
+        id: '',
+        annotation: '',
+        anchors: [],
+        deleted: false,
+        outOfDate: false,
+        authorId: '',
+        createdTimestamp,
+        gitRepo: '',
+        gitCommit: '',
+        gitBranch: '',
+        projectName: '',
+        githubUsername: '',
+        replies: [],
+        outputs: [],
+        codeSnapshots: [],
+        sharedWith: 'private',
+        selected: false,
+        needToUpdate: false,
+        types: [],
+        resolved: false,
+        lastEditTime: createdTimestamp,
+    })
 }

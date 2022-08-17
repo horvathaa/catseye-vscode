@@ -123,6 +123,7 @@ export const handleSnapshotCode = (id: string, anchorId: string): void => {
             ...anno,
             codeSnapshots: newSnapshots,
             needToUpdate: true,
+            lastEditTime: new Date().getTime(),
         })
         setAnnotationList(
             annotationList.filter((anno) => anno.id !== id).concat([newAnno])
@@ -158,6 +159,7 @@ export const handleAddAnchor = async (id: string): Promise<void> => {
             ? buildAnnotation({
                   ...anno,
                   anchors: [...anno.anchors, newAnchor],
+                  lastEditTime: new Date().getTime(),
               })
             : anno
         console.log('new annotation with anchor', newAnno)
@@ -231,7 +233,7 @@ export const handleScrollInEditor = async (
                         view?.updateDisplay(annotationList, anchorObj.filename)
                     },
                     async (reason: any) => {
-                        console.error('rejected', reason)
+                        console.error('Could not open text document', reason)
                         const uri = await getLocalPathFromGitHubUrl(
                             anchorObj.stableGitUrl
                         ) // this only works if the user has the specified github project open in vs code :-/
@@ -264,6 +266,7 @@ export const handleScrollInEditor = async (
 
 // Export annotation content above first anchor by inserting a new line and appending the content of the annotation
 // then running VS Code's "comment" command in order to turn the text into a code comment
+// there's def better ways of doing this
 export const handleExportAnnotationAsComment = async (
     annoId: string
 ): Promise<void> => {
@@ -378,6 +381,7 @@ export const handleUpdateAnnotation = (
                 gitCommit: gitInfo[updatedAnno.projectName]
                     ? gitInfo[updatedAnno.projectName].commit
                     : updatedAnno.gitCommit,
+                lastEditTime: new Date().getTime(),
             })
             setSelectedAnnotationsNavigations(
                 value
@@ -400,6 +404,7 @@ export const handleUpdateAnnotation = (
                 gitCommit: gitInfo[updatedAnno.projectName]
                     ? gitInfo[updatedAnno.projectName].commit
                     : updatedAnno.gitCommit,
+                lastEditTime: new Date().getTime(),
             })
         } else {
             updatedAnno = buildAnnotation({
@@ -410,6 +415,7 @@ export const handleUpdateAnnotation = (
                 gitCommit: gitInfo[updatedAnno.projectName]
                     ? gitInfo[updatedAnno.projectName].commit
                     : updatedAnno.gitCommit,
+                lastEditTime: new Date().getTime(),
             })
         }
         const updatedList = annotationList
@@ -434,6 +440,7 @@ export const handleDeleteResolveAnnotation = (
     const updatedAnno = buildAnnotation({
         ...annotationList.filter((a) => a.id === id)[0],
         needToUpdate: true,
+        lastEditTime: new Date().getTime(),
     })
 
     if (resolve) {
@@ -527,6 +534,7 @@ export const handlePinAnnotation = (id: string): void => {
     const updatedAnno = buildAnnotation({
         ...annotationList.filter((a) => a.id === id)[0],
         needToUpdate: true,
+        lastEditTime: new Date().getTime(),
     })
     updatedAnno.selected = !updatedAnno.selected
 
@@ -554,4 +562,29 @@ export const handlePinAnnotation = (id: string): void => {
         }
     }
     view?.updateDisplay(updatedList)
+}
+
+export const handleMergeAnnotation = (anno: Annotation): void => {
+    const newAnnotationId = uuidv4()
+    const anchorsCopy = anno.anchors.map((a) => {
+        return { ...a, parentId: newAnnotationId, anchorId: uuidv4() }
+    })
+    const projectName = getProjectName()
+    const newAnnotation: Annotation = buildAnnotation({
+        ...anno,
+        anchors: anchorsCopy,
+        id: newAnnotationId,
+        githubUsername: gitInfo.author,
+        authorId: user?.uid,
+        gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : '',
+        gitBranch: gitInfo[projectName]?.branch
+            ? gitInfo[projectName]?.branch
+            : '',
+        gitCommit: gitInfo[projectName]?.commit
+            ? gitInfo[projectName]?.commit
+            : 'localChange',
+        projectName: projectName,
+    })
+    setAnnotationList([...annotationList, newAnnotation])
+    view?.updateDisplay(annotationList)
 }

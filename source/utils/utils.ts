@@ -1091,8 +1091,8 @@ export const createAnchorObject = async (
                     branchName: gitInfo[projectName]?.branch
                         ? gitInfo[projectName]?.branch
                         : '',
-                    startLine: anc.startLine,
-                    endLine: anc.endLine,
+                    anchor: anc,
+                    stableGitUrl,
                     path: visiblePath,
                     surroundingCode: surrounding,
                 },

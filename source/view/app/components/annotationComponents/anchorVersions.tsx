@@ -18,7 +18,6 @@ interface Props {
 }
 
 const AnchorVersions: React.FC<Props> = ({ anchors, scrollInEditor }) => {
-    console.log('rendering anchor versions', anchors)
     // let dummyFuture: PotentialAnchorObject[] = [
     //     {
     //         weight: 0.5,

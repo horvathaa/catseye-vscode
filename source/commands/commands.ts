@@ -123,19 +123,31 @@ export const createView = async (context: vscode.ExtensionContext) => {
                     }
                     case 'resolveAnnotation': {
                         const { annoId } = message
-                        console.log('resolveAnnotation case')
                         viewHelper.handleDeleteResolveAnnotation(annoId, true)
                         break
                     }
                     case 'shareAnnotation': {
                         const { annoId } = message
-                        console.log('resolveAnnotation case')
                         viewHelper.handleDeleteResolveAnnotation(annoId, true)
                         break
                     }
                     case 'mergeAnnotation': {
-                        const { anno } = message
-                        viewHelper.handleMergeAnnotation(anno)
+                        const { anno, mergedAnnotations } = message
+                        viewHelper.handleMergeAnnotation(
+                            anno,
+                            new Map(Object.entries(mergedAnnotations))
+                        )
+                        break
+                    }
+                    case 'findMatchingAnchors': {
+                        const { annotations } = message
+                        viewHelper.handleFindMatchingAnchors(annotations)
+                        break
+                    }
+                    case 'scrollWithRangeAndFile': {
+                        const { anchor, gitUrl } = message
+                        viewHelper.handleScrollWithRangeAndFile(anchor, gitUrl)
+                        break
                     }
                     default: {
                         break
@@ -230,17 +242,18 @@ export const createNewAnnotation = async () => {
                     r
                 ),
             }
+            const stableGitUrl = utils.getGithubUrl(
+                visiblePath,
+                projectName,
+                true
+            )
             const anchorObject: AnchorObject = {
                 anchor: anc,
                 anchorText: text,
                 html,
                 filename: activeTextEditor.document.uri.toString(),
                 gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
-                stableGitUrl: utils.getGithubUrl(
-                    visiblePath,
-                    projectName,
-                    true
-                ),
+                stableGitUrl,
                 gitRepo: gitInfo[projectName]?.repo
                     ? gitInfo[projectName]?.repo
                     : '',
@@ -273,8 +286,8 @@ export const createNewAnnotation = async () => {
                         branchName: gitInfo[projectName]?.branch
                             ? gitInfo[projectName]?.branch
                             : '',
-                        startLine: anc.startLine,
-                        endLine: anc.endLine,
+                        anchor: anc,
+                        stableGitUrl,
                         path: visiblePath,
                         surroundingCode: surrounding,
                     },
@@ -454,17 +467,18 @@ export const addNewHighlight = (
                     r
                 ),
             }
+            const stableGitUrl = utils.getGithubUrl(
+                visiblePath,
+                projectName,
+                true
+            )
             const anchorObject: AnchorObject = {
                 anchor: anc,
                 anchorText: text,
                 html,
                 filename: activeTextEditor.document.uri.toString(),
                 gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
-                stableGitUrl: utils.getGithubUrl(
-                    visiblePath,
-                    projectName,
-                    true
-                ),
+                stableGitUrl,
                 gitRepo: gitInfo[projectName]?.repo
                     ? gitInfo[projectName]?.repo
                     : '',
@@ -497,8 +511,10 @@ export const addNewHighlight = (
                         branchName: gitInfo[projectName]?.branch
                             ? gitInfo[projectName]?.branch
                             : '',
-                        startLine: anc.startLine,
-                        endLine: anc.endLine,
+                        // startLine: anc.startLine,
+                        // endLine: anc.endLine,
+                        anchor: anc,
+                        stableGitUrl,
                         path: visiblePath,
                         surroundingCode: surrounding,
                     },

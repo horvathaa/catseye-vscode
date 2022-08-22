@@ -8,7 +8,7 @@ import {
     PotentialAnchorObject,
 } from '../../../../constants/constants'
 
-import { PastVersions } from './pastVersions'
+import { OldAnchorOnCommit, PastVersions } from './pastVersions'
 import { PotentialVersions } from './potentialVersions'
 
 interface Props {
@@ -16,6 +16,23 @@ interface Props {
     potentialVersions?: PotentialAnchorObject[]
     currentAnchorObject: AnchorObject
     handleSelected: (id: string) => void
+}
+
+export const createAnchorOnCommitFromAnchorObject = (
+    currentAnchorObject: AnchorObject
+): AnchorOnCommit => {
+    return {
+        id: currentAnchorObject.anchorId,
+        commitHash: '',
+        createdTimestamp: currentAnchorObject.createdTimestamp,
+        html: currentAnchorObject.html,
+        anchorText: currentAnchorObject.anchorText,
+        branchName: currentAnchorObject.gitBranch,
+        anchor: currentAnchorObject.anchor,
+        stableGitUrl: currentAnchorObject.stableGitUrl,
+        path: currentAnchorObject.visiblePath,
+        surroundingCode: currentAnchorObject.surroundingCode,
+    }
 }
 
 const AnchorCarousel: React.FC<Props> = ({
@@ -44,18 +61,8 @@ const AnchorCarousel: React.FC<Props> = ({
 
     React.useEffect(() => {
         if (priorVersions) {
-            const pseudoPriorVersion: AnchorOnCommit = {
-                id: currentAnchorObject.anchorId,
-                commitHash: '',
-                createdTimestamp: currentAnchorObject.createdTimestamp,
-                html: currentAnchorObject.html,
-                anchorText: currentAnchorObject.anchorText,
-                branchName: currentAnchorObject.gitBranch,
-                startLine: currentAnchorObject.anchor.startLine,
-                endLine: currentAnchorObject.anchor.endLine,
-                path: currentAnchorObject.visiblePath,
-                surroundingCode: currentAnchorObject.surroundingCode,
-            }
+            const pseudoPriorVersion: AnchorOnCommit =
+                createAnchorOnCommitFromAnchorObject(currentAnchorObject)
             const foundCurrentAnchorToDisplay: boolean =
                 priorVersions.find((pv) => pv.id === pseudoPriorVersion.id)
                     ?.id === pseudoPriorVersion.id
@@ -68,8 +75,6 @@ const AnchorCarousel: React.FC<Props> = ({
             pastVersions && setIndex(pastVersions?.length - 1)
         }
     }, [currentAnchorObject]) //watch for any changes to current anchor and update
-
-    console.log('currentAnchrObject', currentAnchorObject)
 
     const handleClick = (e: React.SyntheticEvent, aId: string): void => {
         e.stopPropagation()
@@ -116,13 +121,12 @@ const AnchorCarousel: React.FC<Props> = ({
         console.log('todo')
     }
 
+    // this is in my branch
     const handleReanchor = (pv: PotentialAnchorObject): void => {
         console.log('todo')
     }
 
     // only handles frontend options
-
-    console.log('pastVersions', pastVersions)
 
     return (
         <div

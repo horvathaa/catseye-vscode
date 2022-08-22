@@ -11,6 +11,7 @@ import annoStyles from '../styles/annotation.module.css'
 import TextEditor from './annotationComponents/textEditor'
 import { breakpoints } from '../utils/viewUtils'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
+import cn from 'classnames'
 import {
     editorBackground,
     iconColor,
@@ -18,6 +19,7 @@ import {
     cardStyle,
 } from '../styles/vscodeStyles'
 import styles from '../styles/annotation.module.css'
+import anchorStyles from '../styles/versions.module.css'
 import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
 import {
     AnchorObject,
@@ -25,15 +27,28 @@ import {
     Reply,
     Type,
 } from '../../../constants/constants'
-import { Carousel } from 'react-bootstrap'
+import Carousel from 'react-material-ui-carousel'
 import ReplyContainer from './annotationComponents/replyContainer'
+import { PastVersion } from './annotationComponents/pastVersions'
+import { createAnchorOnCommitFromAnchorObject } from './annotationComponents/anchorCarousel'
 
 interface Props {
     annotation: Annotation
     partSelected: (type: string, object: any) => void
+    scrollWithRangeAndFile: (e: React.SyntheticEvent, anchorId: string) => void
+    removeAnchorFromMergeAnnotation: (anchorId: string, annoId: string) => void
+    annoNum: number
+    alreadySelectedAnchors: string[]
 }
 
-const AnnotationReference: React.FC<Props> = ({ annotation, partSelected }) => {
+const AnnotationReference: React.FC<Props> = ({
+    annotation,
+    partSelected,
+    scrollWithRangeAndFile,
+    removeAnchorFromMergeAnnotation,
+    annoNum,
+    alreadySelectedAnchors,
+}) => {
     const theme = createTheme({
         palette: {
             primary: {
@@ -72,6 +87,8 @@ const AnnotationReference: React.FC<Props> = ({ annotation, partSelected }) => {
         },
         breakpoints: breakpoints,
     })
+    const [hasAnnotationTextBeenSelected, setHasAnnotationTextBeenSelected] =
+        React.useState<boolean>(false)
 
     const isMedOrMore = useMediaQuery(theme.breakpoints.up('md'))
 
@@ -79,143 +96,131 @@ const AnnotationReference: React.FC<Props> = ({ annotation, partSelected }) => {
         console.log('SELECTED')
     }
 
-    const handleMouseSelection = (event: React.MouseEvent, part: string) => {
+    const handleSelectReply = (id: string): void => {
+        const reply = annotation.replies.find((r) => r.id === id)
+        partSelected('reply', { ...reply, annoId: annotation.id })
+    }
+
+    const handleMouseSelection = (
+        event: React.MouseEvent,
+        part: string,
+        anchorId?: string,
+        annotationId?: string,
+        anchorText?: string
+    ) => {
         event.stopPropagation()
         const selectedText = document.getSelection().toString()
-        console.log('event', event)
         if (selectedText.length) {
             if (part === 'anchor') {
-                const ids: string[] = (
-                    event.target as HTMLDivElement
-                ).parentElement.id.split('%')
+                // const ids: string[] = (event.target as HTMLDivElement).id.split(
+                //     '%'
+                // )
+                // console.log('ids?', ids)
+                if (alreadySelectedAnchors.includes(anchorId)) return
                 partSelected(part, {
-                    anchorId: ids[1],
-                    annotationId: ids[0],
+                    anchorId,
+                    annotationId,
                     text: selectedText,
+                    anchorText: anchorText,
                 })
-            } else {
-                partSelected(part, selectedText)
-            }
+            } else if (part === 'annotation') {
+                if (!hasAnnotationTextBeenSelected) {
+                    partSelected(part, {
+                        selectedAnnotation: selectedText,
+                        githubUsername: annotation.githubUsername,
+                        annoId: annotation.id,
+                    })
+                    setHasAnnotationTextBeenSelected(true)
+                }
+            } // todo: add reply -- not sure why replies aren't showing up in curr build
         }
     }
 
-    // React.useEffect(() => {
-    //     document.addEventListener('mouseup', handleMouseSelection)
-    //     return () =>
-    //         document.removeEventListener('mouseup', handleMouseSelection)
-    // }, [])
-
     return (
         <div>
-            <ThemeProvider theme={theme}>
-                <Card className={styles['ContentContainer']}>
-                    <CardContent>
-                        Anchors
-                        {annotation.anchors.map((anchor: AnchorObject, i) => {
-                            anchor.priorVersions &&
-                                anchor.priorVersions.reverse()
-                            if (anchor.priorVersions) {
-                                return (
-                                    <div
-                                        key={
-                                            'reference-' +
-                                            annotation.id +
-                                            anchor.anchorId
-                                        }
-                                        style={{
-                                            display: 'flex',
-                                            flexDirection: 'row',
-                                        }}
-                                        id={
-                                            anchor.parentId +
-                                            '%' +
-                                            anchor.anchorId
-                                        }
-                                    >
-                                        {isMedOrMore && (
-                                            <Checkbox
-                                                // Needs work
-                                                onChange={() =>
-                                                    partSelected(
-                                                        'anchor',
-                                                        anchor
-                                                    )
-                                                }
-                                                inputProps={{
-                                                    'aria-label': 'controlled',
-                                                }}
-                                            />
-                                        )}
-                                        <div
-                                            key={
-                                                'reference-' +
-                                                annotation.id +
-                                                anchor.anchorId
-                                            }
-                                            className={
-                                                styles['AnchorContainer']
-                                            }
-                                            onMouseUp={(e) =>
-                                                handleMouseSelection(
-                                                    e,
-                                                    'anchor'
-                                                )
-                                            }
-                                            // style={{
-                                            //     display: 'flex',
-                                            //     flexDirection: 'column',
-                                            //     alignItems: 'flex-start',
-                                            //     width: '100%',
-                                            //     padding: '10px',
-                                            //     color: iconColor,
-                                            // }} // same as AnchorContainer ^^
-                                            onClick={(e) => {
-                                                handleClick()
-                                                // handleClick(
-                                                //     e,
-                                                //     anchor.anchorId
-                                                // )
-                                            }}
-                                        >
-                                            {anchor.anchorText}
-                                        </div>
-                                        {/* <Carousel
-                                            key={i}
-                                            priorVersions={anchor.priorVersions}
-                                            currentAnchorObject={anchor}
-                                            handleSelected={handleSelected}
-                                        ></Carousel> */}
-                                    </div>
+            <p className={anchorStyles['SuggestionTitle']}>
+                Annotation {annoNum}
+            </p>
+
+            {annotation.anchors.map((anchor: AnchorObject, i) => {
+                // consider bringing back prior versions in carousel view -- for now, not bothering
+                return (
+                    <div style={{ display: 'flex' }}>
+                        {isMedOrMore && (
+                            <Checkbox
+                                // Needs work
+                                onChange={() =>
+                                    alreadySelectedAnchors.includes(
+                                        anchor.anchorId
+                                    )
+                                        ? removeAnchorFromMergeAnnotation(
+                                              anchor.anchorId,
+                                              anchor.parentId
+                                          )
+                                        : partSelected('anchor', anchor)
+                                }
+                                inputProps={{
+                                    'aria-label': 'controlled',
+                                }}
+                                checked={alreadySelectedAnchors.includes(
+                                    anchor.anchorId
+                                )}
+                            />
+                        )}
+                        <div
+                            id={anchor.parentId + '%' + anchor.anchorId}
+                            className={cn({
+                                [anchorStyles['AnchorContainer']]: true,
+                                [anchorStyles['Suggestion']]: true,
+                                [anchorStyles['disabled']]:
+                                    alreadySelectedAnchors.includes(
+                                        anchor.anchorId
+                                    ),
+                            })}
+                            onMouseUp={(e) =>
+                                handleMouseSelection(
+                                    e,
+                                    'anchor',
+                                    anchor.anchorId,
+                                    anchor.parentId,
+                                    anchor.anchorText
                                 )
                             }
-                            return null
-                            // if (!anchor.anchored) {
-                            // return (
-                            // put show/hide here
-                            // )
-                            // }
-                            // return null
-                        })}
-                        <div
-                            className={styles['SelectableContainer']}
-                            onMouseUp={(e) =>
-                                handleMouseSelection(e, 'annotation')
-                            }
                         >
-                            {annotation.annotation}
+                            <PastVersion
+                                handleClick={scrollWithRangeAndFile}
+                                i={i}
+                                pastVersion={createAnchorOnCommitFromAnchorObject(
+                                    anchor
+                                )}
+                            />
                         </div>
-                        {/* To Include, Annotation types */}
-                        {/* Annotation text works differently. */}
-                        {/* Include replies as checkboxes, same with anchors */}
-                        <ReplyContainer
-                            replying={false}
-                            replies={annotation.replies}
-                            cancelReply={() => {}}
-                            focus={false}
-                        />
-                    </CardContent>
+                    </div>
+                )
+            })}
+            <div
+                className={cn({
+                    [styles['SelectableContainer']]: true,
+                    [anchorStyles['disabled']]: hasAnnotationTextBeenSelected,
+                })}
+                onMouseUp={(e) => handleMouseSelection(e, 'annotation')}
+            >
+                {annotation.annotation}
+            </div>
+            {/* To Include, Annotation types */}
+            {/* Annotation text works differently. */}
+            {/* Include replies as checkboxes, same with anchors */}
+            <ReplyContainer
+                replying={false}
+                showCheckbox={true}
+                handleSelectReply={handleSelectReply}
+                replies={annotation.replies}
+                cancelReply={() => {}}
+                focus={false}
+            />
+            {/* </CardContent>
                 </Card>
-            </ThemeProvider>
+            </ThemeProvider> */}
         </div>
     )
 }

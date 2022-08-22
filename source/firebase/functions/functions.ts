@@ -178,8 +178,8 @@ export const getPriorVersions = (
                     html: priorVersionFromCommit.html, // not updated correctly
                     anchorText: priorVersionFromCommit.anchorText,
                     branchName: commit.branchName,
-                    startLine: priorVersionFromCommit.anchor.startLine,
-                    endLine: priorVersionFromCommit.anchor.endLine,
+                    stableGitUrl: priorVersionFromCommit.stableGitUrl,
+                    anchor: priorVersionFromCommit.anchor,
                     path: priorVersionFromCommit.visiblePath,
                     surroundingCode: priorVersionFromCommit.surroundingCode,
                 }

@@ -639,7 +639,7 @@ const createDecorationOptions = (
     })
 }
 
-interface AnnotationRange {
+export interface AnnotationRange {
     annotationId: string
     anchorText: string
     range: vscode.Range

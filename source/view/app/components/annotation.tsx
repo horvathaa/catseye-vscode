@@ -137,10 +137,6 @@ const ReactAnnotation: React.FC<Props> = ({
 
     const isMedOrMore = useMediaQuery(theme.breakpoints.up('md'))
 
-    const handleExpandClick = () => {
-        setExpanded(!expanded)
-    }
-
     const handleIncomingMessages = (e: MessageEvent<any>) => {
         const message = e.data
         switch (message.command) {
@@ -290,6 +286,7 @@ const ReactAnnotation: React.FC<Props> = ({
             value: updatedReplies,
         })
         setReplying(false)
+        // consider notifying annotation list that this value changed
     }
 
     const deleteReply = (id: string): void => {
@@ -515,7 +512,7 @@ const ReactAnnotation: React.FC<Props> = ({
                                     </div>
                                 )}
                                 <ReplyContainer
-                                    replying={replying}
+                                    replying={true}
                                     replies={anno.replies}
                                     username={username}
                                     userId={userId}

@@ -7,9 +7,22 @@ import styles from '../../styles/versions.module.css'
 interface PastVersionProps {
     handleClick: (e: React.SyntheticEvent, aId: string) => void
     i: number
-    pastVersion: AnchorOnCommit
-    displayBefore: (pv: AnchorOnCommit, index: number) => string
-    displayAfter: (pv: AnchorOnCommit, index: number) => string
+    pastVersion: AnchorOnCommit | OldAnchorOnCommit
+    displayBefore?: (pv: AnchorOnCommit, index: number) => string
+    displayAfter?: (pv: AnchorOnCommit, index: number) => string
+}
+
+export interface OldAnchorOnCommit extends AnchorOnCommit {
+    startLine: number
+    endLine: number
+}
+
+export const isOldAnchorOnCommit = (
+    anchor: any
+): anchor is OldAnchorOnCommit => {
+    return (
+        anchor.hasOwnProperty('startLine') && anchor.hasOwnProperty('endLine')
+    )
 }
 
 export const PastVersion: React.FC<PastVersionProps> = ({
@@ -19,33 +32,89 @@ export const PastVersion: React.FC<PastVersionProps> = ({
     displayBefore,
     displayAfter,
 }) => {
+    const [pv, setPv] = React.useState<AnchorOnCommit>(pastVersion)
+    React.useEffect(() => {
+        if (isOldAnchorOnCommit(pastVersion)) {
+            const { startLine, endLine, ...rest } = pastVersion
+            setPv({
+                ...rest,
+                anchor: {
+                    startLine: pastVersion.startLine,
+                    endLine: pastVersion.endLine,
+                    startOffset: 0,
+                    endOffset: 0,
+                },
+            })
+        }
+    }, [pastVersion])
+    const showBefore = (): React.ReactElement => {
+        return (
+            <>
+                <p
+                    style={{
+                        opacity: '0.5',
+                    }}
+                >
+                    {displayBefore && displayBefore(pastVersion, 3)}
+                </p>
+                <p
+                    style={{
+                        opacity: '0.7',
+                    }}
+                >
+                    {displayBefore && displayBefore(pastVersion, 2)}
+                </p>
+            </>
+        )
+    }
+
+    const showAfter = (): React.ReactElement => {
+        return (
+            <>
+                <p
+                    style={{
+                        opacity: '0.7',
+                    }}
+                >
+                    {displayAfter && displayAfter(pastVersion, 1)}
+                </p>
+                <p
+                    style={{
+                        opacity: '0.5',
+                    }}
+                >
+                    {displayAfter && displayAfter(pastVersion, 2)}
+                </p>
+            </>
+        )
+    }
+
     return (
         <div
-            key={pastVersion.id + i}
+            key={pv.id + i}
             onClick={(e) => {
-                handleClick(e, pastVersion.id)
+                handleClick(e, pv.id)
             }}
             className={styles['AnchorContainer']}
         >
             <span>
-                <i> {pastVersion.path} </i>
+                <i> {pv.path} </i>
             </span>
-            {pastVersion.endLine - pastVersion.startLine > 0 ? (
+            {pv.anchor?.endLine - pv.anchor?.startLine > 0 ? (
                 <span>
-                    lines {pastVersion.startLine + 1}-{pastVersion.endLine + 1}{' '}
-                    on {pastVersion.branchName}{' '}
-                    {pastVersion.commitHash !== '' ? ':' : null}{' '}
-                    {pastVersion.commitHash.slice(0, 7)}
+                    lines {pv.anchor?.startLine + 1}-{pv.anchor?.endLine + 1} on{' '}
+                    {pv.branchName} {pv.commitHash !== '' ? ':' : null}{' '}
+                    {pv.commitHash.slice(0, 7)}
                 </span>
             ) : (
                 <span>
-                    line {pastVersion.startLine + 1} on {pastVersion.branchName}
-                    {pastVersion.commitHash !== '' ? ':' : null}{' '}
-                    {pastVersion.commitHash.slice(0, 6)}
+                    line {pv.anchor?.startLine + 1} on {pv.branchName}
+                    {pv.commitHash !== '' ? ':' : null}{' '}
+                    {pv.commitHash.slice(0, 6)}
                 </span>
             )}
             <span>
-                <i>made on {formatTimestamp(pastVersion.createdTimestamp)}</i>
+                <i>made on {formatTimestamp(pv.createdTimestamp)}</i>
             </span>
             <div
                 style={{
@@ -54,41 +123,15 @@ export const PastVersion: React.FC<PastVersionProps> = ({
                 }}
             >
                 <div className={styles['AnchorCode']}>
-                    <p
-                        style={{
-                            opacity: '0.5',
-                        }}
-                    >
-                        {displayBefore(pastVersion, 3)}
-                    </p>
-                    <p
-                        style={{
-                            opacity: '0.7',
-                        }}
-                    >
-                        {displayBefore(pastVersion, 2)}
-                    </p>
                     <p>
+                        {displayBefore && showBefore()}
                         <b>
-                            {pastVersion.anchorText.length > 60
-                                ? pastVersion.anchorText.slice(0, 60)
-                                : pastVersion.anchorText}
-                            {pastVersion.anchorText.length > 60 ? '...' : null}
+                            {pv.anchorText.length > 60
+                                ? pv.anchorText.slice(0, 60)
+                                : pv.anchorText}
+                            {pv.anchorText.length > 60 ? '...' : null}
                         </b>
-                    </p>
-                    <p
-                        style={{
-                            opacity: '0.7',
-                        }}
-                    >
-                        {displayAfter(pastVersion, 1)}
-                    </p>
-                    <p
-                        style={{
-                            opacity: '0.5',
-                        }}
-                    >
-                        {displayAfter(pastVersion, 2)}
+                        {displayAfter && showAfter()}
                     </p>
                 </div>
             </div>

@@ -21,6 +21,8 @@ interface Props {
     cancelReply: () => void
     deleteReply?: (id: string) => void
     focus?: boolean
+    showCheckbox?: boolean
+    handleSelectReply?: (id: string) => void
 }
 
 const MAX_NUM_REPLIES = 3
@@ -34,6 +36,8 @@ const ReplyContainer: React.FC<Props> = ({
     cancelReply,
     deleteReply = undefined,
     focus = true,
+    showCheckbox = false,
+    handleSelectReply,
 }) => {
     const [showMoreReplies, setShowMoreReplies] = React.useState<boolean>(false)
     const activeReplies = replies.filter((r) => !r.deleted)
@@ -67,11 +71,12 @@ const ReplyContainer: React.FC<Props> = ({
                                       flexDirection: 'row',
                                   }}
                               >
-                                  {!replying && (
+                                  {/* Amber: Why do we have this? What is this supposed to do? */}
+                                  {showCheckbox && (
                                       <Checkbox
                                           // Needs work
                                           onChange={() =>
-                                              console.log('Add checkbox')
+                                              handleSelectReply(r.id)
                                           }
                                           inputProps={{
                                               'aria-label': 'controlled',
@@ -86,7 +91,7 @@ const ReplyContainer: React.FC<Props> = ({
                                       authorId={r.authorId}
                                       githubUsername={r.githubUsername}
                                       createdTimestamp={r.createdTimestamp}
-                                      replying={replying}
+                                      replying={false}
                                       deleted={r.deleted}
                                       submissionHandler={submitReply}
                                       cancelHandler={cancelReply}

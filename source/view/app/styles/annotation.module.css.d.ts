@@ -20,11 +20,13 @@ interface CssExports {
   'IconContainer': string;
   'LocationContainer': string;
   'LocationWrapper': string;
+  'MergeLine': string;
   'Output': string;
   'OutputContainer': string;
   'OutputHTMLContainer': string;
   'OutputsContainer': string;
   'Pad': string;
+  'QuoteInfo': string;
   'ReferenceContainer': string;
   'SelectableContainer': string;
   'TitleContainer': string;
@@ -32,6 +34,7 @@ interface CssExports {
   'arrowBox': string;
   'arrowBox-leftAlign': string;
   'bottomRow': string;
+  'bq': string;
   'btn-primary': string;
   'buttonRow': string;
   'cancel': string;

@@ -134,3 +134,9 @@ button.remove:hover {
     transition: opacity 0.55s ease-in-out;
     background-color: rgba(158, 158, 158, 0.651);
 }
+
+.disabled {
+    opacity: 0.5;
+    font-style: oblique;
+    filter: grayscale();
+}

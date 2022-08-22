@@ -311,6 +311,7 @@
     border-radius: 4px;
     outline: 1px solid #7fae42 !important;
     color: var(--vscode-foreground);
+    padding-left: 10px;
 }
 
 .topRow {
@@ -383,6 +384,10 @@
     margin: 5px;
     box-sizing: border-box;
     flex-grow: 1;
+}
+
+.MergeLine {
+    margin: 1em;
 }
 
 .AnchorContainer:hover {
@@ -561,7 +566,7 @@ mark {
     display: flex;
     border: 1.5px solid var(--vscode-editor-foreground);
     border-radius: 4px;
-    padding: 2px;
+    padding: 8px;
     margin: 5px;
     box-sizing: border-box;
 }
@@ -571,4 +576,19 @@ mark {
 } */
 
 .ReferenceContainer {
+}
+
+.QuoteInfo {
+    font-style: oblique;
+    font-weight: 300;
+    margin-bottom: 8px;
+    font-size: small;
+}
+
+.bq {
+    margin-left: 0.3em;
+    border-left: thin solid #c8c8c8;
+    padding: 8px;
+    font-weight: 300;
+    margin-top: 6px;
 }

@@ -68,9 +68,11 @@ export const Reply: React.FC<Props> = ({
     }, [id])
 
     const createReply = (replyFromCallback: ReplyInterface): void => {
-        const { replyContent } = replyFromCallback
-        const replyToSend = { ...reply, replyContent, createdTimestamp }
-        submissionHandler(replyToSend)
+        if (submissionHandler) {
+            const { replyContent } = replyFromCallback
+            const replyToSend = { ...reply, replyContent, createdTimestamp }
+            replyToSend && submissionHandler(replyToSend)
+        }
     }
 
     const ReplyContent: React.ReactElement = (
@@ -79,7 +81,13 @@ export const Reply: React.FC<Props> = ({
                 <UserProfile
                     githubUsername={githubUsername}
                     createdTimestamp={createdTimestamp}
-                    lastEditTime={lastEditTime}
+                    lastEditTime={
+                        lastEditTime
+                            ? lastEditTime
+                            : reply.lastEditTime
+                            ? reply.lastEditTime
+                            : new Date().getTime()
+                    }
                 />
                 {authorId === userId && (
                     <div className={styles['buttonRow']}>
@@ -119,7 +127,7 @@ export const Reply: React.FC<Props> = ({
     )
 
     return (
-        <div>
+        <div style={{ width: `100%` }}>
             {replying ? ReplyEditor : editing ? ReplyEditor : ReplyContent}
         </div>
     )

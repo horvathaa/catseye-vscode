@@ -34,13 +34,13 @@ const PotentialVersion: React.FC<PotentialVersionProps> = ({
             : 'weak'
     }
     return (
-        <div style={{}}>
+        <div>
             <div
-                className={`${styles['AnchorContainer']} ${styles['Suggestion']}`}
                 key={potentialVersion.anchorId + index}
                 onClick={(e) => {
                     handleClick(e, potentialVersion.anchorId)
                 }}
+                className={`${styles['AnchorContainer']} ${styles['Suggestion']}`}
             >
                 <span>
                     <i>

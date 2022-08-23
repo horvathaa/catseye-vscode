@@ -67,11 +67,13 @@ const AnchorVersions: React.FC<Props> = ({
                         <>
                             <Carousel
                                 key={anchor.anchorId + i + '-pv'}
-                                potentialVersions={
-                                    anchor.potentialReanchorSpots
-                                }
+                                // potentialVersions={
+                                //     anchor.potentialReanchorSpots
+                                // }
+                                priorVersions={anchor.priorVersions}
                                 currentAnchorObject={anchor}
                                 // handleSelected={scrollInEditor}
+
                                 scrollInEditor={scrollInEditor}
                                 scrollToRange={scrollToRange}
                             ></Carousel>

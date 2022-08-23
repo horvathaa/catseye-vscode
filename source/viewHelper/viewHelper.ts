@@ -64,8 +64,8 @@ import {
     createRangesFromAnnotation,
     updateAnchorInAnchorObject,
 } from '../anchorFunctions/anchor'
+import { saveAnnotations as fbSaveAnnotations } from '../firebase/functions/functions'
 import { v4 as uuidv4 } from 'uuid'
-import { create } from 'domain'
 
 // Opens and reloads the webview -- this is invoked when the user uses the "Adamite: Launch Adamite" command (ctrl/cmd + shift + A).
 export const handleAdamiteWebviewLaunch = (): void => {
@@ -686,6 +686,7 @@ export const handleMergeAnnotation = (
             return buildAnnotation({ ...a, deleted: true })
         })
     setDeletedAnnotationList(mergedAnnotations)
+    fbSaveAnnotations(mergedAnnotations)
     setAnnotationList([
         ...annotationList.filter((a) => !ids.includes(a.id)),
         newAnnotation,

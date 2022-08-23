@@ -244,7 +244,14 @@ export const displayAnchorText = (
                                 </span>
                             )
                         } else {
-                            return <b className={styles.codeStyle}>{a}</b>
+                            return (
+                                <b
+                                    style={{ fontWeight: 600 }}
+                                    className={styles.codeStyle}
+                                >
+                                    {a}
+                                </b>
+                            )
                         }
                     })}
                 </>
@@ -266,7 +273,10 @@ export const displayAnchorText = (
                     {multiLines.map((a) => {
                         return (
                             <p>
-                                <b>
+                                <b
+                                    style={{ fontWeight: 600 }}
+                                    className={styles.codeStyle}
+                                >
                                     {a.length > 60 ? a.slice(0, 60) + '...' : a}
                                 </b>
                             </p>
@@ -275,6 +285,10 @@ export const displayAnchorText = (
                 </>
             )
         default:
-            return <b>{pv.anchorText}</b>
+            return (
+                <b style={{ fontWeight: 600 }} className={styles.codeStyle}>
+                    {pv.anchorText}
+                </b>
+            )
     }
 }

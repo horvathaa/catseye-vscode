@@ -121,7 +121,7 @@ export const handleChangeActiveTextEditor = (
             }
 
             astHelper.addSourceFile(TextEditor.document)
-            console.log('ADD FILE TO TRACK IN ACTIVE TEXT EDITOR')
+            // console.log('ADD FILE TO TRACK IN ACTIVE TEXT EDITOR')
             utils.addFileToTrack(TextEditor.document)
             if (user && vscode.workspace.workspaceFolders)
                 view?.updateDisplay(undefined, gitUrl, currentProject)

@@ -6,6 +6,7 @@ import {
     PASSABLE_SIMILARITY_THRESHOLD,
 } from '../../../../constants/constants' // we are confident enough } from '../../../../constants/constants'
 import Carousel from 'react-material-ui-carousel' // https://www.npmjs.com/package/react-material-ui-carousel
+import { displayAnchorText } from '../../utils/viewUtilsTsx'
 
 interface PotentialVersionProps {
     handleClick: (e: React.SyntheticEvent, aId: string) => void
@@ -80,12 +81,13 @@ const PotentialVersion: React.FC<PotentialVersionProps> = ({
                         </p>
                         <p>
                             <b>
-                                {potentialVersion.anchorText.length > 60
+                                {displayAnchorText(potentialVersion, styles)}
+                                {/* {potentialVersion.anchorText.length > 60
                                     ? potentialVersion.anchorText.slice(0, 60)
                                     : potentialVersion.anchorText}
                                 {potentialVersion.anchorText.length > 60
                                     ? '...'
-                                    : null}
+                                    : null} */}
                             </b>
                         </p>
                         <p style={{ opacity: '0.7' }}>

@@ -534,7 +534,7 @@ const ReactAnnotation: React.FC<Props> = ({
                                                 }
                                             />
                                         </div>
-                                        {anno.annotation.length > 0 ? (
+                                        {anno.annotation.trim().length > 0 ? (
                                             <div
                                                 className={
                                                     styles[

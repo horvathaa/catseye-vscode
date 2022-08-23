@@ -3,6 +3,7 @@ import * as React from 'react'
 import { formatTimestamp } from '../../utils/viewUtils'
 import Carousel from 'react-material-ui-carousel'
 import styles from '../../styles/versions.module.css'
+import { displayAnchorText } from '../../utils/viewUtilsTsx'
 
 interface PastVersionProps {
     handleClick: (e: React.SyntheticEvent, aId: string) => void
@@ -127,10 +128,11 @@ export const PastVersion: React.FC<PastVersionProps> = ({
                     <p>
                         {displayBefore && showBefore()}
                         <b>
-                            {pv.anchorText.length > 60
+                            {displayAnchorText(pv, styles)}
+                            {/* {pv.anchorText.length > 60
                                 ? pv.anchorText.slice(0, 60)
                                 : pv.anchorText}
-                            {pv.anchorText.length > 60 ? '...' : null}
+                            {pv.anchorText.length > 60 ? '...' : null} */}
                         </b>
                         {displayAfter && showAfter()}
                     </p>
@@ -153,6 +155,7 @@ export const PastVersions: React.FC<PastVersionsProps> = ({
     displayAfter,
     pastVersions,
 }) => {
+    console.log('rendering past versions')
     return (
         <Carousel autoPlay={false}>
             {pastVersions.map((pv: AnchorOnCommit, index) => (

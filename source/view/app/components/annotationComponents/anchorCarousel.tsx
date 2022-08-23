@@ -99,7 +99,9 @@ const AnchorCarousel: React.FC<Props> = ({
 
     const handleClick = (e: React.SyntheticEvent, aId: string): void => {
         e.stopPropagation()
-        const pv = potentialVersions.find((a) => a.anchorId === aId) // ???
+        const pv =
+            potentialVersions &&
+            potentialVersions.find((a) => a.anchorId === aId) // ???
         if (pv && isPotentialAnchorObject(pv)) {
             scrollToRange(pv.anchor, pv.filename, pv.stableGitUrl)
         }
@@ -160,7 +162,7 @@ const AnchorCarousel: React.FC<Props> = ({
             futureVersions.filter((pv: PotentialAnchorObject) => {
                 return removedAnchor?.anchorId !== pv.anchorId
             })
-        // TODO: connect to backend
+
         setFutureVersions(removedAFuture)
     }
 
@@ -195,7 +197,7 @@ const AnchorCarousel: React.FC<Props> = ({
             }}
         >
             {/* PRIOR VERISONS  */}
-            {priorVersions ? (
+            {pastVersions ? (
                 <PastVersions
                     pastVersions={pastVersions}
                     handleClick={handleClick}

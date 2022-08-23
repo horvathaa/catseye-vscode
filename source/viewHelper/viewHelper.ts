@@ -17,6 +17,7 @@ import {
     AnnotationAnchorPair,
     MergeInformation,
     isReply,
+    ReanchorInformation,
 } from '../constants/constants'
 import {
     user,
@@ -231,6 +232,63 @@ const getLocalPathFromGitHubUrl = async (url: string): Promise<string> => {
     return files[0].toString()
 }
 
+const scroll = (
+    range: vscode.Range,
+    filename: string,
+    gitUrl: string
+): void => {
+    const text = vscode.window.visibleTextEditors?.find(
+        (doc) => doc.document.uri.toString() === filename
+    ) // maybe switch to textDocuments
+    if (!text) {
+        vscode.workspace.openTextDocument(vscode.Uri.parse(filename)).then(
+            (doc: vscode.TextDocument) => {
+                vscode.window.showTextDocument(doc, {
+                    preserveFocus: true,
+                    preview: true,
+                    selection: range,
+                    viewColumn:
+                        view?._panel?.viewColumn === vscode.ViewColumn.One
+                            ? vscode.ViewColumn.Two
+                            : vscode.ViewColumn.One,
+                })
+                view?.updateDisplay(annotationList, filename)
+            },
+            async (reason: any) => {
+                console.error('rejected', reason)
+                const uri = await getLocalPathFromGitHubUrl(gitUrl) // this only works if the user has the specified github project open in vs code :-/
+                vscode.workspace
+                    .openTextDocument(vscode.Uri.parse(uri))
+                    .then((doc: vscode.TextDocument) => {
+                        vscode.window.showTextDocument(doc, {
+                            preserveFocus: true,
+                            preview: true,
+                            selection: range,
+                            viewColumn:
+                                view?._panel?.viewColumn ===
+                                vscode.ViewColumn.One
+                                    ? vscode.ViewColumn.Two
+                                    : vscode.ViewColumn.One,
+                        })
+                        view?.updateDisplay(annotationList, gitUrl)
+                    })
+            }
+        )
+        // fallback
+    } else {
+        text.revealRange(range, 1)
+    }
+}
+
+export const handleScrollToRange = (
+    anchor: Anchor,
+    filename: string,
+    gitUrl: string
+) => {
+    const range = createRangeFromObject(anchor)
+    scroll(range, filename, gitUrl)
+}
+
 // Navigate to the selected anchor's location
 export const handleScrollInEditor = async (
     id: string,
@@ -244,55 +302,7 @@ export const handleScrollInEditor = async (
     )
     if (anno && anchorObj) {
         const range = createRangeFromAnchorObject(anchorObj)
-        const text = vscode.window.visibleTextEditors?.find(
-            (doc) => doc.document.uri.toString() === anchorObj.filename
-        ) // maybe switch to textDocuments
-        if (!text) {
-            vscode.workspace
-                .openTextDocument(vscode.Uri.parse(anchorObj.filename))
-                .then(
-                    (doc: vscode.TextDocument) => {
-                        vscode.window.showTextDocument(doc, {
-                            preserveFocus: true,
-                            preview: true,
-                            selection: range,
-                            viewColumn:
-                                view?._panel?.viewColumn ===
-                                vscode.ViewColumn.One
-                                    ? vscode.ViewColumn.Two
-                                    : vscode.ViewColumn.One,
-                        })
-                        view?.updateDisplay(annotationList, anchorObj.filename)
-                    },
-                    async (reason: any) => {
-                        console.error('Could not open text document', reason)
-                        const uri = await getLocalPathFromGitHubUrl(
-                            anchorObj.stableGitUrl
-                        ) // this only works if the user has the specified github project open in vs code :-/
-                        vscode.workspace
-                            .openTextDocument(vscode.Uri.parse(uri))
-                            .then((doc: vscode.TextDocument) => {
-                                vscode.window.showTextDocument(doc, {
-                                    preserveFocus: true,
-                                    preview: true,
-                                    selection: range,
-                                    viewColumn:
-                                        view?._panel?.viewColumn ===
-                                        vscode.ViewColumn.One
-                                            ? vscode.ViewColumn.Two
-                                            : vscode.ViewColumn.One,
-                                })
-                                view?.updateDisplay(
-                                    annotationList,
-                                    anchorObj.stableGitUrl
-                                )
-                            })
-                    }
-                )
-            // fallback
-        } else {
-            text.revealRange(range, 1)
-        }
+        scroll(range, anchorObj.filename, anchorObj.stableGitUrl)
     }
 }
 
@@ -824,4 +834,52 @@ export const handleFindMatchingAnchors = (annotations: Annotation[]): void => {
         anchorsThatWereUsedButNotTransmitting,
         annoIdArr
     )
+}
+
+export const handleReanchor = (
+    annoId: string,
+    newAnchor: ReanchorInformation
+): void => {
+    // find anno to update
+    const anno = annotationList.find((a) => a.id === annoId)
+    if (anno) {
+        // find anchor to update
+        const anchorToReplace = anno.anchors.find(
+            (a) => a.anchorId === newAnchor.anchorId
+        )
+        if (anchorToReplace) {
+            // merge old anchor with new, reanchor information, reset potentialReanchorSpots, and mark as anchored
+            const newAnchorObj: AnchorObject = {
+                ...anchorToReplace,
+                ...newAnchor,
+                potentialReanchorSpots: [],
+                anchored: true,
+            }
+            // update corresponding anno
+            const updatedAnno = buildAnnotation({
+                ...anno,
+                anchors: anno.anchors
+                    .filter((a) => a.anchorId !== newAnchor.anchorId)
+                    .concat(newAnchorObj),
+                needToUpdate: true,
+            })
+            // console.log('updated', updatedAnno)
+            // update list
+            setAnnotationList(
+                annotationList
+                    .filter((a) => a.id !== anno.id)
+                    .concat(updatedAnno)
+            )
+            // send updated list to front-end
+            view?.updateDisplay(annotationList)
+            // if reanchor is in visible location, add new highlights
+            const currTextEditor: vscode.TextEditor =
+                vscode.window.activeTextEditor ??
+                vscode.window.visibleTextEditors[0]
+            console.log('currText', currTextEditor)
+            newAnchor.stableGitUrl ===
+                getStableGitHubUrl(currTextEditor.document.uri.fsPath) &&
+                addHighlightsToEditor(annotationList, currTextEditor)
+        }
+    }
 }

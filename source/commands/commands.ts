@@ -20,8 +20,10 @@ import {
     selectedAnnotationsNavigations,
     setSelectedAnnotationsNavigations,
     astHelper,
+    trackedFiles,
+    setTrackedFiles,
 } from '../extension'
-import { AnchorObject, Annotation } from '../constants/constants'
+import { AnchorObject, AnchorType, Annotation } from '../constants/constants'
 import * as anchor from '../anchorFunctions/anchor'
 import * as vscode from 'vscode'
 import * as utils from '../utils/utils'
@@ -29,15 +31,27 @@ import ViewLoader from '../view/ViewLoader'
 import * as viewHelper from '../viewHelper/viewHelper'
 import { v4 as uuidv4 } from 'uuid'
 import { initializeAuth } from '../authHelper/authHelper'
+import {
+    catseyeFoldingRangeProvider,
+    refreshFoldingRanges,
+} from '../foldingRangeProvider/foldingRangeProvider'
+import { computeMostSimilarAnchor } from '../anchorFunctions/reanchor'
 
 // on launch, create auth session and sign in to FireStore
 export const init = async () => {
     adamiteLog.appendLine('Calling init')
     await initializeAuth()
-
+    trackAndAuditFilesOnLaunch()
     if (view) {
         view._panel?.reveal()
     }
+}
+
+export const trackAndAuditFilesOnLaunch = (): void => {
+    const docs = vscode.window.visibleTextEditors.map((t) => t.document)
+    docs.forEach((document: vscode.TextDocument) => {
+        utils.addFileToTrack(document)
+    })
 }
 
 // Creates Adamite side panel and sets up its listeners
@@ -54,6 +68,12 @@ export const createView = async (context: vscode.ExtensionContext) => {
             context.extensionPath
         )
         setView(newView)
+        let foldingRangeProviderDisposable =
+            vscode.languages.registerFoldingRangeProvider(
+                '*',
+                catseyeFoldingRangeProvider
+            )
+        context.subscriptions.push(foldingRangeProviderDisposable)
         if (newView) {
             /***********************************************************************************/
             /**************************************** VIEW LISTENERS ******************************/
@@ -63,6 +83,11 @@ export const createView = async (context: vscode.ExtensionContext) => {
                     case 'scrollInEditor': {
                         const { id, anchorId } = message
                         viewHelper.handleScrollInEditor(id, anchorId)
+                        break
+                    }
+                    case 'scrollToRange': {
+                        const { anchor, filename, gitUrl } = message
+                        viewHelper.handleScrollToRange(anchor, filename, gitUrl)
                         break
                     }
                     case 'emailAndPassReceived': {
@@ -149,6 +174,12 @@ export const createView = async (context: vscode.ExtensionContext) => {
                         viewHelper.handleScrollWithRangeAndFile(anchor, gitUrl)
                         break
                     }
+                    case 'reanchor': {
+                        const { annoId, newAnchor } = message
+                        console.log('reanchoring')
+                        viewHelper.handleReanchor(annoId, newAnchor)
+                        break
+                    }
                     default: {
                         break
                     }
@@ -171,6 +202,8 @@ export const createView = async (context: vscode.ExtensionContext) => {
             newView._panel?.onDidDispose(
                 (e: void) => {
                     viewHelper.handleOnDidDispose()
+                    foldingRangeProviderDisposable.dispose()
+                    refreshFoldingRanges()
                 },
                 null,
                 context.subscriptions
@@ -232,21 +265,21 @@ export const createNewAnnotation = async () => {
             const anc = anchor.createAnchorFromRange(r)
             const anchorId = uuidv4()
             const createdTimestamp = new Date().getTime()
-            const surrounding = {
-                linesBefore: anchor.getSurroundingLinesBeforeAnchor(
-                    activeTextEditor.document,
-                    r
-                ),
-                linesAfter: anchor.getSurroundingLinesAfterAnchor(
-                    activeTextEditor.document,
-                    r
-                ),
-            }
+
             const stableGitUrl = utils.getGithubUrl(
                 visiblePath,
                 projectName,
                 true
             )
+            const surrounding = anchor.getSurroundingCodeArea(
+                activeTextEditor.document,
+                r
+            )
+            const anchorType = anchor.getAnchorType(
+                anc,
+                activeTextEditor.document
+            )
+
             const anchorObject: AnchorObject = {
                 anchor: anc,
                 anchorText: text,
@@ -290,6 +323,7 @@ export const createNewAnnotation = async () => {
                         stableGitUrl,
                         path: visiblePath,
                         surroundingCode: surrounding,
+                        anchorType,
                     },
                 ],
                 path: astHelper.generateCodeContextPath(
@@ -298,6 +332,7 @@ export const createNewAnnotation = async () => {
                 ),
                 potentialReanchorSpots: [],
                 surroundingCode: surrounding,
+                anchorType,
             }
             const temp = {
                 id: newAnnoId,
@@ -378,6 +413,7 @@ export const createFileAnnotation = async (
             linesAfter: [],
         },
         potentialReanchorSpots: [],
+        anchorType: AnchorType.file,
     }
     const temp = {
         id: newAnnoId,
@@ -457,20 +493,19 @@ export const addNewHighlight = (
             const anchorId = uuidv4()
             const createdTimestamp = new Date().getTime()
             const anc = anchor.createAnchorFromRange(r)
-            const surrounding = {
-                linesBefore: anchor.getSurroundingLinesBeforeAnchor(
-                    activeTextEditor.document,
-                    r
-                ),
-                linesAfter: anchor.getSurroundingLinesAfterAnchor(
-                    activeTextEditor.document,
-                    r
-                ),
-            }
+
             const stableGitUrl = utils.getGithubUrl(
                 visiblePath,
                 projectName,
                 true
+            )
+            const surrounding = anchor.getSurroundingCodeArea(
+                activeTextEditor.document,
+                r
+            )
+            const anchorType = anchor.getAnchorType(
+                anc,
+                activeTextEditor.document
             )
             const anchorObject: AnchorObject = {
                 anchor: anc,
@@ -517,6 +552,7 @@ export const addNewHighlight = (
                         stableGitUrl,
                         path: visiblePath,
                         surroundingCode: surrounding,
+                        anchorType,
                     },
                 ],
                 path: astHelper.generateCodeContextPath(
@@ -525,6 +561,7 @@ export const addNewHighlight = (
                 ),
                 potentialReanchorSpots: [],
                 surroundingCode: surrounding,
+                anchorType,
             }
             const temp = {
                 id: newAnnoId,

@@ -7,6 +7,7 @@ interface CssExports {
   'Suggestion': string;
   'SuggestionTitle': string;
   'Suggestions': string;
+  'codeStyle': string;
   'disabled': string;
   'reanchor': string;
   'remove': string;

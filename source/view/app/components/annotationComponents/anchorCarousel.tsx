@@ -6,16 +6,33 @@ import {
     AnchorObject,
     AnchorOnCommit,
     PotentialAnchorObject,
+    isPotentialAnchorObject,
+    HIGH_SIMILARITY_THRESHOLD, // we are pretty confident the anchor is here
+    PASSABLE_SIMILARITY_THRESHOLD, // we are confident enough
+    ReanchorInformation,
+    AnchorType,
+    Anchor,
 } from '../../../../constants/constants'
 
 import { OldAnchorOnCommit, PastVersions } from './pastVersions'
 import { PotentialVersions } from './potentialVersions'
 
+import {
+    disabledIcon,
+    iconColor,
+    vscodeBorderColor,
+} from '../../styles/vscodeStyles'
+import AdamiteButton from './AdamiteButton'
+
 interface Props {
     priorVersions?: AnchorOnCommit[]
     potentialVersions?: PotentialAnchorObject[]
     currentAnchorObject: AnchorObject
-    handleSelected: (id: string) => void
+    // handleSelected: (id: string) => void
+
+    scrollInEditor: (id: string) => void
+    scrollToRange: (anchor: Anchor, filename: string, gitUrl: string) => void
+    requestReanchor?: (newAnchor: ReanchorInformation) => void
 }
 
 export const createAnchorOnCommitFromAnchorObject = (
@@ -32,6 +49,7 @@ export const createAnchorOnCommitFromAnchorObject = (
         stableGitUrl: currentAnchorObject.stableGitUrl,
         path: currentAnchorObject.visiblePath,
         surroundingCode: currentAnchorObject.surroundingCode,
+        anchorType: currentAnchorObject.anchorType,
     }
 }
 
@@ -39,7 +57,10 @@ const AnchorCarousel: React.FC<Props> = ({
     priorVersions,
     potentialVersions,
     currentAnchorObject,
-    handleSelected,
+    // handleSelected,
+    scrollInEditor,
+    scrollToRange,
+    requestReanchor,
 }) => {
     const [pastVersions, setPastVersions] = React.useState<
         AnchorOnCommit[] | undefined
@@ -78,8 +99,12 @@ const AnchorCarousel: React.FC<Props> = ({
 
     const handleClick = (e: React.SyntheticEvent, aId: string): void => {
         e.stopPropagation()
+        const pv = potentialVersions.find((a) => a.anchorId === aId) // ???
+        if (pv && isPotentialAnchorObject(pv)) {
+            scrollToRange(pv.anchor, pv.filename, pv.stableGitUrl)
+        }
         if (pastVersions && index === pastVersions.length - 1)
-            handleSelected(aId)
+            scrollInEditor(aId)
     }
 
     const displayBefore = (
@@ -117,13 +142,47 @@ const AnchorCarousel: React.FC<Props> = ({
         return null
     }
 
-    const handleRemoveSuggestion = (pv: PotentialAnchorObject): void => {
-        console.log('todo')
+    // const handleRemoveSuggestion = (pv: PotentialAnchorObject): void => {
+    //     console.log('todo')
+    // }
+
+    // // this is in my branch
+    // const handleReanchor = (pv: PotentialAnchorObject): void => {
+    //     console.log('todo')
+    // }
+
+    // only handles frontend options
+    const handleRemoveSuggestion = (
+        removedAnchor: PotentialAnchorObject | null
+    ) => {
+        const removedAFuture =
+            futureVersions &&
+            futureVersions.filter((pv: PotentialAnchorObject) => {
+                return removedAnchor?.anchorId !== pv.anchorId
+            })
+        // TODO: connect to backend
+        setFutureVersions(removedAFuture)
     }
 
-    // this is in my branch
-    const handleReanchor = (pv: PotentialAnchorObject): void => {
-        console.log('todo')
+    // why "null" as an option for removedAnchor?
+    const handleReanchor = (removedAnchor: PotentialAnchorObject | null) => {
+        console.log('removedAnchor', removedAnchor)
+        if (requestReanchor && removedAnchor) {
+            const reanchor: ReanchorInformation = {
+                anchor: removedAnchor.anchor,
+                anchorId: removedAnchor.anchorId,
+                stableGitUrl: removedAnchor.stableGitUrl,
+                filename: removedAnchor.filename,
+                path: removedAnchor.path,
+                gitUrl: removedAnchor.gitUrl,
+                anchorText: removedAnchor.anchorText,
+                surroundingCode: removedAnchor.surroundingCode,
+            }
+            requestReanchor(reanchor)
+        }
+        // reanchor at potential object
+        // set annotation.anchored === true
+        return
     }
 
     // only handles frontend options
@@ -143,7 +202,267 @@ const AnchorCarousel: React.FC<Props> = ({
                     displayBefore={displayBefore}
                     displayAfter={displayAfter}
                 />
-            ) : null}
+            ) : // <div style={{ display: 'flex', flexDirection: 'row' }}>
+            //     <AdamiteButton
+            //         buttonClicked={back}
+            //         name="Back"
+            //         icon={
+            //             <ArrowBackIcon
+            //                 style={
+            //                     showBack
+            //                         ? undefined
+            //                         : { color: disabledIcon }
+            //                 }
+            //             />
+            //         }
+            //         noMargin={true}
+            //         disabled={!showBack}
+            //     />
+            //     <div
+            //         className={styles['AnchorContainer']}
+            //         style={{
+            //             minWidth: 50,
+            //             maxWidth: 800,
+            //             height: 150,
+            //         }} // cannot move dimensions to CSS file or else package styles override
+            //     >
+            //         <Carousel // not sure how to resolve type issue yet 'JSX element type 'Slider' does not have any construct or call signatures.'
+            //             onSlideComplete={(i: any) => {
+            //                 setIndex(i)
+            //             }}
+            //             onSlideStart={(i: any) => {}}
+            //             activeIndex={index}
+            //             // threshHold={50} // min # of pixels dragged to trigger swipe
+            //             transition={0.5}
+            //             scaleOnDrag={true}
+            //         >
+            //             {pastVersions &&
+            //                 pastVersions.map(
+            //                     (pv: AnchorOnCommit, index) => (
+            //                         <div
+            //                             style={{
+            //                                 display: 'flex',
+            //                                 flexDirection: 'column',
+            //                                 alignItems: 'flex-start',
+            //                                 width: '100%',
+            //                                 height: 150,
+            //                                 padding: '10px',
+            //                                 color: iconColor,
+            //                             }} // same as AnchorContainer ^^
+            //                             key={index}
+            //                             onClick={(e) => {
+            //                                 handleClick(
+            //                                     e,
+            //                                     currentAnchorObject.anchorId
+            //                                 )
+            //                             }}
+            //                         >
+            //                             <span>
+            //                                 <i> {pv.path} </i>
+            //                             </span>
+            //                             {pv.endLine - pv.startLine > 0 ? (
+            //                                 <span>
+            //                                     lines {pv.startLine + 1}-
+            //                                     {pv.endLine + 1} on{' '}
+            //                                     {pv.branchName}{' '}
+            //                                     {pv.commitHash !== ''
+            //                                         ? ':'
+            //                                         : null}{' '}
+            //                                     {pv.commitHash.slice(0, 7)}
+            //                                 </span>
+            //                             ) : (
+            //                                 <span>
+            //                                     line {pv.startLine + 1} on{' '}
+            //                                     {pv.branchName}
+            //                                     {pv.commitHash !== ''
+            //                                         ? ':'
+            //                                         : null}{' '}
+            //                                     {pv.commitHash.slice(0, 6)}
+            //                                 </span>
+            //                             )}
+            //                             <div
+            //                                 style={{
+            //                                     display: 'flex',
+            //                                     flexDirection: 'column',
+            //                                 }}
+            //                             >
+            //                                 <div
+            //                                     style={{
+            //                                         display: 'flex',
+            //                                         flexDirection: 'column',
+            //                                         width: 'fit-content',
+            //                                         alignItems:
+            //                                             'flex-start',
+            //                                         color: '#2ADD42',
+            //                                         overflow: 'scroll',
+            //                                     }}
+            //                                 >
+            //                                     <p
+            //                                         style={{
+            //                                             opacity: '0.5',
+            //                                         }}
+            //                                     >
+            //                                         {displayBefore(pv, 3)}
+            //                                     </p>
+            //                                     <p
+            //                                         style={{
+            //                                             opacity: '0.7',
+            //                                         }}
+            //                                     >
+            //                                         {displayBefore(pv, 2)}
+            //                                     </p>
+            //                                     <p>
+            //                                         {/* <b> */}
+            //                                         {displayAnchorText(pv)}
+            //                                         {/* </b> */}
+            //                                     </p>
+            //                                     <p
+            //                                         style={{
+            //                                             opacity: '0.7',
+            //                                         }}
+            //                                     >
+            //                                         {displayAfter(pv, 1)}
+            //                                     </p>
+            //                                     <p
+            //                                         style={{
+            //                                             opacity: '0.5',
+            //                                         }}
+            //                                     >
+            //                                         {displayAfter(pv, 2)}
+            //                                     </p>
+            //                                     {/* styling html within carousel hard */}
+            //                                     {/* <div
+            //                     dangerouslySetInnerHTML={{
+            //                         __html: pv.html,
+            //                     }}
+            //                     style={{
+            //                         cursor: 'normal',
+            //                     }}
+            //                 ></div> */}
+            //                                 </div>
+            //                             </div>
+            //                         </div>
+            //                     )
+            //                 )}
+            //         </Carousel>
+            //     </div>
+            //     <AdamiteButton
+            //         buttonClicked={forward}
+            //         name="Forward"
+            //         icon={
+            //             <ArrowForwardIcon
+            //                 style={
+            //                     showForward
+            //                         ? undefined
+            //                         : { color: disabledIcon }
+            //                 }
+            //             />
+            //         }
+            //         noMargin={true}
+            //         disabled={!showForward}
+            //     />
+            // </div>
+            null}
+            {/* POTENTIAL VERSIONS  */}
+            {/* {potentialVersions ? (
+                <div
+                    className={styles['AnchorContainer']}
+                    style={{
+                        minWidth: 50,
+                        maxWidth: 800,
+                        height: 150,
+                    }} // cannot move dimensions to CSS file or else package styles override
+                >
+                    <Carousel // not sure how to resolve type issue yet 'JSX element type 'Carousel' does not have any construct or call signatures.'
+                        onSlideComplete={(i: any) => {
+                            setIndex(i)
+                        }}
+                        onSlideStart={(i: any) => {
+                            // setPotentialVersion(futureVersions[index])
+                        }}
+                        activeIndex={index}
+                        // threshHold={50} // min # of pixels dragged to trigger swipe
+                        transition={0.5}
+                        scaleOnDrag={true}
+                    >
+                        {futureVersions &&
+                            futureVersions.map(
+                                (pv: PotentialAnchorObject, index) => (
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'flex-start',
+                                            width: '100%',
+                                            height: 150,
+                                            padding: '10px',
+                                            color: iconColor,
+                                        }} // same as AnchorContainer ^^
+                                        key={index}
+                                        onClick={(e) => {
+                                            handleClick(e, pv.anchorId, pv)
+                                        }}
+                                    >
+                                        <span>
+                                            <i>
+                                                {' '}
+                                                {getConfidenceString(
+                                                    pv.weight
+                                                )}{' '}
+                                                match in {pv.visiblePath}
+                                            </i>
+                                        </span>
+                                        {pv.anchor.endLine -
+                                            pv.anchor.startLine >
+                                        0 ? (
+                                            <span>
+                                                found {pv.reasonSuggested} at
+                                                lines {pv.anchor.startLine + 1}-
+                                                {pv.anchor.endLine + 1}
+                                            </span>
+                                        ) : (
+                                            <span>
+                                                found {pv.reasonSuggested} at
+                                                line {pv.anchor.startLine + 1}
+                                            </span>
+                                        )}
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    width: 'fit-content',
+                                                    alignItems: 'flex-start',
+                                                    color: '#2ADD42',
+                                                    overflow: 'scroll',
+                                                }}
+                                            >
+                                                <p style={{ opacity: '0.5' }}>
+                                                    {displayBefore(pv, 3)}
+                                                </p>
+                                                <p style={{ opacity: '0.7' }}>
+                                                    {displayBefore(pv, 2)}
+                                                </p>
+                                                <p>{displayAnchorText(pv)}</p>
+                                                <p style={{ opacity: '0.7' }}>
+                                                    {displayAfter(pv, 1)}
+                                                </p>
+                                                <p style={{ opacity: '0.5' }}>
+                                                    {displayAfter(pv, 2)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            )}
+                    </Carousel>
+                </div>
+            ) : null} */}
             {/* POTENTIAL VERSIONS -- lot of redundant code between this and prior versions - should fix */}
             {potentialVersions ? (
                 <PotentialVersions

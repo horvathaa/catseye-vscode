@@ -1,4 +1,4 @@
-import ts = require('typescript')
+import * as ts from 'typescript'
 import { CodeContext } from '../astHelper/nodeHelper'
 
 // import * as vscode from 'vscode';
@@ -86,6 +86,13 @@ export interface SurroundingAnchorArea {
     linesAfter: string[]
 }
 
+export enum AnchorType {
+    partialLine = 'PartialLine',
+    oneline = 'OneLine',
+    multiline = 'MultiLine',
+    file = 'File',
+}
+
 export interface AnchorObject {
     anchor: Anchor
     anchorText: string
@@ -108,6 +115,7 @@ export interface AnchorObject {
     path: CodeContext[]
     surroundingCode: SurroundingAnchorArea
     potentialReanchorSpots: PotentialAnchorObject[] // consider making optional
+    anchorType: AnchorType
     //add annotation field, ridding of multiple anchors
 }
 
@@ -118,6 +126,13 @@ export interface AnchorObject {
 export interface PotentialAnchorObject extends AnchorObject {
     weight: number // how likely we think this anchor point is
     reasonSuggested: string // why we think this anchor point is a good choice
+    paoId: string
+}
+
+export const isPotentialAnchorObject = (
+    obj: any
+): obj is PotentialAnchorObject => {
+    return obj.hasOwnProperty('reasonSuggested')
 }
 
 // why does this not have offsets?????????
@@ -135,6 +150,7 @@ export interface AnchorOnCommit {
     stableGitUrl: string
     path: string
     surroundingCode: SurroundingAnchorArea
+    anchorType: AnchorType
     // diff: string // MAYBE. Need to investigate diff packages
 }
 
@@ -297,7 +313,7 @@ export enum Selection {
 }
 
 export const HIGH_SIMILARITY_THRESHOLD = 0.3 // we are pretty confident the anchor is here
-export const PASSABLE_SIMILARITY_THRESHOLD = 0.7 // we are confident enough
+export const PASSABLE_SIMILARITY_THRESHOLD = 0.8 // we are confident enough
 export const INCREMENT = 2 // amount for expanding search range
 
 export const isAnchorObject = (anchor: any): anchor is AnchorObject => {
@@ -323,4 +339,14 @@ export interface AnchorInformation {
     anchorId: string
     duplicateOf: AnnotationAnchorPair[] // pair of annotation/anchor ids of duplicates OR empty if it is unique/direct child of its annotation
     hasDuplicates: AnnotationAnchorPair[]
+}
+export interface ReanchorInformation {
+    anchorId: string
+    filename: string
+    stableGitUrl: string
+    gitUrl: string
+    anchor: Anchor
+    anchorText: string
+    path: CodeContext[]
+    surroundingCode: SurroundingAnchorArea
 }

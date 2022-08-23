@@ -170,7 +170,6 @@ export const getPriorVersions = (
             if (!pv) pv = []
 
             if (priorVersionFromCommit) {
-                console.log('pv in commit', priorVersionFromCommit)
                 const priorVersion: AnchorOnCommit = {
                     id: priorVersionFromCommit.anchorId,
                     commitHash: commit.commit,
@@ -182,6 +181,7 @@ export const getPriorVersions = (
                     anchor: priorVersionFromCommit.anchor,
                     path: priorVersionFromCommit.visiblePath,
                     surroundingCode: priorVersionFromCommit.surroundingCode,
+                    anchorType: priorVersionFromCommit.anchorType,
                 }
                 pv = [...pv, { ...priorVersion }]
             }

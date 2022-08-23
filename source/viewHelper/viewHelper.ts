@@ -55,6 +55,7 @@ import {
 } from '../utils/utils'
 import {
     addHighlightsToEditor,
+    addTempAnnotationHighlight,
     AnnotationRange,
     createAnchorFromRange,
     createRangeFromAnchorObject,
@@ -145,17 +146,37 @@ export const handleSnapshotCode = (id: string, anchorId: string): void => {
 // Add a new anchor to the annotation by looking at what is currently selected in the editor
 // then creating a new anchor object and appending that to the annotation
 export const handleAddAnchor = async (id: string): Promise<void> => {
-    const anno: Annotation | undefined = annotationList.find(
-        (anno) => anno.id === id
-    )
     let currentSelection: vscode.Selection | undefined =
         vscode.window.activeTextEditor?.selection
-    // if we couldn't get a selection using activeTextEditor, try using first visibleTextEditor (which is usually the same as activeTextEditor)
-    // have to do this because sometimes selecting the webview in order to click the "add anchor" button
-    // takes away focus from the user's editor in which they selected text to add as an anchor
     if (!currentSelection) {
         currentSelection = vscode.window.visibleTextEditors[0].selection
     }
+    if (id.includes('merge')) {
+        const newAnchor: AnchorObject | undefined = await createAnchorObject(
+            id,
+            new vscode.Range(currentSelection.start, currentSelection.end)
+        )
+        if (newAnchor) {
+            view?.sendAnchorsToMergeAnnotation([newAnchor], [], [])
+            const textEditorToHighlight: vscode.TextEditor = vscode.window
+                .activeTextEditor
+                ? vscode.window.activeTextEditor
+                : vscode.window.visibleTextEditors[0]
+            addTempAnnotationHighlight([newAnchor], textEditorToHighlight)
+        } else {
+            console.log('couldnt create anchor')
+        }
+
+        return
+    }
+    const anno: Annotation | undefined = annotationList.find(
+        (anno) => anno.id === id
+    )
+
+    // if we couldn't get a selection using activeTextEditor, try using first visibleTextEditor (which is usually the same as activeTextEditor)
+    // have to do this because sometimes selecting the webview in order to click the "add anchor" button
+    // takes away focus from the user's editor in which they selected text to add as an anchor
+
     if (
         anno &&
         currentSelection &&
@@ -661,9 +682,10 @@ export const handleMergeAnnotation = (
         // ...mergedAnnotations,
     ])
     view?.updateDisplay(annotationList)
-    vscode.window.visibleTextEditors.forEach((t) =>
+    vscode.window.visibleTextEditors.forEach((t) => {
         addHighlightsToEditor(annotationList, t)
-    )
+        addTempAnnotationHighlight([], t)
+    })
 }
 
 interface AnnotationAnchorRange extends AnnotationRange {

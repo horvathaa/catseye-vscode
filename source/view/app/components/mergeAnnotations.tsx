@@ -69,9 +69,15 @@ const MergeAnnotations: React.FC<Props> = ({
     notifyDone = () => {},
     annotations = [],
 }) => {
-    const [newAnnotation, setNewAnnotation] = React.useState<Annotation>(
-        buildEmptyAnnotation()
+    const [newAnnotation, _setNewAnnotation] = React.useState<Annotation>(
+        buildAnnotation({ ...buildEmptyAnnotation(), id: 'temp-merge' })
     )
+
+    const newAnnotationRef = React.useRef(newAnnotation) // have to use the useRef hook to access the most up-to-date state value in our 'receiveAnchors' listener handler
+    const setNewAnnotation = (newAnno: Annotation) => {
+        newAnnotationRef.current = newAnno
+        _setNewAnnotation(newAnno)
+    }
     const [annotationsActuallyMerged, setAnnotationsActuallyMerged] =
         React.useState<Map<string, MergeInformation>>(new Map())
     const [duplicateBundles, setDuplicateBundles] = React.useState<DB>(null)
@@ -131,96 +137,105 @@ const MergeAnnotations: React.FC<Props> = ({
         })
     }, [annotations])
 
-    // React.useEffect(() => {}, [newAnnotation.anchors])
-
     const handleIncomingMessages = (e: MessageEvent<any>): void => {
         const message = e.data
+        // console.log('message', message, 'newanno', newAnnotation)
         switch (message.command) {
             case 'receiveAnchors': {
                 const { anchors, removedAnchorIds, usedAnnoIds } =
                     message.payload
-                const removedAnchorIdsOnly = removedAnchorIds.map(
-                    (a) => a.anchorId
-                )
-                let db: DB = {}
-                setNewAnnotation(buildAnnotation({ ...newAnnotation, anchors }))
 
-                usedAnnoIds.forEach((annoId: string) => {
-                    const usedAnchorIdsThatMatchThisAnno: AnchorInformation[] =
-                        anchors
-                            .filter((a) => a.parentId === annoId)
-                            .map((a: AnchorObject) => {
-                                const dupPairs = removedAnchorIds.flatMap(
-                                    (r) => {
-                                        const anchorIds = r.duplicateOf.map(
-                                            (ra) => ra.anchorId
-                                        )
-                                        const annoIds = r.duplicateOf.map(
-                                            (ra) => ra.annoId
-                                        )
-                                        return {
-                                            anchorIds,
-                                            annoIds,
-                                            dupAnchorId: r.anchorId,
-                                            dupAnnoId: r.annoId,
-                                        }
-                                    }
-                                )
-                                const hasDups = dupPairs
-                                    .filter(
-                                        (h) =>
-                                            h.anchorIds.includes(a.anchorId) &&
-                                            h.annoIds.includes(a.parentId)
-                                    )
-                                    .map((h) => {
-                                        return {
-                                            anchorId: h.dupAnchorId,
-                                            annoId: h.dupAnnoId,
-                                        }
-                                    })
+                const anchorsToSet =
+                    newAnnotationRef.current.anchors.concat(anchors)
 
-                                if (hasDups.length) {
-                                    db = {
-                                        ...db,
-                                        [a.anchorText]: {
-                                            annoIds: hasDups
-                                                .map((d) => d.annoId)
-                                                .concat(a.parentId),
-                                            anchorIds: hasDups
-                                                .map((d) => d.anchorId)
-                                                .concat(a.anchorId),
-                                        },
-                                    }
-                                    // updateDuplicateBundles(hasDups, a)
-                                }
-
-                                return {
-                                    anchorId: a.anchorId,
-                                    duplicateOf: [],
-                                    hasDuplicates: hasDups,
-                                }
-                            })
-                    const anchorIdsForAnnoId: AnchorInformation[] =
-                        removedAnchorIds
-                            .filter((a) => a.annoId === annoId)
-                            .map((a) => {
-                                return {
-                                    anchorId: a.anchorId,
-                                    duplicateOf: a.duplicateOf,
-                                    hasDuplicates: [],
-                                }
-                            })
-                            .concat(usedAnchorIdsThatMatchThisAnno)
-                    setAnnotationsActuallyMerged(
-                        new Map(
-                            annotationsActuallyMerged.set(annoId, {
-                                ...annotationsActuallyMerged.get(annoId),
-                                anchors: anchorIdsForAnnoId,
-                            })
-                        )
-                    )
+                const newAnno = buildAnnotation({
+                    ...newAnnotation,
+                    anchors: anchorsToSet,
                 })
-                setDuplicateBundles(db)
+
+                setNewAnnotation(newAnno)
+
+                if (removedAnchorIds.length || usedAnnoIds.length) {
+                    let db: DB = {}
+                    usedAnnoIds.forEach((annoId: string) => {
+                        const usedAnchorIdsThatMatchThisAnno: AnchorInformation[] =
+                            anchors
+                                .filter((a) => a.parentId === annoId)
+                                .map((a: AnchorObject) => {
+                                    const dupPairs = removedAnchorIds.flatMap(
+                                        (r) => {
+                                            const anchorIds = r.duplicateOf.map(
+                                                (ra) => ra.anchorId
+                                            )
+                                            const annoIds = r.duplicateOf.map(
+                                                (ra) => ra.annoId
+                                            )
+                                            return {
+                                                anchorIds,
+                                                annoIds,
+                                                dupAnchorId: r.anchorId,
+                                                dupAnnoId: r.annoId,
+                                            }
+                                        }
+                                    )
+                                    const hasDups = dupPairs
+                                        .filter(
+                                            (h) =>
+                                                h.anchorIds.includes(
+                                                    a.anchorId
+                                                ) &&
+                                                h.annoIds.includes(a.parentId)
+                                        )
+                                        .map((h) => {
+                                            return {
+                                                anchorId: h.dupAnchorId,
+                                                annoId: h.dupAnnoId,
+                                            }
+                                        })
+
+                                    if (hasDups.length) {
+                                        db = {
+                                            ...db,
+                                            [a.anchorText]: {
+                                                annoIds: hasDups
+                                                    .map((d) => d.annoId)
+                                                    .concat(a.parentId),
+                                                anchorIds: hasDups
+                                                    .map((d) => d.anchorId)
+                                                    .concat(a.anchorId),
+                                            },
+                                        }
+                                        // updateDuplicateBundles(hasDups, a)
+                                    }
+
+                                    return {
+                                        anchorId: a.anchorId,
+                                        duplicateOf: [],
+                                        hasDuplicates: hasDups,
+                                    }
+                                })
+                        const anchorIdsForAnnoId: AnchorInformation[] =
+                            removedAnchorIds
+                                .filter((a) => a.annoId === annoId)
+                                .map((a) => {
+                                    return {
+                                        anchorId: a.anchorId,
+                                        duplicateOf: a.duplicateOf,
+                                        hasDuplicates: [],
+                                    }
+                                })
+                                .concat(usedAnchorIdsThatMatchThisAnno)
+                        setAnnotationsActuallyMerged(
+                            new Map(
+                                annotationsActuallyMerged.set(annoId, {
+                                    ...annotationsActuallyMerged.get(annoId),
+                                    anchors: anchorIdsForAnnoId,
+                                })
+                            )
+                        )
+                    })
+                    setDuplicateBundles(db)
+                }
             }
         }
     }
@@ -246,6 +261,8 @@ const MergeAnnotations: React.FC<Props> = ({
             selected: willBePinned,
         })
 
+        console.log('annotationsActuallyMerged', annotationsActuallyMerged)
+
         vscode.postMessage({
             command: 'mergeAnnotation',
             anno: annoToPass,
@@ -258,11 +275,10 @@ const MergeAnnotations: React.FC<Props> = ({
     }
 
     const addAnchor = (): void => {
-        console.log('We should add an anchor using the specified methods here!')
-        // vscode.postMessage({
-        //     command: 'addAnchor',
-        //     annoId: id,
-        // })
+        vscode.postMessage({
+            command: 'addAnchor',
+            annoId: newAnnotation.id,
+        })
     }
 
     const deleteReply = (id: string): void => {

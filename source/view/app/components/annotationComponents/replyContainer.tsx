@@ -46,7 +46,7 @@ const ReplyContainer: React.FC<Props> = ({
     const [tempIdCounter, setTempIdCounter] = React.useState<number>(1)
 
     const createReply = (reply: Reply): void => {
-        submitReply(reply)
+        submitReply && submitReply(reply)
         setTempIdCounter(tempIdCounter + 1)
     }
 

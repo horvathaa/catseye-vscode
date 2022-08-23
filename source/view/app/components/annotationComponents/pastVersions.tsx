@@ -120,6 +120,7 @@ export const PastVersion: React.FC<PastVersionProps> = ({
                 style={{
                     display: 'flex',
                     flexDirection: 'column',
+                    overflow: 'scroll',
                 }}
             >
                 <div className={styles['AnchorCode']}>

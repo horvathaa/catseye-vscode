@@ -79,7 +79,7 @@ export const Reply: React.FC<Props> = ({
         <div className={styles['replyContainer']}>
             <div className={styles['topRow']}>
                 <UserProfile
-                    githubUsername={githubUsername}
+                    githubUsername={githubUsername ? githubUsername : ''}
                     createdTimestamp={createdTimestamp}
                     lastEditTime={
                         lastEditTime

@@ -12,8 +12,12 @@ import {
     AnchorObject,
     Reply,
     Snapshot,
-    ReanchorInformation,
+    Type,
     Anchor,
+    AnnotationAnchorPair,
+    MergeInformation,
+    isReply,
+    ReanchorInformation,
 } from '../constants/constants'
 import {
     user,
@@ -30,6 +34,7 @@ import {
     setSelectedAnnotationsNavigations,
     outOfDateAnnotations,
     deletedAnnotations,
+    setDeletedAnnotationList,
 } from '../extension'
 import {
     initializeAnnotations,
@@ -45,15 +50,21 @@ import {
     getAllAnnotationStableGitUrls,
     getGithubUrl,
     getStableGitHubUrl,
+    partition,
+    objectsEqual,
+    getVisiblePath,
 } from '../utils/utils'
 import {
     addHighlightsToEditor,
+    addTempAnnotationHighlight,
+    AnnotationRange,
     createAnchorFromRange,
     createRangeFromAnchorObject,
     createRangeFromObject,
     createRangesFromAnnotation,
     updateAnchorInAnchorObject,
 } from '../anchorFunctions/anchor'
+import { saveAnnotations as fbSaveAnnotations } from '../firebase/functions/functions'
 import { v4 as uuidv4 } from 'uuid'
 
 // Opens and reloads the webview -- this is invoked when the user uses the "Adamite: Launch Adamite" command (ctrl/cmd + shift + A).
@@ -125,6 +136,7 @@ export const handleSnapshotCode = (id: string, anchorId: string): void => {
             ...anno,
             codeSnapshots: newSnapshots,
             needToUpdate: true,
+            lastEditTime: new Date().getTime(),
         })
         setAnnotationList(
             annotationList.filter((anno) => anno.id !== id).concat([newAnno])
@@ -135,17 +147,37 @@ export const handleSnapshotCode = (id: string, anchorId: string): void => {
 // Add a new anchor to the annotation by looking at what is currently selected in the editor
 // then creating a new anchor object and appending that to the annotation
 export const handleAddAnchor = async (id: string): Promise<void> => {
-    const anno: Annotation | undefined = annotationList.find(
-        (anno) => anno.id === id
-    )
     let currentSelection: vscode.Selection | undefined =
         vscode.window.activeTextEditor?.selection
-    // if we couldn't get a selection using activeTextEditor, try using first visibleTextEditor (which is usually the same as activeTextEditor)
-    // have to do this because sometimes selecting the webview in order to click the "add anchor" button
-    // takes away focus from the user's editor in which they selected text to add as an anchor
     if (!currentSelection) {
         currentSelection = vscode.window.visibleTextEditors[0].selection
     }
+    if (id.includes('merge')) {
+        const newAnchor: AnchorObject | undefined = await createAnchorObject(
+            id,
+            new vscode.Range(currentSelection.start, currentSelection.end)
+        )
+        if (newAnchor) {
+            view?.sendAnchorsToMergeAnnotation([newAnchor], [], [])
+            const textEditorToHighlight: vscode.TextEditor = vscode.window
+                .activeTextEditor
+                ? vscode.window.activeTextEditor
+                : vscode.window.visibleTextEditors[0]
+            addTempAnnotationHighlight([newAnchor], textEditorToHighlight)
+        } else {
+            console.log('couldnt create anchor')
+        }
+
+        return
+    }
+    const anno: Annotation | undefined = annotationList.find(
+        (anno) => anno.id === id
+    )
+
+    // if we couldn't get a selection using activeTextEditor, try using first visibleTextEditor (which is usually the same as activeTextEditor)
+    // have to do this because sometimes selecting the webview in order to click the "add anchor" button
+    // takes away focus from the user's editor in which they selected text to add as an anchor
+
     if (
         anno &&
         currentSelection &&
@@ -160,6 +192,7 @@ export const handleAddAnchor = async (id: string): Promise<void> => {
             ? buildAnnotation({
                   ...anno,
                   anchors: [...anno.anchors, newAnchor],
+                  lastEditTime: new Date().getTime(),
               })
             : anno
         console.log('new annotation with anchor', newAnno)
@@ -273,8 +306,43 @@ export const handleScrollInEditor = async (
     }
 }
 
+// could probably merge this and the original handleScrollInFile
+export const handleScrollWithRangeAndFile = async (
+    anchor: Anchor,
+    gitUrl: string
+): Promise<void> => {
+    const range = createRangeFromObject(anchor)
+    const uri = await getLocalPathFromGitHubUrl(gitUrl)
+    const text = vscode.window.visibleTextEditors?.find(
+        (doc) => doc.document.uri.toString() === uri
+    )
+    if (!text) {
+        vscode.workspace.openTextDocument(vscode.Uri.parse(uri)).then(
+            (doc: vscode.TextDocument) => {
+                vscode.window.showTextDocument(doc, {
+                    preserveFocus: true,
+                    preview: true,
+                    selection: range,
+                    viewColumn:
+                        view?._panel?.viewColumn === vscode.ViewColumn.One
+                            ? vscode.ViewColumn.Two
+                            : vscode.ViewColumn.One,
+                })
+                view?.updateDisplay(annotationList, gitUrl)
+            },
+            async (reason: any) => {
+                console.error('Could not open text document', reason)
+            }
+        )
+        // fallback
+    } else {
+        text.revealRange(range, 1)
+    }
+}
+
 // Export annotation content above first anchor by inserting a new line and appending the content of the annotation
 // then running VS Code's "comment" command in order to turn the text into a code comment
+// there's def better ways of doing this
 export const handleExportAnnotationAsComment = async (
     annoId: string
 ): Promise<void> => {
@@ -321,7 +389,8 @@ export const handleExportAnnotationAsComment = async (
 export const handleCreateAnnotation = (
     annotationContent: string,
     shareWith: string,
-    willBePinned: boolean
+    willBePinned: boolean,
+    types: Type[]
 ): void => {
     if (!tempAnno) return
     getShikiCodeHighlighting(
@@ -334,6 +403,7 @@ export const handleCreateAnnotation = (
             newAnno.selected = willBePinned
             newAnno.sharedWith = shareWith
             newAnno.anchors[0].html = html
+            newAnno.types = types
             setAnnotationList(annotationList.concat([newAnno]))
             const text = vscode.window.visibleTextEditors?.find(
                 (doc) =>
@@ -371,6 +441,9 @@ export const handleUpdateAnnotation = (
         value.forEach((obj: Reply | Snapshot) => {
             if (obj.id.startsWith('temp')) {
                 obj.id = uuidv4()
+                if (isReply(obj)) {
+                    obj.lastEditTime = new Date().getTime()
+                }
             }
         })
     }
@@ -387,6 +460,7 @@ export const handleUpdateAnnotation = (
                 gitCommit: gitInfo[updatedAnno.projectName]
                     ? gitInfo[updatedAnno.projectName].commit
                     : updatedAnno.gitCommit,
+                lastEditTime: new Date().getTime(),
             })
             setSelectedAnnotationsNavigations(
                 value
@@ -409,6 +483,7 @@ export const handleUpdateAnnotation = (
                 gitCommit: gitInfo[updatedAnno.projectName]
                     ? gitInfo[updatedAnno.projectName].commit
                     : updatedAnno.gitCommit,
+                lastEditTime: new Date().getTime(),
             })
         } else {
             updatedAnno = buildAnnotation({
@@ -419,6 +494,7 @@ export const handleUpdateAnnotation = (
                 gitCommit: gitInfo[updatedAnno.projectName]
                     ? gitInfo[updatedAnno.projectName].commit
                     : updatedAnno.gitCommit,
+                lastEditTime: new Date().getTime(),
             })
         }
         const updatedList = annotationList
@@ -443,6 +519,7 @@ export const handleDeleteResolveAnnotation = (
     const updatedAnno = buildAnnotation({
         ...annotationList.filter((a) => a.id === id)[0],
         needToUpdate: true,
+        lastEditTime: new Date().getTime(),
     })
 
     if (resolve) {
@@ -536,6 +613,7 @@ export const handlePinAnnotation = (id: string): void => {
     const updatedAnno = buildAnnotation({
         ...annotationList.filter((a) => a.id === id)[0],
         needToUpdate: true,
+        lastEditTime: new Date().getTime(),
     })
     updatedAnno.selected = !updatedAnno.selected
 
@@ -563,6 +641,200 @@ export const handlePinAnnotation = (id: string): void => {
         }
     }
     view?.updateDisplay(updatedList)
+}
+
+export const handleMergeAnnotation = (
+    anno: Annotation,
+    mergedAnnos: Map<string, MergeInformation>
+): void => {
+    const newAnnotationId = uuidv4()
+    const anchorsCopy = anno.anchors.map((a) => {
+        return { ...a, parentId: newAnnotationId, anchorId: uuidv4() }
+    })
+    const projectName = getProjectName()
+    const newAnnotation: Annotation = buildAnnotation({
+        ...anno,
+        anchors: anchorsCopy,
+        id: newAnnotationId,
+        githubUsername: gitInfo.author,
+        authorId: user?.uid,
+        gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : '',
+        gitBranch: gitInfo[projectName]?.branch
+            ? gitInfo[projectName]?.branch
+            : '',
+        gitCommit: gitInfo[projectName]?.commit
+            ? gitInfo[projectName]?.commit
+            : 'localChange',
+        projectName: projectName,
+    })
+
+    const ids: string[] = []
+    // tbd if this is correct -- may want to only delete an annotation when all of its content has been used?
+    mergedAnnos.forEach((m, key) => {
+        if (
+            m.anchors.length ||
+            (m.annotation && m.annotation.length) ||
+            (m.replies && m.replies.length)
+        ) {
+            ids.push(key)
+        }
+    })
+
+    const mergedAnnotations = annotationList
+        .filter((a) => ids.includes(a.id))
+        .map((a) => {
+            return buildAnnotation({ ...a, deleted: true })
+        })
+    setDeletedAnnotationList(mergedAnnotations)
+    fbSaveAnnotations(mergedAnnotations)
+    setAnnotationList([
+        ...annotationList.filter((a) => !ids.includes(a.id)),
+        newAnnotation,
+        // ...mergedAnnotations,
+    ])
+    view?.updateDisplay(annotationList)
+    vscode.window.visibleTextEditors.forEach((t) => {
+        addHighlightsToEditor(annotationList, t)
+        addTempAnnotationHighlight([], t)
+    })
+}
+
+interface AnnotationAnchorRange extends AnnotationRange {
+    anchorId: string
+}
+
+const rangeOnlyContainsRange = (
+    a: AnnotationAnchorRange,
+    arr: AnnotationAnchorRange[]
+): boolean => {
+    return arr.some(
+        (anno) => a.range.contains(anno.range) && !a.range.isEqual(anno.range)
+    )
+}
+
+const rangeOnlyEqualsRange = (
+    a: AnnotationAnchorRange,
+    arr: AnnotationAnchorRange[]
+): boolean => {
+    return arr.some((anno) => a.range.isEqual(anno.range))
+}
+
+interface DupInfo {
+    annoId: string
+    anchorId: string
+    duplicateOf: any
+}
+
+interface DuplicateInformation {
+    uniqueIndices: number[]
+    dups: DupInfo[]
+}
+
+const getIndicesOfUnique = (
+    objArr: { [key: string]: any }[]
+): DuplicateInformation => {
+    let indices: number[] = []
+    let dups: DupInfo[] = []
+    let seen: { [key: string]: any }[] = [] // use this for debugging
+    objArr.forEach((o, i) => {
+        if (
+            seen.every(
+                (obj) =>
+                    !objectsEqual(
+                        createAnchorFromRange(o.range),
+                        createAnchorFromRange(obj.range)
+                    )
+            )
+        ) {
+            indices.push(i)
+            seen.push(o) // use this for debugging
+        } else {
+            dups.push({
+                annoId: o.annotationId,
+                anchorId: o.anchorId,
+                duplicateOf: objArr.filter(
+                    (s) =>
+                        s.anchorId !== o.anchorId &&
+                        s.annotationId !== o.annotationId &&
+                        objectsEqual(
+                            createAnchorFromRange(o.range),
+                            createAnchorFromRange(s.range)
+                        )
+                ),
+            })
+        }
+    })
+    return { uniqueIndices: indices, dups }
+}
+
+export interface AnnotationAnchorDuplicatePair extends AnnotationAnchorPair {
+    duplicateOf: AnnotationAnchorPair[]
+}
+
+export const handleFindMatchingAnchors = (annotations: Annotation[]): void => {
+    const anchors = annotations.flatMap((a) => a.anchors)
+    const annoAnchorRanges: AnnotationAnchorRange[] = anchors.map((anch) => {
+        return {
+            annotationId: anch.parentId,
+            anchorId: anch.anchorId,
+            range: createRangeFromAnchorObject(anch),
+            anchorText: anch.anchorText,
+        }
+    })
+
+    const contains = annoAnchorRanges.filter((a) => {
+        return rangeOnlyContainsRange(a, annoAnchorRanges)
+    })
+    const equals = annoAnchorRanges.filter((a) => {
+        return rangeOnlyEqualsRange(a, annoAnchorRanges)
+    })
+    // since equals will have duplicates of each range, we only want one of each
+    // const equalRanges = equals.map((a) => createAnchorFromRange(a.range))
+    const uniqueIndices = getIndicesOfUnique(equals)
+    const anchorsToTransmit: AnnotationAnchorRange[] = equals
+        .filter((a, i) => uniqueIndices.uniqueIndices.includes(i))
+        .concat(contains) // may need to do some cleanup of contains too
+    // .map((a) => a.anchorId)
+    const removedIds = equals
+        .filter((a, i) => !uniqueIndices.uniqueIndices.includes(i))
+        .map((a, i) => {
+            return {
+                annoAnchor: a,
+                duplicateOf: uniqueIndices.dups.find(
+                    (d) =>
+                        d.annoId === a.annotationId && d.anchorId === a.anchorId
+                )?.duplicateOf,
+            }
+        })
+    // .map((a) => a.anchorId)
+
+    let annoIds = new Set<string>()
+    const anchorsThatWereUsedButNotTransmitting: AnnotationAnchorDuplicatePair[] =
+        removedIds.map((id) => {
+            annoIds.add(id.annoAnchor.annotationId)
+            return {
+                anchorId: id.annoAnchor.anchorId,
+                annoId: id.annoAnchor.annotationId,
+                duplicateOf: id.duplicateOf.map((a: any) => {
+                    // remove anys later
+                    return { annoId: a.annotationId, anchorId: a.anchorId }
+                }),
+            }
+        })
+
+    const anchorIdsThatWeAreSending = anchorsToTransmit.map((id) => {
+        annoIds.add(id.annotationId)
+        return id.anchorId
+    })
+    const anchorObjs = anchors.filter((a) =>
+        anchorIdsThatWeAreSending.includes(a.anchorId)
+    )
+    const annoIdArr = [...annoIds]
+    view?.sendAnchorsToMergeAnnotation(
+        anchorObjs,
+        anchorsThatWereUsedButNotTransmitting,
+        annoIdArr
+    )
 }
 
 export const handleReanchor = (

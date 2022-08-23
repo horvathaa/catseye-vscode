@@ -7,7 +7,11 @@
  */
 import * as vscode from 'vscode'
 import * as path from 'path'
-import { Annotation } from '../constants/constants'
+import {
+    AnchorObject,
+    Annotation,
+    AnnotationAnchorPair,
+} from '../constants/constants'
 import {
     annotationList,
     user,
@@ -21,6 +25,7 @@ import {
     getStableGitHubUrl,
     getVisiblePath,
 } from '../utils/utils'
+import { AnnotationAnchorDuplicatePair } from '../viewHelper/viewHelper'
 export default class ViewLoader {
     public _panel: vscode.WebviewPanel | undefined
     private readonly _extensionPath: string
@@ -213,6 +218,23 @@ export default class ViewLoader {
                 command: 'addTerminalMessage',
                 payload: {
                     content,
+                },
+            })
+        }
+    }
+
+    public sendAnchorsToMergeAnnotation(
+        anchors: AnchorObject[],
+        removedAnchorIds: AnnotationAnchorDuplicatePair[], // should have interface for anchor anno pair
+        usedAnnoIds: string[]
+    ) {
+        if (this._panel && this._panel.webview) {
+            this._panel.webview.postMessage({
+                command: 'receiveAnchors',
+                payload: {
+                    anchors,
+                    removedAnchorIds,
+                    usedAnnoIds,
                 },
             })
         }

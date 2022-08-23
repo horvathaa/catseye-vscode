@@ -172,7 +172,6 @@
     transition: cubic-bezier(1, 0, 0, 1);
 }
 
-
 .DropdownIcons {
     height: 1.25em;
     width: 1.25em;
@@ -281,6 +280,7 @@
     text-decoration: none;
     color: inherit;
     cursor: pointer;
+    align-self: flex-start;
 }
 
 .userContainer {
@@ -292,7 +292,7 @@
 .textboxContainer {
     display: block;
     /* border-radius: 8px;
-    border: 2px solid rgb(239 255 201 / 20%); */
+    border: 1.5px solid var(--vscode-editor-foreground); */
     margin-top: 8px;
     margin-bottom: 4px;
 }
@@ -311,6 +311,7 @@
     border-radius: 4px;
     outline: 1px solid #7fae42 !important;
     color: var(--vscode-foreground);
+    padding-left: 10px;
 }
 
 .topRow {
@@ -375,13 +376,18 @@
 }
 
 .AnchorContainer {
-    border: 2px solid rgb(239 255 201 / 20%);
-    padding: 8px 4px 0px 10px;
+    display: flex;
+    border: 1.5px solid var(--vscode-editor-foreground);
+    border-color: #94ce9b63;
     border-radius: 4px;
-    overflow: scroll;
-    box-shadow: none;
-    border-color: var(--vscode-badge-background);
-    transition: all 0.5s ease-in-out;
+    padding: 2px;
+    margin: 5px;
+    box-sizing: border-box;
+    flex-grow: 1;
+}
+
+.MergeLine {
+    margin: 1em;
 }
 
 .AnchorContainer:hover {
@@ -427,8 +433,8 @@
 
 .ContentContainer {
     margin: 10px 0px;
-    border: 2px solid rgb(239 255 201 / 20%);
-    border-radius: 4px;
+    /* border: 1px solid var(--vscode-editor-foreground); */
+    border-radius: 8px;
     font-family: var(--vscode-font-family);
     overflow-wrap: anywhere;
     /* font-size: 1.138em; */
@@ -437,12 +443,12 @@
 
 .AnnoContentContainer {
     margin: 5px 0px;
-    border: 1px solid rgb(239 255 201 / 20%);
+    border: 1px solid var(--vscode-editor-foreground);
     border-radius: 4px;
     font-family: var(--vscode-font-family);
     overflow-wrap: anywhere;
     font-size: 1.15em;
-    padding: 2px 3px;
+    padding: 6px 7px;
 }
 
 .collapseExpandButton {
@@ -554,4 +560,35 @@ mark {
     background-color: #93c0ff39;
     color: var(--vscode-foreground);
     font-family: Consolas, 'Menlo';
+}
+
+.SelectableContainer {
+    display: flex;
+    border: 1.5px solid var(--vscode-editor-foreground);
+    border-radius: 4px;
+    padding: 8px;
+    margin: 5px;
+    box-sizing: border-box;
+}
+/* 
+.SelectableContainer:hover {
+    box-shadow: 0.5px 0.5px 5px 0.5px #dcdcdc;
+} */
+
+.ReferenceContainer {
+}
+
+.QuoteInfo {
+    font-style: oblique;
+    font-weight: 300;
+    margin-bottom: 8px;
+    font-size: small;
+}
+
+.bq {
+    margin-left: 0.3em;
+    border-left: thin solid #c8c8c8;
+    padding: 8px;
+    font-weight: 300;
+    margin-top: 6px;
 }

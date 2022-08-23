@@ -13,7 +13,7 @@ import {
     ReanchorInformation,
 } from '../../../../constants/constants'
 import Carousel from './anchorCarousel'
-
+import styles from '../../styles/versions.module.css'
 interface Props {
     anchors: AnchorObject[]
     scrollInEditor: (id: string) => void
@@ -32,8 +32,8 @@ const AnchorVersions: React.FC<Props> = ({
     const showPotentialAnchors = (anchor: AnchorObject): React.ReactElement => {
         const unanchorText = (
             <p
-                style={{ padding: '0 5px' }}
                 onClick={() => setShowSuggestions(!showSuggestions)}
+                className={styles['SuggestionTitle']}
             >
                 {showSuggestions
                     ? 'Hide Suggestions'
@@ -67,12 +67,17 @@ const AnchorVersions: React.FC<Props> = ({
                         <>
                             <Carousel
                                 key={anchor.anchorId + i + '-pv'}
+                                // potentialVersions={
+                                //     anchor.potentialReanchorSpots
+                                // }
                                 priorVersions={anchor.priorVersions}
                                 currentAnchorObject={anchor}
+                                // handleSelected={scrollInEditor}
+
                                 scrollInEditor={scrollInEditor}
                                 scrollToRange={scrollToRange}
-                                // requestReanchor={requestReanchor} - consider supporting reanchor for prior versions?
                             ></Carousel>
+
                             {anchor.potentialReanchorSpots &&
                             anchor.potentialReanchorSpots.length
                                 ? showPotentialAnchors(anchor)

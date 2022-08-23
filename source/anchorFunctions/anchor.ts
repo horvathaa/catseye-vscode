@@ -781,7 +781,7 @@ const createDecorationOptions = (
     })
 }
 
-interface AnnotationRange extends AnnotationAnchorPair {
+export interface AnnotationRange extends AnnotationAnchorPair {
     anchorText: string
     range: vscode.Range
     valid?: boolean
@@ -819,6 +819,44 @@ const validateRanges = (
         }
     })
     return [validRanges, invalidRanges]
+}
+
+const tempDecoration = vscode.window.createTextEditorDecorationType({
+    // borderWidth: '0.25px',
+    // borderStyle: 'solid',
+    overviewRulerLane: vscode.OverviewRulerLane.Right,
+
+    light: {
+        // this color will be used in light color themes
+        // borderColor: 'darkblue',
+        border: '0.15px solid rgba(0, 0, 0, .25)',
+        overviewRulerColor: 'darkgreen',
+        backgroundColor: 'darkgreen',
+    },
+    dark: {
+        // this color will be used in dark color themes
+        // borderColor: ,
+        border: '0.15px solid rgba(217, 234, 247, .25)',
+        overviewRulerColor: 'lightgreen',
+        backgroundColor: 'rgba(236, 255, 193, .25)',
+    },
+    rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+})
+
+export const addTempAnnotationHighlight = (
+    anchors: AnchorObject[],
+    textEditor: vscode.TextEditor
+): void => {
+    const ranges = anchors.map((a) => createRangeFromAnchorObject(a))
+    const decorationObjects: vscode.DecorationOptions[] = ranges.map((r) => {
+        let markdownArr = new Array<vscode.MarkdownString>()
+        markdownArr.push(new vscode.MarkdownString('New Merged Anchor Point'))
+        return {
+            range: r,
+            hoverMessage: markdownArr,
+        }
+    })
+    textEditor.setDecorations(tempDecoration, decorationObjects)
 }
 
 const getDupIds = (arr: string[]): string[] => {

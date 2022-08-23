@@ -24,7 +24,7 @@ export class Annotation {
     needToUpdate: boolean
     types: Type[]
     resolved: boolean
-
+    lastEditTime: number
     constructor(
         id: string,
         annotation: string,
@@ -44,6 +44,7 @@ export class Annotation {
         sharedWith: string,
         selected: boolean,
         needToUpdate: boolean,
+        lastEditTime: number,
         types?: Type[],
         resolved?: boolean
     ) {
@@ -67,6 +68,7 @@ export class Annotation {
         this.needToUpdate = needToUpdate
         this.types = types ?? []
         this.resolved = resolved ?? false
+        this.lastEditTime = lastEditTime
     }
 }
 
@@ -133,6 +135,8 @@ export const isPotentialAnchorObject = (
     return obj.hasOwnProperty('reasonSuggested')
 }
 
+// why does this not have offsets?????????
+
 export interface AnchorOnCommit {
     id: string
     commitHash: string
@@ -140,8 +144,10 @@ export interface AnchorOnCommit {
     html: string
     anchorText: string
     branchName: string
-    startLine: number
-    endLine: number
+    // startLine: number
+    // endLine: number
+    anchor: Anchor
+    stableGitUrl: string
     path: string
     surroundingCode: SurroundingAnchorArea
     anchorType: AnchorType
@@ -185,6 +191,11 @@ export interface Reply {
     githubUsername: string
     id: string
     replyContent: string
+    lastEditTime: number
+}
+
+export const isReply = (obj: any): obj is Reply => {
+    return obj.hasOwnProperty('replyContent')
 }
 
 export const stringToShikiThemes: { [key: string]: string } = {
@@ -305,6 +316,30 @@ export const HIGH_SIMILARITY_THRESHOLD = 0.3 // we are pretty confident the anch
 export const PASSABLE_SIMILARITY_THRESHOLD = 0.8 // we are confident enough
 export const INCREMENT = 2 // amount for expanding search range
 
+export const isAnchorObject = (anchor: any): anchor is AnchorObject => {
+    return (
+        anchor.hasOwnProperty('anchorId') &&
+        anchor.hasOwnProperty('parentId') &&
+        !anchor.hasOwnProperty('weight')
+    )
+}
+
+export interface AnnotationAnchorPair {
+    annoId: string
+    anchorId: string
+}
+
+export interface MergeInformation {
+    anchors: AnchorInformation[] // array of anchor ids or empty array if no anchors
+    replies: Reply[] // array of reply ids or empty array if no replies
+    annotation: string | undefined // annotation content or undefined if unused
+}
+
+export interface AnchorInformation {
+    anchorId: string
+    duplicateOf: AnnotationAnchorPair[] // pair of annotation/anchor ids of duplicates OR empty if it is unique/direct child of its annotation
+    hasDuplicates: AnnotationAnchorPair[]
+}
 export interface ReanchorInformation {
     anchorId: string
     filename: string

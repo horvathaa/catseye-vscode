@@ -54,9 +54,10 @@ interface Props {
     window: Window
     username: string
     userId: string
-    annotationSelected: (anno: Annotation) => void
-    annotations: Annotation[] // Likely unnecessary
-    selected: boolean
+    annotationSelected?: (anno: Annotation) => void
+    annotations?: Annotation[] // Likely unnecessary
+    selected?: boolean
+    allowSelection?: boolean
 }
 
 // TODO: Add Pin button next to edit
@@ -69,6 +70,7 @@ const ReactAnnotation: React.FC<Props> = ({
     annotationSelected,
     annotations,
     selected,
+    allowSelection = false,
 }) => {
     const [anno, setAnno] = React.useState<Annotation>(annotation)
     const [expanded, setExpanded] = React.useState(false)
@@ -77,16 +79,18 @@ const ReactAnnotation: React.FC<Props> = ({
     const [anchored, setAnchored] = React.useState(true) // change later
 
     const annoRef: React.MutableRefObject<Annotation> = React.useRef(anno)
-
+    const tryingSomethingNew = 'rgb(48 47 47)'
     // MUI doesn't accept CSS version of this for some reason..?
 
     const theme = createTheme({
         palette: {
             primary: {
-                main: `${editorBackground}`,
+                // main: `${editorBackground}`,
+                main: `${tryingSomethingNew}`,
             },
             background: {
-                paper: `${editorBackground}`,
+                // paper: `${editorBackground}`,
+                paper: `${tryingSomethingNew}`,
             },
         },
         typography: {
@@ -112,6 +116,14 @@ const ReactAnnotation: React.FC<Props> = ({
                         '&.Mui-checked': {
                             color: `${vscodeTextColor}`,
                         },
+                    },
+                },
+            },
+            MuiCardContent: {
+                styleOverrides: {
+                    root: {
+                        paddingLeft: 12,
+                        paddingRight: 12,
                     },
                 },
             },
@@ -285,14 +297,18 @@ const ReactAnnotation: React.FC<Props> = ({
     }
 
     const submitReply = (reply: Reply): void => {
+        const lastEditTime = new Date().getTime()
         const replyIds: string[] = anno.replies?.map((r) => r.id)
+        const newReply = { ...reply, lastEditTime }
+
         // TODO: Here we should maybe sort by created and replacing instead of just concatenating
         const updatedReplies: Reply[] = replyIds.includes(reply.id)
-            ? anno.replies.filter((r) => r.id !== reply.id).concat([reply])
-            : anno.replies.concat([reply])
+            ? anno.replies.filter((r) => r.id !== reply.id).concat([newReply])
+            : anno.replies.concat([newReply])
         const newAnno: Annotation = buildAnnotation({
             ...anno,
             replies: updatedReplies,
+            lastEditTime,
         })
         setAnno(newAnno)
         annoRef.current = newAnno
@@ -303,13 +319,15 @@ const ReactAnnotation: React.FC<Props> = ({
             value: updatedReplies,
         })
         setReplying(false)
-        // TODO: End of this function should result to clearing of annotation
+        // consider notifying annotation list that this value changed
     }
 
     const deleteReply = (id: string): void => {
+        const lastEditTime = new Date().getTime()
         const updatedReply = {
             ...anno.replies.filter((r) => r.id === id)[0],
             deleted: true,
+            lastEditTime,
         }
         const updatedReplies = anno.replies
             .filter((r) => r.id !== id)
@@ -317,6 +335,7 @@ const ReactAnnotation: React.FC<Props> = ({
         const newAnno: Annotation = buildAnnotation({
             ...anno,
             replies: updatedReplies,
+            lastEditTime,
         })
         setAnno(newAnno)
         annoRef.current = newAnno
@@ -376,6 +395,7 @@ const ReactAnnotation: React.FC<Props> = ({
         const newAnno: Annotation = buildAnnotation({
             ...anno,
             type: updatedTypes,
+            lastEditTime: new Date().getTime(),
         })
         setAnno(newAnno)
         annoRef.current = newAnno
@@ -395,6 +415,7 @@ const ReactAnnotation: React.FC<Props> = ({
             ...anno,
             annotation: newAnnoContent,
             shareWith,
+            lastEditTime: new Date().getTime(),
         })
         setAnno(newAnno)
         annoRef.current = newAnno
@@ -420,7 +441,7 @@ const ReactAnnotation: React.FC<Props> = ({
             id={anno.id}
         >
             <ThemeProvider theme={theme}>
-                {isMedOrMore && (
+                {isMedOrMore && allowSelection && (
                     <Checkbox
                         checked={selected}
                         onChange={() => annotationSelected(anno)}
@@ -459,12 +480,25 @@ const ReactAnnotation: React.FC<Props> = ({
                             />
                             <div className={styles['ContentContainer']}>
                                 {edit ? (
-                                    <TextEditor
-                                        content={anno.annotation}
-                                        submissionHandler={updateContent}
-                                        cancelHandler={cancelAnnotation}
-                                        showSplitButton={true}
-                                    />
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            justifyContent: 'space-between',
+                                        }}
+                                    >
+                                        <AnnotationTypesBar
+                                            currentTypes={anno.types}
+                                            editTypes={updateAnnotationTypes}
+                                        />
+                                        <TextEditor
+                                            content={anno.annotation}
+                                            submissionHandler={updateContent}
+                                            cancelHandler={cancelAnnotation}
+                                            showSplitButton={true}
+                                            placeholder={'Add annotation text'}
+                                        />
+                                    </div>
                                 ) : (
                                     <div
                                         style={{
@@ -473,14 +507,6 @@ const ReactAnnotation: React.FC<Props> = ({
                                             justifyContent: 'space-between',
                                         }}
                                     >
-                                        <div
-                                            className={
-                                                styles['AnnoContentContainer']
-                                            }
-                                        >
-                                            {anno.annotation}
-                                        </div>
-
                                         <div
                                             style={{
                                                 display: 'flex',
@@ -501,17 +527,28 @@ const ReactAnnotation: React.FC<Props> = ({
                                                     e.stopPropagation()
                                                     setEdit(!edit)
                                                 }}
-                                                name="Edit"
+                                                name="Edit Text"
                                                 noMargin={true}
                                                 icon={
                                                     <EditIcon fontSize="small" />
                                                 }
                                             />
                                         </div>
+                                        {anno.annotation.trim().length > 0 ? (
+                                            <div
+                                                className={
+                                                    styles[
+                                                        'AnnoContentContainer'
+                                                    ]
+                                                }
+                                            >
+                                                {anno.annotation}
+                                            </div>
+                                        ) : null}
                                     </div>
                                 )}
                                 <ReplyContainer
-                                    replying={replying}
+                                    replying={true}
                                     replies={anno.replies}
                                     username={username}
                                     userId={userId}

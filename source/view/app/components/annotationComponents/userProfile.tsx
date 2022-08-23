@@ -13,12 +13,18 @@ import { createTheme, useMediaQuery } from '@mui/material'
 interface Props {
     githubUsername: string
     createdTimestamp: number
+    lastEditTime: number
 }
 
-const UserProfile: React.FC<Props> = ({ githubUsername, createdTimestamp }) => {
+const UserProfile: React.FC<Props> = ({
+    githubUsername,
+    createdTimestamp,
+    lastEditTime,
+}) => {
     const userHasImage: boolean =
         githubUsername !== undefined && githubUsername !== ''
     const time: string = formatTimestamp(createdTimestamp)
+    const editTime: string = formatTimestamp(lastEditTime)
 
     const theme = createTheme({
         breakpoints: breakpoints,
@@ -38,14 +44,15 @@ const UserProfile: React.FC<Props> = ({ githubUsername, createdTimestamp }) => {
                 />
             )}
             <div className={styles['usernameAndTimeContainer']}>
-                    <a
-                        href={'https://github.com/' + githubUsername}
-                        className={styles['username']}
-                    >
-                        {githubUsername}
-                    </a>
-                    {time}
-                </div>
+                <a
+                    href={'https://github.com/' + githubUsername}
+                    className={styles['username']}
+                >
+                    {githubUsername}
+                </a>
+                {time}
+                <i>last edited on {editTime}</i>
+            </div>
         </div>
     )
 }

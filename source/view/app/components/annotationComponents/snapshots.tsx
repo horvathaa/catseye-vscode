@@ -38,10 +38,10 @@ export const Snapshot: React.FC<SnapshotProps> = ({
     return (
         <div className={styles['replyContainer']}>
             <div className={styles['topRow']}>
-                <UserProfile
+                {/* <UserProfile
                     githubUsername={snapshot.githubUsername}
                     createdTimestamp={snapshot.createdTimestamp}
-                />
+                /> */}
                 {githubUsername === snapshot.githubUsername && (
                     <div className={styles['buttonRow']}>
                         <AuthorOperationButtons
@@ -67,6 +67,7 @@ export const Snapshot: React.FC<SnapshotProps> = ({
                     submissionHandler={submissionHandler}
                     cancelHandler={() => setEditing(false)}
                     showSplitButton={false}
+                    placeholder={'Add snapshot comment'}
                 />
             ) : (
                 `${snapshot.comment}`

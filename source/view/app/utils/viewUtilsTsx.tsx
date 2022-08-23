@@ -16,6 +16,9 @@ import {
     AuthorOptions,
     FilterOptions,
     OptionGroup,
+    AnchorOnCommit,
+    PotentialAnchorObject,
+    AnchorType,
 } from '../../../constants/constants'
 import { defaultSort, defaultScope } from '../utils/viewUtils'
 import BugReportIcon from '@mui/icons-material/BugReport' // Issue
@@ -207,8 +210,85 @@ export const mergeAnnotations = (
     annos: Annotation[]
 ): void => {
     e.stopPropagation()
+
     // vscode.postMessage({
     //     command: 'resolveAnnotation',
     //     annoId: anno.id,
     // })
+}
+
+export const displayAnchorText = (
+    pv: AnchorOnCommit | PotentialAnchorObject,
+    styles: any
+): React.ReactElement => {
+    switch (pv.anchorType) {
+        case AnchorType.partialLine:
+            const wholeLine: string = pv.surroundingCode.linesAfter[0]
+            const indexOfAnchor = wholeLine.indexOf(pv.anchorText)
+            const endIndx = indexOfAnchor + pv.anchorText.length
+            const partialLines = [
+                wholeLine.slice(0, indexOfAnchor),
+                wholeLine.slice(indexOfAnchor, endIndx),
+                wholeLine.slice(endIndx),
+            ]
+            return (
+                <>
+                    {partialLines.map((a, i) => {
+                        if (i !== 1) {
+                            return (
+                                <span
+                                    className={styles.codeStyle}
+                                    style={{ opacity: '0.825' }}
+                                >
+                                    {a}
+                                </span>
+                            )
+                        } else {
+                            return (
+                                <b
+                                    style={{ fontWeight: 600 }}
+                                    className={styles.codeStyle}
+                                >
+                                    {a}
+                                </b>
+                            )
+                        }
+                    })}
+                </>
+            )
+        case AnchorType.oneline:
+            return (
+                <>
+                    {' '}
+                    {pv.anchorText.length > 60
+                        ? pv.anchorText.slice(0, 60)
+                        : pv.anchorText}
+                    {pv.anchorText.length > 60 ? '...' : null}
+                </>
+            )
+        case AnchorType.multiline:
+            const multiLines = pv.anchorText.split('\n')
+            return (
+                <>
+                    {multiLines.map((a) => {
+                        return (
+                            <p>
+                                <b
+                                    style={{ fontWeight: 600 }}
+                                    className={styles.codeStyle}
+                                >
+                                    {a.length > 60 ? a.slice(0, 60) + '...' : a}
+                                </b>
+                            </p>
+                        )
+                    })}
+                </>
+            )
+        default:
+            return (
+                <b style={{ fontWeight: 600 }} className={styles.codeStyle}>
+                    {pv.anchorText}
+                </b>
+            )
+    }
 }

@@ -10,15 +10,19 @@ import { Reply as ReactReply } from './reply' // reply component
 import { collapseExpandToggle, showHideLine } from '../../utils/viewUtilsTsx'
 import { Reply } from '../../../../constants/constants' // reply data model
 import styles from '../../styles/annotation.module.css'
+import { Checkbox } from '@mui/material'
 
 interface Props {
     replying: boolean
     replies: Reply[]
-    username: string
-    userId: string
-    submitReply: (reply: Reply) => void
+    username?: string
+    userId?: string
+    submitReply?: (reply: Reply) => void
     cancelReply: () => void
-    deleteReply: (id: string) => void
+    deleteReply?: (id: string) => void
+    focus?: boolean
+    showCheckbox?: boolean
+    handleSelectReply?: (id: string) => void
 }
 
 const MAX_NUM_REPLIES = 3
@@ -26,11 +30,14 @@ const MAX_NUM_REPLIES = 3
 const ReplyContainer: React.FC<Props> = ({
     replying,
     replies,
-    username,
-    userId,
-    submitReply,
+    username = undefined,
+    userId = undefined,
+    submitReply = undefined,
     cancelReply,
-    deleteReply,
+    deleteReply = undefined,
+    focus = true,
+    showCheckbox = false,
+    handleSelectReply,
 }) => {
     const [showMoreReplies, setShowMoreReplies] = React.useState<boolean>(false)
     const activeReplies = replies.filter((r) => !r.deleted)
@@ -39,7 +46,7 @@ const ReplyContainer: React.FC<Props> = ({
     const [tempIdCounter, setTempIdCounter] = React.useState<number>(1)
 
     const createReply = (reply: Reply): void => {
-        submitReply(reply)
+        submitReply && submitReply(reply)
         setTempIdCounter(tempIdCounter + 1)
     }
 
@@ -57,34 +64,57 @@ const ReplyContainer: React.FC<Props> = ({
                 ? (showMoreReplies ? activeReplies : mostRecentReplies)?.map(
                       (r: Reply) => {
                           return !r.deleted ? (
-                              <ReactReply
-                                  key={'reply-' + r.id}
-                                  id={r.id}
-                                  replyContent={r.replyContent}
-                                  userId={userId}
-                                  authorId={r.authorId}
-                                  githubUsername={r.githubUsername}
-                                  createdTimestamp={r.createdTimestamp}
-                                  replying={false}
-                                  deleted={r.deleted}
-                                  submissionHandler={submitReply}
-                                  cancelHandler={cancelReply}
-                                  deleteHandler={deleteReply}
-                              />
+                              <div
+                                  key={'reply-div-' + r.id}
+                                  style={{
+                                      display: 'flex',
+                                      flexDirection: 'row',
+                                  }}
+                              >
+                                  {/* Amber: Why do we have this? What is this supposed to do? */}
+                                  {showCheckbox && (
+                                      <Checkbox
+                                          // Needs work
+                                          onChange={() =>
+                                              handleSelectReply(r.id)
+                                          }
+                                          inputProps={{
+                                              'aria-label': 'controlled',
+                                          }}
+                                      />
+                                  )}
+                                  <ReactReply
+                                      key={'reply-' + r.id}
+                                      id={r.id}
+                                      replyContent={r.replyContent}
+                                      userId={userId}
+                                      authorId={r.authorId}
+                                      githubUsername={r.githubUsername}
+                                      createdTimestamp={r.createdTimestamp}
+                                      replying={false}
+                                      deleted={r.deleted}
+                                      submissionHandler={submitReply}
+                                      cancelHandler={cancelReply}
+                                      deleteHandler={deleteReply}
+                                  />
+                              </div>
                           ) : null
                       }
                   )
                 : null}
-            <ReactReply
-                githubUsername={username}
-                id={`temp-${tempIdCounter}`}
-                authorId={userId}
-                userId={userId}
-                replying={true}
-                createdTimestamp={new Date().getTime()}
-                submissionHandler={createReply}
-                cancelHandler={cancelReply}
-            />
+            {replying && (
+                <ReactReply
+                    githubUsername={username}
+                    id={`temp-${tempIdCounter}`}
+                    authorId={userId}
+                    userId={userId}
+                    replying={true}
+                    createdTimestamp={new Date().getTime()}
+                    submissionHandler={createReply}
+                    cancelHandler={cancelReply}
+                    focus={focus}
+                />
+            )}
         </div>
     )
 }

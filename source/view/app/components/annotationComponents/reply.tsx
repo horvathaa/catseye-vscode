@@ -15,29 +15,33 @@ import { Reply as ReplyInterface } from '../../../../constants/constants'
 interface Props {
     id?: string | undefined
     replyContent?: string | undefined
+    lastEditTime?: number | undefined
     createdTimestamp: number
-    githubUsername: string
-    userId: string
+    githubUsername?: string
+    userId?: string
     deleted?: boolean
     authorId: string
     replying: boolean
-    submissionHandler: (reply: ReplyInterface) => void
+    submissionHandler?: (reply: ReplyInterface) => void
     cancelHandler: () => void
     deleteHandler?: (id: string) => void
+    focus?: boolean
 }
 
 export const Reply: React.FC<Props> = ({
     id = undefined,
     replyContent = undefined,
     createdTimestamp,
-    githubUsername,
-    userId,
+    githubUsername = undefined,
+    userId = undefined,
     authorId,
     replying,
     deleted,
-    submissionHandler,
+    lastEditTime = undefined,
+    submissionHandler = undefined,
     cancelHandler,
-    deleteHandler,
+    deleteHandler = undefined,
+    focus,
 }) => {
     const [editing, setEditing] = React.useState<boolean>(false)
     const [reply, setReply] = React.useState({
@@ -47,6 +51,7 @@ export const Reply: React.FC<Props> = ({
         githubUsername,
         authorId,
         deleted: deleted ? deleted : false,
+        lastEditTime: lastEditTime ? lastEditTime : createdTimestamp,
     })
 
     React.useEffect(() => {
@@ -63,17 +68,26 @@ export const Reply: React.FC<Props> = ({
     }, [id])
 
     const createReply = (replyFromCallback: ReplyInterface): void => {
-        const { replyContent } = replyFromCallback
-        const replyToSend = { ...reply, replyContent, createdTimestamp }
-        submissionHandler(replyToSend)
+        if (submissionHandler) {
+            const { replyContent } = replyFromCallback
+            const replyToSend = { ...reply, replyContent, createdTimestamp }
+            replyToSend && submissionHandler(replyToSend)
+        }
     }
 
     const ReplyContent: React.ReactElement = (
         <div className={styles['replyContainer']}>
             <div className={styles['topRow']}>
                 <UserProfile
-                    githubUsername={githubUsername}
+                    githubUsername={githubUsername ? githubUsername : ''}
                     createdTimestamp={createdTimestamp}
+                    lastEditTime={
+                        lastEditTime
+                            ? lastEditTime
+                            : reply.lastEditTime
+                            ? reply.lastEditTime
+                            : new Date().getTime()
+                    }
                 />
                 {authorId === userId && (
                     <div className={styles['buttonRow']}>
@@ -86,7 +100,9 @@ export const Reply: React.FC<Props> = ({
                     </div>
                 )}
             </div>
-            <div className={styles['replyContentContainer']}>{replyContent}</div>
+            <div className={styles['replyContentContainer']}>
+                {replyContent}
+            </div>
         </div>
     )
     // Ideally createdTimestamp is updated on Submit for creation (might be happening)
@@ -97,6 +113,8 @@ export const Reply: React.FC<Props> = ({
             cancelHandler={cancelHandler}
             showSplitButton={false}
             showCancel={false}
+            focus={focus}
+            placeholder={'Add reply'}
         />
     ) : (
         // This shouldn't update created Timestamp, maybe have a new edit time field though
@@ -109,7 +127,7 @@ export const Reply: React.FC<Props> = ({
     )
 
     return (
-        <div>
+        <div style={{ width: `100%` }}>
             {replying ? ReplyEditor : editing ? ReplyEditor : ReplyContent}
         </div>
     )

@@ -155,17 +155,17 @@ export class DebugAdapter implements DebugAdapterTracker {
                             const anchor = anno?.anchors.find(
                                 (a) => a.anchorId === annoBreakpoint.anchorId
                             )
+                            const createdTimestamp = new Date().getTime()
                             const autoReply: Reply = {
                                 authorId: user.uid,
-                                createdTimestamp: new Date().getTime(),
+                                createdTimestamp: createdTimestamp,
                                 deleted: false,
                                 githubUsername: gitInfo.author, // make interface for gitInfo
                                 id: uuidv4(),
                                 replyContent: `${
                                     anchor?.anchorText
-                                } ran at ${formatTimestamp(
-                                    new Date().getTime()
-                                )}`,
+                                } ran at ${formatTimestamp(createdTimestamp)}`,
+                                lastEditTime: createdTimestamp,
                             }
                             this.annoBreakpoints = this.annoBreakpoints.map(
                                 (b) => {
@@ -228,14 +228,16 @@ export class DebugAdapter implements DebugAdapterTracker {
 
     transmitAutoReply(annoBreakpoint: AnnoBreakpoint, content: string) {
         const anno = annotationList.find((a) => a.id === annoBreakpoint.annoId)
+        const createdTimestamp = new Date().getTime()
         // const anchor = anno?.anchors.find(a => a.anchorId === annoBreakpoint.anchorId);
         const autoReply: Reply = {
             authorId: user ? user.uid : '',
-            createdTimestamp: new Date().getTime(),
+            createdTimestamp,
             deleted: false,
             githubUsername: gitInfo.author, // make interface for gitInfo
             id: uuidv4(),
             replyContent: content,
+            lastEditTime: createdTimestamp,
         }
 
         handleUpdateAnnotation(

@@ -101,6 +101,7 @@ const CardHeader = ({
                 <UserProfile
                     githubUsername={annotation.githubUsername}
                     createdTimestamp={annotation.createdTimestamp}
+                    lastEditTime={annotation.lastEditTime}
                 />
             )}
             {(smCodeSize || expanded) && (

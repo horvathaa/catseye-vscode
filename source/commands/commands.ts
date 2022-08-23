@@ -115,11 +115,12 @@ export const createView = async (context: vscode.ExtensionContext) => {
                         break
                     }
                     case 'createAnnotation': {
-                        const { anno, shareWith, willBePinned } = message
+                        const { anno, shareWith, willBePinned, types } = message
                         viewHelper.handleCreateAnnotation(
                             anno,
                             shareWith,
-                            willBePinned
+                            willBePinned,
+                            types
                         )
                         break
                     }
@@ -147,14 +148,30 @@ export const createView = async (context: vscode.ExtensionContext) => {
                     }
                     case 'resolveAnnotation': {
                         const { annoId } = message
-                        console.log('resolveAnnotation case')
                         viewHelper.handleDeleteResolveAnnotation(annoId, true)
                         break
                     }
                     case 'shareAnnotation': {
                         const { annoId } = message
-                        console.log('resolveAnnotation case')
                         viewHelper.handleDeleteResolveAnnotation(annoId, true)
+                        break
+                    }
+                    case 'mergeAnnotation': {
+                        const { anno, mergedAnnotations } = message
+                        viewHelper.handleMergeAnnotation(
+                            anno,
+                            new Map(Object.entries(mergedAnnotations))
+                        )
+                        break
+                    }
+                    case 'findMatchingAnchors': {
+                        const { annotations } = message
+                        viewHelper.handleFindMatchingAnchors(annotations)
+                        break
+                    }
+                    case 'scrollWithRangeAndFile': {
+                        const { anchor, gitUrl } = message
+                        viewHelper.handleScrollWithRangeAndFile(anchor, gitUrl)
                         break
                     }
                     case 'reanchor': {
@@ -248,6 +265,12 @@ export const createNewAnnotation = async () => {
             const anc = anchor.createAnchorFromRange(r)
             const anchorId = uuidv4()
             const createdTimestamp = new Date().getTime()
+
+            const stableGitUrl = utils.getGithubUrl(
+                visiblePath,
+                projectName,
+                true
+            )
             const surrounding = anchor.getSurroundingCodeArea(
                 activeTextEditor.document,
                 r
@@ -263,11 +286,7 @@ export const createNewAnnotation = async () => {
                 html,
                 filename: activeTextEditor.document.uri.toString(),
                 gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
-                stableGitUrl: utils.getGithubUrl(
-                    visiblePath,
-                    projectName,
-                    true
-                ),
+                stableGitUrl,
                 gitRepo: gitInfo[projectName]?.repo
                     ? gitInfo[projectName]?.repo
                     : '',
@@ -300,8 +319,8 @@ export const createNewAnnotation = async () => {
                         branchName: gitInfo[projectName]?.branch
                             ? gitInfo[projectName]?.branch
                             : '',
-                        startLine: anc.startLine,
-                        endLine: anc.endLine,
+                        anchor: anc,
+                        stableGitUrl,
                         path: visiblePath,
                         surroundingCode: surrounding,
                         anchorType,
@@ -315,14 +334,13 @@ export const createNewAnnotation = async () => {
                 surroundingCode: surrounding,
                 anchorType,
             }
-            console.log('anchor obj on creating anno', anchorObject)
             const temp = {
                 id: newAnnoId,
                 anchors: [anchorObject],
                 annotation: '',
                 deleted: false,
                 outOfDate: false,
-                createdTimestamp: new Date().getTime(),
+                createdTimestamp: createdTimestamp,
                 authorId: user?.uid,
                 gitRepo: gitInfo[projectName]?.repo
                     ? gitInfo[projectName]?.repo
@@ -341,6 +359,7 @@ export const createNewAnnotation = async () => {
                 sharedWith: 'private',
                 selected: false,
                 needToUpdate: true,
+                lastEditTime: createdTimestamp,
             }
             setTempAnno(utils.buildAnnotation(temp))
             view?.createNewAnno(html, annotationList)
@@ -364,6 +383,7 @@ export const createFileAnnotation = async (
     const visiblePath: string = vscode.workspace.workspaceFolders
         ? utils.getVisiblePath(projectName, context.fsPath)
         : context.fsPath
+    const createdTimestamp = new Date().getTime()
     const anchorObject: AnchorObject = {
         anchor: { startLine: 0, endLine: 0, startOffset: 0, endOffset: 0 },
         anchorText: visiblePath,
@@ -385,7 +405,7 @@ export const createFileAnnotation = async (
         parentId: newAnnoId,
         programmingLang,
         anchored: true,
-        createdTimestamp: new Date().getTime(),
+        createdTimestamp,
         priorVersions: [],
         path: [],
         surroundingCode: {
@@ -401,7 +421,7 @@ export const createFileAnnotation = async (
         annotation: '',
         deleted: false,
         outOfDate: false,
-        createdTimestamp: new Date().getTime(),
+        createdTimestamp,
         authorId: user?.uid,
         gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : '',
         gitBranch: gitInfo[projectName]?.branch
@@ -418,6 +438,7 @@ export const createFileAnnotation = async (
         sharedWith: 'private',
         selected: false,
         needToUpdate: true,
+        lastEditTime: createdTimestamp,
     }
     setTempAnno(utils.buildAnnotation(temp))
     view?.createNewAnno(visiblePath, annotationList)
@@ -472,6 +493,12 @@ export const addNewHighlight = (
             const anchorId = uuidv4()
             const createdTimestamp = new Date().getTime()
             const anc = anchor.createAnchorFromRange(r)
+
+            const stableGitUrl = utils.getGithubUrl(
+                visiblePath,
+                projectName,
+                true
+            )
             const surrounding = anchor.getSurroundingCodeArea(
                 activeTextEditor.document,
                 r
@@ -486,11 +513,7 @@ export const addNewHighlight = (
                 html,
                 filename: activeTextEditor.document.uri.toString(),
                 gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
-                stableGitUrl: utils.getGithubUrl(
-                    visiblePath,
-                    projectName,
-                    true
-                ),
+                stableGitUrl,
                 gitRepo: gitInfo[projectName]?.repo
                     ? gitInfo[projectName]?.repo
                     : '',
@@ -523,8 +546,10 @@ export const addNewHighlight = (
                         branchName: gitInfo[projectName]?.branch
                             ? gitInfo[projectName]?.branch
                             : '',
-                        startLine: anc.startLine,
-                        endLine: anc.endLine,
+                        // startLine: anc.startLine,
+                        // endLine: anc.endLine,
+                        anchor: anc,
+                        stableGitUrl,
                         path: visiblePath,
                         surroundingCode: surrounding,
                         anchorType,
@@ -544,7 +569,7 @@ export const addNewHighlight = (
                 annotation: '',
                 deleted: false,
                 outOfDate: false,
-                createdTimestamp: new Date().getTime(),
+                createdTimestamp,
                 authorId: user?.uid,
                 gitRepo: gitInfo[projectName]?.repo
                     ? gitInfo[projectName]?.repo
@@ -563,6 +588,7 @@ export const addNewHighlight = (
                 sharedWith: 'private',
                 selected: selected ? selected : false,
                 needToUpdate: true,
+                lastEditTime: createdTimestamp,
             }
             setAnnotationList(
                 annotationList.concat([utils.buildAnnotation(temp)])

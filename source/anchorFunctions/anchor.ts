@@ -103,12 +103,7 @@ export const connectPotentialAnchorsToAnchors = (
             )
         }
     })
-    console.log(
-        'new arr',
-        newAnchors.concat(
-            anchors.filter((a) => !anchorIds.includes(a.anchorId))
-        )
-    )
+
     return newAnchors
     // .concat(
     //     anchors.filter((a) => !anchorIds.includes(a.anchorId))
@@ -145,10 +140,13 @@ export const handleUpdatingTranslatedAnnotations = (
                 change.text
             )
     )
+    // console.log('??????')
     const translatedAnchors = removeNulls(translate)
+    // a.id === 'fa718d3f-2e8f-43e2-a869-c995f0c9b7a8' &&
+    //     console.log('post translate', translatedAnchors)
     const translatedPotentialAnchors: PotentialAnchorObject[] = removeNulls(
         potentialAnchorsToTranslate.map((a: PotentialAnchorObject) => {
-            translateChanges(
+            return translateChanges(
                 a,
                 change.range,
                 change.text.length,
@@ -159,6 +157,7 @@ export const handleUpdatingTranslatedAnnotations = (
             )
         })
     )
+
     const needToUpdate = translatedAnchors.some((t) => {
         const anchor = anchorsToTranslate.find(
             (o: AnchorObject) => t.anchorId === o.anchorId
@@ -172,12 +171,11 @@ export const handleUpdatingTranslatedAnnotations = (
         return t.gitCommit === gitInfo[a.projectName].commit
     })?.gitCommit
     const originalGitCommit = a.gitCommit
-    console.log('translted', translatedAnchors)
     const updatedAnchors = connectPotentialAnchorsToAnchors(
         translatedPotentialAnchors,
         translatedAnchors.concat(anchorsNotToTranslate)
     )
-    console.log('updated', updatedAnchors)
+
     return buildAnnotation({
         ...a,
         needToUpdate,
@@ -924,6 +922,7 @@ export const addHighlightsToEditor = (
         let anchors: AnchorObject[] = annotationsToHighlight
             .flatMap((a) => a.anchors)
             .filter((a) => a.stableGitUrl === textUrl)
+            .filter((a) => a.anchored)
         let ranges: AnnotationRange[] = anchors
             .map((a) => {
                 return {

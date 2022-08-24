@@ -79,6 +79,8 @@ const CardHeader = ({
                         style={{
                             display: 'flex',
                             flexDirection: 'column',
+                            marginLeft: 10,
+                            justifyContent: 'center',
                         }}
                     >
                         <div>

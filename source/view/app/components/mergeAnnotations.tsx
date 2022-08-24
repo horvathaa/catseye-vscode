@@ -543,7 +543,7 @@ const MergeAnnotations: React.FC<Props> = ({
                         createAnchorOnCommitFromAnchorObject(a)
                     return (
                         <div
-                            className={`${anchorStyles['AnchorContainer']} ${anchorStyles['Suggestion']}`}
+                            className={`${anchorStyles['AnchorContainer']} ${anchorStyles['Suggestion']} ${anchorStyles['Merged']}`}
                             key={
                                 a.anchorId +
                                 a.parentId +
@@ -552,6 +552,12 @@ const MergeAnnotations: React.FC<Props> = ({
                             }
                         >
                             <PastVersion
+                                key={
+                                    a.anchorId +
+                                    a.parentId +
+                                    i +
+                                    'merge-anchor-list-pv'
+                                }
                                 pastVersion={pseudoAnchorOnCommit}
                                 handleClick={scrollWithRangeAndFile}
                                 i={i}
@@ -562,6 +568,12 @@ const MergeAnnotations: React.FC<Props> = ({
                                         a.anchorId,
                                         a.parentId
                                     )
+                                }
+                                key={
+                                    a.anchorId +
+                                    a.parentId +
+                                    i +
+                                    'merge-anchor-list-delete'
                                 }
                                 name="Delete"
                                 icon={<DeleteIcon fontSize="small" />}
@@ -599,7 +611,7 @@ const MergeAnnotations: React.FC<Props> = ({
                     <CardContent>
                         <div className={styles['ContentContainer']}>
                             <p className={anchorStyles['SuggestionTitle']}>
-                                New Annotation
+                                Merged Annotation
                             </p>
                             <div
                                 style={{

@@ -63,13 +63,18 @@ const AnchorVersions: React.FC<Props> = ({
     return (
         <div>
             {anchors.map((anchor: AnchorObject, i) => {
-                console.log('rendering this anchor', anchor)
+                // console.log('rendering this anchor', anchor)
                 anchor.priorVersions && anchor.priorVersions.reverse()
                 if (anchor.priorVersions) {
                     return (
-                        <>
+                        <div key={'map-' + i}>
                             <Carousel
-                                key={anchor.anchorId + i + '-pv'}
+                                key={
+                                    anchor.anchorId +
+                                    anchor.parentId +
+                                    i +
+                                    '-pv'
+                                }
                                 // potentialVersions={
                                 //     anchor.potentialReanchorSpots
                                 // }
@@ -82,10 +87,11 @@ const AnchorVersions: React.FC<Props> = ({
                             ></Carousel>
 
                             {anchor.potentialReanchorSpots &&
-                            anchor.potentialReanchorSpots.length
+                            anchor.potentialReanchorSpots.length &&
+                            !anchor.anchored
                                 ? showPotentialAnchors(anchor)
                                 : null}
-                        </>
+                        </div>
                     )
                 }
                 return null

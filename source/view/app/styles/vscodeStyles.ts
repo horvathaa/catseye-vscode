@@ -93,5 +93,6 @@ export const cardStyle = {
     borderRadius: '4px',
     // borderStyle: 'solid',
     padding: 10,
+    paddingBottom: 0,
     flexGrow: 1,
 }

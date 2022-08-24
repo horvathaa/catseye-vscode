@@ -78,28 +78,33 @@ const AnchorCarousel: React.FC<Props> = ({
     }, [pastVersions, futureVersions])
 
     React.useEffect(() => {
-        // if (priorVersions) {
-        //     console.log('hewwo??', currentAnchorObject)
-        const pseudoPriorVersion: AnchorOnCommit =
-            createAnchorOnCommitFromAnchorObject(currentAnchorObject)
-        console.log('psedi', pseudoPriorVersion)
-        // const foundCurrentAnchorToDisplay: boolean =
-        //     priorVersions.find((pv) => pv.id === pseudoPriorVersion.id)
-        //         ?.id === pseudoPriorVersion.id
-        // console.log('found', foundCurrentAnchorToDisplay)
-        setPastVersions(
-            // foundCurrentAnchorToDisplay
-            //     ?
-            [
-                // ...priorVersions.filter(
-                //     (a) => a.id !== pseudoPriorVersion.id
-                // ),
-                ...priorVersions,
-                pseudoPriorVersion,
-            ]
-            // : //priorVersions.concat(pseudoPriorVersion)
-            //   priorVersions
-        )
+        if (priorVersions) {
+            //     console.log('hewwo??', currentAnchorObject)
+            const pseudoPriorVersion: AnchorOnCommit =
+                createAnchorOnCommitFromAnchorObject(currentAnchorObject)
+            // console.log('psedi', pseudoPriorVersion)
+            // const foundCurrentAnchorToDisplay: boolean =
+            //     priorVersions.find((pv) => pv.id === pseudoPriorVersion.id)
+            //         ?.id === pseudoPriorVersion.id
+            // console.log('found', foundCurrentAnchorToDisplay)
+            setPastVersions(
+                // foundCurrentAnchorToDisplay
+                //     ?
+                [
+                    // ...priorVersions.filter(
+                    //     (a) => a.id !== pseudoPriorVersion.id
+                    // ),
+                    ...priorVersions,
+                    pseudoPriorVersion,
+                ]
+                // : //priorVersions.concat(pseudoPriorVersion)
+                //   priorVersions
+            )
+        } else if (!potentialVersions) {
+            setPastVersions([
+                createAnchorOnCommitFromAnchorObject(currentAnchorObject),
+            ])
+        }
         pastVersions && setIndex(pastVersions?.length - 1)
         // }
     }, [currentAnchorObject]) //watch for any changes to current anchor and update
@@ -128,9 +133,10 @@ const AnchorCarousel: React.FC<Props> = ({
                 pv.surroundingCode?.linesBefore[
                     pv.surroundingCode?.linesBefore?.length - index
                 ]
-            const length = lineBefore.length
-            const tooLong = length > 60
-            return tooLong ? lineBefore.slice(0, 60).concat('...') : lineBefore
+            // const length = lineBefore.length
+            // const tooLong = length > 60
+            return lineBefore
+            // return tooLong ? lineBefore.slice(0, 60).concat('...') : lineBefore
         }
         return null
     }
@@ -144,9 +150,10 @@ const AnchorCarousel: React.FC<Props> = ({
             index < pv.surroundingCode?.linesAfter.length
         ) {
             const lineAfter = pv.surroundingCode.linesAfter[index]
-            const length = lineAfter.length
-            const tooLong = length > 60
-            return tooLong ? lineAfter.slice(0, 60) : lineAfter
+            // const length = lineAfter.length
+            // const tooLong = length > 60
+            // return tooLong ? lineAfter.slice(0, 60) : lineAfter
+            return lineAfter
         }
         return null
     }
@@ -212,266 +219,10 @@ const AnchorCarousel: React.FC<Props> = ({
                     displayAfter={displayAfter}
                 />
             ) : // <div style={{ display: 'flex', flexDirection: 'row' }}>
-            //     <AdamiteButton
-            //         buttonClicked={back}
-            //         name="Back"
-            //         icon={
-            //             <ArrowBackIcon
-            //                 style={
-            //                     showBack
-            //                         ? undefined
-            //                         : { color: disabledIcon }
-            //                 }
-            //             />
-            //         }
-            //         noMargin={true}
-            //         disabled={!showBack}
-            //     />
-            //     <div
-            //         className={styles['AnchorContainer']}
-            //         style={{
-            //             minWidth: 50,
-            //             maxWidth: 800,
-            //             height: 150,
-            //         }} // cannot move dimensions to CSS file or else package styles override
-            //     >
-            //         <Carousel // not sure how to resolve type issue yet 'JSX element type 'Slider' does not have any construct or call signatures.'
-            //             onSlideComplete={(i: any) => {
-            //                 setIndex(i)
-            //             }}
-            //             onSlideStart={(i: any) => {}}
-            //             activeIndex={index}
-            //             // threshHold={50} // min # of pixels dragged to trigger swipe
-            //             transition={0.5}
-            //             scaleOnDrag={true}
-            //         >
-            //             {pastVersions &&
-            //                 pastVersions.map(
-            //                     (pv: AnchorOnCommit, index) => (
-            //                         <div
-            //                             style={{
-            //                                 display: 'flex',
-            //                                 flexDirection: 'column',
-            //                                 alignItems: 'flex-start',
-            //                                 width: '100%',
-            //                                 height: 150,
-            //                                 padding: '10px',
-            //                                 color: iconColor,
-            //                             }} // same as AnchorContainer ^^
-            //                             key={index}
-            //                             onClick={(e) => {
-            //                                 handleClick(
-            //                                     e,
-            //                                     currentAnchorObject.anchorId
-            //                                 )
-            //                             }}
-            //                         >
-            //                             <span>
-            //                                 <i> {pv.path} </i>
-            //                             </span>
-            //                             {pv.endLine - pv.startLine > 0 ? (
-            //                                 <span>
-            //                                     lines {pv.startLine + 1}-
-            //                                     {pv.endLine + 1} on{' '}
-            //                                     {pv.branchName}{' '}
-            //                                     {pv.commitHash !== ''
-            //                                         ? ':'
-            //                                         : null}{' '}
-            //                                     {pv.commitHash.slice(0, 7)}
-            //                                 </span>
-            //                             ) : (
-            //                                 <span>
-            //                                     line {pv.startLine + 1} on{' '}
-            //                                     {pv.branchName}
-            //                                     {pv.commitHash !== ''
-            //                                         ? ':'
-            //                                         : null}{' '}
-            //                                     {pv.commitHash.slice(0, 6)}
-            //                                 </span>
-            //                             )}
-            //                             <div
-            //                                 style={{
-            //                                     display: 'flex',
-            //                                     flexDirection: 'column',
-            //                                 }}
-            //                             >
-            //                                 <div
-            //                                     style={{
-            //                                         display: 'flex',
-            //                                         flexDirection: 'column',
-            //                                         width: 'fit-content',
-            //                                         alignItems:
-            //                                             'flex-start',
-            //                                         color: '#2ADD42',
-            //                                         overflow: 'scroll',
-            //                                     }}
-            //                                 >
-            //                                     <p
-            //                                         style={{
-            //                                             opacity: '0.5',
-            //                                         }}
-            //                                     >
-            //                                         {displayBefore(pv, 3)}
-            //                                     </p>
-            //                                     <p
-            //                                         style={{
-            //                                             opacity: '0.7',
-            //                                         }}
-            //                                     >
-            //                                         {displayBefore(pv, 2)}
-            //                                     </p>
-            //                                     <p>
-            //                                         {/* <b> */}
-            //                                         {displayAnchorText(pv)}
-            //                                         {/* </b> */}
-            //                                     </p>
-            //                                     <p
-            //                                         style={{
-            //                                             opacity: '0.7',
-            //                                         }}
-            //                                     >
-            //                                         {displayAfter(pv, 1)}
-            //                                     </p>
-            //                                     <p
-            //                                         style={{
-            //                                             opacity: '0.5',
-            //                                         }}
-            //                                     >
-            //                                         {displayAfter(pv, 2)}
-            //                                     </p>
-            //                                     {/* styling html within carousel hard */}
-            //                                     {/* <div
-            //                     dangerouslySetInnerHTML={{
-            //                         __html: pv.html,
-            //                     }}
-            //                     style={{
-            //                         cursor: 'normal',
-            //                     }}
-            //                 ></div> */}
-            //                                 </div>
-            //                             </div>
-            //                         </div>
-            //                     )
-            //                 )}
-            //         </Carousel>
-            //     </div>
-            //     <AdamiteButton
-            //         buttonClicked={forward}
-            //         name="Forward"
-            //         icon={
-            //             <ArrowForwardIcon
-            //                 style={
-            //                     showForward
-            //                         ? undefined
-            //                         : { color: disabledIcon }
-            //                 }
-            //             />
-            //         }
-            //         noMargin={true}
-            //         disabled={!showForward}
-            //     />
-            // </div>
+
             null}
             {/* POTENTIAL VERSIONS  */}
-            {/* {potentialVersions ? (
-                <div
-                    className={styles['AnchorContainer']}
-                    style={{
-                        minWidth: 50,
-                        maxWidth: 800,
-                        height: 150,
-                    }} // cannot move dimensions to CSS file or else package styles override
-                >
-                    <Carousel // not sure how to resolve type issue yet 'JSX element type 'Carousel' does not have any construct or call signatures.'
-                        onSlideComplete={(i: any) => {
-                            setIndex(i)
-                        }}
-                        onSlideStart={(i: any) => {
-                            // setPotentialVersion(futureVersions[index])
-                        }}
-                        activeIndex={index}
-                        // threshHold={50} // min # of pixels dragged to trigger swipe
-                        transition={0.5}
-                        scaleOnDrag={true}
-                    >
-                        {futureVersions &&
-                            futureVersions.map(
-                                (pv: PotentialAnchorObject, index) => (
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'flex-start',
-                                            width: '100%',
-                                            height: 150,
-                                            padding: '10px',
-                                            color: iconColor,
-                                        }} // same as AnchorContainer ^^
-                                        key={index}
-                                        onClick={(e) => {
-                                            handleClick(e, pv.anchorId, pv)
-                                        }}
-                                    >
-                                        <span>
-                                            <i>
-                                                {' '}
-                                                {getConfidenceString(
-                                                    pv.weight
-                                                )}{' '}
-                                                match in {pv.visiblePath}
-                                            </i>
-                                        </span>
-                                        {pv.anchor.endLine -
-                                            pv.anchor.startLine >
-                                        0 ? (
-                                            <span>
-                                                found {pv.reasonSuggested} at
-                                                lines {pv.anchor.startLine + 1}-
-                                                {pv.anchor.endLine + 1}
-                                            </span>
-                                        ) : (
-                                            <span>
-                                                found {pv.reasonSuggested} at
-                                                line {pv.anchor.startLine + 1}
-                                            </span>
-                                        )}
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    width: 'fit-content',
-                                                    alignItems: 'flex-start',
-                                                    color: '#2ADD42',
-                                                    overflow: 'scroll',
-                                                }}
-                                            >
-                                                <p style={{ opacity: '0.5' }}>
-                                                    {displayBefore(pv, 3)}
-                                                </p>
-                                                <p style={{ opacity: '0.7' }}>
-                                                    {displayBefore(pv, 2)}
-                                                </p>
-                                                <p>{displayAnchorText(pv)}</p>
-                                                <p style={{ opacity: '0.7' }}>
-                                                    {displayAfter(pv, 1)}
-                                                </p>
-                                                <p style={{ opacity: '0.5' }}>
-                                                    {displayAfter(pv, 2)}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )
-                            )}
-                    </Carousel>
-                </div>
-            ) : null} */}
+
             {/* POTENTIAL VERSIONS -- lot of redundant code between this and prior versions - should fix */}
             {potentialVersions ? (
                 <PotentialVersions

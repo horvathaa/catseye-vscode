@@ -7,6 +7,7 @@
 import { VscChevronDown, VscChevronRight } from 'react-icons/vsc'
 import * as React from 'react'
 import styles from '../styles/annotation.module.css'
+import anchorStyles from '../styles/versions.module.css'
 import { Groups } from '@mui/icons-material'
 import PersonIcon from '@mui/icons-material/Person'
 import {
@@ -232,63 +233,73 @@ export const displayAnchorText = (
                 wholeLine.slice(endIndx),
             ]
             return (
-                <>
+                <pre className={anchorStyles['CodeLines']}>
                     {partialLines.map((a, i) => {
                         if (i !== 1) {
                             return (
                                 <span
                                     className={styles.codeStyle}
                                     style={{ opacity: '0.825' }}
+                                    key={'span' + a}
                                 >
                                     {a}
                                 </span>
                             )
                         } else {
                             return (
-                                <b
+                                <span
                                     style={{ fontWeight: 600 }}
                                     className={styles.codeStyle}
+                                    key={'span-anchor' + a}
                                 >
                                     {a}
-                                </b>
+                                </span>
                             )
                         }
                     })}
-                </>
+                </pre>
             )
         case AnchorType.oneline:
             return (
-                <>
-                    {' '}
-                    {pv.anchorText.length > 60
+                <pre className={anchorStyles['CodeLines']}>
+                    {/* {' '} */}
+                    {pv.anchorText}
+                    {/* {pv.anchorText.length > 60
                         ? pv.anchorText.slice(0, 60)
                         : pv.anchorText}
-                    {pv.anchorText.length > 60 ? '...' : null}
-                </>
+                    {pv.anchorText.length > 60 ? '...' : null} */}
+                </pre>
             )
         case AnchorType.multiline:
             const multiLines = pv.anchorText.split('\n')
             return (
                 <>
-                    {multiLines.map((a) => {
+                    {multiLines.map((a, i) => {
                         return (
-                            <p>
+                            <pre
+                                className={`${anchorStyles['CodeLines']} ${styles.anchorCode}`}
+                                key={'ml-anchor-' + a + i}
+                            >
                                 <b
                                     style={{ fontWeight: 600 }}
                                     className={styles.codeStyle}
                                 >
-                                    {a.length > 60 ? a.slice(0, 60) + '...' : a}
+                                    {a}
+                                    {/* {a.length > 60 ? a.slice(0, 60) + '...' : a} */}
                                 </b>
-                            </p>
+                            </pre>
                         )
                     })}
                 </>
             )
         default:
             return (
-                <b style={{ fontWeight: 600 }} className={styles.codeStyle}>
+                <pre
+                    style={{ fontWeight: 600 }}
+                    className={`${anchorStyles['CodeLines']} ${styles.anchorCode}`}
+                >
                     {pv.anchorText}
-                </b>
+                </pre>
             )
     }
 }

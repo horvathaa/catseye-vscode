@@ -249,7 +249,7 @@ const compareAnnotationAnchorTextPairs = (
 ): string[] => {
     const ids: string[] = []
     oldSet.forEach((anchorText: string, key: string) => {
-        console.log('hewwo?', newSet.get(key), 'anch', anchorText)
+        // console.log('hewwo?', newSet.get(key), 'anch', anchorText)
         const split = key.split('%')
         if (anchorText !== newSet.get(key)) ids.push(split[1])
     })
@@ -357,12 +357,13 @@ export const handleDidChangeTextDocument = (
                 translatedAnnotations
             )
 
-            console.log('pairsBeforeTranslate', pairsBeforeTranslate)
+            // console.log('pairsBeforeTranslate', pairsBeforeTranslate)
 
             // update and remove any annotation given the translate change handler in anchor.ts
             // mark any annotation that has changed for saving to FireStore
             translatedAnnotations = utils.removeOutOfDateAnnotations(
                 translatedAnnotations.map((a: Annotation) => {
+                    // console.log('mapping...', a)
                     return anchor.handleUpdatingTranslatedAnnotations(
                         a,
                         stableGitPath,
@@ -377,13 +378,13 @@ export const handleDidChangeTextDocument = (
                 translatedAnnotations
             )
 
-            console.log('pairs after', pairsAfterTranslate)
+            // console.log('pairs after', pairsAfterTranslate)
 
             const idsWithChangedText = compareAnnotationAnchorTextPairs(
                 pairsBeforeTranslate,
                 pairsAfterTranslate
             )
-            console.log('ids', idsWithChangedText)
+            // console.log('ids', idsWithChangedText)
             if (idsWithChangedText.length) {
                 setEventsToTransmitOnSave(
                     translatedAnnotations
@@ -413,8 +414,6 @@ export const handleDidChangeTextDocument = (
         let shouldRefreshDisplay: boolean = translatedAnnotations.some(
             (a) => a.needToUpdate
         )
-
-        console.log('should refresh', shouldRefreshDisplay)
 
         const notUpdatedAnnotations: Annotation[] =
             utils.getAnnotationsNotWithGitUrl(annotationList, stableGitPath)

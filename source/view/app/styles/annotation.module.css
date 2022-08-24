@@ -309,7 +309,7 @@
     resize: none;
     font-family: var(--vscode-font-family);
     border-radius: 4px;
-    outline: 1px solid #7fae42 !important;
+    outline: 1px solid #7fae4269 !important;
     color: var(--vscode-foreground);
     padding-left: 10px;
 }
@@ -432,7 +432,7 @@
 }
 
 .ContentContainer {
-    margin: 10px 0px;
+    /* margin: 10px 0px; */
     /* border: 1px solid var(--vscode-editor-foreground); */
     border-radius: 8px;
     font-family: var(--vscode-font-family);
@@ -443,12 +443,12 @@
 
 .AnnoContentContainer {
     margin: 5px 0px;
-    border: 1px solid var(--vscode-editor-foreground);
-    border-radius: 4px;
+    /* border: 1px solid rgba(var(--vscode-editor-foreground), 0.4);
+    border-radius: 4px; */
     font-family: var(--vscode-font-family);
     overflow-wrap: anywhere;
-    font-size: 1.15em;
-    padding: 6px 7px;
+    font-size: 1.3em;
+    padding: 1px 7px;
 }
 
 .collapseExpandButton {
@@ -525,7 +525,7 @@ button.submit {
     color: var(--vscode-foreground);
     margin-top: 6px;
     border: 2px solid transparent; /* TODO: Switch between 1 and 2px*/
-    border-color: #7fae42;
+    border-color: #7fae4236;
     background-color: var(--vscode-editor-background);
     height: 30px;
 }
@@ -546,7 +546,7 @@ button.cancel {
     cursor: pointer;
     color: var(--vscode-foreground);
     border: 2px solid transparent;
-    border-color: #7fae42;
+    border-color: #7fae4236;
     background-color: var(--vscode-editor-background);
     height: 27px; /* TODO: some reason needs to be smaller height do to submit button weirdness */
     transition: all 0.5s ease-in-out;

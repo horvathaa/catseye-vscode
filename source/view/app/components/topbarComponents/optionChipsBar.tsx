@@ -41,8 +41,10 @@ const OptionChipsBar: React.FC<OptionsProps> = ({
             backgroundColor: editorBackground,
             color: vscodeTextColor,
             borderColor: iconColor,
-            border: '1.2px solid',
+            border: `1.2px solid rgba(${iconColor}, 0.3)`,
             margin: '3px',
+            alignItems: 'flex-start',
+            paddingLeft: '2px',
             '&:hover': {
                 backgroundColor: hoverBackground,
                 color: hoverText,

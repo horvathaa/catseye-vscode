@@ -77,10 +77,15 @@ const ReactAnnotation: React.FC<Props> = ({
     const [edit, setEdit] = React.useState<boolean>(false)
     const [replying, setReplying] = React.useState<boolean>(false)
     const [anchored, setAnchored] = React.useState(true) // change later
+    const [dynamicCardStyle, setDynamicCardStyle] = React.useState(cardStyle)
 
     const annoRef: React.MutableRefObject<Annotation> = React.useRef(anno)
     const tryingSomethingNew = 'rgb(48 47 47)'
     // MUI doesn't accept CSS version of this for some reason..?
+
+    React.useEffect(() => {
+        setAnno(annotation)
+    }, [annotation])
 
     const theme = createTheme({
         palette: {
@@ -122,14 +127,26 @@ const ReactAnnotation: React.FC<Props> = ({
             MuiCardContent: {
                 styleOverrides: {
                     root: {
-                        paddingLeft: 12,
-                        paddingRight: 12,
+                        // paddingLeft: 12,
+                        // paddingRight: 12,
+                        padding: 0,
+                        ':last-child': {
+                            paddingBottom: 0,
+                        },
                     },
                 },
             },
         },
         breakpoints: breakpoints,
     })
+
+    React.useEffect(() => {
+        if (!expanded) {
+            setDynamicCardStyle({ ...cardStyle, paddingBottom: 10 })
+        } else {
+            setDynamicCardStyle({ ...cardStyle, paddingBottom: 0 })
+        }
+    }, [expanded])
 
     const isMedOrMore = useMediaQuery(theme.breakpoints.up('md'))
 
@@ -448,7 +465,7 @@ const ReactAnnotation: React.FC<Props> = ({
                         inputProps={{ 'aria-label': 'controlled' }}
                     />
                 )}
-                <Card style={cardStyle}>
+                <Card style={dynamicCardStyle}>
                     <CollapsedCardHeader
                         expanded={expanded}
                         setExpanded={setExpanded}
@@ -471,7 +488,7 @@ const ReactAnnotation: React.FC<Props> = ({
                         timeout="auto"
                         //unmountOnExit
                     >
-                        <CardContent>
+                        <CardContent style={{ padding: 0 }}>
                             <AnchorVersions
                                 anchors={anno.anchors}
                                 scrollInEditor={scrollInEditor}

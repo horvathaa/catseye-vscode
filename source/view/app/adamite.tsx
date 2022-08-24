@@ -374,8 +374,6 @@ const AdamitePanel: React.FC<Props> = ({
               )
         : []
 
-    console.log('new filtered', filtered)
-
     const consolidateAnnos = (annos: Annotation[]) => {
         setAnnosToConsolidate(annos)
     }

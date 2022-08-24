@@ -188,6 +188,7 @@ const AnnotationReference: React.FC<Props> = ({
                             }
                         >
                             <PastVersion
+                                key={'anno-ref' + anchor.anchorId + i}
                                 handleClick={scrollWithRangeAndFile}
                                 i={i}
                                 pastVersion={createAnchorOnCommitFromAnchorObject(

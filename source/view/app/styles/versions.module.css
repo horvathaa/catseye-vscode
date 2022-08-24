@@ -59,6 +59,19 @@ span {
     margin-right: 2rem;
     margin-bottom: 0.25rem;
     border-color: #dcdcaa5e;
+    /* flex-direction: row; */
+}
+
+.AnchorContainer.Suggestion.Merged {
+    flex-direction: row;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.CodeLines {
+    margin: 0;
+    font-family: Consolas, 'Menlo';
 }
 
 .AnchorCode {
@@ -74,7 +87,7 @@ span {
 .SuggestionTitle {
     padding: 0px 5px;
     padding-bottom: 4px;
-    font-size: 0.8rem;
+    font-size: 1.2rem;
     font-style: italic;
 }
 
@@ -104,7 +117,7 @@ button.reanchor {
     color: var(--vscode-foreground);
     margin-top: 2px;
     border: 2px solid transparent; /* TODO: Switch between 1 and 2px*/
-    border-color: #7fae42;
+    border-color: #7fae4236;
     background-color: var(--vscode-editor-background);
     height: 30px;
 }

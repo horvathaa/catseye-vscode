@@ -70,7 +70,12 @@ export const Reply: React.FC<Props> = ({
     const createReply = (replyFromCallback: ReplyInterface): void => {
         if (submissionHandler) {
             const { replyContent } = replyFromCallback
-            const replyToSend = { ...reply, replyContent, createdTimestamp }
+            const replyToSend = {
+                ...reply,
+                replyContent,
+                createdTimestamp,
+                githubUsername: githubUsername ? githubUsername : '',
+            }
             replyToSend && submissionHandler(replyToSend)
         }
     }

@@ -6,6 +6,8 @@ interface CssExports {
   'AnchorWrapper': string;
   'CodeLines': string;
   'Merged': string;
+  'MergedAnchorContainer': string;
+  'Selected': string;
   'Suggestion': string;
   'SuggestionTitle': string;
   'Suggestions': string;

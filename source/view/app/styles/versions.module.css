@@ -51,6 +51,7 @@ span {
     flex-grow: 1;
     margin-left: 1.75rem;
     margin-right: 1.75rem;
+    overflow: hidden;
 }
 
 .AnchorContainer.Suggestion {
@@ -60,6 +61,23 @@ span {
     margin-bottom: 0.25rem;
     border-color: #dcdcaa5e;
     /* flex-direction: row; */
+}
+
+.MergedAnchorContainer {
+    overflow: hidden;
+}
+
+.MergedAnchorContainer.Selected {
+    box-shadow: 0px 0px 6px 3px #94ce9b5e;
+}
+
+.AnchorContainer.Selected {
+    box-shadow: 0px 0px 6px 3px #94ce9b5e;
+}
+
+.MergedAnchorContainer > .AnchorContainer {
+    margin-left: 0;
+    margin-right: 0;
 }
 
 .AnchorContainer.Suggestion.Merged {

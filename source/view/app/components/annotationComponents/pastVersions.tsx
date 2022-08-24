@@ -11,6 +11,7 @@ interface PastVersionProps {
     pastVersion: AnchorOnCommit | OldAnchorOnCommit
     displayBefore?: (pv: AnchorOnCommit, index: number) => string
     displayAfter?: (pv: AnchorOnCommit, index: number) => string
+    mergeSelection?: boolean
 }
 
 export interface OldAnchorOnCommit extends AnchorOnCommit {
@@ -32,6 +33,7 @@ export const PastVersion: React.FC<PastVersionProps> = ({
     handleClick,
     displayBefore,
     displayAfter,
+    mergeSelection,
 }) => {
     const [pv, setPv] = React.useState<AnchorOnCommit>(pastVersion)
     React.useEffect(() => {
@@ -103,7 +105,11 @@ export const PastVersion: React.FC<PastVersionProps> = ({
             onClick={(e) => {
                 handleClick(e, pv.id)
             }}
-            className={styles['AnchorContainer']}
+            className={
+                mergeSelection
+                    ? `${styles['AnchorContainer']} ${styles['Selected']}`
+                    : `${styles['AnchorContainer']}`
+            }
         >
             <span>
                 <i> {pv.path} </i>

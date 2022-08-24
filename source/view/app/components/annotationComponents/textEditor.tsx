@@ -45,6 +45,10 @@ const TextEditor: React.FC<Props> = ({
 }) => {
     const [text, setText] = React.useState<any>(content)
     const [willBePinned, setWillBePinned] = React.useState<boolean>(false)
+
+    React.useEffect(() => {
+        setText(content)
+    }, [content])
     // TODO: Change this theme
     const theme = createTheme({
         palette: {

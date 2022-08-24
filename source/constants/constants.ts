@@ -194,6 +194,10 @@ export interface Reply {
     lastEditTime: number
 }
 
+export interface ReplyMergeInformation extends Reply {
+    inAnnoBody: boolean
+}
+
 export const isReply = (obj: any): obj is Reply => {
     return obj.hasOwnProperty('replyContent')
 }
@@ -331,7 +335,7 @@ export interface AnnotationAnchorPair {
 
 export interface MergeInformation {
     anchors: AnchorInformation[] // array of anchor ids or empty array if no anchors
-    replies: Reply[] // array of reply ids or empty array if no replies
+    replies: ReplyMergeInformation[] // array of reply ids or empty array if no replies
     annotation: string | undefined // annotation content or undefined if unused
 }
 

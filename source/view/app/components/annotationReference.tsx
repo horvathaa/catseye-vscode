@@ -6,6 +6,8 @@
  */
 import { Card, CardContent, List, useMediaQuery } from '@material-ui/core'
 import { Checkbox } from '@mui/material'
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import * as React from 'react'
 import annoStyles from '../styles/annotation.module.css'
 import TextEditor from './annotationComponents/textEditor'
@@ -96,9 +98,34 @@ const AnnotationReference: React.FC<Props> = ({
         console.log('SELECTED')
     }
 
-    const handleSelectReply = (id: string): void => {
+    const handleSelectReply = (
+        id: string,
+        operation: string,
+        level?: string
+    ): void => {
         const reply = annotation.replies.find((r) => r.id === id)
-        partSelected('reply', { ...reply, annoId: annotation.id })
+        const infoToPass = level
+            ? { ...reply, annoId: annotation.id, operation, level }
+            : { ...reply, annoId: annotation.id, operation }
+        partSelected('reply', infoToPass)
+    }
+
+    const elevateAnnotation = () => {
+        partSelected('annotation', {
+            selectedAnnotation: annotation.annotation,
+            githubUsername: annotation.githubUsername,
+            annoId: annotation.id,
+        })
+        setHasAnnotationTextBeenSelected(true)
+    }
+
+    const bringBackAnnotation = () => {
+        partSelected('annotation', {
+            selectedAnnotation: annotation.annotation,
+            githubUsername: annotation.githubUsername,
+            annoId: annotation.id,
+        })
+        setHasAnnotationTextBeenSelected(false)
     }
 
     const handleMouseSelection = (
@@ -137,92 +164,132 @@ const AnnotationReference: React.FC<Props> = ({
     }
 
     return (
-        <div>
+        <>
             <p className={anchorStyles['SuggestionTitle']}>
                 Annotation {annoNum}
             </p>
-
-            {annotation.anchors.map((anchor: AnchorObject, i) => {
-                // consider bringing back prior versions in carousel view -- for now, not bothering
-                return (
-                    <div style={{ display: 'flex' }}>
-                        {isMedOrMore && (
-                            <Checkbox
-                                // Needs work
-                                onChange={() =>
-                                    alreadySelectedAnchors.includes(
+            <div>
+                {annotation.anchors.map((anchor: AnchorObject, i) => {
+                    // consider bringing back prior versions in carousel view -- for now, not bothering
+                    return (
+                        <div
+                            key={'merging-new-anchors-' + anchor.anchorId}
+                            style={{ display: 'flex' }}
+                        >
+                            {isMedOrMore && (
+                                <Checkbox
+                                    // Needs work
+                                    onChange={() =>
+                                        alreadySelectedAnchors.includes(
+                                            anchor.anchorId
+                                        )
+                                            ? removeAnchorFromMergeAnnotation(
+                                                  anchor.anchorId,
+                                                  anchor.parentId
+                                              )
+                                            : partSelected('anchor', anchor)
+                                    }
+                                    inputProps={{
+                                        'aria-label': 'controlled',
+                                    }}
+                                    checked={alreadySelectedAnchors.includes(
                                         anchor.anchorId
-                                    )
-                                        ? removeAnchorFromMergeAnnotation(
-                                              anchor.anchorId,
-                                              anchor.parentId
-                                          )
-                                        : partSelected('anchor', anchor)
+                                    )}
+                                />
+                            )}
+                            <div
+                                id={anchor.parentId + '%' + anchor.anchorId}
+                                // className={cn({
+                                //     // [anchorStyles['AnchorContainer']]: true,
+                                //     [anchorStyles['MergedAnchorContainer']]: true,
+                                //     [anchorStyles['Selected']]:
+                                //         alreadySelectedAnchors.includes(
+                                //             anchor.anchorId
+                                //         ),
+                                // })}
+                                className={
+                                    anchorStyles['MergedAnchorContainer']
                                 }
-                                inputProps={{
-                                    'aria-label': 'controlled',
-                                }}
-                                checked={alreadySelectedAnchors.includes(
-                                    anchor.anchorId
-                                )}
+                                onMouseUp={(e) =>
+                                    handleMouseSelection(
+                                        e,
+                                        'anchor',
+                                        anchor.anchorId,
+                                        anchor.parentId,
+                                        anchor.anchorText
+                                    )
+                                }
+                            >
+                                <PastVersion
+                                    key={'anno-ref' + anchor.anchorId + i}
+                                    handleClick={scrollWithRangeAndFile}
+                                    i={i}
+                                    pastVersion={createAnchorOnCommitFromAnchorObject(
+                                        anchor
+                                    )}
+                                    mergeSelection={alreadySelectedAnchors.includes(
+                                        anchor.anchorId
+                                    )}
+                                />
+                            </div>
+                        </div>
+                    )
+                })}
+                {annotation.annotation.length ? (
+                    <div
+                        className={
+                            styles['AnnotationContentAnnotationReference']
+                        }
+                    >
+                        {hasAnnotationTextBeenSelected ? (
+                            <ArrowDownwardIcon
+                                onClick={bringBackAnnotation}
+                                style={{ cursor: 'pointer' }}
+                                // className={cn({
+                                //     [anchorStyles['disabled']]:
+                                //         hasAnnotationTextBeenSelected,
+                                // })}
+                            />
+                        ) : (
+                            <ArrowUpwardIcon
+                                onClick={elevateAnnotation}
+                                style={{ cursor: 'pointer' }}
+                                // className={cn({
+                                //     [anchorStyles['disabled']]:
+                                //         hasAnnotationTextBeenSelected,
+                                // })}
                             />
                         )}
+
                         <div
-                            id={anchor.parentId + '%' + anchor.anchorId}
                             className={cn({
-                                [anchorStyles['AnchorContainer']]: true,
-                                [anchorStyles['Suggestion']]: true,
+                                [styles['SelectableContainer']]: true,
                                 [anchorStyles['disabled']]:
-                                    alreadySelectedAnchors.includes(
-                                        anchor.anchorId
-                                    ),
+                                    hasAnnotationTextBeenSelected,
                             })}
-                            onMouseUp={(e) =>
-                                handleMouseSelection(
-                                    e,
-                                    'anchor',
-                                    anchor.anchorId,
-                                    anchor.parentId,
-                                    anchor.anchorText
-                                )
-                            }
+                            // onMouseUp={(e) => handleMouseSelection(e, 'annotation')}
                         >
-                            <PastVersion
-                                key={'anno-ref' + anchor.anchorId + i}
-                                handleClick={scrollWithRangeAndFile}
-                                i={i}
-                                pastVersion={createAnchorOnCommitFromAnchorObject(
-                                    anchor
-                                )}
-                            />
+                            {annotation.annotation}
                         </div>
                     </div>
-                )
-            })}
-            <div
-                className={cn({
-                    [styles['SelectableContainer']]: true,
-                    [anchorStyles['disabled']]: hasAnnotationTextBeenSelected,
-                })}
-                onMouseUp={(e) => handleMouseSelection(e, 'annotation')}
-            >
-                {annotation.annotation}
-            </div>
-            {/* To Include, Annotation types */}
-            {/* Annotation text works differently. */}
-            {/* Include replies as checkboxes, same with anchors */}
-            <ReplyContainer
-                replying={false}
-                showCheckbox={true}
-                handleSelectReply={handleSelectReply}
-                replies={annotation.replies}
-                cancelReply={() => {}}
-                focus={false}
-            />
-            {/* </CardContent>
+                ) : null}
+
+                {/* To Include, Annotation types */}
+                {/* Annotation text works differently. */}
+                {/* Include replies as checkboxes, same with anchors */}
+                <ReplyContainer
+                    replying={false}
+                    showCheckbox={true}
+                    handleSelectReply={handleSelectReply}
+                    replies={annotation.replies}
+                    cancelReply={() => {}}
+                    focus={false}
+                />
+                {/* </CardContent>
                 </Card>
             </ThemeProvider> */}
-        </div>
+            </div>
+        </>
     )
 }
 

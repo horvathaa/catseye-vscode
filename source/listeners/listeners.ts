@@ -31,6 +31,8 @@ import {
     setTsFiles,
     floatingDecorations,
     astHelper,
+    setEventsToTransmitOnSave,
+    eventsToTransmitOnSave,
 } from '../extension'
 import * as anchor from '../anchorFunctions/anchor'
 import {
@@ -43,8 +45,12 @@ import {
     AnchorObject,
     ChangeEvent,
     PotentialAnchorObject,
+    EventType,
+    // AnnotationAnchorTextPair,
     // Timer
 } from '../constants/constants'
+import { createEvent } from '../utils/utils'
+import { emitEvent } from '../firebase/functions/functions'
 
 let timeSinceLastEdit: number = -1
 let tempChanges: any[] = []
@@ -175,6 +181,7 @@ export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
             )
         )
     )
+    emitEvent(eventsToTransmitOnSave)
     view?.updateDisplay(annotationList, gitUrl)
     if (vscode.workspace.workspaceFolders)
         utils.handleSaveCloseEvent(
@@ -234,6 +241,31 @@ const logChanges = (e: vscode.TextDocumentChangeEvent): void => {
         ])
         tempChanges = []
     }
+}
+
+const compareAnnotationAnchorTextPairs = (
+    oldSet: Map<string, string>,
+    newSet: Map<string, string>
+): string[] => {
+    const ids: string[] = []
+    oldSet.forEach((anchorText: string, key: string) => {
+        console.log('hewwo?', newSet.get(key), 'anch', anchorText)
+        const split = key.split('%')
+        if (anchorText !== newSet.get(key)) ids.push(split[1])
+    })
+    return ids
+}
+
+const createAnnotationAnchorTextPairs = (
+    annotationList: Annotation[]
+): Map<string, string> => {
+    const map = new Map()
+    annotationList.forEach((a) => {
+        a.anchors.forEach((anch) =>
+            map.set(`${anch.anchorId}%${anch.parentId}`, anch.anchorText)
+        )
+    })
+    return map
 }
 
 // When user edits a document, update corresponding annotations
@@ -301,6 +333,7 @@ export const handleDidChangeTextDocument = (
                     })
                     rangeAdjustedAnnotations = deletedAnnos
                     const deletedIds = deletedAnnos.map((a) => a.id)
+                    // delete event emit here
                     setDeletedAnnotationList(
                         deletedAnnotations.filter(
                             (a: Annotation) => !deletedIds?.includes(a.id)
@@ -320,6 +353,12 @@ export const handleDidChangeTextDocument = (
                 }
             }
 
+            const pairsBeforeTranslate = createAnnotationAnchorTextPairs(
+                translatedAnnotations
+            )
+
+            console.log('pairsBeforeTranslate', pairsBeforeTranslate)
+
             // update and remove any annotation given the translate change handler in anchor.ts
             // mark any annotation that has changed for saving to FireStore
             translatedAnnotations = utils.removeOutOfDateAnnotations(
@@ -333,6 +372,25 @@ export const handleDidChangeTextDocument = (
                     )
                 })
             )
+
+            const pairsAfterTranslate = createAnnotationAnchorTextPairs(
+                translatedAnnotations
+            )
+
+            console.log('pairs after', pairsAfterTranslate)
+
+            const idsWithChangedText = compareAnnotationAnchorTextPairs(
+                pairsBeforeTranslate,
+                pairsAfterTranslate
+            )
+            console.log('ids', idsWithChangedText)
+            if (idsWithChangedText.length) {
+                setEventsToTransmitOnSave(
+                    translatedAnnotations
+                        .filter((a) => idsWithChangedText.includes(a.id))
+                        .map((a) => createEvent([a], EventType.textChange))
+                )
+            }
 
             // if user is creating an annotation at edit time, update that annotation too
             if (
@@ -355,6 +413,8 @@ export const handleDidChangeTextDocument = (
         let shouldRefreshDisplay: boolean = translatedAnnotations.some(
             (a) => a.needToUpdate
         )
+
+        console.log('should refresh', shouldRefreshDisplay)
 
         const notUpdatedAnnotations: Annotation[] =
             utils.getAnnotationsNotWithGitUrl(annotationList, stableGitPath)

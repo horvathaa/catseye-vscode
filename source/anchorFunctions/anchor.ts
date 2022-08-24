@@ -103,9 +103,16 @@ export const connectPotentialAnchorsToAnchors = (
             )
         }
     })
-    return newAnchors.concat(
-        anchors.filter((a) => !anchorIds.includes(a.anchorId))
+    console.log(
+        'new arr',
+        newAnchors.concat(
+            anchors.filter((a) => !anchorIds.includes(a.anchorId))
+        )
     )
+    return newAnchors
+    // .concat(
+    //     anchors.filter((a) => !anchorIds.includes(a.anchorId))
+    // )
 }
 
 export const handleUpdatingTranslatedAnnotations = (
@@ -165,10 +172,12 @@ export const handleUpdatingTranslatedAnnotations = (
         return t.gitCommit === gitInfo[a.projectName].commit
     })?.gitCommit
     const originalGitCommit = a.gitCommit
+    console.log('translted', translatedAnchors)
     const updatedAnchors = connectPotentialAnchorsToAnchors(
         translatedPotentialAnchors,
         translatedAnchors.concat(anchorsNotToTranslate)
     )
+    console.log('updated', updatedAnchors)
     return buildAnnotation({
         ...a,
         needToUpdate,

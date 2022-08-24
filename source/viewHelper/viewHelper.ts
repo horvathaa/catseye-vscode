@@ -18,6 +18,7 @@ import {
     MergeInformation,
     isReply,
     ReanchorInformation,
+    EventType,
 } from '../constants/constants'
 import {
     user,
@@ -53,6 +54,7 @@ import {
     partition,
     objectsEqual,
     getVisiblePath,
+    createEvent,
 } from '../utils/utils'
 import {
     addHighlightsToEditor,
@@ -64,7 +66,10 @@ import {
     createRangesFromAnnotation,
     updateAnchorInAnchorObject,
 } from '../anchorFunctions/anchor'
-import { saveAnnotations as fbSaveAnnotations } from '../firebase/functions/functions'
+import {
+    emitEvent,
+    saveAnnotations as fbSaveAnnotations,
+} from '../firebase/functions/functions'
 import { v4 as uuidv4 } from 'uuid'
 
 // Opens and reloads the webview -- this is invoked when the user uses the "Adamite: Launch Adamite" command (ctrl/cmd + shift + A).
@@ -692,6 +697,9 @@ export const handleMergeAnnotation = (
         newAnnotation,
         // ...mergedAnnotations,
     ])
+    const newEvent = createEvent(mergedAnnotations, EventType.merge)
+    console.log('evento', newEvent)
+    emitEvent(newEvent)
     view?.updateDisplay(annotationList)
     vscode.window.visibleTextEditors.forEach((t) => {
         addHighlightsToEditor(annotationList, t)
@@ -883,4 +891,12 @@ export const handleReanchor = (
                 addHighlightsToEditor(annotationList, currTextEditor)
         }
     }
+}
+function mergedAnnotations(
+    mergedAnnotations: Annotation[],
+    merge: any
+):
+    | import('../constants/constants').AnnotationEvent
+    | import('../constants/constants').AnnotationEvent[] {
+    throw new Error('Function not implemented.')
 }

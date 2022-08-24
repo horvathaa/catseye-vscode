@@ -10,7 +10,12 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode'
 import firebase from './firebase/firebase'
-import { Annotation, ChangeEvent, TsFile } from './constants/constants'
+import {
+    Annotation,
+    AnnotationEvent,
+    ChangeEvent,
+    TsFile,
+} from './constants/constants'
 import * as commands from './commands/commands'
 import * as eventHandlers from './listeners/listeners'
 import * as utils from './utils/utils'
@@ -46,6 +51,7 @@ export let numChangeEventsCompleted = 0
 export let tsFiles: TsFile[] = []
 export let trackedFiles: vscode.TextDocument[] = []
 export let astHelper: AstHelper = new AstHelper()
+export let eventsToTransmitOnSave: AnnotationEvent[] = []
 
 export const annotationDecorations =
     vscode.window.createTextEditorDecorationType({
@@ -171,6 +177,14 @@ export const setTrackedFiles = (
     newTrackedFiles: vscode.TextDocument | vscode.TextDocument[]
 ): void => {
     trackedFiles = trackedFiles.concat(newTrackedFiles)
+}
+
+export const setEventsToTransmitOnSave = (
+    newEventsToTransmitOnSave: AnnotationEvent[]
+): void => {
+    eventsToTransmitOnSave = eventsToTransmitOnSave.concat(
+        newEventsToTransmitOnSave
+    )
 }
 
 // this method is called when the extension is activated

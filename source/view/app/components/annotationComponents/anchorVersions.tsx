@@ -5,7 +5,7 @@
  *
  */
 import * as React from 'react'
-import '../../styles/versions.module.css'
+// import '../../styles/versions.module.css'
 import {
     Anchor,
     AnchorObject,
@@ -28,6 +28,8 @@ const AnchorVersions: React.FC<Props> = ({
     scrollToRange,
 }) => {
     const [showSuggestions, setShowSuggestions] = React.useState<boolean>(true)
+
+    React.useEffect(() => {}, [anchors])
 
     const showPotentialAnchors = (anchor: AnchorObject): React.ReactElement => {
         const unanchorText = (
@@ -61,6 +63,7 @@ const AnchorVersions: React.FC<Props> = ({
     return (
         <div>
             {anchors.map((anchor: AnchorObject, i) => {
+                console.log('rendering this anchor', anchor)
                 anchor.priorVersions && anchor.priorVersions.reverse()
                 if (anchor.priorVersions) {
                     return (

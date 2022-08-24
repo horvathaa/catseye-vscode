@@ -109,7 +109,7 @@ const AnnotationReference: React.FC<Props> = ({
         anchorText?: string
     ) => {
         event.stopPropagation()
-        const selectedText = document.getSelection().toString()
+        const selectedText = document?.getSelection().toString()
         if (selectedText.length) {
             if (part === 'anchor') {
                 // const ids: string[] = (event.target as HTMLDivElement).id.split(

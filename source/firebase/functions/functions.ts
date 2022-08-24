@@ -10,6 +10,7 @@ import {
     AnchorOnCommit,
     AnchorsToUpdate,
     Annotation,
+    AnnotationEvent,
     CommitObject,
 } from '../../constants/constants'
 import { currentGitHubCommit, user } from '../../extension'
@@ -30,6 +31,10 @@ const annotationsRef: firebase.firestore.CollectionReference = db.collection(
 )
 const commitsRef: firebase.firestore.CollectionReference = db.collection(
     DB_COLLECTIONS.COMMITS
+)
+
+const eventsRef: firebase.firestore.CollectionReference = db.collection(
+    DB_COLLECTIONS.EVENTS
 )
 
 // Save annotations to FireStore
@@ -285,5 +290,14 @@ export const getAnnotationsFromCommit = (
 export const saveCommit = (commit: CommitObject) => {
     if (user) {
         commitsRef.doc(commit.commit).set(commit)
+    }
+}
+
+export const emitEvent = (event: AnnotationEvent | AnnotationEvent[]) => {
+    console.log('emitting this event', event)
+    if (user) {
+        Array.isArray(event)
+            ? event.forEach((e) => eventsRef.doc(e.id).set(e))
+            : eventsRef.doc(event.id).set(event)
     }
 }

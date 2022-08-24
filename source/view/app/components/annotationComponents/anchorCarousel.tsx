@@ -1,7 +1,4 @@
 import * as React from 'react'
-
-import '../../styles/versions.module.css'
-
 import {
     AnchorObject,
     AnchorOnCommit,
@@ -81,20 +78,30 @@ const AnchorCarousel: React.FC<Props> = ({
     }, [pastVersions, futureVersions])
 
     React.useEffect(() => {
-        if (priorVersions) {
-            const pseudoPriorVersion: AnchorOnCommit =
-                createAnchorOnCommitFromAnchorObject(currentAnchorObject)
-            const foundCurrentAnchorToDisplay: boolean =
-                priorVersions.find((pv) => pv.id === pseudoPriorVersion.id)
-                    ?.id === pseudoPriorVersion.id
-
-            setPastVersions(
-                foundCurrentAnchorToDisplay
-                    ? priorVersions.concat(pseudoPriorVersion)
-                    : priorVersions
-            )
-            pastVersions && setIndex(pastVersions?.length - 1)
-        }
+        // if (priorVersions) {
+        //     console.log('hewwo??', currentAnchorObject)
+        const pseudoPriorVersion: AnchorOnCommit =
+            createAnchorOnCommitFromAnchorObject(currentAnchorObject)
+        console.log('psedi', pseudoPriorVersion)
+        // const foundCurrentAnchorToDisplay: boolean =
+        //     priorVersions.find((pv) => pv.id === pseudoPriorVersion.id)
+        //         ?.id === pseudoPriorVersion.id
+        // console.log('found', foundCurrentAnchorToDisplay)
+        setPastVersions(
+            // foundCurrentAnchorToDisplay
+            //     ?
+            [
+                // ...priorVersions.filter(
+                //     (a) => a.id !== pseudoPriorVersion.id
+                // ),
+                ...priorVersions,
+                pseudoPriorVersion,
+            ]
+            // : //priorVersions.concat(pseudoPriorVersion)
+            //   priorVersions
+        )
+        pastVersions && setIndex(pastVersions?.length - 1)
+        // }
     }, [currentAnchorObject]) //watch for any changes to current anchor and update
 
     const handleClick = (e: React.SyntheticEvent, aId: string): void => {

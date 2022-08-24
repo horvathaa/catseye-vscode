@@ -350,3 +350,44 @@ export interface ReanchorInformation {
     path: CodeContext[]
     surroundingCode: SurroundingAnchorArea
 }
+
+export enum EventType {
+    merge = 'Merge',
+    edit = 'Edit',
+    reply = 'New Reply',
+    anchorAdded = 'Add Anchor',
+    commit = 'Commit',
+    deleted = 'Deleted',
+    textChange = 'Text Change on Save',
+}
+export interface AnnotationEvent {
+    id: string
+    eventUserId: string
+    usersImpacted: string[]
+    annotationIds: string[]
+    eventType: EventType
+    annotationSnapshots: AnnotationAtEvent[]
+    timestamp: number
+}
+
+export interface AnnotationAtEvent {
+    annotation: string
+    authorId: string
+    githubUsername: string
+    createdTimestamp: number
+    gitRepo: string
+    gitBranch: string
+    gitCommit: string
+    id: string
+    anchors: AnchorOnCommit[]
+    replies: Reply[]
+    resolved: boolean
+    types: Type[]
+}
+
+// export interface AnchorTextPair {
+//     [anchorId: string]: string
+// }
+// export interface AnnotationAnchorTextPair {
+//     [annoId: string]: AnchorTextPair[]
+// }

@@ -262,7 +262,10 @@ const MergeAnnotations: React.FC<Props> = ({
         const { annotation } = newAnnotation
         const annoToPass = buildAnnotation({
             ...newAnnotation,
-            annotation: annotation + '\n' + annoContent,
+            annotation:
+                annotation.trim() !== annoContent.trim()
+                    ? annotation + '\n' + annoContent
+                    : annotation,
             shareWith,
             selected: willBePinned,
         })
@@ -306,54 +309,155 @@ const MergeAnnotations: React.FC<Props> = ({
         setReplies(updatedReplies)
     }
 
-    const getAllAnnotationContent = (): void => {
-        console.log('??????', annotations)
-        let str = ''
-        annotations
-            .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
-            .forEach((a) => {
-                console.log(
-                    'ok what?',
-                    a,
-                    'map',
-                    !annotationsActuallyMerged.get(a.id).annotation,
-                    'content',
-                    annotationsActuallyMerged.get(a.id).annotation === ''
-                )
-                if (
-                    !annotationsActuallyMerged.get(a.id).annotation ||
-                    annotationsActuallyMerged.get(a.id).annotation === ''
-                ) {
-                    console.log('a', a)
-                    str += generateNewAnnotationContent(
-                        a.githubUsername,
-                        a.id,
-                        a.annotation
-                    )
-                    // addAnnotationContent(a.githubUsername, a.id, a.annotation)
-                }
+    const resetMapByField = (field: string): void => {
+        let newMap = new Map<string, MergeInformation>()
+        // annotationsActuallyMerged
+        annotationsActuallyMerged.forEach((mi, key) => {
+            newMap.set(key, {
+                ...mi,
+                [field]: field === 'annotation' ? '' : [],
             })
-        addAnnotationContent(githubUsername)
-        setGetAllAnnotation(false)
+        })
+        setAnnotationsActuallyMerged(newMap)
     }
 
     const removeAllAnnotationContent = (): void => {
-        annotations.forEach((a) => {
-            removeAnnotationContent(a.annotation, a.githubUsername, a.id)
+        let newAnnoBody = ''
+        let newUserSet = new Set<string>()
+        let hasRepliesInBody = false
+        annotationsActuallyMerged.forEach((value, key) => {
+            if (value.replies && value.replies.some((r) => r.inAnnoBody)) {
+                hasRepliesInBody = true
+                value.replies
+                    .filter((r) => r.inAnnoBody)
+                    .forEach((r) => {
+                        newAnnoBody = generateNewAnnotationContent(
+                            r.githubUsername,
+                            key,
+                            r.replyContent,
+                            newAnnoBody
+                        )
+                        newUserSet.add(r.githubUsername)
+                        // addAnnotationContent(r.githubUsername, key, r.replyContent, newAnnoBody)
+                    })
+            }
         })
+        const finalAnnoBody = hasRepliesInBody
+            ? resetAuthorListByUsernames(newAnnoBody, [...newUserSet])
+            : ''
+        setNewAnnotation(
+            buildAnnotation({ ...newAnnotation, annotation: finalAnnoBody })
+        )
+        resetMapByField('annotation')
+        setGetAllAnnotation(false)
+    }
+
+    const getAllAnnotationContent = (): void => {
+        const { annotation } = newAnnotation
+        const combinedAnnotationBody: string = annotations
+            .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
+            .reduce((prevValue: string, currAnno: Annotation) => {
+                let content = prevValue
+                if (
+                    !annotationsActuallyMerged.get(currAnno.id).annotation ||
+                    annotationsActuallyMerged.get(currAnno.id).annotation === ''
+                ) {
+                    if (annotation !== '') {
+                        content = generateNewAnnotationContent(
+                            currAnno.githubUsername,
+                            currAnno.id,
+                            currAnno.annotation,
+                            content
+                        )
+                    } else {
+                        content += generateNewAnnotationContent(
+                            currAnno.githubUsername,
+                            currAnno.id,
+                            currAnno.annotation
+                        )
+                    }
+                }
+                // else {
+                //     content = prevValue
+                // }
+                console.log('content', content)
+                return content
+            }, annotation)
+        const combinedAnnotationBodyWithAuthors = resetAuthorListByUsernames(
+            combinedAnnotationBody,
+            [
+                ...new Set([
+                    ...githubUsernames,
+                    ...annotations.map((a) => a.githubUsername),
+                ]),
+            ]
+        )
+        setAllAnnotationsInMap(annotations, 'annotation')
+        setNewAnnotation(
+            buildAnnotation({
+                ...newAnnotation,
+                annotation: combinedAnnotationBodyWithAuthors,
+            })
+        )
+        // addAnnotationContent(githubUsername)
         setGetAllAnnotation(true)
+    }
+
+    const resetAuthorListByUsernames = (
+        annotationBody: string,
+        usernames: string[]
+        // annotations: Annotation[],
+        // field: string
+    ): string => {
+        const cleanStr = annotationBody
+            .split('{')
+            .map((s, i) => {
+                if (s.includes('}')) {
+                    const firstIndex = s.indexOf('}')
+                    const substr = s.substring(0, firstIndex)
+
+                    if (usernames.some((u) => substr.includes(u))) {
+                        return s.substring(firstIndex + 1)
+                    } else {
+                        return '{' + s
+                    }
+                }
+
+                return s
+            })
+            .join('')
+
+        return cleanStr + ' ' + generateList(usernames)
+    }
+
+    // don't think this will work for anchors since we add metadata.. maybe also with replies..
+    const setAllAnnotationsInMap = (
+        annotations: Annotation[],
+        field: string
+    ): void => {
+        let map = new Map<string, MergeInformation>(annotationsActuallyMerged)
+        annotations.forEach((anno) => {
+            map.set(anno.id, { ...map.get(anno.id), [field]: anno[field] })
+        })
+        // console.log('map???', map)
+        setAnnotationsActuallyMerged(map)
     }
 
     const generateNewAnnotationContent = (
         githubUsername: string,
         annoId: string,
-        selectedAnnotation: string
+        selectedAnnotation: string,
+        alreadyBuiltAnnotationContent?: string
     ): string => {
         const { annotation } = newAnnotation
-        const partOfStringToAddTo = annotation.includes(
+        const contentToUse =
+            alreadyBuiltAnnotationContent !== undefined
+                ? alreadyBuiltAnnotationContent
+                : annotation
+        const partOfStringToAddTo = contentToUse.includes(
             '{' + githubUsernames[0]
         )
-            ? annotation.split('{' + githubUsernames[0])[0]
+            ? contentToUse.split('{' + githubUsernames[0])[0]
             : ''
 
         const listOfAuthors = handleUpdateGithubUsernames(
@@ -363,7 +467,7 @@ const MergeAnnotations: React.FC<Props> = ({
         )
 
         const newAnnotationContent =
-            annotation.trim() !== ''
+            contentToUse.trim() !== ''
                 ? `${partOfStringToAddTo} \n${selectedAnnotation} ${listOfAuthors}`
                 : `${selectedAnnotation} ${listOfAuthors}`
         return newAnnotationContent
@@ -372,13 +476,16 @@ const MergeAnnotations: React.FC<Props> = ({
     const addAnnotationContent = (
         githubUsername: string,
         annoId: string,
-        selectedAnnotation: string
+        selectedAnnotation: string,
+        alreadyBuiltAnnotationContent?: string
     ) => {
-        const newAnnotationContent = generateNewAnnotationContent(
-            githubUsername,
-            annoId,
-            selectedAnnotation
-        )
+        const newAnnotationContent = alreadyBuiltAnnotationContent
+            ? alreadyBuiltAnnotationContent
+            : generateNewAnnotationContent(
+                  githubUsername,
+                  annoId,
+                  selectedAnnotation
+              )
         console.log('new content', newAnnotationContent)
         setNewAnnotation(
             buildAnnotation({
@@ -391,10 +498,32 @@ const MergeAnnotations: React.FC<Props> = ({
             new Map(
                 annotationsActuallyMerged.set(annoId, {
                     ...annotationsActuallyMerged.get(annoId),
-                    annotation: selectedAnnotation,
+                    annotation: newAnnotationContent,
                 })
             )
         )
+    }
+
+    const generateRemovedAnnotationContent = (
+        selectedAnnotation: string,
+        content?: string
+    ): string => {
+        const { annotation } = newAnnotation
+        const contentToRemoveFrom = content ? content : annotation
+        const beginningOfAnnotation = contentToRemoveFrom.indexOf(
+            '\n' + selectedAnnotation
+        )
+        const endOfAnnotation =
+            contentToRemoveFrom.indexOf('\n' + selectedAnnotation) +
+            selectedAnnotation.length +
+            1
+        const newAnnotationContent =
+            contentToRemoveFrom.substring(0, beginningOfAnnotation) +
+            contentToRemoveFrom.substring(
+                endOfAnnotation,
+                annotation.indexOf(`{${githubUsernames[0]}`)
+            )
+        return newAnnotationContent
     }
 
     const removeAnnotationContent = (
@@ -402,20 +531,8 @@ const MergeAnnotations: React.FC<Props> = ({
         githubUsername: string,
         annoId: string
     ) => {
-        const { annotation } = newAnnotation
-        const beginningOfAnnotation = annotation.indexOf(
-            '\n' + selectedAnnotation
-        )
-        const endOfAnnotation =
-            annotation.indexOf('\n' + selectedAnnotation) +
-            selectedAnnotation.length +
-            1
         const newAnnotationContent =
-            annotation.substring(0, beginningOfAnnotation) +
-            annotation.substring(
-                endOfAnnotation,
-                annotation.indexOf(`{${githubUsernames[0]}`)
-            )
+            generateRemovedAnnotationContent(selectedAnnotation)
         const authorList = handleUpdateGithubUsernames(
             githubUsername,
             annoId,
@@ -704,6 +821,18 @@ const MergeAnnotations: React.FC<Props> = ({
         }
     }
 
+    const generateList = (listOfAuthors: string[]): string => {
+        // console.log('what?', listOfAuthors)
+        return (
+            '{' +
+            listOfAuthors
+                .map((u, i) =>
+                    i !== listOfAuthors.length - 1 ? u + ', ' : u + '}'
+                )
+                .join('')
+        )
+    }
+
     const handleUpdateGithubUsernames = (
         githubUsername: string,
         annoId: string,
@@ -718,14 +847,7 @@ const MergeAnnotations: React.FC<Props> = ({
             !githubUsernames.includes(githubUsername) &&
                 setGithubUsernames(listOfAuthors)
 
-            return (
-                '{' +
-                listOfAuthors
-                    .map((u, i) =>
-                        i !== listOfAuthors.length - 1 ? u + ', ' : u + '}'
-                    )
-                    .join()
-            )
+            return generateList(listOfAuthors)
         } else if (operation === 'remove') {
             let hasSeen = false
             annotationsActuallyMerged.forEach((mi, k) => {

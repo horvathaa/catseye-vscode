@@ -109,6 +109,11 @@ span {
     font-style: italic;
 }
 
+.SuggestionTitle.ReanchorTitle {
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
 .AnchorCode.Suggestion {
     color: #dcdcaa;
 }

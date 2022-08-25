@@ -35,7 +35,7 @@ const AnchorVersions: React.FC<Props> = ({
         const unanchorText = (
             <p
                 onClick={() => setShowSuggestions(!showSuggestions)}
-                className={styles['SuggestionTitle']}
+                className={`${styles['SuggestionTitle']} ${styles['ReanchorTitle']}`}
             >
                 {showSuggestions
                     ? 'Hide Suggestions'

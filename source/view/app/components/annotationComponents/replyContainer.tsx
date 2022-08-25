@@ -59,7 +59,7 @@ const ReplyContainer: React.FC<Props> = ({
     const showSelection = (r: Reply): React.ReactElement => {
         if (hasBeenSelected.get(r.id)) {
             return (
-                <div style={{ display: 'flex' }}>
+                <div className={styles['ReplyArrowBox']}>
                     <ArrowDownwardIcon
                         onClick={() => {
                             setHasBeenSelected(
@@ -72,7 +72,7 @@ const ReplyContainer: React.FC<Props> = ({
             )
         } else {
             return (
-                <div style={{ display: 'flex' }}>
+                <div className={styles['ReplyArrowBox']}>
                     <KeyboardDoubleArrowUpIcon
                         onClick={() => {
                             setHasBeenSelected(
@@ -106,7 +106,7 @@ const ReplyContainer: React.FC<Props> = ({
                 : null}
             {hasReplies
                 ? (showMoreReplies ? activeReplies : mostRecentReplies)?.map(
-                      (r: Reply) => {
+                      (r: Reply, i: number, arr: Reply[]) => {
                           return !r.deleted ? (
                               <div
                                   key={'reply-div-' + r.id}
@@ -139,6 +139,7 @@ const ReplyContainer: React.FC<Props> = ({
                                       submissionHandler={submitReply}
                                       cancelHandler={cancelReply}
                                       deleteHandler={deleteReply}
+                                      lastItem={i === arr.length - 1}
                                   />
                               </div>
                           ) : null

@@ -306,335 +306,401 @@ const MergeAnnotations: React.FC<Props> = ({
         setReplies(updatedReplies)
     }
 
-    const partSelected = (type: string, object: any) => {
-        const { annoId, githubUsername } = object
+    const getAllAnnotationContent = (): void => {
+        console.log('??????', annotations)
+        let str = ''
+        annotations
+            .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
+            .forEach((a) => {
+                console.log(
+                    'ok what?',
+                    a,
+                    'map',
+                    !annotationsActuallyMerged.get(a.id).annotation,
+                    'content',
+                    annotationsActuallyMerged.get(a.id).annotation === ''
+                )
+                if (
+                    !annotationsActuallyMerged.get(a.id).annotation ||
+                    annotationsActuallyMerged.get(a.id).annotation === ''
+                ) {
+                    console.log('a', a)
+                    str += generateNewAnnotationContent(
+                        a.githubUsername,
+                        a.id,
+                        a.annotation
+                    )
+                    // addAnnotationContent(a.githubUsername, a.id, a.annotation)
+                }
+            })
+        addAnnotationContent(githubUsername)
+        setGetAllAnnotation(false)
+    }
+
+    const removeAllAnnotationContent = (): void => {
+        annotations.forEach((a) => {
+            removeAnnotationContent(a.annotation, a.githubUsername, a.id)
+        })
+        setGetAllAnnotation(true)
+    }
+
+    const generateNewAnnotationContent = (
+        githubUsername: string,
+        annoId: string,
+        selectedAnnotation: string
+    ): string => {
         const { annotation } = newAnnotation
+        const partOfStringToAddTo = annotation.includes(
+            '{' + githubUsernames[0]
+        )
+            ? annotation.split('{' + githubUsernames[0])[0]
+            : ''
+
+        const listOfAuthors = handleUpdateGithubUsernames(
+            githubUsername,
+            annoId,
+            'add'
+        )
+
+        const newAnnotationContent =
+            annotation.trim() !== ''
+                ? `${partOfStringToAddTo} \n${selectedAnnotation} ${listOfAuthors}`
+                : `${selectedAnnotation} ${listOfAuthors}`
+        return newAnnotationContent
+    }
+
+    const addAnnotationContent = (
+        githubUsername: string,
+        annoId: string,
+        selectedAnnotation: string
+    ) => {
+        const newAnnotationContent = generateNewAnnotationContent(
+            githubUsername,
+            annoId,
+            selectedAnnotation
+        )
+        console.log('new content', newAnnotationContent)
+        setNewAnnotation(
+            buildAnnotation({
+                ...newAnnotation,
+                annotation: newAnnotationContent,
+            })
+        )
+
+        setAnnotationsActuallyMerged(
+            new Map(
+                annotationsActuallyMerged.set(annoId, {
+                    ...annotationsActuallyMerged.get(annoId),
+                    annotation: selectedAnnotation,
+                })
+            )
+        )
+    }
+
+    const removeAnnotationContent = (
+        selectedAnnotation: string,
+        githubUsername: string,
+        annoId: string
+    ) => {
+        const { annotation } = newAnnotation
+        const beginningOfAnnotation = annotation.indexOf(
+            '\n' + selectedAnnotation
+        )
+        const endOfAnnotation =
+            annotation.indexOf('\n' + selectedAnnotation) +
+            selectedAnnotation.length +
+            1
+        const newAnnotationContent =
+            annotation.substring(0, beginningOfAnnotation) +
+            annotation.substring(
+                endOfAnnotation,
+                annotation.indexOf(`{${githubUsernames[0]}`)
+            )
+        const authorList = handleUpdateGithubUsernames(
+            githubUsername,
+            annoId,
+            'remove',
+            'annotation'
+        )
+        setNewAnnotation(
+            buildAnnotation({
+                ...newAnnotation,
+                annotation: newAnnotationContent + ' ' + authorList,
+            })
+        )
+        setAnnotationsActuallyMerged(
+            new Map(
+                annotationsActuallyMerged.set(annoId, {
+                    ...annotationsActuallyMerged.get(annoId),
+                    annotation: '',
+                })
+            )
+        )
+    }
+
+    const handleUpdateAnnotationContent = (
+        selectedAnnotation: string,
+        annoId: string,
+        githubUsername: string
+    ) => {
+        // const { selectedAnnotation } = object
+        // const { annotation } = newAnnotation
+
+        if (
+            annotationsActuallyMerged.get(annoId).annotation === '' ||
+            !annotationsActuallyMerged.get(annoId).annotation // map is empty/this anno hasnt been added
+        ) {
+            addAnnotationContent(githubUsername, annoId, selectedAnnotation)
+        } else {
+            removeAnnotationContent(selectedAnnotation, annoId, githubUsername)
+        }
+    }
+
+    const handleUpdateAnchor = (object: any) => {
+        let anchorId: string,
+            annotationId: string,
+            text: string,
+            anchorText: string
+        // this is stupid = could just have object always used AnchorObject property names
+        if (isAnchorObject(object)) {
+            anchorId = object.anchorId
+            annotationId = object.parentId
+            text = object.anchorText
+            anchorText = object.anchorText
+        } else {
+            anchorId = object.anchorId
+            annotationId = object.annotationId
+            text = object.text
+            anchorText = object.anchorText
+        }
+
+        const anchorToCopy = annotations
+            .find((a) => a.id === annotationId)
+            .anchors.find((a) => a.anchorId === anchorId)
+        // console.log('newAnnotation', newAnnotation)
+        setNewAnnotation(
+            buildAnnotation({
+                ...newAnnotation,
+                anchors: newAnnotation.anchors.concat(anchorToCopy),
+            })
+        )
+
+        if (duplicateBundles[text] || duplicateBundles[anchorText]) {
+            duplicateBundles[anchorText].annoIds.forEach((annoId, i) => {
+                const otherDups = duplicateBundles[anchorText].annoIds
+                    .map((a, idx) => {
+                        return (
+                            idx !== i && {
+                                annoId: a,
+                                anchorId:
+                                    duplicateBundles[anchorText].anchorIds[idx],
+                            }
+                        )
+                    })
+                    .filter((an) => typeof an !== 'boolean') // stupid
+                setAnnotationsActuallyMerged(
+                    new Map(
+                        annotationsActuallyMerged.set(annoId, {
+                            ...annotationsActuallyMerged.get(annoId),
+                            anchors: annotationsActuallyMerged
+                                .get(annoId)
+                                .anchors.concat({
+                                    anchorId:
+                                        duplicateBundles[anchorText].anchorIds[
+                                            i
+                                        ],
+                                    duplicateOf: [],
+                                    hasDuplicates: otherDups,
+                                }), // need to double check if this is true
+                        })
+                    )
+                )
+            })
+        } else {
+            setAnnotationsActuallyMerged(
+                new Map(
+                    annotationsActuallyMerged.set(annotationId, {
+                        ...annotationsActuallyMerged.get(annotationId),
+                        anchors: annotationsActuallyMerged
+                            .get(annotationId)
+                            .anchors.concat({
+                                anchorId,
+                                duplicateOf: [],
+                                hasDuplicates: [],
+                            }), // need to double check if this is true
+                    })
+                )
+            )
+        }
+    }
+
+    const handleUpdateReplies = (object: any) => {
+        const githubUsername = object.githubUsername
+        const { level, operation, annoId, ...rest } = object
+        const { annotation } = newAnnotation
+        if (
+            operation === 'remove'
+            // newAnnotation.replies.map((r) => r.id).includes(object.id)
+        ) {
+            const mergedReply = annotationsActuallyMerged
+                .get(object.annoId)
+                .replies.find((r) => r.id === object.id)
+            if (mergedReply.inAnnoBody) {
+                const beginningOfReply = annotation.indexOf(
+                    '\n' + mergedReply.replyContent
+                )
+                const endOfReply =
+                    annotation.indexOf('\n' + mergedReply.replyContent) +
+                    mergedReply.replyContent.length +
+                    1
+                const newAnnotationContent =
+                    annotation.substring(0, beginningOfReply) +
+                    annotation.substring(
+                        endOfReply,
+                        annotation.indexOf(`{${githubUsernames[0]}`)
+                    )
+                const authorList = handleUpdateGithubUsernames(
+                    githubUsername,
+                    annoId,
+                    'remove',
+                    'replies',
+                    mergedReply.id
+                )
+                setNewAnnotation(
+                    buildAnnotation({
+                        ...newAnnotation,
+                        annotation: newAnnotationContent + ' ' + authorList,
+                    })
+                )
+                setAnnotationsActuallyMerged(
+                    new Map(
+                        annotationsActuallyMerged.set(annoId, {
+                            ...annotationsActuallyMerged.get(annoId),
+                            replies: annotationsActuallyMerged
+                                .get(annoId)
+                                .replies.filter((r) => r.id !== mergedReply.id),
+                        })
+                    )
+                )
+            } else if (
+                annotationsActuallyMerged.get(object.annoId) &&
+                annotationsActuallyMerged.get(object.annoId).replies &&
+                annotationsActuallyMerged
+                    .get(object.annoId)
+                    .replies.map((r) => r.id)
+                    .includes(object.id)
+            ) {
+                const newReplies = newAnnotation.replies.filter(
+                    (r) => r.id !== object.id
+                )
+                setNewAnnotation(
+                    buildAnnotation({
+                        ...newAnnotation,
+                        replies: newReplies,
+                    })
+                )
+                setAnnotationsActuallyMerged(
+                    new Map(
+                        annotationsActuallyMerged.set(object.annoId, {
+                            ...annotationsActuallyMerged.get(object.annoId),
+                            replies: annotationsActuallyMerged
+                                .get(object.annoId)
+                                .replies.filter((r) => r.id !== object.id), // need to double check if this is true
+                        })
+                    )
+                )
+            }
+        } else if (operation === 'add') {
+            if (level === 'annotation') {
+                const partOfStringToAddTo = annotation.includes(
+                    '{' + githubUsernames[0]
+                )
+                    ? annotation.split('{' + githubUsernames[0])[0]
+                    : ''
+                const replyToAdd = { ...rest, inAnnoBody: true }
+
+                const listOfAuthors = handleUpdateGithubUsernames(
+                    githubUsername,
+                    annoId,
+                    'add',
+                    'replies'
+                    // replyToAdd.id
+                )
+
+                const newAnnotationContent =
+                    annotation.trim() !== ''
+                        ? `${partOfStringToAddTo} \n${object.replyContent} ${listOfAuthors}`
+                        : `${object.replyContent} ${listOfAuthors}`
+
+                setNewAnnotation(
+                    buildAnnotation({
+                        ...newAnnotation,
+                        annotation: newAnnotationContent,
+                    })
+                )
+
+                const mergedReplies =
+                    annotationsActuallyMerged.get(annoId).replies
+
+                setAnnotationsActuallyMerged(
+                    new Map(
+                        annotationsActuallyMerged.set(annoId, {
+                            ...annotationsActuallyMerged.get(annoId),
+                            replies: mergedReplies
+                                ? mergedReplies.concat(replyToAdd)
+                                : [replyToAdd],
+                        })
+                    )
+                )
+            } else {
+                // const { annoId, ...rest } = object
+                const newReplies = newAnnotation.replies.concat(rest)
+                setNewAnnotation(
+                    buildAnnotation({
+                        ...newAnnotation,
+                        replies: newReplies,
+                    })
+                )
+                const mergedReplies =
+                    annotationsActuallyMerged.get(annoId).replies
+                setAnnotationsActuallyMerged(
+                    new Map(
+                        annotationsActuallyMerged.set(annoId, {
+                            ...annotationsActuallyMerged.get(annoId),
+                            replies:
+                                mergedReplies && mergedReplies.length
+                                    ? mergedReplies.concat(rest)
+                                    : [rest], // need to double check if this is true
+                        })
+                    )
+                )
+            }
+            // TODO: add UI to move reply content up to main anno body
+            // add CSS to make more clear if the reply has been selected or not
+        }
+    }
+
+    const partSelected = (type: string, object: any) => {
+        // const { annoId, githubUsername } = object
+        // const { annotation } = newAnnotation
         switch (type) {
             case 'annotation':
-                const { selectedAnnotation } = object
-
-                if (
-                    annotationsActuallyMerged.get(annoId).annotation === '' ||
-                    !annotationsActuallyMerged.get(annoId).annotation // map is empty/this anno hasnt been added
-                ) {
-                    const partOfStringToAddTo = annotation.includes(
-                        '{' + githubUsernames[0]
-                    )
-                        ? annotation.split('{' + githubUsernames[0])[0]
-                        : ''
-
-                    const listOfAuthors = handleUpdateGithubUsernames(
-                        githubUsername,
-                        annoId,
-                        'add'
-                    )
-
-                    const newAnnotationContent =
-                        annotation !== ''
-                            ? `${partOfStringToAddTo} \n${selectedAnnotation} ${listOfAuthors}`
-                            : `${selectedAnnotation} ${listOfAuthors}`
-                    console.log('newANnotationcontent', newAnnotationContent)
-                    setNewAnnotation(
-                        buildAnnotation({
-                            ...newAnnotation,
-                            annotation: newAnnotationContent,
-                        })
-                    )
-                    // const updatedMergeObj = {
-                    //     ...annotationsActuallyMerged[annoId],
-                    //     annotation,
-                    // }
-                    setAnnotationsActuallyMerged(
-                        new Map(
-                            annotationsActuallyMerged.set(annoId, {
-                                ...annotationsActuallyMerged.get(annoId),
-                                annotation: selectedAnnotation,
-                            })
-                        )
-                        //     [
-                        //     ...new Set([...annotationsActuallyMerged, annoId]),
-                        // ]
-                    )
-                } else {
-                    const beginningOfAnnotation = annotation.indexOf(
-                        '\n' + selectedAnnotation
-                    )
-                    const endOfAnnotation =
-                        annotation.indexOf('\n' + selectedAnnotation) +
-                        selectedAnnotation.length +
-                        1
-                    const newAnnotationContent =
-                        annotation.substring(0, beginningOfAnnotation) +
-                        annotation.substring(
-                            endOfAnnotation,
-                            annotation.indexOf(`{${githubUsernames[0]}`)
-                        )
-                    const authorList = handleUpdateGithubUsernames(
-                        githubUsername,
-                        annoId,
-                        'remove',
-                        'annotation'
-                    )
-                    setNewAnnotation(
-                        buildAnnotation({
-                            ...newAnnotation,
-                            annotation: newAnnotationContent + ' ' + authorList,
-                        })
-                    )
-                    setAnnotationsActuallyMerged(
-                        new Map(
-                            annotationsActuallyMerged.set(annoId, {
-                                ...annotationsActuallyMerged.get(annoId),
-                                annotation: '',
-                            })
-                        )
-                    )
-                }
+                handleUpdateAnnotationContent(
+                    object.selectedAnnotation,
+                    object.annoId,
+                    object.githubUsername
+                )
 
                 break
             case 'anchor':
                 // would be better to use text in order to grab subset of anchor
                 // could use tokenization that we use for reanchoring to create offset tokens
-                let anchorId: string,
-                    annotationId: string,
-                    text: string,
-                    anchorText: string
-                // this is stupid = could just have object always used AnchorObject property names
-                if (isAnchorObject(object)) {
-                    anchorId = object.anchorId
-                    annotationId = object.parentId
-                    text = object.anchorText
-                    anchorText = object.anchorText
-                } else {
-                    anchorId = object.anchorId
-                    annotationId = object.annotationId
-                    text = object.text
-                    anchorText = object.anchorText
-                }
-
-                const anchorToCopy = annotations
-                    .find((a) => a.id === annotationId)
-                    .anchors.find((a) => a.anchorId === anchorId)
-                // console.log('newAnnotation', newAnnotation)
-                setNewAnnotation(
-                    buildAnnotation({
-                        ...newAnnotation,
-                        anchors: newAnnotation.anchors.concat(anchorToCopy),
-                    })
-                )
-
-                if (duplicateBundles[text] || duplicateBundles[anchorText]) {
-                    duplicateBundles[anchorText].annoIds.forEach(
-                        (annoId, i) => {
-                            const otherDups = duplicateBundles[
-                                anchorText
-                            ].annoIds
-                                .map((a, idx) => {
-                                    return (
-                                        idx !== i && {
-                                            annoId: a,
-                                            anchorId:
-                                                duplicateBundles[anchorText]
-                                                    .anchorIds[idx],
-                                        }
-                                    )
-                                })
-                                .filter((an) => typeof an !== 'boolean') // stupid
-                            setAnnotationsActuallyMerged(
-                                new Map(
-                                    annotationsActuallyMerged.set(annoId, {
-                                        ...annotationsActuallyMerged.get(
-                                            annoId
-                                        ),
-                                        anchors: annotationsActuallyMerged
-                                            .get(annoId)
-                                            .anchors.concat({
-                                                anchorId:
-                                                    duplicateBundles[anchorText]
-                                                        .anchorIds[i],
-                                                duplicateOf: [],
-                                                hasDuplicates: otherDups,
-                                            }), // need to double check if this is true
-                                    })
-                                )
-                            )
-                        }
-                    )
-                } else {
-                    setAnnotationsActuallyMerged(
-                        new Map(
-                            annotationsActuallyMerged.set(annotationId, {
-                                ...annotationsActuallyMerged.get(annotationId),
-                                anchors: annotationsActuallyMerged
-                                    .get(annotationId)
-                                    .anchors.concat({
-                                        anchorId,
-                                        duplicateOf: [],
-                                        hasDuplicates: [],
-                                    }), // need to double check if this is true
-                            })
-                        )
-                    )
-                }
-
+                handleUpdateAnchor(object)
                 break
             case 'reply':
-                // const { annoId, level, ...rest } = object
-                const { level, operation, ...rest } = object
-                if (
-                    operation === 'remove'
-                    // newAnnotation.replies.map((r) => r.id).includes(object.id)
-                ) {
-                    const mergedReply = annotationsActuallyMerged
-                        .get(object.annoId)
-                        .replies.find((r) => r.id === object.id)
-                    if (mergedReply.inAnnoBody) {
-                        const beginningOfReply = annotation.indexOf(
-                            '\n' + mergedReply.replyContent
-                        )
-                        const endOfReply =
-                            annotation.indexOf(
-                                '\n' + mergedReply.replyContent
-                            ) +
-                            mergedReply.replyContent.length +
-                            1
-                        const newAnnotationContent =
-                            annotation.substring(0, beginningOfReply) +
-                            annotation.substring(
-                                endOfReply,
-                                annotation.indexOf(`{${githubUsernames[0]}`)
-                            )
-                        const authorList = handleUpdateGithubUsernames(
-                            githubUsername,
-                            annoId,
-                            'remove',
-                            'replies'
-                        )
-                        setNewAnnotation(
-                            buildAnnotation({
-                                ...newAnnotation,
-                                annotation:
-                                    newAnnotationContent + ' ' + authorList,
-                            })
-                        )
-                        setAnnotationsActuallyMerged(
-                            new Map(
-                                annotationsActuallyMerged.set(annoId, {
-                                    ...annotationsActuallyMerged.get(annoId),
-                                    replies: annotationsActuallyMerged
-                                        .get(annoId)
-                                        .replies.filter(
-                                            (r) => r.id !== mergedReply.id
-                                        ),
-                                })
-                            )
-                        )
-                    } else if (
-                        annotationsActuallyMerged.get(object.annoId) &&
-                        annotationsActuallyMerged.get(object.annoId).replies &&
-                        annotationsActuallyMerged
-                            .get(object.annoId)
-                            .replies.map((r) => r.id)
-                            .includes(object.id)
-                    ) {
-                        const newReplies = newAnnotation.replies.filter(
-                            (r) => r.id !== object.id
-                        )
-                        setNewAnnotation(
-                            buildAnnotation({
-                                ...newAnnotation,
-                                replies: newReplies,
-                            })
-                        )
-                        setAnnotationsActuallyMerged(
-                            new Map(
-                                annotationsActuallyMerged.set(object.annoId, {
-                                    ...annotationsActuallyMerged.get(
-                                        object.annoId
-                                    ),
-                                    replies: annotationsActuallyMerged
-                                        .get(object.annoId)
-                                        .replies.filter(
-                                            (r) => r.id !== object.id
-                                        ), // need to double check if this is true
-                                })
-                            )
-                        )
-                    }
-                } else if (operation === 'add') {
-                    if (level === 'annotation') {
-                        const partOfStringToAddTo = annotation.includes(
-                            '{' + githubUsernames[0]
-                        )
-                            ? annotation.split('{' + githubUsernames[0])[0]
-                            : ''
-
-                        const listOfAuthors = handleUpdateGithubUsernames(
-                            githubUsername,
-                            annoId,
-                            'add'
-                        )
-
-                        const newAnnotationContent =
-                            annotation !== ''
-                                ? `${partOfStringToAddTo} \n${object.replyContent} ${listOfAuthors}`
-                                : `${object.replyContent} ${listOfAuthors}`
-                        console.log(
-                            'newANnotationcontent',
-                            newAnnotationContent
-                        )
-                        setNewAnnotation(
-                            buildAnnotation({
-                                ...newAnnotation,
-                                annotation: newAnnotationContent,
-                            })
-                        )
-                        // const updatedMergeObj = {
-                        //     ...annotationsActuallyMerged[annoId],
-                        //     annotation,
-                        // }
-                        const mergedReplies =
-                            annotationsActuallyMerged.get(annoId).replies
-                        const replyToAdd = { ...rest, inAnnoBody: true }
-                        setAnnotationsActuallyMerged(
-                            new Map(
-                                annotationsActuallyMerged.set(annoId, {
-                                    ...annotationsActuallyMerged.get(annoId),
-                                    replies: mergedReplies
-                                        ? mergedReplies.concat(replyToAdd)
-                                        : [replyToAdd],
-                                })
-                            )
-                            //     [
-                            //     ...new Set([...annotationsActuallyMerged, annoId]),
-                            // ]
-                        )
-                    } else {
-                        // const { annoId, ...rest } = object
-                        const newReplies = newAnnotation.replies.concat(rest)
-                        setNewAnnotation(
-                            buildAnnotation({
-                                ...newAnnotation,
-                                replies: newReplies,
-                            })
-                        )
-                        const mergedReplies =
-                            annotationsActuallyMerged.get(annoId).replies
-                        setAnnotationsActuallyMerged(
-                            new Map(
-                                annotationsActuallyMerged.set(annoId, {
-                                    ...annotationsActuallyMerged.get(annoId),
-                                    replies:
-                                        mergedReplies && mergedReplies.length
-                                            ? mergedReplies.concat(rest)
-                                            : [rest], // need to double check if this is true
-                                })
-                            )
-                        )
-                    }
-                    // TODO: add UI to move reply content up to main anno body
-                    // add CSS to make more clear if the reply has been selected or not
-                }
+                handleUpdateReplies(object)
+                break
+            // const { annoId, level, ...rest } = object
         }
     }
 
@@ -699,6 +765,25 @@ const MergeAnnotations: React.FC<Props> = ({
                             return
                         }
                     } else if (fieldChanging === 'replies') {
+                        console.log(
+                            'reply ids',
+                            mi.replies.map((re) => re.id),
+                            'passed in id',
+                            replyId,
+                            'first part checking anno true',
+                            mi.annotation &&
+                                mi.annotation !== '' &&
+                                anno.githubUsername === githubUsername,
+                            'second part checking replies true',
+                            anno.replies.some(
+                                (r) =>
+                                    mi.replies
+                                        .map((re) => re.id)
+                                        .filter((id) => id !== replyId)
+                                        .includes(r.id) &&
+                                    r.githubUsername === githubUsername
+                            )
+                        )
                         hasSeen =
                             (mi.annotation &&
                                 mi.annotation !== '' &&
@@ -915,26 +1000,26 @@ const MergeAnnotations: React.FC<Props> = ({
                                     currentTypes={types}
                                     editTypes={updateAnnotationTypes}
                                 />
-                                <>
+                                <div>
                                     <Checkbox
-                                        // onChange={
-                                        // getAllAnnotation
-                                        //     ? getAllAnnotationContent()
-                                        //     : removeAllAnnotationContent()
-                                        // }
+                                        onChange={() =>
+                                            !getAllAnnotation
+                                                ? getAllAnnotationContent()
+                                                : removeAllAnnotationContent()
+                                        }
                                         inputProps={{
                                             'aria-label': 'controlled',
                                         }}
                                         checked={getAllAnnotation}
                                     />
-                                    Add all annotation body?
-                                </>
-                                <>
+                                    Add all annotation bodies?
+                                </div>
+                                <div>
                                     <Checkbox
                                         // onChange={
-                                        // getAllReplies
-                                        //     ? getAllReplyContent()
-                                        //     : removeAllReplyContent()
+                                        //     !getAllReplies
+                                        //         ? getAllReplyContent()
+                                        //         : removeAllReplyContent()
                                         // }
                                         inputProps={{
                                             'aria-label': 'controlled',
@@ -942,7 +1027,7 @@ const MergeAnnotations: React.FC<Props> = ({
                                         checked={getAllReplies}
                                     />
                                     Add all replies?
-                                </>
+                                </div>
                                 <AdamiteButton
                                     buttonClicked={addAnchor}
                                     name="Add Anchor"

@@ -29,6 +29,7 @@ interface CssExports {
   'Pad': string;
   'QuoteInfo': string;
   'ReferenceContainer': string;
+  'ReplyArrowBox': string;
   'SelectableContainer': string;
   'TitleContainer': string;
   'active': string;
@@ -45,6 +46,7 @@ interface CssExports {
   'dropdown': string;
   'dropdown-toggle': string;
   'inFocus': string;
+  'lastItem': string;
   'multiLine': string;
   'outOfFocus': string;
   'outerSnapshotContainer': string;

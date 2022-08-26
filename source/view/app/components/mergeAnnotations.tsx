@@ -14,6 +14,7 @@ import {
     breakpoints,
     buildAnnotation,
     buildEmptyAnnotation,
+    getStringDifference,
 } from '../utils/viewUtils'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import DeleteIcon from '@mui/icons-material/Delete'
@@ -56,6 +57,34 @@ interface DuplicateBundle {
     anchorIds: string[]
 }
 
+enum AnnotationBodySources {
+    Annotation = 'annotation',
+    Reply = 'reply',
+    User = 'user',
+    AuthorNameList = 'githubUsernames',
+}
+
+interface AnnotationBodyMetaData {
+    source: AnnotationBodySources // can either be user, reply, or annotation
+    annoId: string // corresponding annotation and/or reply IDs, or made up user id
+    // startOffset: number // ya hate to see it
+    // endOffset: number
+    content: string // what to actually print out
+    githubUsername: string // author of content
+    timestamp?: number
+    replyId?: string
+}
+
+interface AnnotationBodyLocationMetaData extends AnnotationBodyMetaData {
+    startOffset: number
+    endOffset: number
+}
+
+interface Selection {
+    startOffset: number
+    endOffset: number
+}
+
 interface Props {
     vscode: any
     notifyDone: () => void
@@ -89,6 +118,12 @@ const MergeAnnotations: React.FC<Props> = ({
     const [types, setTypes] = React.useState<Type[]>([])
     const [replies, setReplies] = React.useState<Reply[]>([])
     const [githubUsernames, setGithubUsernames] = React.useState<string[]>([])
+    const [userAddedText, setUserAddedText] = React.useState<string>('')
+    const [
+        internalAnnotationBodyRepresentation,
+        setInternalAnnotationBodyRepresentation,
+    ] = React.useState<AnnotationBodyLocationMetaData[]>([])
+
     const theme = createTheme({
         palette: {
             primary: {
@@ -318,7 +353,60 @@ const MergeAnnotations: React.FC<Props> = ({
                 [field]: field === 'annotation' ? '' : [],
             })
         })
+        console.log('new map in reset map', newMap)
         setAnnotationsActuallyMerged(newMap)
+    }
+
+    const handleUserAddedAnnotationContent = (
+        newTextAreaValue: string,
+        selectedRange?: Selection
+    ) => {
+        setUserAddedText(
+            getStringDifference(
+                newTextAreaValue,
+                newAnnotation.annotation
+            ).trim()
+        )
+        setNewAnnotation(
+            buildAnnotation({ ...newAnnotation, annotation: newTextAreaValue })
+        )
+    }
+
+    const getStartOffset = (
+        representationToChange: AnnotationBodyMetaData,
+        operation: string
+    ): number => {
+        switch (operation) {
+            case 'add': {
+                // const repToAddAfter = representationToChange.hasOwnProperty('replyId') ?
+                // to do -- figure out how to get start and end offsets
+            }
+        }
+    }
+
+    const updateInternalRepresentation = (typeOfChange: string, obj: any) => {
+        switch (typeOfChange) {
+            case 'addAnnotation': {
+                const anno: Annotation = obj as Annotation
+                const baseInternal: AnnotationBodyMetaData = {
+                    source: AnnotationBodySources.Annotation,
+                    annoId: anno.id,
+                    timestamp:
+                        anno.lastEditTime &&
+                        anno.lastEditTime > anno.createdTimestamp
+                            ? anno.lastEditTime
+                            : anno.createdTimestamp,
+                    content: anno.annotation,
+                    githubUsername: anno.githubUsername,
+                }
+                const internalRepresentation: AnnotationBodyLocationMetaData = {
+                    ...baseInternal,
+                    startOffset: getStartOffset(baseInternal, 'add'),
+                    endOffset: getEndOffset(baseInternal, 'add'),
+                }
+                break
+            }
+        }
     }
 
     const removeAllAnnotationContent = (): void => {
@@ -343,7 +431,7 @@ const MergeAnnotations: React.FC<Props> = ({
             }
         })
         const finalAnnoBody = hasRepliesInBody
-            ? resetAuthorListByUsernames(newAnnoBody, [...newUserSet])
+            ? resetAuthorListByUsernames(newAnnoBody, [...newUserSet]).trim()
             : ''
         setNewAnnotation(
             buildAnnotation({ ...newAnnotation, annotation: finalAnnoBody })
@@ -369,7 +457,10 @@ const MergeAnnotations: React.FC<Props> = ({
                             currAnno.annotation,
                             content
                         )
-                    } else {
+                    } else if (
+                        currAnno.annotation &&
+                        currAnno.annotation.length > 0
+                    ) {
                         content += generateNewAnnotationContent(
                             currAnno.githubUsername,
                             currAnno.id,
@@ -377,10 +468,6 @@ const MergeAnnotations: React.FC<Props> = ({
                         )
                     }
                 }
-                // else {
-                //     content = prevValue
-                // }
-                console.log('content', content)
                 return content
             }, annotation)
         const combinedAnnotationBodyWithAuthors = resetAuthorListByUsernames(
@@ -391,7 +478,7 @@ const MergeAnnotations: React.FC<Props> = ({
                     ...annotations.map((a) => a.githubUsername),
                 ]),
             ]
-        )
+        ).trim()
         setAllAnnotationsInMap(annotations, 'annotation')
         setNewAnnotation(
             buildAnnotation({
@@ -439,7 +526,7 @@ const MergeAnnotations: React.FC<Props> = ({
         annotations.forEach((anno) => {
             map.set(anno.id, { ...map.get(anno.id), [field]: anno[field] })
         })
-        // console.log('map???', map)
+        console.log('in setall annotations in map map???', map)
         setAnnotationsActuallyMerged(map)
     }
 
@@ -490,7 +577,7 @@ const MergeAnnotations: React.FC<Props> = ({
         setNewAnnotation(
             buildAnnotation({
                 ...newAnnotation,
-                annotation: newAnnotationContent,
+                annotation: newAnnotationContent.trim(),
             })
         )
 
@@ -498,7 +585,7 @@ const MergeAnnotations: React.FC<Props> = ({
             new Map(
                 annotationsActuallyMerged.set(annoId, {
                     ...annotationsActuallyMerged.get(annoId),
-                    annotation: newAnnotationContent,
+                    annotation: newAnnotationContent.trim(),
                 })
             )
         )
@@ -539,12 +626,17 @@ const MergeAnnotations: React.FC<Props> = ({
             'remove',
             'annotation'
         )
+        const finalStr = `${newAnnotationContent} ${authorList}`.trim()
         setNewAnnotation(
             buildAnnotation({
                 ...newAnnotation,
-                annotation: newAnnotationContent + ' ' + authorList,
+                annotation: finalStr,
             })
         )
+        console.log('set anno actually merged remove anno content', {
+            ...annotationsActuallyMerged.get(annoId),
+            annotation: '',
+        })
         setAnnotationsActuallyMerged(
             new Map(
                 annotationsActuallyMerged.set(annoId, {
@@ -569,7 +661,7 @@ const MergeAnnotations: React.FC<Props> = ({
         ) {
             addAnnotationContent(githubUsername, annoId, selectedAnnotation)
         } else {
-            removeAnnotationContent(selectedAnnotation, annoId, githubUsername)
+            removeAnnotationContent(selectedAnnotation, githubUsername, annoId)
         }
     }
 
@@ -603,6 +695,7 @@ const MergeAnnotations: React.FC<Props> = ({
         )
 
         if (duplicateBundles[text] || duplicateBundles[anchorText]) {
+            // consider switching this to use our map instead of this separate obj
             duplicateBundles[anchorText].annoIds.forEach((annoId, i) => {
                 const otherDups = duplicateBundles[anchorText].annoIds
                     .map((a, idx) => {
@@ -655,10 +748,7 @@ const MergeAnnotations: React.FC<Props> = ({
         const githubUsername = object.githubUsername
         const { level, operation, annoId, ...rest } = object
         const { annotation } = newAnnotation
-        if (
-            operation === 'remove'
-            // newAnnotation.replies.map((r) => r.id).includes(object.id)
-        ) {
+        if (operation === 'remove') {
             const mergedReply = annotationsActuallyMerged
                 .get(object.annoId)
                 .replies.find((r) => r.id === object.id)
@@ -683,12 +773,14 @@ const MergeAnnotations: React.FC<Props> = ({
                     'replies',
                     mergedReply.id
                 )
+                const finalStr = `${newAnnotationContent} ${authorList}`.trim()
                 setNewAnnotation(
                     buildAnnotation({
                         ...newAnnotation,
-                        annotation: newAnnotationContent + ' ' + authorList,
+                        annotation: finalStr,
                     })
                 )
+
                 setAnnotationsActuallyMerged(
                     new Map(
                         annotationsActuallyMerged.set(annoId, {
@@ -746,8 +838,8 @@ const MergeAnnotations: React.FC<Props> = ({
 
                 const newAnnotationContent =
                     annotation.trim() !== ''
-                        ? `${partOfStringToAddTo} \n${object.replyContent} ${listOfAuthors}`
-                        : `${object.replyContent} ${listOfAuthors}`
+                        ? `${partOfStringToAddTo} \n${object.replyContent} ${listOfAuthors}`.trim()
+                        : `${object.replyContent} ${listOfAuthors}`.trim()
 
                 setNewAnnotation(
                     buildAnnotation({
@@ -852,7 +944,9 @@ const MergeAnnotations: React.FC<Props> = ({
             let hasSeen = false
             annotationsActuallyMerged.forEach((mi, k) => {
                 // if(fieldChanging && fieldChanging === 'annotation') {
+                console.log('k', k, 'mi', mi)
                 const anno = annotations.find((a) => a.id === k)
+                console.log('anno', anno)
                 if (k !== annoId) {
                     if (anno) {
                         if (
@@ -965,71 +1059,112 @@ const MergeAnnotations: React.FC<Props> = ({
     }
 
     // consider moving this out so it can be used in regular annotation component
-    const renderNewAnnotationContent = (): React.ReactElement => {
-        const annotationSplitOnNewline = newAnnotation.annotation.split('\n')
-        return (
-            <div className={styles['AnnoContentContainer']}>
-                {annotationSplitOnNewline.map((annotation) => {
-                    const split: string[] = annotation.split(' said:')
-                    const info: string = split[0] + ' said:' // since split isn't inclusive have to add it back in ! stupid !
-                    const formattedInfo = (
-                        <span className={styles['QuoteInfo']}>{info}</span>
-                    )
-                    return (
-                        <>
-                            {formattedInfo}
-                            <div className={styles['bq']}>{split[1]}</div>
-                        </>
-                    )
-                })}
-            </div>
-        )
+    // const renderNewAnnotationContent = (): React.ReactElement => {
+    //     const annotationSplitOnNewline = newAnnotation.annotation.split('\n')
+    //     return (
+    //         <div className={styles['AnnoContentContainer']}>
+    //             {annotationSplitOnNewline.map((annotation) => {
+    //                 const split: string[] = annotation.split(' said:')
+    //                 const info: string = split[0] + ' said:' // since split isn't inclusive have to add it back in ! stupid !
+    //                 const formattedInfo = (
+    //                     <span className={styles['QuoteInfo']}>{info}</span>
+    //                 )
+    //                 return (
+    //                     <>
+    //                         {formattedInfo}
+    //                         <div className={styles['bq']}>{split[1]}</div>
+    //                     </>
+    //                 )
+    //             })}
+    //         </div>
+    //     )
+    // }
+
+    // returns array of duplicate anchor Ids
+    const checkMapForAnchorDuplicates = (
+        annoId: string,
+        anchorId: string
+    ): AnnotationAnchorPair[] => {
+        let dups = []
+        annotationsActuallyMerged.forEach((val, key) => {
+            if (key === annoId) {
+                // if(val.anchors) {
+                const ourAnchor = val.anchors.find(
+                    (a) => a.anchorId === anchorId
+                )
+                if (ourAnchor) {
+                    const hasDuplicates =
+                        ourAnchor.hasDuplicates &&
+                        ourAnchor.hasDuplicates.length > 0
+                    hasDuplicates &&
+                        ourAnchor.hasDuplicates.forEach((d) => dups.push(d))
+                    const isDuplicate =
+                        ourAnchor.duplicateOf &&
+                        ourAnchor.duplicateOf.length > 0
+                    isDuplicate &&
+                        ourAnchor.duplicateOf.forEach((d) => dups.push(d))
+                }
+            } else {
+                val.anchors.forEach((anch) => {
+                    if (
+                        anch.duplicateOf
+                            .map((a) => a.anchorId)
+                            .includes(anchorId)
+                    ) {
+                        anch.duplicateOf.forEach((d) => {
+                            dups.push(d)
+                        })
+                        dups.push({ anchorId: anch.anchorId, annoId: key })
+                    } else if (
+                        anch.hasDuplicates
+                            .map((a) => a.anchorId)
+                            .includes(anchorId)
+                    ) {
+                        anch.hasDuplicates.forEach((d) => {
+                            dups.push(d)
+                        })
+                        dups.push({ anchorId: anch.anchorId, annoId: key })
+                    }
+                })
+            }
+        })
+        return dups
     }
 
     const removeAnchorFromMergeAnnotation = (
         anchorId: string,
         annoId: string
     ) => {
+        const anchorsToRemove = [{ anchorId, annoId }].concat(
+            checkMapForAnchorDuplicates(annoId, anchorId)
+        )
+        console.log('anchorsToRemove', anchorsToRemove)
+
+        const ids = anchorsToRemove.map((a) => a.anchorId)
+        let newAnchorList = newAnnotation.anchors.filter(
+            (a) => !ids.includes(a.anchorId)
+        )
+
         setNewAnnotation(
             buildAnnotation({
                 ...newAnnotation,
-                anchors: newAnnotation.anchors.filter(
-                    (a) => a.anchorId !== anchorId
-                ),
+                anchors: newAnchorList,
             })
         )
-        const annosToUpdate = annotationsActuallyMerged
-            .get(annoId)
-            .anchors.find((a) => a.anchorId === anchorId).hasDuplicates
-
-        if (annosToUpdate.length) {
-            annosToUpdate.forEach((a) => {
-                setAnnotationsActuallyMerged(
-                    new Map(
-                        annotationsActuallyMerged.set(a.annoId, {
-                            ...annotationsActuallyMerged.get(a.annoId),
-                            anchors: annotationsActuallyMerged
-                                .get(a.annoId)
-                                .anchors.filter(
-                                    (anchId) => a.anchorId !== anchId.anchorId
-                                ),
-                        })
-                    )
+        anchorsToRemove.forEach((d) => {
+            setAnnotationsActuallyMerged(
+                new Map(
+                    annotationsActuallyMerged.set(d.annoId, {
+                        ...annotationsActuallyMerged.get(d.annoId),
+                        anchors: annotationsActuallyMerged
+                            .get(d.annoId)
+                            .anchors.filter(
+                                (anchId) => d.anchorId !== anchId.anchorId
+                            ),
+                    })
                 )
-            })
-        }
-        setAnnotationsActuallyMerged(
-            new Map(
-                annotationsActuallyMerged.set(annoId, {
-                    ...annotationsActuallyMerged.get(annoId),
-                    anchors: annotationsActuallyMerged
-                        .get(annoId)
-                        .anchors.filter(
-                            (anchId) => anchorId !== anchId.anchorId
-                        ),
-                })
             )
-        )
+        })
     }
 
     const renderAnchors = (): React.ReactElement => {
@@ -1169,6 +1304,7 @@ const MergeAnnotations: React.FC<Props> = ({
                                 showSplitButton={true}
                                 focus={true}
                                 placeholder={'Add annotation text'}
+                                onChange={handleUserAddedAnnotationContent}
                             />
                             <ReplyContainer
                                 replying={true}
@@ -1195,13 +1331,14 @@ const MergeAnnotations: React.FC<Props> = ({
                                     <AnnotationReference
                                         key={`merge-tsx-` + a.id}
                                         annotation={a}
-                                        alreadySelectedAnchors={
-                                            map
-                                                ? map.anchors.map(
-                                                      (a) => a.anchorId
-                                                  )
-                                                : []
-                                        }
+                                        mergeInformation={map}
+                                        // alreadySelectedAnchors={
+                                        //     map
+                                        //         ? map.anchors.map(
+                                        //               (a) => a.anchorId
+                                        //           )
+                                        //         : []
+                                        // }
                                         partSelected={partSelected}
                                         removeAnchorFromMergeAnnotation={
                                             removeAnchorFromMergeAnnotation

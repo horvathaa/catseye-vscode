@@ -19,6 +19,11 @@ import {
 } from '../../styles/vscodeStyles'
 import { TextareaAutosize } from '@material-ui/core'
 
+interface Selection {
+    startOffset: number
+    endOffset: number
+}
+
 interface Props {
     content: any // Is either a reply, text, or annotation
     submissionHandler: (
@@ -31,6 +36,7 @@ interface Props {
     showCancel?: boolean
     focus?: boolean
     placeholder?: string
+    onChange?: (newTextAreaValue: string, selectedRange?: Selection) => void
 }
 // Having default props is weirdly supported in React, this way means showCancel is an optional
 // See: https://dev.to/bytebodger/default-props-in-react-typescript-2o5o
@@ -42,9 +48,15 @@ const TextEditor: React.FC<Props> = ({
     showCancel = true,
     focus = true,
     placeholder = '',
+    onChange,
 }) => {
     const [text, setText] = React.useState<any>(content)
     const [willBePinned, setWillBePinned] = React.useState<boolean>(false)
+    const [hasSelectedRange, setHasSelectedRange] =
+        React.useState<boolean>(false)
+    const [selectedRange, setSelectedRange] = React.useState<Selection | null>(
+        null
+    )
 
     React.useEffect(() => {
         setText(content)
@@ -95,8 +107,21 @@ const TextEditor: React.FC<Props> = ({
     })
 
     const updateAnnotationContent = (e: React.SyntheticEvent) => {
+        console.log(
+            'e',
+            e,
+            'selectionstart',
+            (e.target as HTMLTextAreaElement).selectionStart,
+            'selend',
+            (e.target as HTMLTextAreaElement).selectionStart
+        )
         if (typeof text === 'string') {
-            setText((e.target as HTMLTextAreaElement).value)
+            const newText = (e.target as HTMLTextAreaElement).value
+            setText(newText)
+            if (onChange) {
+                // const textAdded = (e.nativeEvent as InputEvent).data
+                onChange(newText)
+            }
         } else if (text.hasOwnProperty('replyContent')) {
             // Checks if is reply
             setText({
@@ -113,12 +138,53 @@ const TextEditor: React.FC<Props> = ({
     }
 
     const handleEnter = (e: React.KeyboardEvent): void => {
+        console.log(
+            'e keydown',
+            e,
+            'state',
+            hasSelectedRange,
+            'obj',
+            selectedRange
+        )
+
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             submissionHandler(text, 'private', willBePinned)
             setText({
                 ...text,
                 replyContent: '',
             })
+        } else if (hasSelectedRange && onChange) {
+            const key = e.key
+            const textArea = e.target as HTMLTextAreaElement
+            if (key !== 'Backspace' && !(e.metaKey || e.ctrlKey || e.altKey)) {
+                // probably input event
+                // could add redundancy check to see if the value of the input changed as well uhguig
+
+                if (textArea.selectionStart === selectedRange.startOffset + 1) {
+                    // replaced range with char
+                    onChange(textArea.value, selectedRange)
+                }
+            } else if (key === 'Backspace') {
+                onChange(textArea.value, selectedRange)
+            }
+            setHasSelectedRange(false)
+            setSelectedRange(null)
+        }
+    }
+
+    const handleMouseUp = (e: React.MouseEvent): void => {
+        console.log('wtf', e)
+        const target = e.target as HTMLTextAreaElement
+        if (target.selectionStart !== target.selectionEnd) {
+            console.log('setting state')
+            setHasSelectedRange(true)
+            setSelectedRange({
+                startOffset: target.selectionStart,
+                endOffset: target.selectionEnd,
+            })
+        } else if (hasSelectedRange) {
+            setHasSelectedRange(false)
+            setSelectedRange(null)
         }
     }
 
@@ -149,6 +215,7 @@ const TextEditor: React.FC<Props> = ({
                 onChange={updateAnnotationContent}
                 onKeyDown={handleEnter}
                 onClick={(e: React.SyntheticEvent) => e.stopPropagation()}
+                onMouseUp={handleMouseUp}
             />
             <div className={styles['bottomRow']}>
                 <div className={styles['bottomRow']}>

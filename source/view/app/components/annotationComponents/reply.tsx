@@ -122,7 +122,7 @@ export const Reply: React.FC<Props> = ({
         </div>
     )
     // Ideally createdTimestamp is updated on Submit for creation (might be happening)
-    const ReplyEditor: React.ReactElement = replying ? (
+    const ReplyEditor: React.ReactElement | null = replying ? (
         <TextEditor
             content={reply}
             submissionHandler={createReply}

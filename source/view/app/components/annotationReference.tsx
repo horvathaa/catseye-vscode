@@ -26,6 +26,7 @@ import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
 import {
     AnchorObject,
     Annotation,
+    MergeInformation,
     Reply,
     Type,
 } from '../../../constants/constants'
@@ -40,7 +41,8 @@ interface Props {
     scrollWithRangeAndFile: (e: React.SyntheticEvent, anchorId: string) => void
     removeAnchorFromMergeAnnotation: (anchorId: string, annoId: string) => void
     annoNum: number
-    alreadySelectedAnchors: string[]
+    // alreadySelectedAnchors: string[]
+    mergeInformation: MergeInformation
 }
 
 const AnnotationReference: React.FC<Props> = ({
@@ -49,7 +51,8 @@ const AnnotationReference: React.FC<Props> = ({
     scrollWithRangeAndFile,
     removeAnchorFromMergeAnnotation,
     annoNum,
-    alreadySelectedAnchors,
+    mergeInformation,
+    // alreadySelectedAnchors,
 }) => {
     const theme = createTheme({
         palette: {
@@ -91,6 +94,30 @@ const AnnotationReference: React.FC<Props> = ({
     })
     const [hasAnnotationTextBeenSelected, setHasAnnotationTextBeenSelected] =
         React.useState<boolean>(false)
+    const [localMergeInformation, setLocalMergeInformation] =
+        React.useState<MergeInformation>(mergeInformation)
+
+    React.useEffect(() => {
+        setLocalMergeInformation(mergeInformation)
+    }, [mergeInformation])
+
+    const isAnchorAlreadySelected = (anchorId: string): boolean => {
+        return (
+            localMergeInformation &&
+            localMergeInformation.anchors &&
+            localMergeInformation.anchors
+                .map((a) => a.anchorId)
+                .includes(anchorId)
+        )
+    }
+
+    const isAnnotationTextAlreadySelected = (): boolean => {
+        return (
+            localMergeInformation &&
+            localMergeInformation.annotation &&
+            localMergeInformation.annotation.length > 0
+        )
+    }
 
     const isMedOrMore = useMediaQuery(theme.breakpoints.up('md'))
 
@@ -139,11 +166,7 @@ const AnnotationReference: React.FC<Props> = ({
         const selectedText = document?.getSelection().toString()
         if (selectedText.length) {
             if (part === 'anchor') {
-                // const ids: string[] = (event.target as HTMLDivElement).id.split(
-                //     '%'
-                // )
-                // console.log('ids?', ids)
-                if (alreadySelectedAnchors.includes(anchorId)) return
+                if (isAnchorAlreadySelected(anchorId)) return
                 partSelected(part, {
                     anchorId,
                     annotationId,
@@ -180,9 +203,7 @@ const AnnotationReference: React.FC<Props> = ({
                                 <Checkbox
                                     // Needs work
                                     onChange={() =>
-                                        alreadySelectedAnchors.includes(
-                                            anchor.anchorId
-                                        )
+                                        isAnchorAlreadySelected(anchor.anchorId)
                                             ? removeAnchorFromMergeAnnotation(
                                                   anchor.anchorId,
                                                   anchor.parentId
@@ -192,9 +213,11 @@ const AnnotationReference: React.FC<Props> = ({
                                     inputProps={{
                                         'aria-label': 'controlled',
                                     }}
-                                    checked={alreadySelectedAnchors.includes(
-                                        anchor.anchorId
-                                    )}
+                                    checked={
+                                        isAnchorAlreadySelected(
+                                            anchor.anchorId
+                                        ) ?? false
+                                    }
                                 />
                             )}
                             <div
@@ -227,7 +250,7 @@ const AnnotationReference: React.FC<Props> = ({
                                     pastVersion={createAnchorOnCommitFromAnchorObject(
                                         anchor
                                     )}
-                                    mergeSelection={alreadySelectedAnchors.includes(
+                                    mergeSelection={isAnchorAlreadySelected(
                                         anchor.anchorId
                                     )}
                                 />
@@ -241,7 +264,7 @@ const AnnotationReference: React.FC<Props> = ({
                             styles['AnnotationContentAnnotationReference']
                         }
                     >
-                        {hasAnnotationTextBeenSelected ? (
+                        {isAnnotationTextAlreadySelected() ? (
                             <ArrowDownwardIcon
                                 onClick={bringBackAnnotation}
                                 style={{ cursor: 'pointer' }}
@@ -265,7 +288,7 @@ const AnnotationReference: React.FC<Props> = ({
                             className={cn({
                                 [styles['SelectableContainer']]: true,
                                 [anchorStyles['disabled']]:
-                                    hasAnnotationTextBeenSelected,
+                                    isAnnotationTextAlreadySelected(),
                             })}
                             // onMouseUp={(e) => handleMouseSelection(e, 'annotation')}
                         >

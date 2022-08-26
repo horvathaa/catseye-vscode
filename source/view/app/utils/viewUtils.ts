@@ -338,3 +338,17 @@ export const buildEmptyAnnotation = (): Annotation => {
         resolved: false,
     })
 }
+
+// https://stackoverflow.com/questions/57102484/find-difference-between-two-strings-in-javascript
+export function getStringDifference(a: string, b: string): string {
+    var i = 0
+    var j = 0
+    var result = ''
+
+    while (j < b.length) {
+        if (a[i] != b[j] || i == a.length) result += b[j]
+        else i++
+        j++
+    }
+    return result
+}

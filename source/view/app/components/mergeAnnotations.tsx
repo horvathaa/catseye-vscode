@@ -36,6 +36,7 @@ import {
     isAnchorObject,
     MergeInformation,
     Reply,
+    ReplyMergeInformation,
     Type,
 } from '../../../constants/constants'
 import AdamiteButton from './annotationComponents/AdamiteButton'
@@ -71,18 +72,39 @@ interface AnnotationBodyMetaData {
     // endOffset: number
     content: string // what to actually print out
     githubUsername: string // author of content
-    timestamp?: number
-    replyId?: string
+    timestamp: number
+    replies?: AnnotationBodyLocationMetaData[]
 }
 
 interface AnnotationBodyLocationMetaData extends AnnotationBodyMetaData {
-    startOffset: number
-    endOffset: number
+    // startOffset: number
+    // endOffset: number
+    offsets: Selection | Selection[]
 }
 
 interface Selection {
     startOffset: number
     endOffset: number
+}
+
+interface SurroundingMetadata {
+    insertionType: InsertionType
+    index: number
+    otherInformation?: any
+}
+
+enum InsertionType {
+    Inside = 'inside',
+    Before = 'before',
+    After = 'after',
+}
+
+interface UserAddedText {
+    content: string
+    githubUsername: string
+    timestamp: number
+    id: string
+    offsets: Selection
 }
 
 interface Props {
@@ -91,6 +113,26 @@ interface Props {
     username: string
     userId: string
     annotations: Annotation[]
+}
+
+const getStartOffset = (a: AnnotationBodyLocationMetaData): number => {
+    return Array.isArray(a.offsets)
+        ? a.offsets[0].startOffset
+        : a.offsets.startOffset
+}
+
+const getEndOffset = (a: AnnotationBodyLocationMetaData): number => {
+    return Array.isArray(a.offsets)
+        ? a.offsets[a.offsets.length - 1].endOffset
+        : a.offsets.endOffset
+}
+
+const isUserAddedText = (obj: any): obj is UserAddedText => {
+    return obj.hasOwnProperty('offsets')
+}
+
+const isSelection = (obj: any): obj is Selection => {
+    return obj.hasOwnProperty('startOffset') && obj.hasOwnProperty('endOffset')
 }
 
 const MergeAnnotations: React.FC<Props> = ({
@@ -121,8 +163,20 @@ const MergeAnnotations: React.FC<Props> = ({
     const [userAddedText, setUserAddedText] = React.useState<string>('')
     const [
         internalAnnotationBodyRepresentation,
-        setInternalAnnotationBodyRepresentation,
+        _setInternalAnnotationBodyRepresentation,
     ] = React.useState<AnnotationBodyLocationMetaData[]>([])
+
+    const setInternalAnnotationBodyRepresentation = (
+        newInternalAnnotationBodyRepresentation: AnnotationBodyLocationMetaData[]
+    ): void => {
+        const newList = newInternalAnnotationBodyRepresentation.sort((a, b) => {
+            const aOffset = getStartOffset(a)
+            const bOffset = getStartOffset(b)
+            return aOffset - bOffset
+        })
+        console.log('newList', newList)
+        _setInternalAnnotationBodyRepresentation(newList)
+    }
 
     const theme = createTheme({
         palette: {
@@ -359,6 +413,7 @@ const MergeAnnotations: React.FC<Props> = ({
 
     const handleUserAddedAnnotationContent = (
         newTextAreaValue: string,
+        userText: string,
         selectedRange?: Selection
     ) => {
         setUserAddedText(
@@ -367,19 +422,168 @@ const MergeAnnotations: React.FC<Props> = ({
                 newAnnotation.annotation
             ).trim()
         )
+        const userContent: UserAddedText = {
+            content: userText,
+            githubUsername: username ?? '',
+            timestamp: new Date().getTime(),
+            id: username
+                ? username + new Date().getTime()
+                : '-' + new Date().getTime(),
+            offsets: selectedRange ?? { startOffset: 0, endOffset: 0 },
+        }
+        console.log('hewwo??', userContent)
+        userText.length
+            ? updateInternalRepresentation('userAddedText', userContent)
+            : updateInternalRepresentation('userRemovedText', userContent)
         setNewAnnotation(
             buildAnnotation({ ...newAnnotation, annotation: newTextAreaValue })
         )
     }
 
-    const getStartOffset = (
+    const updateOffsets = (
+        sel: Selection,
+        sortedList: AnnotationBodyLocationMetaData[]
+    ): AnnotationBodyLocationMetaData[] => {
+        const firstIndexToMove = sortedList.findIndex((s) =>
+            Array.isArray(s.offsets)
+                ? s.offsets.some((off) => off.endOffset === sel.startOffset)
+                : s.offsets.endOffset === sel.startOffset
+        )
+
+        if (firstIndexToMove !== -1) {
+            const updated = sortedList.map((b, i) => {
+                if (i < firstIndexToMove || getEndOffset(b) <= sel.startOffset)
+                    return b
+
+                return {
+                    ...b,
+                    offsets: Array.isArray(b.offsets)
+                        ? b.offsets.map((off, j) => {
+                              if (off.endOffset < sel.startOffset) return off
+                              return {
+                                  startOffset:
+                                      off.startOffset +
+                                      (sel.endOffset - sel.startOffset),
+                                  endOffset:
+                                      off.endOffset +
+                                      (sel.endOffset - sel.startOffset),
+                              }
+                          })
+                        : {
+                              startOffset:
+                                  b.offsets.startOffset +
+                                  (sel.endOffset - sel.startOffset),
+                              endOffset:
+                                  b.offsets.endOffset +
+                                  (sel.endOffset - sel.startOffset),
+                          },
+                }
+            })
+            return updated
+        }
+        // probably added to beginning of list
+        else {
+            const updated = sortedList.map((b) => {
+                return {
+                    ...b,
+                    offsets: Array.isArray(b.offsets)
+                        ? b.offsets.map((off, j) => {
+                              if (off.endOffset < sel.startOffset) return off
+                              return {
+                                  startOffset:
+                                      off.startOffset +
+                                      (sel.endOffset - sel.startOffset),
+                                  endOffset:
+                                      off.endOffset +
+                                      (sel.endOffset - sel.startOffset),
+                              }
+                          })
+                        : {
+                              startOffset:
+                                  b.offsets.startOffset +
+                                  (sel.endOffset - sel.startOffset),
+                              endOffset:
+                                  b.offsets.endOffset +
+                                  (sel.endOffset - sel.startOffset),
+                          },
+                }
+            })
+            return updated
+        }
+    }
+
+    const getOffsets = (
         representationToChange: AnnotationBodyMetaData,
-        operation: string
-    ): number => {
-        switch (operation) {
-            case 'add': {
+        typeOfChange: string
+    ): Selection => {
+        const sortedList = internalAnnotationBodyRepresentation.sort(
+            (a, b) => a.timestamp - b.timestamp
+        )
+
+        switch (typeOfChange) {
+            case 'addAnnotation': {
                 // const repToAddAfter = representationToChange.hasOwnProperty('replyId') ?
                 // to do -- figure out how to get start and end offsets
+
+                const indexToInsert = sortedList.findIndex(
+                    (b) => representationToChange.timestamp > b.timestamp
+                )
+                if (indexToInsert !== -1) {
+                    const startOffset =
+                        indexToInsert !== 0
+                            ? getEndOffset(sortedList[indexToInsert - 1])
+                            : 0 // we either start the annotation at the end of the last index, or start it at the beginning
+                    const endOffset =
+                        startOffset + representationToChange.content.length
+                    const sel = { startOffset, endOffset }
+                    // updateOffsets(sel, sortedList)
+                    return sel
+                } else {
+                    const startOffset = sortedList.length
+                        ? getEndOffset(sortedList[sortedList.length - 1])
+                        : 0
+                    const endOffset =
+                        startOffset + representationToChange.content.length
+                    return { startOffset, endOffset }
+                }
+            }
+            case 'addReply': {
+                const annoToUpdate = internalAnnotationBodyRepresentation.find(
+                    (a) => a.annoId === representationToChange.annoId
+                )
+                if (annoToUpdate) {
+                    const newOffsets =
+                        annoToUpdate.replies && annoToUpdate.replies.length
+                            ? annoToUpdate.replies[
+                                  annoToUpdate.replies.length - 1
+                              ].offsets
+                            : null
+                    const offsets = newOffsets
+                        ? {
+                              startOffset: getStartOffset(annoToUpdate),
+                              endOffset:
+                                  getStartOffset(annoToUpdate) +
+                                  representationToChange.content.length,
+                          }
+                        : {
+                              startOffset: getEndOffset(annoToUpdate),
+                              endOffset:
+                                  getEndOffset(annoToUpdate) +
+                                  representationToChange.content.length,
+                          }
+                    return offsets
+                } else {
+                    const obj =
+                        internalAnnotationBodyRepresentation[
+                            internalAnnotationBodyRepresentation.length - 1
+                        ]
+                    return {
+                        startOffset: getStartOffset(obj),
+                        endOffset:
+                            getStartOffset(obj) +
+                            representationToChange.content.length,
+                    }
+                }
             }
         }
     }
@@ -399,12 +603,265 @@ const MergeAnnotations: React.FC<Props> = ({
                     content: anno.annotation,
                     githubUsername: anno.githubUsername,
                 }
+                const offsets = getOffsets(baseInternal, typeOfChange)
+
                 const internalRepresentation: AnnotationBodyLocationMetaData = {
                     ...baseInternal,
-                    startOffset: getStartOffset(baseInternal, 'add'),
-                    endOffset: getEndOffset(baseInternal, 'add'),
+                    offsets: {
+                        startOffset: offsets.startOffset,
+                        endOffset: offsets.endOffset,
+                    },
                 }
+                const updatedList = updateOffsets(
+                    offsets,
+                    internalAnnotationBodyRepresentation.sort(
+                        (a, b) => a.timestamp - b.timestamp
+                    )
+                )
+                setInternalAnnotationBodyRepresentation(
+                    updatedList.concat(internalRepresentation)
+                )
                 break
+            }
+            case 'addReply': {
+                const reply: ReplyMergeInformation =
+                    obj as ReplyMergeInformation
+                const baseInternal: AnnotationBodyMetaData = {
+                    source: AnnotationBodySources.Reply,
+                    annoId: reply.annoId,
+                    timestamp:
+                        reply.lastEditTime &&
+                        reply.lastEditTime > reply.createdTimestamp
+                            ? reply.lastEditTime
+                            : reply.createdTimestamp,
+                    content: reply.replyContent,
+                    githubUsername: reply.githubUsername,
+                }
+                const replyOffsets: Selection = getOffsets(
+                    baseInternal,
+                    typeOfChange
+                )
+                const annoToUpdate = internalAnnotationBodyRepresentation.find(
+                    (a) => a.annoId === reply.annoId
+                )
+                const newReply = {
+                    ...baseInternal,
+                    offsets: {
+                        startOffset: replyOffsets.startOffset,
+                        endOffset: replyOffsets.endOffset,
+                    },
+                }
+                const newAnno = annoToUpdate
+                    ? {
+                          ...annoToUpdate,
+                          replies:
+                              annoToUpdate.replies &&
+                              annoToUpdate.replies.length
+                                  ? annoToUpdate.replies.concat(newReply)
+                                  : [newReply],
+                          offsets: {
+                              startOffset: getStartOffset(annoToUpdate),
+                              endOffset: newReply.offsets.endOffset,
+                          },
+                      }
+                    : newReply
+
+                const offsets = {
+                    startOffset: newAnno.offsets.startOffset,
+                    endOffset: newAnno.offsets.endOffset,
+                }
+                const updatedList = updateOffsets(
+                    offsets,
+                    internalAnnotationBodyRepresentation.sort(
+                        (a, b) => a.timestamp - b.timestamp
+                    )
+                )
+                setInternalAnnotationBodyRepresentation(updatedList)
+                break
+            }
+            case 'userAddedText': {
+                const userAddition: UserAddedText = obj as UserAddedText
+
+                const surroundingMetadata =
+                    internalAnnotationBodyRepresentation.length
+                        ? findSurroundingAnnotationBodyMetaData(userAddition)
+                        : null
+
+                let baseInternal = null
+                let copy = null
+                if (
+                    surroundingMetadata &&
+                    surroundingMetadata.otherInformation &&
+                    surroundingMetadata.otherInformation.addingToUserText
+                ) {
+                    const objWereAddingTo =
+                        internalAnnotationBodyRepresentation[
+                            surroundingMetadata.index
+                        ]
+                    baseInternal = {
+                        ...objWereAddingTo,
+                        offsets: {
+                            startOffset:
+                                surroundingMetadata.insertionType ===
+                                InsertionType.After
+                                    ? getStartOffset(objWereAddingTo)
+                                    : userAddition.offsets.startOffset,
+                            endOffset:
+                                getEndOffset(objWereAddingTo) +
+                                userAddition.content.length,
+                        },
+                        content: objWereAddingTo.content + userAddition.content,
+                    }
+                } else {
+                    baseInternal = {
+                        source: AnnotationBodySources.User,
+                        annoId: userAddition.id,
+                        timestamp: userAddition.timestamp,
+                        content: userAddition.content,
+                        githubUsername: userAddition.githubUsername,
+                        offsets: {
+                            startOffset: userAddition.offsets.startOffset,
+                            endOffset: userAddition.offsets.endOffset,
+                        },
+                    }
+                    if (
+                        surroundingMetadata &&
+                        surroundingMetadata.insertionType ===
+                            InsertionType.Inside
+                    ) {
+                        const objWerePartitioning =
+                            internalAnnotationBodyRepresentation[
+                                surroundingMetadata.index
+                            ]
+                        copy = {
+                            ...objWerePartitioning,
+                            offsets: Array.isArray(objWerePartitioning.offsets)
+                                ? objWerePartitioning.offsets.concat(
+                                      userAddition.offsets
+                                  )
+                                : [
+                                      objWerePartitioning.offsets,
+                                      userAddition.offsets,
+                                  ],
+                        }
+                    }
+                }
+                const list = internalAnnotationBodyRepresentation
+                    .filter((a) => {
+                        copy !== null ? a.annoId !== copy.annoId : true
+                    })
+                    .concat(copy !== null ? copy : [])
+                    .sort((a, b) => a.timestamp - b.timestamp)
+                const updatedList = updateOffsets(baseInternal.offsets, list)
+                setInternalAnnotationBodyRepresentation(
+                    updatedList.concat(baseInternal)
+                )
+                break
+            }
+        }
+    }
+
+    const findSurroundingAnnotationBodyMetaData = (
+        userAddition: UserAddedText
+    ): SurroundingMetadata => {
+        let surroundingMetadata: SurroundingMetadata = null
+        let insertionType: InsertionType = null
+        let otherInformation = null
+
+        const objs = internalAnnotationBodyRepresentation
+            .map((a, i) => {
+                return {
+                    ...a,
+                    index: i,
+                }
+            })
+            .filter((m) => {
+                const startOffset = getStartOffset(m)
+                const endOffset = getEndOffset(m)
+                return (
+                    startOffset < userAddition.offsets.startOffset &&
+                    endOffset > userAddition.offsets.endOffset
+                )
+            })
+        if (objs.length) {
+            insertionType = InsertionType.Inside
+            let obj
+            if (objs.length > 1) {
+                objs.sort((a) => {
+                    const startOffset = getStartOffset(a)
+                    return startOffset - userAddition.offsets.startOffset
+                })
+            }
+            obj = objs[0]
+
+            if (isUserAddedText(obj)) {
+                otherInformation = {
+                    addingToUserText: true,
+                    id: obj.id,
+                    partitioningThisTypeOfObject: AnnotationBodySources.User,
+                }
+            } else {
+                otherInformation = {
+                    partitioningThisTypeOfObject: obj.source,
+                    id: obj.annoId,
+                }
+            }
+            surroundingMetadata = {
+                insertionType,
+                otherInformation,
+                index: obj.index,
+            }
+            return surroundingMetadata
+        } else {
+            const obj = internalAnnotationBodyRepresentation
+                .map((a, i) => {
+                    return { ...a, index: i }
+                })
+                .find((a) => {
+                    const startOffset = getStartOffset(a)
+                    const endOffset = getEndOffset(a)
+                    return (
+                        startOffset === userAddition.offsets.endOffset ||
+                        endOffset === userAddition.offsets.startOffset
+                    )
+                })
+            if (obj) {
+                if (isUserAddedText(obj)) {
+                    otherInformation = {
+                        addingToUserText: true,
+                        id: obj.id,
+                        partitioningThisTypeOfObject:
+                            AnnotationBodySources.User,
+                    }
+                }
+                const startOffset = getStartOffset(obj)
+                insertionType =
+                    startOffset === userAddition.offsets.endOffset
+                        ? InsertionType.Before
+                        : InsertionType.After
+                return isUserAddedText(obj)
+                    ? { insertionType, index: obj.index, otherInformation }
+                    : { insertionType, index: obj.index }
+            } else {
+                console.log('in else selse')
+                if (isUserAddedText(obj)) {
+                    otherInformation = {
+                        addingToUserText: true,
+                        id: obj.id,
+                        partitioningThisTypeOfObject:
+                            AnnotationBodySources.User,
+                    }
+                }
+                return isUserAddedText(obj)
+                    ? {
+                          insertionType: InsertionType.Before,
+                          index: 0,
+                          otherInformation,
+                      }
+                    : {
+                          insertionType: InsertionType.Before,
+                          index: 0,
+                      }
             }
         }
     }
@@ -468,6 +925,7 @@ const MergeAnnotations: React.FC<Props> = ({
                         )
                     }
                 }
+                updateInternalRepresentation('addAnnotation', currAnno)
                 return content
             }, annotation)
         const combinedAnnotationBodyWithAuthors = resetAuthorListByUsernames(

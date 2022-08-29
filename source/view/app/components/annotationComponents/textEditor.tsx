@@ -36,7 +36,11 @@ interface Props {
     showCancel?: boolean
     focus?: boolean
     placeholder?: string
-    onChange?: (newTextAreaValue: string, selectedRange?: Selection) => void
+    onChange?: (
+        newTextAreaValue: string,
+        userText: string,
+        selectedRange: Selection
+    ) => void
 }
 // Having default props is weirdly supported in React, this way means showCancel is an optional
 // See: https://dev.to/bytebodger/default-props-in-react-typescript-2o5o
@@ -116,11 +120,18 @@ const TextEditor: React.FC<Props> = ({
             (e.target as HTMLTextAreaElement).selectionStart
         )
         if (typeof text === 'string') {
-            const newText = (e.target as HTMLTextAreaElement).value
+            const textArea = e.target as HTMLTextAreaElement
+            const userText = (e.nativeEvent as InputEvent).data
+            const selection: Selection = {
+                startOffset: textArea.selectionStart - userText.length, // stupid
+                endOffset: textArea.selectionEnd,
+            }
+
+            const newText = textArea.value
             setText(newText)
             if (onChange) {
                 // const textAdded = (e.nativeEvent as InputEvent).data
-                onChange(newText)
+                onChange(newText, userText, selection)
             }
         } else if (text.hasOwnProperty('replyContent')) {
             // Checks if is reply
@@ -138,15 +149,6 @@ const TextEditor: React.FC<Props> = ({
     }
 
     const handleEnter = (e: React.KeyboardEvent): void => {
-        console.log(
-            'e keydown',
-            e,
-            'state',
-            hasSelectedRange,
-            'obj',
-            selectedRange
-        )
-
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
             submissionHandler(text, 'private', willBePinned)
             setText({
@@ -162,10 +164,10 @@ const TextEditor: React.FC<Props> = ({
 
                 if (textArea.selectionStart === selectedRange.startOffset + 1) {
                     // replaced range with char
-                    onChange(textArea.value, selectedRange)
+                    onChange(textArea.value, key, selectedRange)
                 }
             } else if (key === 'Backspace') {
-                onChange(textArea.value, selectedRange)
+                onChange(textArea.value, '', selectedRange)
             }
             setHasSelectedRange(false)
             setSelectedRange(null)
@@ -173,10 +175,8 @@ const TextEditor: React.FC<Props> = ({
     }
 
     const handleMouseUp = (e: React.MouseEvent): void => {
-        console.log('wtf', e)
         const target = e.target as HTMLTextAreaElement
         if (target.selectionStart !== target.selectionEnd) {
-            console.log('setting state')
             setHasSelectedRange(true)
             setSelectedRange({
                 startOffset: target.selectionStart,

@@ -196,6 +196,7 @@ export interface Reply {
 
 export interface ReplyMergeInformation extends Reply {
     inAnnoBody: boolean
+    annoId: string
 }
 
 export const isReply = (obj: any): obj is Reply => {

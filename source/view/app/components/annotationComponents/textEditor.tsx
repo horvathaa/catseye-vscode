@@ -123,8 +123,8 @@ const TextEditor: React.FC<Props> = ({
             const textArea = e.target as HTMLTextAreaElement
             const userText = (e.nativeEvent as InputEvent).data
             const selection: Selection = {
-                startOffset: textArea.selectionStart - userText.length, // stupid
-                endOffset: textArea.selectionEnd,
+                startOffset: textArea.selectionStart - userText.length, // REALLY stupid im so mad holy shit
+                endOffset: textArea.selectionEnd, // slightly less stupid
             }
 
             const newText = textArea.value
@@ -176,6 +176,10 @@ const TextEditor: React.FC<Props> = ({
 
     const handleMouseUp = (e: React.MouseEvent): void => {
         const target = e.target as HTMLTextAreaElement
+        console.log('what', target, 'mom', {
+            startOffset: target.selectionStart,
+            endOffset: target.selectionEnd,
+        })
         if (target.selectionStart !== target.selectionEnd) {
             setHasSelectedRange(true)
             setSelectedRange({

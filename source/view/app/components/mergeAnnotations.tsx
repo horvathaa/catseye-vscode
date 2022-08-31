@@ -118,27 +118,24 @@ interface Props {
 }
 
 const getStartOffset = (a: AnnotationBodyLocationMetaData): number => {
-    return
+    return a.offsets.startOffset
     // Array.isArray(a.offsets)
     //     ? a.offsets[0].startOffset
     // :
-    a.offsets.startOffset
 }
 
 const getEndOffset = (a: AnnotationBodyLocationMetaData): number => {
-    return
+    return a.offsets.endOffset
     // Array.isArray(a.offsets)
     //     ? a.offsets[a.offsets.length - 1].endOffset
     //     :
-    a.offsets.endOffset
 }
 
 const getInternalOffsets = (a: AnnotationBodyLocationMetaData): Selection => {
-    return
+    return a.offsets
     // Array.isArray(a.offsets)
     //     ? { startOffset: getStartOffset(a), endOffset: getEndOffset(a) }
     //     :
-    a.offsets
 }
 
 const isUserAddedText = (obj: any): obj is UserAddedText => {
@@ -290,6 +287,9 @@ const MergeAnnotations: React.FC<Props> = ({
         }
     }
 
+    // reset 0th index to beginning of textarea
+    // ensure subsequent offsets are inline with 0th
+    // check that the length of the text matches the offsets
     const auditInternal = (
         newInternal: AnnotationBodyLocationMetaData[]
     ): AnnotationBodyLocationMetaData[] => {
@@ -310,17 +310,42 @@ const MergeAnnotations: React.FC<Props> = ({
                         ),
                     }
                 }
+            } else {
+                const isStartOffsetFlushWithLastEndOffset =
+                    audited[i - 1].offsets.endOffset ===
+                    internal.offsets.startOffset // offsets are not inclusive
+                if (!isStartOffsetFlushWithLastEndOffset) {
+                    auditedInternal = {
+                        ...auditedInternal,
+                        offsets: {
+                            startOffset: audited[i - 1].offsets.endOffset,
+                            endOffset:
+                                audited[i - 1].offsets.endOffset +
+                                auditedInternal.content.length,
+                        },
+                    }
+                }
             }
             const isLenOfContentSameAsOffsetDiff =
                 checkOffsetsEqualTextLength(auditedInternal)
             if (!isLenOfContentSameAsOffsetDiff) {
-                // if(Array.isArray(auditedInternal.offsets)) {
-                //     let newOffsets = []
-                //     auditedInternal.offsets.forEach((off) => {
-                //         let diff =
-                //     })
-                // }
+                auditedInternal = {
+                    ...auditedInternal,
+                    offsets: {
+                        startOffset: auditedInternal.offsets.startOffset,
+                        endOffset:
+                            auditedInternal.offsets.startOffset +
+                            auditedInternal.content.length,
+                    },
+                }
             }
+            // if(Array.isArray(auditedInternal.offsets)) {
+            //     let newOffsets = []
+            //     auditedInternal.offsets.forEach((off) => {
+            //         let diff =
+            //     })
+            // }
+
             audited.push(auditedInternal)
             // return auditedInternal
         })
@@ -627,6 +652,10 @@ const MergeAnnotations: React.FC<Props> = ({
         sortedList: AnnotationBodyLocationMetaData[],
         operation: string = 'adding'
     ): AnnotationBodyLocationMetaData[] => {
+        if (!sortedList.length) {
+            return []
+        }
+        console.log('sel?', sel)
         const firstIndexToMove = sortedList.findIndex(
             (s) =>
                 // Array.isArray(s.offsets)
@@ -921,7 +950,10 @@ const MergeAnnotations: React.FC<Props> = ({
                         : null
                 console.log('surroundingMetadaata', surroundingMetadata)
                 let baseInternal = null
-                let copy = null
+                let partitionA = null
+                let partitionB = null
+                let didPartition = false
+                let didAddToText = false
                 if (
                     surroundingMetadata &&
                     surroundingMetadata.otherInformation &&
@@ -931,6 +963,7 @@ const MergeAnnotations: React.FC<Props> = ({
                         internalAnnotationBodyRepresentation[
                             surroundingMetadata.index
                         ]
+                    didAddToText = true
                     console.log('adding to this', objWereAddingTo)
                     baseInternal = {
                         ...objWereAddingTo,
@@ -944,12 +977,11 @@ const MergeAnnotations: React.FC<Props> = ({
                                 getEndOffset(objWereAddingTo) +
                                 userAddition.content.length,
                         },
-                        content:
-                            surroundingMetadata.insertionType ===
-                            InsertionType.Before
-                                ? userAddition.content + objWereAddingTo.content
-                                : objWereAddingTo.content +
-                                  userAddition.content,
+                        content: mergeContentStrings(
+                            objWereAddingTo,
+                            userAddition,
+                            surroundingMetadata
+                        ),
                     }
                     // baseInternal = copy
                     console.log('was i high??', baseInternal)
@@ -970,6 +1002,7 @@ const MergeAnnotations: React.FC<Props> = ({
                         surroundingMetadata.insertionType ===
                             InsertionType.Inside
                     ) {
+                        didPartition = true
                         const objWerePartitioning =
                             internalAnnotationBodyRepresentation[
                                 surroundingMetadata.index
@@ -981,17 +1014,8 @@ const MergeAnnotations: React.FC<Props> = ({
                             'useraddition??',
                             userAddition
                         )
-                        const offsetWhichContainsUserAddition = Array.isArray(
+                        const offsetWhichContainsUserAddition =
                             objWerePartitioning.offsets
-                        )
-                            ? objWerePartitioning.offsets.find(
-                                  (off) =>
-                                      off.startOffset <=
-                                          userAddition.offsets.startOffset &&
-                                      off.endOffset >=
-                                          userAddition.offsets.endOffset
-                              )
-                            : objWerePartitioning.offsets
                         const partitionedOffsets = [
                             {
                                 startOffset:
@@ -1004,81 +1028,143 @@ const MergeAnnotations: React.FC<Props> = ({
                                     offsetWhichContainsUserAddition.endOffset,
                             },
                         ]
-                        const newOffsets = Array.isArray(
-                            objWerePartitioning.offsets
-                        )
-                            ? objWerePartitioning.offsets
-                                  .filter(
-                                      (off) =>
-                                          !offsetsAreEqual(
-                                              off,
-                                              offsetWhichContainsUserAddition
-                                          )
-                                  )
-                                  .concat(partitionedOffsets)
-                            : partitionedOffsets
-                        copy = {
+
+                        partitionA = {
                             ...objWerePartitioning,
-                            offsets: newOffsets,
-                            // Array.isArray(objWerePartitioning.offsets)
-                            //     ? objWerePartitioning.offsets.concat(
-                            //           userAddition.offsets
-                            //       )
-                            //     : [
-                            //           objWerePartitioning.offsets,
-                            //           userAddition.offsets,
-                            //       ],
+                            annoId:
+                                objWerePartitioning.annoId +
+                                '-' +
+                                new Date().getTime(),
+                            offsets: partitionedOffsets[0],
+                            content: objWerePartitioning.content.substring(
+                                0,
+                                partitionedOffsets[0].endOffset -
+                                    partitionedOffsets[0].startOffset
+                            ),
+                        }
+                        partitionB = {
+                            ...objWerePartitioning,
+                            annoId:
+                                objWerePartitioning.annoId +
+                                '-' +
+                                new Date().getTime(),
+                            offsets: partitionedOffsets[1],
+                            content: objWerePartitioning.content.substring(
+                                partitionedOffsets[1].startOffset -
+                                    userAddition.content.length -
+                                    partitionedOffsets[0].startOffset,
+                                partitionedOffsets[1].endOffset -
+                                    partitionedOffsets[0].startOffset
+                            ),
                         }
                     }
                 }
-                // console.log(
-                //     'copy',
-                //     copy,
-                //     'user addition',
-                //     userAddition,
-                //     'metadata',
-                //     surroundingMetadata
-                // )
-                // const list = internalAnnotationBodyRepresentation
-                //     .filter((a) => {
-                //         copy !== null ? a.annoId !== copy.annoId : true
-                //     })
-                //     .concat(copy !== null ? copy : [])
-                //     .sort((a, b) => a.timestamp - b.timestamp)
+
                 let updatedList = updateOffsets(
                     baseInternal.offsets,
                     internalAnnotationBodyRepresentation
                 )
-                if (copy) {
+                if (didPartition) {
                     updatedList = internalAnnotationBodyRepresentation
-                        .filter((a) => a.annoId !== copy.annoId)
-                        .concat(copy)
+                        .map((internal, i) =>
+                            surroundingMetadata.index === i
+                                ? partitionA
+                                : internal
+                        )
+                        .concat(partitionB)
                 }
-                let didSwap = false // i hate this code so much
-                updatedList = updatedList.map((a) => {
-                    if (a.annoId === baseInternal.annoId) {
-                        didSwap = true
-                        return baseInternal
-                    }
-                    return a
-                })
+
+                if (didAddToText) {
+                    updatedList = updatedList.map((internal, i) =>
+                        surroundingMetadata.index === i
+                            ? baseInternal
+                            : internal
+                    )
+                }
+
                 console.log('updatedList???', updatedList)
                 setInternalAnnotationBodyRepresentation(
-                    didSwap ? updatedList : updatedList.concat(baseInternal)
+                    didAddToText
+                        ? updatedList
+                        : updatedList.concat(baseInternal)
                 )
                 break
             }
             case 'githubUsernames': {
-                updateInternalRepresentationGithubUsernames(obj as string)
+                updateInternalRepresentationGithubUsernames()
                 break
             }
         }
     }
 
+    const mergeContentStrings = (
+        objWereModifying: AnnotationBodyLocationMetaData,
+        userAddition: UserAddedText,
+        surroundingMetadata: SurroundingMetadata
+    ): string => {
+        let str = ''
+        switch (surroundingMetadata.insertionType) {
+            case InsertionType.Before: {
+                str = userAddition.content + objWereModifying.content
+                break
+            }
+            case InsertionType.Inside: {
+                const position =
+                    userAddition.offsets.startOffset -
+                    objWereModifying.offsets.startOffset
+                str =
+                    objWereModifying.content.substring(0, position) +
+                    userAddition.content +
+                    objWereModifying.content.substring(position)
+                break
+            }
+            case InsertionType.After: {
+                str = objWereModifying.content + userAddition.content
+                break
+            }
+        }
+        return str
+    }
+
     const updateInternalRepresentationGithubUsernames = (
-        list: string,
+        // list: string,
         internalRepresentationList?: AnnotationBodyLocationMetaData[]
     ): void => {
+        const usernameList = internalRepresentationList
+            ? [
+                  ...new Set([
+                      ...internalAnnotationBodyRepresentation
+                          .filter(
+                              (a) =>
+                                  a.githubUsername.length > 0 &&
+                                  a.source !==
+                                      AnnotationBodySources.AuthorNameList
+                          )
+                          .map((i) => i.githubUsername),
+                      ...internalRepresentationList
+                          .filter(
+                              (a) =>
+                                  a.githubUsername.length > 0 &&
+                                  a.source !==
+                                      AnnotationBodySources.AuthorNameList
+                          )
+                          .map((i) => i.githubUsername),
+                  ]),
+              ]
+            : [
+                  ...new Set([
+                      ...internalAnnotationBodyRepresentation
+                          .filter(
+                              (a) =>
+                                  a.githubUsername.length > 0 &&
+                                  a.source !==
+                                      AnnotationBodySources.AuthorNameList
+                          )
+                          .map((i) => i.githubUsername),
+                  ]),
+              ]
+
+        const list = generateList(usernameList)
         // const list = obj
         const internalRepresentation = internalRepresentationList
             ? internalRepresentationList.filter(
@@ -1117,41 +1203,16 @@ const MergeAnnotations: React.FC<Props> = ({
         matchingObject: AnnotationBodyLocationMetaData,
         sel: Selection
     ): InsertionType => {
-        if (Array.isArray(matchingObject.offsets)) {
-            let type: InsertionType
-            const didFind = matchingObject.offsets.some((off) => {
-                if (off.startOffset === sel.endOffset) {
-                    type = InsertionType.Before
-                    return true
-                } else if (off.endOffset === sel.startOffset) {
-                    type = InsertionType.After
-                    return true
-                } else if (
-                    off.startOffset < sel.startOffset &&
-                    off.endOffset > sel.endOffset
-                ) {
-                    type = InsertionType.Inside
-                    return true
-                }
-                return false
-            })
-            if (!didFind) {
-                console.error('did not find')
-            } else {
-                return type
-            }
-        } else {
-            const off = matchingObject.offsets
-            if (off.startOffset === sel.endOffset) {
-                return InsertionType.Before
-            } else if (off.endOffset === sel.startOffset) {
-                return InsertionType.After
-            } else if (
-                off.startOffset < sel.startOffset &&
-                off.endOffset > sel.endOffset
-            ) {
-                return InsertionType.Inside
-            }
+        const off = matchingObject.offsets
+        if (off.startOffset === sel.endOffset) {
+            return InsertionType.Before
+        } else if (off.endOffset === sel.startOffset) {
+            return InsertionType.After
+        } else if (
+            off.startOffset <= sel.startOffset &&
+            off.endOffset >= sel.endOffset
+        ) {
+            return InsertionType.Inside
         }
     }
 
@@ -1171,27 +1232,16 @@ const MergeAnnotations: React.FC<Props> = ({
             })
             .find((m) => {
                 console.log('m!!!!!!!!!!!', m)
-                if (Array.isArray(m.offsets)) {
-                    return (
-                        isUserAddedText(m) &&
-                        m.offsets.some((off) => {
-                            return (
-                                off.startOffset ===
-                                    userAddition.offsets.endOffset ||
-                                off.endOffset ===
-                                    userAddition.offsets.startOffset
-                            )
-                        })
-                    )
-                } else {
-                    const startOffset = getStartOffset(m)
-                    const endOffset = getEndOffset(m)
-                    return (
-                        isUserAddedText(m) &&
-                        (startOffset === userAddition.offsets.endOffset ||
-                            endOffset === userAddition.offsets.startOffset)
-                    )
-                }
+
+                const startOffset = getStartOffset(m)
+                const endOffset = getEndOffset(m)
+                return (
+                    isUserAddedText(m) &&
+                    (startOffset === userAddition.offsets.endOffset ||
+                        endOffset === userAddition.offsets.startOffset ||
+                        (startOffset <= userAddition.offsets.startOffset &&
+                            endOffset >= userAddition.offsets.endOffset))
+                )
             })
         console.log('isMatching????', isMatchingOtherUserText)
 
@@ -1434,42 +1484,34 @@ const MergeAnnotations: React.FC<Props> = ({
         const usernameList = [
             ...new Set([
                 ...internalAnnotationBodyRepresentation
-                    .filter((a) => a.githubUsername.length > 0)
+                    .filter(
+                        (a) =>
+                            a.githubUsername.length > 0 &&
+                            a.source !== AnnotationBodySources.AuthorNameList
+                    )
                     .map((i) => i.githubUsername),
-                ...newList.map((i) => i.githubUsername),
+                ...newList
+                    .filter(
+                        (a) =>
+                            a.githubUsername.length > 0 &&
+                            a.source !== AnnotationBodySources.AuthorNameList
+                    )
+                    .map((i) => i.githubUsername),
             ]),
         ]
+        console.log('usernameList', usernameList)
         updateInternalRepresentationGithubUsernames(
-            generateList(usernameList),
+            // generateList(usernameList),
             newList
         )
         // setInternalAnnotationBodyRepresentation(newList)
     }
 
     const removeAllAnnotationMetadata = (): void => {
-        const newList = annotations
-            .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
-            .reduce(
-                (
-                    prevValue: AnnotationBodyLocationMetaData[],
-                    currAnno: Annotation
-                ) => {
-                    const oldAnno = internalAnnotationBodyRepresentation.find(
-                        (i) => i.annoId === currAnno.id
-                    )
-                    if (!oldAnno) {
-                        return prevValue
-                    }
-                    const newList = updateOffsets(
-                        getInternalOffsets(oldAnno),
-                        prevValue,
-                        'removing'
-                    )
-                    return newList.filter((o) => o.annoId !== currAnno.id)
-                },
-                internalAnnotationBodyRepresentation
-            )
-        console.log('im a reduce pro!!!!!!!!! now', newList)
+        const newList = internalAnnotationBodyRepresentation.filter(
+            (i) => i.source !== AnnotationBodySources.Annotation
+        )
+
         setInternalAnnotationBodyRepresentation(newList)
     }
 
@@ -1601,26 +1643,39 @@ const MergeAnnotations: React.FC<Props> = ({
         selectedAnnotation: string,
         alreadyBuiltAnnotationContent?: string
     ) => {
-        const newAnnotationContent = alreadyBuiltAnnotationContent
-            ? alreadyBuiltAnnotationContent
-            : generateNewAnnotationContent(
-                  githubUsername,
-                  annoId,
-                  selectedAnnotation
-              )
-        console.log('new content', newAnnotationContent)
-        setNewAnnotation(
-            buildAnnotation({
-                ...newAnnotation,
-                annotation: newAnnotationContent.trim(),
-            })
-        )
+        const newInternalRepresentation =
+            createAnnotationInternalRepresentation(
+                annotations.find((a) => a.id === annoId)
+            )
+        console.log('newInternalRepresentation', newInternalRepresentation)
+        const newList = updateOffsets(
+            getInternalOffsets(newInternalRepresentation),
+            internalAnnotationBodyRepresentation
+        ).concat(newInternalRepresentation)
+        console.log('wha', newList)
+
+        setInternalAnnotationBodyRepresentation(newList)
+        updateInternalRepresentationGithubUsernames(newList)
+        // const newAnnotationContent = alreadyBuiltAnnotationContent
+        //     ? alreadyBuiltAnnotationContent
+        //     : generateNewAnnotationContent(
+        //           githubUsername,
+        //           annoId,
+        //           selectedAnnotation
+        //       )
+        // console.log('new content', newAnnotationContent)
+        // setNewAnnotation(
+        //     buildAnnotation({
+        //         ...newAnnotation,
+        //         annotation: newAnnotationContent.trim(),
+        //     })
+        // )
 
         setAnnotationsActuallyMerged(
             new Map(
                 annotationsActuallyMerged.set(annoId, {
                     ...annotationsActuallyMerged.get(annoId),
-                    annotation: newAnnotationContent.trim(),
+                    annotation: newInternalRepresentation.content.trim(),
                 })
             )
         )
@@ -1653,25 +1708,30 @@ const MergeAnnotations: React.FC<Props> = ({
         githubUsername: string,
         annoId: string
     ) => {
-        const newAnnotationContent =
-            generateRemovedAnnotationContent(selectedAnnotation)
-        const authorList = handleUpdateGithubUsernames(
-            githubUsername,
-            annoId,
-            'remove',
-            'annotation'
+        const updatedList = internalAnnotationBodyRepresentation.filter(
+            (i) => !i.annoId.includes(annoId)
         )
-        const finalStr = `${newAnnotationContent} ${authorList}`.trim()
-        setNewAnnotation(
-            buildAnnotation({
-                ...newAnnotation,
-                annotation: finalStr,
-            })
-        )
-        console.log('set anno actually merged remove anno content', {
-            ...annotationsActuallyMerged.get(annoId),
-            annotation: '',
-        })
+        setInternalAnnotationBodyRepresentation(updatedList)
+        updateInternalRepresentationGithubUsernames(updatedList)
+        // const newAnnotationContent =
+        //     generateRemovedAnnotationContent(selectedAnnotation)
+        // const authorList = handleUpdateGithubUsernames(
+        //     githubUsername,
+        //     annoId,
+        //     'remove',
+        //     'annotation'
+        // )
+        // const finalStr = `${newAnnotationContent} ${authorList}`.trim()
+        // setNewAnnotation(
+        //     buildAnnotation({
+        //         ...newAnnotation,
+        //         annotation: finalStr,
+        //     })
+        // )
+        // console.log('set anno actually merged remove anno content', {
+        //     ...annotationsActuallyMerged.get(annoId),
+        //     annotation: '',
+        // })
         setAnnotationsActuallyMerged(
             new Map(
                 annotationsActuallyMerged.set(annoId, {

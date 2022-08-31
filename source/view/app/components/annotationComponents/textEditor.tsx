@@ -62,9 +62,32 @@ const TextEditor: React.FC<Props> = ({
         null
     )
 
+    const [clipboardText, _setClipboardText] = React.useState<string>('')
+
     React.useEffect(() => {
         setText(content)
     }, [content])
+
+    React.useEffect(() => {
+        window.document.addEventListener('keydown', setClipboardText)
+        return () => {
+            window.document.removeEventListener('keydown', setClipboardText)
+        }
+    }, [])
+
+    const setClipboardText = (e: Event): void => {
+        const keyboardEvent = e as KeyboardEvent
+        if (
+            window &&
+            (keyboardEvent.code === 'KeyC' || keyboardEvent.code === 'KeyX') &&
+            keyboardEvent.ctrlKey
+        ) {
+            const copiedText: string | undefined = window
+                .getSelection()
+                ?.toString()
+            if (copiedText) _setClipboardText(copiedText)
+        }
+    }
     // TODO: Change this theme
     const theme = createTheme({
         palette: {
@@ -121,7 +144,12 @@ const TextEditor: React.FC<Props> = ({
         )
         if (typeof text === 'string') {
             const textArea = e.target as HTMLTextAreaElement
-            const userText = (e.nativeEvent as InputEvent).data
+            const nativeEvent = e.nativeEvent as InputEvent
+            const userText =
+                nativeEvent.inputType == 'insertFromPaste'
+                    ? clipboardText
+                    : (e.nativeEvent as InputEvent).data
+
             const selection: Selection = {
                 startOffset: textArea.selectionStart - userText.length, // REALLY stupid im so mad holy shit
                 endOffset: textArea.selectionEnd, // slightly less stupid

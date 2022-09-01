@@ -19,10 +19,11 @@ import {
 import styles from '../styles/annotation.module.css'
 import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
 import { Annotation, Reply, Type } from '../../../constants/constants'
-import AdamiteButton from './annotationComponents/AdamiteButton'
+import catseyeButton from './annotationComponents/CatseyeButton'
 import AnchorIcon from '@mui/icons-material/Anchor'
 import ReplyContainer from './annotationComponents/replyContainer'
 import ReactAnnotation from './annotation'
+import CatseyeButton from './annotationComponents/CatseyeButton'
 
 interface SynProps {
     html: string
@@ -32,7 +33,7 @@ const Syntax: React.FC<SynProps> = ({ html }) => {
     return <code dangerouslySetInnerHTML={{ __html: html }}></code>
 }
 interface Props {
-    selection: string 
+    selection: string
     vscode: any
     notifyDone: () => void
 }
@@ -140,7 +141,7 @@ const NewAnnotation: React.FC<Props> = ({
                                     currentTypes={types}
                                     editTypes={updateAnnotationTypes}
                                 />
-                                <AdamiteButton
+                                <CatseyeButton
                                     buttonClicked={addAnchor}
                                     name="Add Anchor"
                                     icon={<AnchorIcon fontSize="small" />}

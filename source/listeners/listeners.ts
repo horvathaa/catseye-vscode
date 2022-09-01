@@ -98,7 +98,7 @@ export const handleChangeVisibleTextEditors = (
     }
 }
 
-// update Adamite pane such that annotations are in the correct project and file lists
+// update catseye pane such that annotations are in the correct project and file lists
 export const handleChangeActiveTextEditor = (
     TextEditor: vscode.TextEditor | undefined
 ) => {
@@ -452,7 +452,7 @@ export const handleDidChangeTextEditorSelection = async (
         let createAnnotationWebviewLink: vscode.MarkdownString =
             new vscode.MarkdownString()
         createAnnotationWebviewLink.isTrusted = true
-        const create = vscode.Uri.parse(`command:adamite.addAnnotation`)
+        const create = vscode.Uri.parse(`command:catseye.addAnnotation`)
         createAnnotationWebviewLink.appendMarkdown(
             `[Create Annotation](${create})`
         )

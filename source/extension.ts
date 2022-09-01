@@ -43,7 +43,7 @@ export let currentColorTheme: string = vscode.workspace.getConfiguration(
     vscode.workspace.workspaceFolders &&
         vscode.workspace.workspaceFolders[0].uri
 ).colorTheme
-export let adamiteLog = vscode.window.createOutputChannel('Adamite')
+export let catseyeLog = vscode.window.createOutputChannel('catseye')
 export let currentGitHubProject: string = '' // also need to add call to update this when user switches projects
 export let currentGitHubCommit: string = ''
 export let changes: ChangeEvent[] = []
@@ -190,7 +190,7 @@ export const setEventsToTransmitOnSave = (
 // this method is called when the extension is activated
 // the extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-    adamiteLog.appendLine('Starting activate')
+    catseyeLog.appendLine('Starting activate')
     // initialize authentication and listeners for annotations
     commands.init()
     vscode.window.activeTextEditor &&
@@ -240,35 +240,35 @@ export function activate(context: vscode.ExtensionContext) {
     /*************************************************************************************/
 
     let createViewDisposable = vscode.commands.registerCommand(
-        'adamite.launch',
+        'catseye.launch',
         () => commands.createView(context)
     )
     let annotateDisposable = vscode.commands.registerCommand(
-        'adamite.addAnnotation',
+        'catseye.addAnnotation',
         () => commands.createNewAnnotation()
     )
     let annotateFileDisposable = vscode.commands.registerCommand(
-        'adamite.addFileAnnotation',
+        'catseye.addFileAnnotation',
         (context: any) => commands.createFileAnnotation(context)
     )
     let highlightDisposable = vscode.commands.registerCommand(
-        'adamite.addHighlight',
+        'catseye.addHighlight',
         () => commands.addNewHighlight()
     )
     let selectedDisposable = vscode.commands.registerCommand(
-        'adamite.addSelectedAnnotation',
+        'catseye.addSelectedAnnotation',
         () => commands.addNewSelectedAnnotation()
     )
     let navigateForwardSelectedDisposable = vscode.commands.registerCommand(
-        'adamite.navigateForward',
+        'catseye.navigateForward',
         () => commands.navigateSelectedAnnotations('forward')
     )
     let navigateBackSelectedDisposable = vscode.commands.registerCommand(
-        'adamite.navigateBack',
+        'catseye.navigateBack',
         () => commands.navigateSelectedAnnotations('back')
     )
     let scrollDisposable = vscode.commands.registerCommand(
-        'adamite.showAnnoInWebview',
+        'catseye.showAnnoInWebview',
         (id) => commands.showAnnoInWebview(id)
     )
 
@@ -281,7 +281,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.executeCommand(
         'setContext',
-        'adamite.showAnchorMenuOptions',
+        'catseye.showAnchorMenuOptions',
         true
     )
 

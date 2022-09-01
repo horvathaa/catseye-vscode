@@ -44,7 +44,7 @@ import {
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CollapsedCardHeader from './annotationComponents/annotationCardHeader'
 import EditIcon from '@mui/icons-material/Edit'
-import AdamiteButton from './annotationComponents/AdamiteButton'
+import CatseyeButton from './annotationComponents/CatseyeButton'
 import { useMediaQuery } from '@material-ui/core'
 // import AnnotationList from './annotationList'
 
@@ -537,7 +537,7 @@ const ReactAnnotation: React.FC<Props> = ({
                                                     updateAnnotationTypes
                                                 }
                                             />
-                                            <AdamiteButton
+                                            <CatseyeButton
                                                 buttonClicked={(
                                                     e: React.SyntheticEvent
                                                 ) => {
@@ -552,15 +552,15 @@ const ReactAnnotation: React.FC<Props> = ({
                                             />
                                         </div>
                                         {anno.annotation.trim().length > 0 ? (
-                                            <div
+                                            <pre
                                                 className={
                                                     styles[
                                                         'AnnoContentContainer'
                                                     ]
                                                 }
                                             >
-                                                {anno.annotation}
-                                            </div>
+                                                {anno.annotation.trim()}
+                                            </pre>
                                         ) : null}
                                     </div>
                                 )}

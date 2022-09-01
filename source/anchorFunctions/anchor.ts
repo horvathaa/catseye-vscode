@@ -384,7 +384,7 @@ export const computeVsCodeRangeFromOffset = (
     )
 }
 
-// Helper function to take an anchor object (Adamite's representation of an anchor + its metadata) and create a VS Code range object
+// Helper function to take an anchor object (catseye's representation of an anchor + its metadata) and create a VS Code range object
 // from the anchor point
 export const createRangeFromAnchorObject = (
     anchor: AnchorObject
@@ -770,7 +770,7 @@ const createDecorationOptions = (
             )
         )
         const showAnnoInWebviewCommand = vscode.Uri.parse(
-            `command:adamite.showAnnoInWebview?${encodeURIComponent(
+            `command:catseye.showAnnoInWebview?${encodeURIComponent(
                 JSON.stringify(r.annotationId)
             )}`
         )

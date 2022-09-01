@@ -7,14 +7,13 @@
  */
 import * as React from 'react'
 import { Reply as ReactReply } from './reply' // reply component
-import { collapseExpandToggle, showHideLine } from '../../utils/viewUtilsTsx'
-import { Reply } from '../../../../constants/constants' // reply data model
+import { showHideLine } from '../../utils/viewUtilsTsx'
+import { Reply, ReplyMergeInformation } from '../../../../constants/constants' // reply data model
 import styles from '../../styles/annotation.module.css'
-import { Checkbox } from '@mui/material'
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import KeyboardDoubleArrowUpIcon from '@mui/icons-material/KeyboardDoubleArrowUp'
-import KeyboardDoubleArrowDownIcon from '@mui/icons-material/KeyboardDoubleArrowDown'
+
 interface Props {
     replying: boolean
     replies: Reply[]
@@ -26,6 +25,7 @@ interface Props {
     focus?: boolean
     showCheckbox?: boolean
     handleSelectReply?: (id: string, operation: string, level?: string) => void
+    mergeInformation?: ReplyMergeInformation[]
 }
 
 const MAX_NUM_REPLIES = 3
@@ -41,6 +41,7 @@ const ReplyContainer: React.FC<Props> = ({
     focus = true,
     showCheckbox = false,
     handleSelectReply,
+    mergeInformation,
 }) => {
     const [showMoreReplies, setShowMoreReplies] = React.useState<boolean>(false)
     const activeReplies = replies.filter((r) => !r.deleted)
@@ -50,6 +51,18 @@ const ReplyContainer: React.FC<Props> = ({
     const [hasBeenSelected, setHasBeenSelected] = React.useState<
         Map<string, boolean>
     >(new Map())
+
+    React.useEffect(() => {
+        let map = new Map()
+        if (mergeInformation) {
+            mergeInformation.forEach((r) => {
+                // if the reply appears in the mergeInformation, it must be in use
+                // which means it has been selected
+                map.set(r.id, true)
+            })
+        }
+        setHasBeenSelected(map)
+    }, [mergeInformation])
 
     const createReply = (reply: Reply): void => {
         submitReply && submitReply(reply)
@@ -61,6 +74,7 @@ const ReplyContainer: React.FC<Props> = ({
             return (
                 <div className={styles['ReplyArrowBox']}>
                     <ArrowDownwardIcon
+                        style={{ cursor: 'pointer' }}
                         onClick={() => {
                             setHasBeenSelected(
                                 new Map(hasBeenSelected.set(r.id, false))
@@ -74,6 +88,7 @@ const ReplyContainer: React.FC<Props> = ({
             return (
                 <div className={styles['ReplyArrowBox']}>
                     <KeyboardDoubleArrowUpIcon
+                        style={{ cursor: 'pointer' }}
                         onClick={() => {
                             setHasBeenSelected(
                                 new Map(hasBeenSelected.set(r.id, true))
@@ -82,6 +97,7 @@ const ReplyContainer: React.FC<Props> = ({
                         }}
                     />
                     <ArrowUpwardIcon
+                        style={{ cursor: 'pointer' }}
                         onClick={() => {
                             setHasBeenSelected(
                                 new Map(hasBeenSelected.set(r.id, true))
@@ -115,17 +131,7 @@ const ReplyContainer: React.FC<Props> = ({
                                       flexDirection: 'row',
                                   }}
                               >
-                                  {showCheckbox &&
-                                      //   <Checkbox
-                                      //       // Needs work
-                                      //       onChange={() =>
-                                      //           handleSelectReply(r.id)
-                                      //       }
-                                      //       inputProps={{
-                                      //           'aria-label': 'controlled',
-                                      //       }}
-                                      //   />
-                                      showSelection(r)}
+                                  {showCheckbox && showSelection(r)}
                                   <ReactReply
                                       key={'reply-' + r.id}
                                       id={r.id}

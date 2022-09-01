@@ -1,7 +1,7 @@
 /*
  *
  * viewHelper.ts
- * Functions for handling when something happens in the adamite webview panel.
+ * Functions for handling when something happens in the catseye webview panel.
  * These are called in commands.ts in the listener we create when we create ViewLoader.
  *
  */
@@ -72,8 +72,8 @@ import {
 } from '../firebase/functions/functions'
 import { v4 as uuidv4 } from 'uuid'
 
-// Opens and reloads the webview -- this is invoked when the user uses the "Adamite: Launch Adamite" command (ctrl/cmd + shift + A).
-export const handleAdamiteWebviewLaunch = (): void => {
+// Opens and reloads the webview -- this is invoked when the user uses the "catseye: Launch catseye" command (ctrl/cmd + shift + A).
+export const handlecatseyeWebviewLaunch = (): void => {
     const currFilename: string | undefined =
         vscode.window.activeTextEditor?.document.uri.path.toString()
     view?._panel?.reveal()
@@ -93,7 +93,7 @@ export const handleAdamiteWebviewLaunch = (): void => {
     })
 }
 
-// Called when the user copies text from the Adamite panel
+// Called when the user copies text from the catseye panel
 export const handleCopyText = (text: string): void => {
     vscode.env.clipboard.writeText(text)
     setStoredCopyText(text)
@@ -562,7 +562,7 @@ export const handleCancelAnnotation = (): void => {
 }
 
 // NOT USED ANYMORE
-// Previously was called  when the user signed in to the adamite pane,
+// Previously was called  when the user signed in to the catseye pane,
 // since we moved to the GitHub auth, this isn't used anymore
 export const handleSignInWithEmailAndPassword = async (
     email: string,
@@ -573,7 +573,7 @@ export const handleSignInWithEmailAndPassword = async (
             .auth()
             .signInWithEmailAndPassword(email, password)
         user ? await initializeAnnotations(user) : setAnnotationList([])
-        handleAdamiteWebviewLaunch()
+        handlecatseyeWebviewLaunch()
     } catch (e) {
         console.error(e)
         view?.logIn()
@@ -654,7 +654,11 @@ export const handleMergeAnnotation = (
 ): void => {
     const newAnnotationId = uuidv4()
     const anchorsCopy = anno.anchors.map((a) => {
-        return { ...a, parentId: newAnnotationId, anchorId: uuidv4() }
+        return {
+            ...a,
+            parentId: newAnnotationId,
+            anchorId: uuidv4(),
+        }
     })
     const projectName = getProjectName()
     const newAnnotation: Annotation = buildAnnotation({
@@ -698,7 +702,6 @@ export const handleMergeAnnotation = (
         // ...mergedAnnotations,
     ])
     const newEvent = createEvent(mergedAnnotations, EventType.merge)
-    console.log('evento', newEvent)
     emitEvent(newEvent)
     view?.updateDisplay(annotationList)
     vscode.window.visibleTextEditors.forEach((t) => {

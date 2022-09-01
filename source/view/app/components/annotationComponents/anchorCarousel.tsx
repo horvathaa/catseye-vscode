@@ -19,7 +19,7 @@ import {
     iconColor,
     vscodeBorderColor,
 } from '../../styles/vscodeStyles'
-import AdamiteButton from './AdamiteButton'
+import catseyeButton from './catseyeButton'
 
 interface Props {
     priorVersions?: AnchorOnCommit[]

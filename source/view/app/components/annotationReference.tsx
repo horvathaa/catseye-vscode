@@ -268,19 +268,11 @@ const AnnotationReference: React.FC<Props> = ({
                             <ArrowDownwardIcon
                                 onClick={bringBackAnnotation}
                                 style={{ cursor: 'pointer' }}
-                                // className={cn({
-                                //     [anchorStyles['disabled']]:
-                                //         hasAnnotationTextBeenSelected,
-                                // })}
                             />
                         ) : (
                             <ArrowUpwardIcon
                                 onClick={elevateAnnotation}
                                 style={{ cursor: 'pointer' }}
-                                // className={cn({
-                                //     [anchorStyles['disabled']]:
-                                //         hasAnnotationTextBeenSelected,
-                                // })}
                             />
                         )}
 
@@ -307,6 +299,11 @@ const AnnotationReference: React.FC<Props> = ({
                     replies={annotation.replies}
                     cancelReply={() => {}}
                     focus={false}
+                    mergeInformation={
+                        mergeInformation?.replies
+                            ? mergeInformation.replies
+                            : []
+                    }
                 />
                 {/* </CardContent>
                 </Card>

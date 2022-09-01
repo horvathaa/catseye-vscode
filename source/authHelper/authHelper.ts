@@ -12,7 +12,7 @@ import {
     setAnnotationList,
     setGitInfo,
     setUser,
-    adamiteLog,
+    catseyeLog,
     view,
     annotationList,
 } from '../extension'
@@ -48,10 +48,10 @@ export const initializeAuth = async () => {
             authSessionOptions
         )
     } catch (e) {
-        adamiteLog.appendLine('Unable to create VS Code GitHub auth session')
+        catseyeLog.appendLine('Unable to create VS Code GitHub auth session')
         throw e
     }
-    adamiteLog.appendLine('creating session')
+    catseyeLog.appendLine('creating session')
 
     if (session) {
         // get user auth token and account info
@@ -67,17 +67,17 @@ export const initializeAuth = async () => {
                     process.env.FB_SU_PASSWORD
                 )
         } catch (e) {
-            adamiteLog.appendLine('Could not sign in to Firebase with SU')
+            catseyeLog.appendLine('Could not sign in to Firebase with SU')
             console.error(e)
             return
         }
         try {
             // using accessToken and user ID, query FireStore for matching user and token
             result = await getUserGithubData({ id: id, oauth: accessToken })
-            adamiteLog.appendLine('Got user GitHub Data with Cloud Function')
+            catseyeLog.appendLine('Got user GitHub Data with Cloud Function')
         } catch (e) {
             console.error(e)
-            adamiteLog.appendLine(
+            catseyeLog.appendLine(
                 'Could not get user GitHub data from Firebase'
             )
             await fbSignOut()
@@ -91,7 +91,7 @@ export const initializeAuth = async () => {
         try {
             // sign in to FireStore with returned data
             const user = await signInWithGithubCredential(result?.data)
-            adamiteLog.appendLine(
+            catseyeLog.appendLine(
                 'Signed in to Firebase with GitHub auth credentials'
             )
             setUser(user)
@@ -113,11 +113,11 @@ export const initializeAuth = async () => {
             //     operationMessage = await setUserGithubAccount({ uid: user.uid, username: account.label });
             // }
             // catch(e) {
-            //     adamiteLog.appendLine('Could not set GitHub data');
+            //     catseyeLog.appendLine('Could not set GitHub data');
             //     console.error(e);
             // }
         } catch (e) {
-            adamiteLog.appendLine(
+            catseyeLog.appendLine(
                 'Could not sign in to Firebase with GitHub data'
             )
             console.error(e)

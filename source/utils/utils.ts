@@ -39,7 +39,7 @@ import {
     setAnnotationList,
     outOfDateAnnotations,
     deletedAnnotations,
-    adamiteLog,
+    catseyeLog,
     setSelectedAnnotationsNavigations,
     currentColorTheme,
     activeEditor,

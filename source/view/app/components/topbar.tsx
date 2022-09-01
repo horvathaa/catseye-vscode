@@ -1,7 +1,7 @@
 /*
  *
  * topBar.tsx
- * Component at the top of the Adamite panel -- includes search bar and sandwich menu
+ * Component at the top of the catseye panel -- includes search bar and sandwich menu
  *
  */
 import * as React from 'react'

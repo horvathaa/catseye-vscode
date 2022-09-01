@@ -9,7 +9,7 @@ import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import styles from '../../styles/annotation.module.css'
 import { Tooltip } from '@material-ui/core'
-import AdamiteButton from './AdamiteButton'
+import CatseyeButton from './CatseyeButton'
 
 interface Props {
     editAnnotation: () => void
@@ -22,12 +22,12 @@ const AuthorOperationButtons: React.FC<Props> = ({
 }) => {
     return (
         <React.Fragment>
-            <AdamiteButton
+            <CatseyeButton
                 buttonClicked={editAnnotation}
                 name="Edit"
                 icon={<EditIcon fontSize="small" />}
             />
-            <AdamiteButton
+            <CatseyeButton
                 buttonClicked={deleteAnnotation}
                 name="Delete"
                 icon={<DeleteIcon fontSize="small" />}

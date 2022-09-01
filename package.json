@@ -1,6 +1,6 @@
 {
-    "name": "adamite",
-    "displayName": "Adamite",
+    "name": "catseye",
+    "displayName": "Catseye",
     "description": "Annotate your code for lightweight information tracking, and for sharing notes with collaborators!",
     "author": {
         "name": "Amber Horvath",
@@ -11,14 +11,14 @@
         "url": "https://github.com/horvathaa/adamite-vscode"
     },
     "publisher": "ahorvath",
-    "version": "0.1.6",
+    "version": "0.1.7",
     "engines": {
         "vscode": "^1.57.0"
     },
     "categories": [
         "Other"
     ],
-    "icon": "source/constants/Adamite.png",
+    "icon": "source/constants/catseye.png",
     "activationEvents": [
         "onStartupFinished"
     ],
@@ -26,62 +26,62 @@
     "contributes": {
         "commands": [
             {
-                "command": "adamite.launch",
-                "title": "Adamite: Launch Adamite"
+                "command": "catseye.launch",
+                "title": "catseye: Launch catseye"
             },
             {
-                "command": "adamite.addAnnotation",
-                "title": "Adamite: Create Annotation"
+                "command": "catseye.addAnnotation",
+                "title": "catseye: Create Annotation"
             },
             {
-                "command": "adamite.addFileAnnotation",
-                "title": "Adamite: Create File Annotation"
+                "command": "catseye.addFileAnnotation",
+                "title": "catseye: Create File Annotation"
             },
             {
-                "command": "adamite.addHighlight",
-                "title": "Adamite: Create Highlight"
+                "command": "catseye.addHighlight",
+                "title": "catseye: Create Highlight"
             },
             {
-                "command": "adamite.addSelectedAnnotation",
-                "title": "Adamite: Create Pinned Annotation"
+                "command": "catseye.addSelectedAnnotation",
+                "title": "catseye: Create Pinned Annotation"
             },
             {
-                "command": "adamite.navigateForward",
-                "title": "Adamite: Go to Next Pinned Annotation"
+                "command": "catseye.navigateForward",
+                "title": "catseye: Go to Next Pinned Annotation"
             },
             {
-                "command": "adamite.navigateBack",
-                "title": "Adamite: Go to Last Pinned Annotation"
+                "command": "catseye.navigateBack",
+                "title": "catseye: Go to Last Pinned Annotation"
             }
         ],
         "keybindings": [
             {
-                "command": "adamite.launch",
+                "command": "catseye.launch",
                 "key": "ctrl+shift+a",
                 "mac": "cmd+shift+a"
             },
             {
-                "command": "adamite.addAnnotation",
+                "command": "catseye.addAnnotation",
                 "key": "ctrl+alt+a",
                 "mac": "cmd+alt+a"
             },
             {
-                "command": "adamite.addHighlight",
+                "command": "catseye.addHighlight",
                 "key": "ctrl+alt+h",
                 "mac": "cmd+alt+h"
             },
             {
-                "command": "adamite.addSelectedAnnotation",
+                "command": "catseye.addSelectedAnnotation",
                 "key": "ctrl+alt+p",
                 "mac": "cmd+alt+p"
             },
             {
-                "command": "adamite.navigateForward",
+                "command": "catseye.navigateForward",
                 "key": "ctrl+alt+]",
                 "mac": "cmd+alt+]"
             },
             {
-                "command": "adamite.navigateBack",
+                "command": "catseye.navigateBack",
                 "key": "ctrl+alt+[",
                 "mac": "cmd+alt+["
             }
@@ -89,29 +89,29 @@
         "menus": {
             "editor/context": [
                 {
-                    "command": "adamite.launch",
-                    "group": "2_adamite"
+                    "command": "catseye.launch",
+                    "group": "2_catseye"
                 },
                 {
                     "when": "editorHasSelection",
-                    "command": "adamite.addAnnotation",
-                    "group": "2_adamite"
+                    "command": "catseye.addAnnotation",
+                    "group": "2_catseye"
                 },
                 {
                     "when": "editorHasSelection",
-                    "command": "adamite.addHighlight",
-                    "group": "2_adamite"
+                    "command": "catseye.addHighlight",
+                    "group": "2_catseye"
                 },
                 {
                     "when": "editorHasSelection",
-                    "command": "adamite.addSelectedAnnotation",
-                    "group": "2_adamite"
+                    "command": "catseye.addSelectedAnnotation",
+                    "group": "2_catseye"
                 }
             ],
             "explorer/context": [
                 {
-                    "command": "adamite.addFileAnnotation",
-                    "group": "2_adamite"
+                    "command": "catseye.addFileAnnotation",
+                    "group": "2_catseye"
                 }
             ]
         }

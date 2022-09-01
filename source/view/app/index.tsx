@@ -1,13 +1,13 @@
 /*
  *
  * index.tsx
- * Main file that actually defines and renders the Adamite webview panel.
+ * Main file that actually defines and renders the catseye webview panel.
  * Note in webpack.config.js that this is the file pointed at for entry into the extension.
  *
  */
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
-import AdamitePanel from './adamite'
+import CatseyePanel from './catseye'
 import { Annotation } from '../../constants/constants'
 
 declare global {
@@ -32,13 +32,13 @@ window.addEventListener('message', (event) => {
     const message = event.data
     if (message.command === 'init') {
         ReactDOM.render(
-            <AdamitePanel vscode={vscode} window={window} showLogIn={true} />,
+            <CatseyePanel vscode={vscode} window={window} showLogIn={true} />,
             document.getElementById('root')
         )
         return
     } else if (message.command === 'reload') {
         ReactDOM.render(
-            <AdamitePanel
+            <CatseyePanel
                 vscode={vscode}
                 window={window}
                 showLogIn={false}
@@ -52,6 +52,6 @@ window.addEventListener('message', (event) => {
 
 // render the panel
 ReactDOM.render(
-    <AdamitePanel vscode={vscode} window={window} showLogIn={false} />,
+    <CatseyePanel vscode={vscode} window={window} showLogIn={false} />,
     document.getElementById('root')
 )

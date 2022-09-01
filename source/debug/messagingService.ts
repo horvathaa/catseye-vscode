@@ -1,7 +1,7 @@
 /*
  *
  * messagingService.ts
- * Class to facilitate communication between debugAdapter and the Adamite panel
+ * Class to facilitate communication between debugAdapter and the catseye panel
  *
  */
 

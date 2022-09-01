@@ -5,7 +5,7 @@
  *
  */
 import * as React from 'react'
-import '../../styles/versions.module.css'
+// import '../../styles/versions.module.css'
 import {
     Anchor,
     AnchorObject,
@@ -29,11 +29,13 @@ const AnchorVersions: React.FC<Props> = ({
 }) => {
     const [showSuggestions, setShowSuggestions] = React.useState<boolean>(true)
 
+    React.useEffect(() => {}, [anchors])
+
     const showPotentialAnchors = (anchor: AnchorObject): React.ReactElement => {
         const unanchorText = (
             <p
                 onClick={() => setShowSuggestions(!showSuggestions)}
-                className={styles['SuggestionTitle']}
+                className={`${styles['SuggestionTitle']} ${styles['ReanchorTitle']}`}
             >
                 {showSuggestions
                     ? 'Hide Suggestions'
@@ -61,12 +63,18 @@ const AnchorVersions: React.FC<Props> = ({
     return (
         <div>
             {anchors.map((anchor: AnchorObject, i) => {
+                // console.log('rendering this anchor', anchor)
                 anchor.priorVersions && anchor.priorVersions.reverse()
                 if (anchor.priorVersions) {
                     return (
-                        <>
+                        <div key={'map-' + i}>
                             <Carousel
-                                key={anchor.anchorId + i + '-pv'}
+                                key={
+                                    anchor.anchorId +
+                                    anchor.parentId +
+                                    i +
+                                    '-pv'
+                                }
                                 // potentialVersions={
                                 //     anchor.potentialReanchorSpots
                                 // }
@@ -79,10 +87,11 @@ const AnchorVersions: React.FC<Props> = ({
                             ></Carousel>
 
                             {anchor.potentialReanchorSpots &&
-                            anchor.potentialReanchorSpots.length
+                            anchor.potentialReanchorSpots.length &&
+                            !anchor.anchored
                                 ? showPotentialAnchors(anchor)
                                 : null}
-                        </>
+                        </div>
                     )
                 }
                 return null

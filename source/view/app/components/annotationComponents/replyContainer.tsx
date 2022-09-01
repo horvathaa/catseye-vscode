@@ -7,10 +7,12 @@
  */
 import * as React from 'react'
 import { Reply as ReactReply } from './reply' // reply component
-import { collapseExpandToggle, showHideLine } from '../../utils/viewUtilsTsx'
-import { Reply } from '../../../../constants/constants' // reply data model
+import { showHideLine } from '../../utils/viewUtilsTsx'
+import { Reply, ReplyMergeInformation } from '../../../../constants/constants' // reply data model
 import styles from '../../styles/annotation.module.css'
-import { Checkbox } from '@mui/material'
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
+import KeyboardDoubleArrowUpIcon from '@mui/icons-material/KeyboardDoubleArrowUp'
 
 interface Props {
     replying: boolean
@@ -22,7 +24,8 @@ interface Props {
     deleteReply?: (id: string) => void
     focus?: boolean
     showCheckbox?: boolean
-    handleSelectReply?: (id: string) => void
+    handleSelectReply?: (id: string, operation: string, level?: string) => void
+    mergeInformation?: ReplyMergeInformation[]
 }
 
 const MAX_NUM_REPLIES = 3
@@ -38,16 +41,73 @@ const ReplyContainer: React.FC<Props> = ({
     focus = true,
     showCheckbox = false,
     handleSelectReply,
+    mergeInformation,
 }) => {
     const [showMoreReplies, setShowMoreReplies] = React.useState<boolean>(false)
     const activeReplies = replies.filter((r) => !r.deleted)
     const mostRecentReplies = activeReplies.slice(-MAX_NUM_REPLIES)
     const hasReplies = replies && activeReplies.length
     const [tempIdCounter, setTempIdCounter] = React.useState<number>(1)
+    const [hasBeenSelected, setHasBeenSelected] = React.useState<
+        Map<string, boolean>
+    >(new Map())
+
+    React.useEffect(() => {
+        let map = new Map()
+        if (mergeInformation) {
+            mergeInformation.forEach((r) => {
+                // if the reply appears in the mergeInformation, it must be in use
+                // which means it has been selected
+                map.set(r.id, true)
+            })
+        }
+        setHasBeenSelected(map)
+    }, [mergeInformation])
 
     const createReply = (reply: Reply): void => {
         submitReply && submitReply(reply)
         setTempIdCounter(tempIdCounter + 1)
+    }
+
+    const showSelection = (r: Reply): React.ReactElement => {
+        if (hasBeenSelected.get(r.id)) {
+            return (
+                <div className={styles['ReplyArrowBox']}>
+                    <ArrowDownwardIcon
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                            setHasBeenSelected(
+                                new Map(hasBeenSelected.set(r.id, false))
+                            )
+                            handleSelectReply(r.id, 'remove')
+                        }}
+                    />
+                </div>
+            )
+        } else {
+            return (
+                <div className={styles['ReplyArrowBox']}>
+                    <KeyboardDoubleArrowUpIcon
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                            setHasBeenSelected(
+                                new Map(hasBeenSelected.set(r.id, true))
+                            )
+                            handleSelectReply(r.id, 'add', 'annotation')
+                        }}
+                    />
+                    <ArrowUpwardIcon
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                            setHasBeenSelected(
+                                new Map(hasBeenSelected.set(r.id, true))
+                            )
+                            handleSelectReply(r.id, 'add', 'reply')
+                        }}
+                    />
+                </div>
+            )
+        }
     }
 
     return (
@@ -62,7 +122,7 @@ const ReplyContainer: React.FC<Props> = ({
                 : null}
             {hasReplies
                 ? (showMoreReplies ? activeReplies : mostRecentReplies)?.map(
-                      (r: Reply) => {
+                      (r: Reply, i: number, arr: Reply[]) => {
                           return !r.deleted ? (
                               <div
                                   key={'reply-div-' + r.id}
@@ -71,18 +131,7 @@ const ReplyContainer: React.FC<Props> = ({
                                       flexDirection: 'row',
                                   }}
                               >
-                                  {/* Amber: Why do we have this? What is this supposed to do? */}
-                                  {showCheckbox && (
-                                      <Checkbox
-                                          // Needs work
-                                          onChange={() =>
-                                              handleSelectReply(r.id)
-                                          }
-                                          inputProps={{
-                                              'aria-label': 'controlled',
-                                          }}
-                                      />
-                                  )}
+                                  {showCheckbox && showSelection(r)}
                                   <ReactReply
                                       key={'reply-' + r.id}
                                       id={r.id}
@@ -96,6 +145,7 @@ const ReplyContainer: React.FC<Props> = ({
                                       submissionHandler={submitReply}
                                       cancelHandler={cancelReply}
                                       deleteHandler={deleteReply}
+                                      lastItem={i === arr.length - 1}
                                   />
                               </div>
                           ) : null

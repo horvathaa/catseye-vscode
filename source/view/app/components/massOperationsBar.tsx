@@ -17,7 +17,7 @@ import {
     iconColor,
     vscodeTextColor,
 } from '../styles/vscodeStyles'
-import AdamiteButton from './annotationComponents/AdamiteButton'
+import CatseyeButton from './annotationComponents/CatseyeButton'
 import { Selection } from '../../../constants/constants'
 interface Props {
     massOperationSelected: (e: React.SyntheticEvent, operation: string) => void
@@ -82,29 +82,29 @@ const MassOperationsBar: React.FC<Props> = ({
                     }}
                 />
                 <Card sx={{ flexGrow: 2 }}>
-                    <AdamiteButton
+                    <CatseyeButton
                         buttonClicked={(e) => massOperationSelected(e, 'merge')}
                         name="Merge"
                         icon={<MergeIcon fontSize="small" />}
                     />
-                    <AdamiteButton
+                    <CatseyeButton
                         buttonClicked={(e) => massOperationSelected(e, 'pin')}
                         name="Pin"
                         icon={<PushPinOutlinedIcon fontSize="small" />}
                     />
-                    <AdamiteButton
+                    <CatseyeButton
                         buttonClicked={(e) => massOperationSelected(e, 'share')}
                         name="Share"
                         icon={<ShareIcon fontSize="small" />}
                     />
-                    <AdamiteButton
+                    <CatseyeButton
                         buttonClicked={(e) =>
                             massOperationSelected(e, 'resolve')
                         }
                         name="Resolve"
                         icon={<CheckIcon fontSize="small" />}
                     />
-                    <AdamiteButton
+                    <CatseyeButton
                         buttonClicked={(e) =>
                             massOperationSelected(e, 'delete')
                         }

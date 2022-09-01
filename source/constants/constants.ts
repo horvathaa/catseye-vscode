@@ -194,6 +194,11 @@ export interface Reply {
     lastEditTime: number
 }
 
+export interface ReplyMergeInformation extends Reply {
+    inAnnoBody: boolean
+    annoId: string
+}
+
 export const isReply = (obj: any): obj is Reply => {
     return obj.hasOwnProperty('replyContent')
 }
@@ -331,7 +336,7 @@ export interface AnnotationAnchorPair {
 
 export interface MergeInformation {
     anchors: AnchorInformation[] // array of anchor ids or empty array if no anchors
-    replies: Reply[] // array of reply ids or empty array if no replies
+    replies: ReplyMergeInformation[] // array of reply ids or empty array if no replies
     annotation: string | undefined // annotation content or undefined if unused
 }
 
@@ -350,3 +355,44 @@ export interface ReanchorInformation {
     path: CodeContext[]
     surroundingCode: SurroundingAnchorArea
 }
+
+export enum EventType {
+    merge = 'Merge',
+    edit = 'Edit',
+    reply = 'New Reply',
+    anchorAdded = 'Add Anchor',
+    commit = 'Commit',
+    deleted = 'Deleted',
+    textChange = 'Text Change on Save',
+}
+export interface AnnotationEvent {
+    id: string
+    eventUserId: string
+    usersImpacted: string[]
+    annotationIds: string[]
+    eventType: EventType
+    annotationSnapshots: AnnotationAtEvent[]
+    timestamp: number
+}
+
+export interface AnnotationAtEvent {
+    annotation: string
+    authorId: string
+    githubUsername: string
+    createdTimestamp: number
+    gitRepo: string
+    gitBranch: string
+    gitCommit: string
+    id: string
+    anchors: AnchorOnCommit[]
+    replies: Reply[]
+    resolved: boolean
+    types: Type[]
+}
+
+// export interface AnchorTextPair {
+//     [anchorId: string]: string
+// }
+// export interface AnnotationAnchorTextPair {
+//     [annoId: string]: AnchorTextPair[]
+// }

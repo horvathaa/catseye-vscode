@@ -17,7 +17,7 @@ import {
     user,
     gitInfo,
     activeEditor,
-    adamiteLog,
+    catseyeLog,
 } from '../extension'
 import {
     getGithubUrl,
@@ -33,17 +33,17 @@ export default class ViewLoader {
     // create the webview and point it to our compiled/bundled extension
     constructor(fileUri: vscode.Uri, extensionPath: string) {
         this._extensionPath = extensionPath
-        adamiteLog.appendLine(`Creating ViewLoader at ${extensionPath}`)
+        catseyeLog.appendLine(`Creating ViewLoader at ${extensionPath}`)
         if (annotationList) {
-            adamiteLog.appendLine(`Creating WebviewPanel`)
-            adamiteLog.appendLine(
+            catseyeLog.appendLine(`Creating WebviewPanel`)
+            catseyeLog.appendLine(
                 `localResourceRoots: ${vscode.Uri.file(
                     path.join(extensionPath, 'dist')
                 )}`
             )
             this._panel = vscode.window.createWebviewPanel(
-                'adamite',
-                'Adamite',
+                'catseye',
+                'Catseye',
                 vscode.ViewColumn.Beside,
                 {
                     enableScripts: true,
@@ -54,7 +54,7 @@ export default class ViewLoader {
                 }
             )
             this._panel.iconPath = vscode.Uri.file(
-                path.join(extensionPath, 'source/constants/Adamite.png')
+                path.join(extensionPath, 'source/constants/catseye.png')
             )
             this._panel.webview.html = this.getWebviewContent(annotationList)
         }
@@ -91,7 +91,7 @@ export default class ViewLoader {
       <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Adamite</title>
+          <title>catseye</title>
 
           <meta http-equiv="Content-Security-Policy"
                       content="default-src 'none';
@@ -115,7 +115,7 @@ export default class ViewLoader {
       </body>
     </html>`
 
-        adamiteLog.appendLine(`Webview content: ${webviewContent}`)
+        catseyeLog.appendLine(`Webview content: ${webviewContent}`)
 
         return webviewContent
     }

@@ -1,6 +1,6 @@
 /*
  *
- * Adamite Terminal Link Provider
+ * catseye Terminal Link Provider
  * Used to connect into the user's terminal for capturing code output
  * Not currently used as it is very limited (can only capture one line and require overriding default clickable link behavior)
  *
@@ -15,15 +15,15 @@ import {
     TerminalLink,
 } from 'vscode'
 
-interface AdamiteTerminalLink extends TerminalLink {
+interface catseyeTerminalLink extends TerminalLink {
     content: string
 }
 
-export class AdamiteTerminalLinkProvider implements TerminalLinkProvider {
+export class catseyeTerminalLinkProvider implements TerminalLinkProvider {
     public provideTerminalLinks(
         context: TerminalLinkContext,
         token: CancellationToken
-    ): ProviderResult<AdamiteTerminalLink[]> {
+    ): ProviderResult<catseyeTerminalLink[]> {
         if (view) {
             const startIndex: number = 0
             const lengthOfLink: number = context.line.length
@@ -41,7 +41,7 @@ export class AdamiteTerminalLinkProvider implements TerminalLinkProvider {
         }
     }
 
-    public async handleTerminalLink(link: AdamiteTerminalLink): Promise<void> {
+    public async handleTerminalLink(link: catseyeTerminalLink): Promise<void> {
         view?.addTerminalMessage(link.content)
         // text
     }

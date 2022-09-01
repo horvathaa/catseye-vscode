@@ -1,6 +1,6 @@
 /*
  *
- * adamite.tsx
+ * catseye.tsx
  * React component for the webview panel as a whole. Note that, if you want to debug any of these .tsx files
  * You need to use the command "Developer: Open Webview Developer Tools" (available in command prompt (ctrl/cmd + shift + p))
  *
@@ -17,23 +17,12 @@ import {
     Scope,
     Sort,
 } from '../../constants/constants'
-import ReactAnnotation from './components/annotation'
+
 import NewAnnotation from './components/newAnnotation'
 import AnnotationList from './components/annotationList'
 import LogIn from './components/login'
-import styles from './styles/adamite.module.css'
-import annoStyles from './styles/annotation.module.css'
 import TopBar from './components/topbar'
-import Tabs from '@mui/material/Tabs'
-import Tab from '@mui/material/Tab'
-import { styled } from '@mui/material/styles'
-import {
-    vscodeTextColor,
-    vscodeDisableTextColor,
-    vscodeBorderColor,
-} from './styles/vscodeStyles'
 import { defaultFilterOptions } from './utils/viewUtilsTsx'
-import MassOperationsBar from './components/massOperationsBar'
 import {
     getAllAnnotationStableGitUrls,
     sortAnnotationsByLocation,
@@ -49,7 +38,7 @@ interface Props {
     userId?: string
 }
 
-const AdamitePanel: React.FC<Props> = ({
+const CatseyePanel: React.FC<Props> = ({
     vscode,
     window,
     showLogIn,
@@ -424,4 +413,4 @@ const AdamitePanel: React.FC<Props> = ({
     )
 }
 
-export default AdamitePanel
+export default CatseyePanel

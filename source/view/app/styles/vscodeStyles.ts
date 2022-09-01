@@ -51,7 +51,7 @@ export const disabledIcon: string = getComputedStyle(
     document.body
 ).getPropertyValue('--vscode-disabledForeground')
 
-export const adamiteGreen: string = '#7fae42'
+export const catseyeGreen: string = '#7fae42'
 
 function lightenDarkenColor(col: string, amt: number) {
     var usePound = false
@@ -93,5 +93,6 @@ export const cardStyle = {
     borderRadius: '4px',
     // borderStyle: 'solid',
     padding: 10,
+    paddingBottom: 0,
     flexGrow: 1,
 }

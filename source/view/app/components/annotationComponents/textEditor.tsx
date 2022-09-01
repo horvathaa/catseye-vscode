@@ -19,6 +19,11 @@ import {
 } from '../../styles/vscodeStyles'
 import { TextareaAutosize } from '@material-ui/core'
 
+interface Selection {
+    startOffset: number
+    endOffset: number
+}
+
 interface Props {
     content: any // Is either a reply, text, or annotation
     submissionHandler: (
@@ -31,6 +36,11 @@ interface Props {
     showCancel?: boolean
     focus?: boolean
     placeholder?: string
+    onChange?: (
+        newTextAreaValue: string,
+        userText: string,
+        selectedRange: Selection
+    ) => void
 }
 // Having default props is weirdly supported in React, this way means showCancel is an optional
 // See: https://dev.to/bytebodger/default-props-in-react-typescript-2o5o
@@ -42,9 +52,48 @@ const TextEditor: React.FC<Props> = ({
     showCancel = true,
     focus = true,
     placeholder = '',
+    onChange,
 }) => {
     const [text, setText] = React.useState<any>(content)
     const [willBePinned, setWillBePinned] = React.useState<boolean>(false)
+    const [hasSelectedRange, setHasSelectedRange] =
+        React.useState<boolean>(false)
+    const [selectedRange, _setSelectedRange] = React.useState<Selection | null>(
+        null
+    )
+    const selectedRangeRef = React.useRef(selectedRange)
+    const setSelectedRange = (newSelectedRange: Selection): void => {
+        console.log('setting...', newSelectedRange)
+        selectedRangeRef.current = newSelectedRange
+        _setSelectedRange(newSelectedRange)
+    }
+
+    const [clipboardText, _setClipboardText] = React.useState<string>('')
+
+    React.useEffect(() => {
+        setText(content)
+    }, [content])
+
+    React.useEffect(() => {
+        window.document.addEventListener('keydown', setClipboardText)
+        return () => {
+            window.document.removeEventListener('keydown', setClipboardText)
+        }
+    }, [])
+
+    const setClipboardText = (e: Event): void => {
+        const keyboardEvent = e as KeyboardEvent
+        if (
+            window &&
+            (keyboardEvent.code === 'KeyC' || keyboardEvent.code === 'KeyX') &&
+            keyboardEvent.ctrlKey
+        ) {
+            const copiedText: string | undefined = window
+                .getSelection()
+                ?.toString()
+            if (copiedText) _setClipboardText(copiedText)
+        }
+    }
     // TODO: Change this theme
     const theme = createTheme({
         palette: {
@@ -91,8 +140,47 @@ const TextEditor: React.FC<Props> = ({
     })
 
     const updateAnnotationContent = (e: React.SyntheticEvent) => {
+        console.log(
+            'e',
+            e,
+            'selectionstart',
+            (e.target as HTMLTextAreaElement).selectionStart,
+            'selend',
+            (e.target as HTMLTextAreaElement).selectionStart
+        )
         if (typeof text === 'string') {
-            setText((e.target as HTMLTextAreaElement).value)
+            const textArea = e.target as HTMLTextAreaElement
+            const nativeEvent = e.nativeEvent as InputEvent
+            if (nativeEvent.inputType.includes('deleteContent')) {
+                return
+            }
+            const userText =
+                nativeEvent.inputType == 'insertFromPaste'
+                    ? clipboardText
+                    : nativeEvent.inputType.includes('deleteContent')
+                    ? ''
+                    : (e.nativeEvent as InputEvent).data
+            console.log(
+                'selectedRange',
+                selectedRange,
+                'hewwo?',
+                window.getSelection()?.toString()
+            )
+            const selection: Selection = {
+                startOffset: nativeEvent.inputType.includes('deleteContent')
+                    ? selectedRangeRef.current.startOffset
+                    : textArea.selectionStart - userText.length, // REALLY stupid im so mad holy shit
+                endOffset: nativeEvent.inputType.includes('deleteContent')
+                    ? selectedRangeRef.current.endOffset
+                    : textArea.selectionEnd, // slightly less stupid
+            }
+
+            const newText = textArea.value
+            setText(newText)
+            if (onChange) {
+                // const textAdded = (e.nativeEvent as InputEvent).data
+                onChange(newText, userText, selection)
+            }
         } else if (text.hasOwnProperty('replyContent')) {
             // Checks if is reply
             setText({
@@ -115,6 +203,46 @@ const TextEditor: React.FC<Props> = ({
                 ...text,
                 replyContent: '',
             })
+        } else if (hasSelectedRange && onChange) {
+            const key = e.key
+            const textArea = e.target as HTMLTextAreaElement
+            if (key !== 'Backspace' && !(e.metaKey || e.ctrlKey || e.altKey)) {
+                // probably input event
+                // could add redundancy check to see if the value of the input changed as well uhguig
+
+                if (textArea.selectionStart === selectedRange.startOffset + 1) {
+                    // replaced range with char
+                    onChange(textArea.value, key, selectedRange)
+                }
+            } else if (key === 'Backspace') {
+                onChange(textArea.value, '', selectedRange)
+            }
+            console.log('here????')
+            setHasSelectedRange(false)
+            setSelectedRange(null)
+        }
+    }
+
+    const handleMouseUp = (e: React.MouseEvent): void => {
+        const target = e.target as HTMLTextAreaElement
+        console.log('what', target, 'mom', {
+            startOffset: target.selectionStart,
+            endOffset: target.selectionEnd,
+        })
+        if (target.selectionStart !== target.selectionEnd) {
+            setHasSelectedRange(true)
+            console.log('ewiuofehjiu', {
+                startOffset: target.selectionStart,
+                endOffset: target.selectionEnd,
+            })
+            setSelectedRange({
+                startOffset: target.selectionStart,
+                endOffset: target.selectionEnd,
+            })
+        } else if (hasSelectedRange) {
+            console.log('or here???')
+            setHasSelectedRange(false)
+            setSelectedRange(null)
         }
     }
 
@@ -145,6 +273,7 @@ const TextEditor: React.FC<Props> = ({
                 onChange={updateAnnotationContent}
                 onKeyDown={handleEnter}
                 onClick={(e: React.SyntheticEvent) => e.stopPropagation()}
+                onMouseUp={handleMouseUp}
             />
             <div className={styles['bottomRow']}>
                 <div className={styles['bottomRow']}>

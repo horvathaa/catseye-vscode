@@ -6,6 +6,8 @@
  */
 import { Card, CardContent, List, useMediaQuery } from '@material-ui/core'
 import { Checkbox } from '@mui/material'
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import * as React from 'react'
 import annoStyles from '../styles/annotation.module.css'
 import TextEditor from './annotationComponents/textEditor'
@@ -24,6 +26,7 @@ import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
 import {
     AnchorObject,
     Annotation,
+    MergeInformation,
     Reply,
     Type,
 } from '../../../constants/constants'
@@ -38,7 +41,8 @@ interface Props {
     scrollWithRangeAndFile: (e: React.SyntheticEvent, anchorId: string) => void
     removeAnchorFromMergeAnnotation: (anchorId: string, annoId: string) => void
     annoNum: number
-    alreadySelectedAnchors: string[]
+    // alreadySelectedAnchors: string[]
+    mergeInformation: MergeInformation
 }
 
 const AnnotationReference: React.FC<Props> = ({
@@ -47,7 +51,8 @@ const AnnotationReference: React.FC<Props> = ({
     scrollWithRangeAndFile,
     removeAnchorFromMergeAnnotation,
     annoNum,
-    alreadySelectedAnchors,
+    mergeInformation,
+    // alreadySelectedAnchors,
 }) => {
     const theme = createTheme({
         palette: {
@@ -89,6 +94,30 @@ const AnnotationReference: React.FC<Props> = ({
     })
     const [hasAnnotationTextBeenSelected, setHasAnnotationTextBeenSelected] =
         React.useState<boolean>(false)
+    const [localMergeInformation, setLocalMergeInformation] =
+        React.useState<MergeInformation>(mergeInformation)
+
+    React.useEffect(() => {
+        setLocalMergeInformation(mergeInformation)
+    }, [mergeInformation])
+
+    const isAnchorAlreadySelected = (anchorId: string): boolean => {
+        return (
+            localMergeInformation &&
+            localMergeInformation.anchors &&
+            localMergeInformation.anchors
+                .map((a) => a.anchorId)
+                .includes(anchorId)
+        )
+    }
+
+    const isAnnotationTextAlreadySelected = (): boolean => {
+        return (
+            localMergeInformation &&
+            localMergeInformation.annotation &&
+            localMergeInformation.annotation.length > 0
+        )
+    }
 
     const isMedOrMore = useMediaQuery(theme.breakpoints.up('md'))
 
@@ -96,9 +125,34 @@ const AnnotationReference: React.FC<Props> = ({
         console.log('SELECTED')
     }
 
-    const handleSelectReply = (id: string): void => {
+    const handleSelectReply = (
+        id: string,
+        operation: string,
+        level?: string
+    ): void => {
         const reply = annotation.replies.find((r) => r.id === id)
-        partSelected('reply', { ...reply, annoId: annotation.id })
+        const infoToPass = level
+            ? { ...reply, annoId: annotation.id, operation, level }
+            : { ...reply, annoId: annotation.id, operation }
+        partSelected('reply', infoToPass)
+    }
+
+    const elevateAnnotation = () => {
+        partSelected('annotation', {
+            selectedAnnotation: annotation.annotation,
+            githubUsername: annotation.githubUsername,
+            annoId: annotation.id,
+        })
+        setHasAnnotationTextBeenSelected(true)
+    }
+
+    const bringBackAnnotation = () => {
+        partSelected('annotation', {
+            selectedAnnotation: annotation.annotation,
+            githubUsername: annotation.githubUsername,
+            annoId: annotation.id,
+        })
+        setHasAnnotationTextBeenSelected(false)
     }
 
     const handleMouseSelection = (
@@ -109,14 +163,10 @@ const AnnotationReference: React.FC<Props> = ({
         anchorText?: string
     ) => {
         event.stopPropagation()
-        const selectedText = document.getSelection().toString()
+        const selectedText = document?.getSelection().toString()
         if (selectedText.length) {
             if (part === 'anchor') {
-                // const ids: string[] = (event.target as HTMLDivElement).id.split(
-                //     '%'
-                // )
-                // console.log('ids?', ids)
-                if (alreadySelectedAnchors.includes(anchorId)) return
+                if (isAnchorAlreadySelected(anchorId)) return
                 partSelected(part, {
                     anchorId,
                     annotationId,
@@ -137,91 +187,129 @@ const AnnotationReference: React.FC<Props> = ({
     }
 
     return (
-        <div>
+        <>
             <p className={anchorStyles['SuggestionTitle']}>
                 Annotation {annoNum}
             </p>
-
-            {annotation.anchors.map((anchor: AnchorObject, i) => {
-                // consider bringing back prior versions in carousel view -- for now, not bothering
-                return (
-                    <div style={{ display: 'flex' }}>
-                        {isMedOrMore && (
-                            <Checkbox
-                                // Needs work
-                                onChange={() =>
-                                    alreadySelectedAnchors.includes(
-                                        anchor.anchorId
-                                    )
-                                        ? removeAnchorFromMergeAnnotation(
-                                              anchor.anchorId,
-                                              anchor.parentId
-                                          )
-                                        : partSelected('anchor', anchor)
+            <div>
+                {annotation.anchors.map((anchor: AnchorObject, i) => {
+                    // consider bringing back prior versions in carousel view -- for now, not bothering
+                    return (
+                        <div
+                            key={'merging-new-anchors-' + anchor.anchorId}
+                            style={{ display: 'flex' }}
+                        >
+                            {isMedOrMore && (
+                                <Checkbox
+                                    // Needs work
+                                    onChange={() =>
+                                        isAnchorAlreadySelected(anchor.anchorId)
+                                            ? removeAnchorFromMergeAnnotation(
+                                                  anchor.anchorId,
+                                                  anchor.parentId
+                                              )
+                                            : partSelected('anchor', anchor)
+                                    }
+                                    inputProps={{
+                                        'aria-label': 'controlled',
+                                    }}
+                                    checked={
+                                        isAnchorAlreadySelected(
+                                            anchor.anchorId
+                                        ) ?? false
+                                    }
+                                />
+                            )}
+                            <div
+                                id={anchor.parentId + '%' + anchor.anchorId}
+                                // className={cn({
+                                //     // [anchorStyles['AnchorContainer']]: true,
+                                //     [anchorStyles['MergedAnchorContainer']]: true,
+                                //     [anchorStyles['Selected']]:
+                                //         alreadySelectedAnchors.includes(
+                                //             anchor.anchorId
+                                //         ),
+                                // })}
+                                className={
+                                    anchorStyles['MergedAnchorContainer']
                                 }
-                                inputProps={{
-                                    'aria-label': 'controlled',
-                                }}
-                                checked={alreadySelectedAnchors.includes(
-                                    anchor.anchorId
-                                )}
+                                onMouseUp={(e) =>
+                                    handleMouseSelection(
+                                        e,
+                                        'anchor',
+                                        anchor.anchorId,
+                                        anchor.parentId,
+                                        anchor.anchorText
+                                    )
+                                }
+                            >
+                                <PastVersion
+                                    key={'anno-ref' + anchor.anchorId + i}
+                                    handleClick={scrollWithRangeAndFile}
+                                    i={i}
+                                    pastVersion={createAnchorOnCommitFromAnchorObject(
+                                        anchor
+                                    )}
+                                    mergeSelection={isAnchorAlreadySelected(
+                                        anchor.anchorId
+                                    )}
+                                />
+                            </div>
+                        </div>
+                    )
+                })}
+                {annotation.annotation.length ? (
+                    <div
+                        className={
+                            styles['AnnotationContentAnnotationReference']
+                        }
+                    >
+                        {isAnnotationTextAlreadySelected() ? (
+                            <ArrowDownwardIcon
+                                onClick={bringBackAnnotation}
+                                style={{ cursor: 'pointer' }}
+                            />
+                        ) : (
+                            <ArrowUpwardIcon
+                                onClick={elevateAnnotation}
+                                style={{ cursor: 'pointer' }}
                             />
                         )}
+
                         <div
-                            id={anchor.parentId + '%' + anchor.anchorId}
                             className={cn({
-                                [anchorStyles['AnchorContainer']]: true,
-                                [anchorStyles['Suggestion']]: true,
+                                [styles['SelectableContainer']]: true,
                                 [anchorStyles['disabled']]:
-                                    alreadySelectedAnchors.includes(
-                                        anchor.anchorId
-                                    ),
+                                    isAnnotationTextAlreadySelected(),
                             })}
-                            onMouseUp={(e) =>
-                                handleMouseSelection(
-                                    e,
-                                    'anchor',
-                                    anchor.anchorId,
-                                    anchor.parentId,
-                                    anchor.anchorText
-                                )
-                            }
+                            // onMouseUp={(e) => handleMouseSelection(e, 'annotation')}
                         >
-                            <PastVersion
-                                handleClick={scrollWithRangeAndFile}
-                                i={i}
-                                pastVersion={createAnchorOnCommitFromAnchorObject(
-                                    anchor
-                                )}
-                            />
+                            {annotation.annotation}
                         </div>
                     </div>
-                )
-            })}
-            <div
-                className={cn({
-                    [styles['SelectableContainer']]: true,
-                    [anchorStyles['disabled']]: hasAnnotationTextBeenSelected,
-                })}
-                onMouseUp={(e) => handleMouseSelection(e, 'annotation')}
-            >
-                {annotation.annotation}
-            </div>
-            {/* To Include, Annotation types */}
-            {/* Annotation text works differently. */}
-            {/* Include replies as checkboxes, same with anchors */}
-            <ReplyContainer
-                replying={false}
-                showCheckbox={true}
-                handleSelectReply={handleSelectReply}
-                replies={annotation.replies}
-                cancelReply={() => {}}
-                focus={false}
-            />
-            {/* </CardContent>
+                ) : null}
+
+                {/* To Include, Annotation types */}
+                {/* Annotation text works differently. */}
+                {/* Include replies as checkboxes, same with anchors */}
+                <ReplyContainer
+                    replying={false}
+                    showCheckbox={true}
+                    handleSelectReply={handleSelectReply}
+                    replies={annotation.replies}
+                    cancelReply={() => {}}
+                    focus={false}
+                    mergeInformation={
+                        mergeInformation?.replies
+                            ? mergeInformation.replies
+                            : []
+                    }
+                />
+                {/* </CardContent>
                 </Card>
             </ThemeProvider> */}
-        </div>
+            </div>
+        </>
     )
 }
 

@@ -16,7 +16,7 @@ import {
     setCopiedAnnotationList,
     copiedAnnotations,
     setStoredCopyText,
-    adamiteLog,
+    catseyeLog,
     selectedAnnotationsNavigations,
     setSelectedAnnotationsNavigations,
     astHelper,
@@ -39,7 +39,7 @@ import { computeMostSimilarAnchor } from '../anchorFunctions/reanchor'
 
 // on launch, create auth session and sign in to FireStore
 export const init = async () => {
-    adamiteLog.appendLine('Calling init')
+    catseyeLog.appendLine('Calling init')
     await initializeAuth()
     trackAndAuditFilesOnLaunch()
     if (view) {
@@ -54,15 +54,15 @@ export const trackAndAuditFilesOnLaunch = (): void => {
     })
 }
 
-// Creates Adamite side panel and sets up its listeners
+// Creates catseye side panel and sets up its listeners
 export const createView = async (context: vscode.ExtensionContext) => {
     if (vscode.workspace.workspaceFolders) {
         if (view) {
-            adamiteLog.appendLine('Revealing Adamite panel.')
+            catseyeLog.appendLine('Revealing catseye panel.')
             view._panel?.reveal()
             return
         }
-        adamiteLog.appendLine('Creating new panel')
+        catseyeLog.appendLine('Creating new panel')
         const newView: ViewLoader = new ViewLoader(
             vscode.workspace.workspaceFolders[0].uri,
             context.extensionPath
@@ -186,7 +186,7 @@ export const createView = async (context: vscode.ExtensionContext) => {
                 }
             })
 
-            // since we launched Adamite, show highlights in editor
+            // since we launched catseye, show highlights in editor
             if (vscode.window.activeTextEditor) {
                 // console.log('launch + active', annotationList);
                 anchor.addHighlightsToEditor(
@@ -218,7 +218,7 @@ export const createView = async (context: vscode.ExtensionContext) => {
     }
 }
 
-// user has expressed they want to annotate something - get Adamite side panel init'ed for that operation
+// user has expressed they want to annotate something - get catseye side panel init'ed for that operation
 export const createNewAnnotation = async () => {
     const { activeTextEditor } = vscode.window
     if (!activeTextEditor) {
@@ -226,7 +226,7 @@ export const createNewAnnotation = async () => {
         return
     }
     if (!view) {
-        await vscode.commands.executeCommand('adamite.launch')
+        await vscode.commands.executeCommand('catseye.launch')
     } else if (!view?._panel?.visible) {
         view?._panel?.reveal(vscode.ViewColumn.Beside)
     }
@@ -371,7 +371,7 @@ export const createFileAnnotation = async (
     context: vscode.Uri
 ): Promise<void> => {
     if (!view) {
-        await vscode.commands.executeCommand('adamite.launch')
+        await vscode.commands.executeCommand('catseye.launch')
     } else if (!view?._panel?.visible) {
         view?._panel?.reveal(vscode.ViewColumn.Beside)
     }
@@ -455,7 +455,7 @@ export const addNewHighlight = (
     }
 
     if (!view) {
-        vscode.commands.executeCommand('adamite.launch')
+        vscode.commands.executeCommand('catseye.launch')
     } else if (!view?._panel?.visible) {
         view?._panel?.reveal(vscode.ViewColumn.Beside)
     }

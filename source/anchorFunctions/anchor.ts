@@ -103,9 +103,11 @@ export const connectPotentialAnchorsToAnchors = (
             )
         }
     })
-    return newAnchors.concat(
-        anchors.filter((a) => !anchorIds.includes(a.anchorId))
-    )
+
+    return newAnchors
+    // .concat(
+    //     anchors.filter((a) => !anchorIds.includes(a.anchorId))
+    // )
 }
 
 export const handleUpdatingTranslatedAnnotations = (
@@ -138,10 +140,13 @@ export const handleUpdatingTranslatedAnnotations = (
                 change.text
             )
     )
+    // console.log('??????')
     const translatedAnchors = removeNulls(translate)
+    // a.id === 'fa718d3f-2e8f-43e2-a869-c995f0c9b7a8' &&
+    //     console.log('post translate', translatedAnchors)
     const translatedPotentialAnchors: PotentialAnchorObject[] = removeNulls(
         potentialAnchorsToTranslate.map((a: PotentialAnchorObject) => {
-            translateChanges(
+            return translateChanges(
                 a,
                 change.range,
                 change.text.length,
@@ -152,6 +157,7 @@ export const handleUpdatingTranslatedAnnotations = (
             )
         })
     )
+
     const needToUpdate = translatedAnchors.some((t) => {
         const anchor = anchorsToTranslate.find(
             (o: AnchorObject) => t.anchorId === o.anchorId
@@ -169,6 +175,7 @@ export const handleUpdatingTranslatedAnnotations = (
         translatedPotentialAnchors,
         translatedAnchors.concat(anchorsNotToTranslate)
     )
+
     return buildAnnotation({
         ...a,
         needToUpdate,
@@ -377,7 +384,7 @@ export const computeVsCodeRangeFromOffset = (
     )
 }
 
-// Helper function to take an anchor object (Adamite's representation of an anchor + its metadata) and create a VS Code range object
+// Helper function to take an anchor object (catseye's representation of an anchor + its metadata) and create a VS Code range object
 // from the anchor point
 export const createRangeFromAnchorObject = (
     anchor: AnchorObject
@@ -763,7 +770,7 @@ const createDecorationOptions = (
             )
         )
         const showAnnoInWebviewCommand = vscode.Uri.parse(
-            `command:adamite.showAnnoInWebview?${encodeURIComponent(
+            `command:catseye.showAnnoInWebview?${encodeURIComponent(
                 JSON.stringify(r.annotationId)
             )}`
         )
@@ -915,6 +922,7 @@ export const addHighlightsToEditor = (
         let anchors: AnchorObject[] = annotationsToHighlight
             .flatMap((a) => a.anchors)
             .filter((a) => a.stableGitUrl === textUrl)
+            .filter((a) => a.anchored)
         let ranges: AnnotationRange[] = anchors
             .map((a) => {
                 return {

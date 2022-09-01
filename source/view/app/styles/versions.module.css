@@ -51,6 +51,7 @@ span {
     flex-grow: 1;
     margin-left: 1.75rem;
     margin-right: 1.75rem;
+    overflow: hidden;
 }
 
 .AnchorContainer.Suggestion {
@@ -59,6 +60,36 @@ span {
     margin-right: 2rem;
     margin-bottom: 0.25rem;
     border-color: #dcdcaa5e;
+    /* flex-direction: row; */
+}
+
+.MergedAnchorContainer {
+    overflow: hidden;
+}
+
+.MergedAnchorContainer.Selected {
+    box-shadow: 0px 0px 6px 3px #94ce9b5e;
+}
+
+.AnchorContainer.Selected {
+    box-shadow: 0px 0px 6px 3px #94ce9b5e;
+}
+
+.MergedAnchorContainer > .AnchorContainer {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.AnchorContainer.Suggestion.Merged {
+    flex-direction: row;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.CodeLines {
+    margin: 0;
+    font-family: Consolas, 'Menlo';
 }
 
 .AnchorCode {
@@ -74,8 +105,13 @@ span {
 .SuggestionTitle {
     padding: 0px 5px;
     padding-bottom: 4px;
-    font-size: 0.8rem;
+    font-size: 1.2rem;
     font-style: italic;
+}
+
+.SuggestionTitle.ReanchorTitle {
+    font-size: 0.9rem;
+    cursor: pointer;
 }
 
 .AnchorCode.Suggestion {
@@ -104,7 +140,7 @@ button.reanchor {
     color: var(--vscode-foreground);
     margin-top: 2px;
     border: 2px solid transparent; /* TODO: Switch between 1 and 2px*/
-    border-color: #7fae42;
+    border-color: #7fae4236;
     background-color: var(--vscode-editor-background);
     height: 30px;
 }

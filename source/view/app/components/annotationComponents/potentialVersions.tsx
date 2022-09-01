@@ -34,6 +34,9 @@ const PotentialVersion: React.FC<PotentialVersionProps> = ({
             ? 'similar'
             : 'weak'
     }
+    if (!potentialVersion) {
+        return null
+    }
     return (
         <div>
             <div
@@ -68,18 +71,26 @@ const PotentialVersion: React.FC<PotentialVersionProps> = ({
                     style={{
                         display: 'flex',
                         flexDirection: 'column',
+                        overflow: 'scroll',
+                        maxHeight: '20vh',
                     }}
                 >
                     <div
                         className={`${styles['AnchorCode']} ${styles['Suggestion']}`}
                     >
-                        <p style={{ opacity: '0.5' }}>
+                        <pre
+                            className={styles['CodeLines']}
+                            style={{ opacity: '0.5' }}
+                        >
                             {displayBefore(potentialVersion, 3)}
-                        </p>
-                        <p style={{ opacity: '0.7' }}>
+                        </pre>
+                        <pre
+                            className={styles['CodeLines']}
+                            style={{ opacity: '0.7' }}
+                        >
                             {displayBefore(potentialVersion, 2)}
-                        </p>
-                        <p>
+                        </pre>
+                        <pre className={styles['CodeLines']}>
                             <b>
                                 {displayAnchorText(potentialVersion, styles)}
                                 {/* {potentialVersion.anchorText.length > 60
@@ -89,13 +100,19 @@ const PotentialVersion: React.FC<PotentialVersionProps> = ({
                                     ? '...'
                                     : null} */}
                             </b>
-                        </p>
-                        <p style={{ opacity: '0.7' }}>
+                        </pre>
+                        <pre
+                            className={styles['CodeLines']}
+                            style={{ opacity: '0.7' }}
+                        >
                             {displayAfter(potentialVersion, 1)}
-                        </p>
-                        <p style={{ opacity: '0.5' }}>
+                        </pre>
+                        <pre
+                            className={styles['CodeLines']}
+                            style={{ opacity: '0.5' }}
+                        >
                             {displayAfter(potentialVersion, 2)}
-                        </p>
+                        </pre>
                     </div>
                 </div>
             </div>
@@ -143,10 +160,16 @@ export const PotentialVersions: React.FC<PotentialVersionsProps> = ({
     handleRemoveSuggestion,
 }) => {
     return (
-        <Carousel autoPlay={false}>
+        <Carousel autoPlay={false} index={potentialVersions.length - 1}>
             {potentialVersions.map((pv: PotentialAnchorObject, index) => {
                 return (
                     <PotentialVersion
+                        key={
+                            'potential-version-' +
+                            pv.anchorId +
+                            index +
+                            '-carousel'
+                        }
                         handleClick={handleClick}
                         index={index}
                         potentialVersion={pv}

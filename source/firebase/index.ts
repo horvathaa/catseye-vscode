@@ -14,6 +14,7 @@ export const DB_COLLECTIONS = {
     VSCODE_ANNOTATIONS: 'vscode-annotations',
     COMMITS: 'commits',
     GROUPS: 'groups',
+    EVENTS: 'vscode-events',
 }
 
 export let db = firebase.firestore()

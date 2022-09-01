@@ -14,6 +14,10 @@ import {
     stringToShikiThemes,
     CommitObject,
     AnchorType,
+    EventType,
+    AnnotationEvent,
+    AnnotationAtEvent,
+    AnchorOnCommit,
 } from '../constants/constants'
 import {
     computeRangeFromOffset,
@@ -35,7 +39,7 @@ import {
     setAnnotationList,
     outOfDateAnnotations,
     deletedAnnotations,
-    adamiteLog,
+    catseyeLog,
     setSelectedAnnotationsNavigations,
     currentColorTheme,
     activeEditor,
@@ -1325,5 +1329,75 @@ export const handleAuditNewFile = (document: vscode.TextDocument): void => {
         if (view) {
             view.updateDisplay(annotationList)
         }
+    }
+}
+
+const getUserIdsFromAnnotations = (annotationList: Annotation[]): string[] => {
+    const replyUserIds = annotationList
+        .flatMap((a) => a.replies)
+        .map((r) => r.authorId)
+    const annoUserIds = annotationList.map((a) => a.authorId)
+    return [...new Set([...replyUserIds, ...annoUserIds])]
+}
+
+const createAnnotationSnapshotsFromAnnotations = (
+    annotationList: Annotation[]
+): AnnotationAtEvent[] => {
+    return annotationList.map((a) => {
+        return {
+            annotation: a.annotation,
+            authorId: a.authorId,
+            gitBranch: a.gitBranch,
+            gitCommit: a.gitCommit,
+            gitRepo: a.gitRepo,
+            githubUsername: a.githubUsername,
+            createdTimestamp: a.createdTimestamp,
+            anchors: a.anchors.map((anch) =>
+                createAnchorOnCommitFromAnchorObject(anch)
+            ),
+            replies: a.replies,
+            resolved: a.resolved,
+            types: a.types,
+            id: a.id,
+        }
+    })
+}
+
+export const createEvent = (
+    annotationList: Annotation[] | Annotation,
+    event: EventType
+): AnnotationEvent => {
+    return {
+        id: uuidv4(),
+        eventUserId: user ? user.uid : '',
+        usersImpacted: Array.isArray(annotationList)
+            ? getUserIdsFromAnnotations(annotationList)
+            : getUserIdsFromAnnotations([annotationList]),
+        annotationIds: Array.isArray(annotationList)
+            ? annotationList.map((a) => a.id)
+            : [annotationList.id],
+        eventType: event,
+        timestamp: new Date().getTime(),
+        annotationSnapshots: Array.isArray(annotationList)
+            ? createAnnotationSnapshotsFromAnnotations(annotationList)
+            : createAnnotationSnapshotsFromAnnotations([annotationList]),
+    }
+}
+
+export const createAnchorOnCommitFromAnchorObject = (
+    currentAnchorObject: AnchorObject
+): AnchorOnCommit => {
+    return {
+        id: currentAnchorObject.anchorId,
+        commitHash: currentAnchorObject.gitCommit,
+        createdTimestamp: currentAnchorObject.createdTimestamp,
+        html: currentAnchorObject.html,
+        anchorText: currentAnchorObject.anchorText,
+        branchName: currentAnchorObject.gitBranch,
+        anchor: currentAnchorObject.anchor,
+        stableGitUrl: currentAnchorObject.stableGitUrl,
+        path: currentAnchorObject.visiblePath,
+        surroundingCode: currentAnchorObject.surroundingCode,
+        anchorType: currentAnchorObject.anchorType,
     }
 }

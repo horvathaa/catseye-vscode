@@ -11,6 +11,7 @@ interface PastVersionProps {
     pastVersion: AnchorOnCommit | OldAnchorOnCommit
     displayBefore?: (pv: AnchorOnCommit, index: number) => string
     displayAfter?: (pv: AnchorOnCommit, index: number) => string
+    mergeSelection?: boolean
 }
 
 export interface OldAnchorOnCommit extends AnchorOnCommit {
@@ -32,6 +33,7 @@ export const PastVersion: React.FC<PastVersionProps> = ({
     handleClick,
     displayBefore,
     displayAfter,
+    mergeSelection,
 }) => {
     const [pv, setPv] = React.useState<AnchorOnCommit>(pastVersion)
     React.useEffect(() => {
@@ -46,25 +48,30 @@ export const PastVersion: React.FC<PastVersionProps> = ({
                     endOffset: 0,
                 },
             })
+        } else {
+            setPv(pastVersion)
         }
     }, [pastVersion])
+
     const showBefore = (): React.ReactElement => {
         return (
             <>
-                <p
+                <pre
                     style={{
                         opacity: '0.5',
                     }}
+                    className={styles['CodeLines']}
                 >
-                    {displayBefore && displayBefore(pastVersion, 3)}
-                </p>
-                <p
+                    {displayBefore && displayBefore(pv, 3)}
+                </pre>
+                <pre
+                    className={styles['CodeLines']}
                     style={{
                         opacity: '0.7',
                     }}
                 >
-                    {displayBefore && displayBefore(pastVersion, 2)}
-                </p>
+                    {displayBefore && displayBefore(pv, 2)}
+                </pre>
             </>
         )
     }
@@ -72,20 +79,22 @@ export const PastVersion: React.FC<PastVersionProps> = ({
     const showAfter = (): React.ReactElement => {
         return (
             <>
-                <p
+                <pre
+                    className={styles['CodeLines']}
                     style={{
                         opacity: '0.7',
                     }}
                 >
-                    {displayAfter && displayAfter(pastVersion, 1)}
-                </p>
-                <p
+                    {displayAfter && displayAfter(pv, 1)}
+                </pre>
+                <pre
+                    className={styles['CodeLines']}
                     style={{
                         opacity: '0.5',
                     }}
                 >
-                    {displayAfter && displayAfter(pastVersion, 2)}
-                </p>
+                    {displayAfter && displayAfter(pv, 2)}
+                </pre>
             </>
         )
     }
@@ -96,7 +105,11 @@ export const PastVersion: React.FC<PastVersionProps> = ({
             onClick={(e) => {
                 handleClick(e, pv.id)
             }}
-            className={styles['AnchorContainer']}
+            className={
+                mergeSelection
+                    ? `${styles['AnchorContainer']} ${styles['Selected']}`
+                    : `${styles['AnchorContainer']}`
+            }
         >
             <span>
                 <i> {pv.path} </i>
@@ -122,10 +135,11 @@ export const PastVersion: React.FC<PastVersionProps> = ({
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'scroll',
+                    maxHeight: '20vh',
                 }}
             >
                 <div className={styles['AnchorCode']}>
-                    <p>
+                    <pre className={styles['CodeLines']}>
                         {displayBefore && showBefore()}
                         <b>
                             {displayAnchorText(pv, styles)}
@@ -135,7 +149,7 @@ export const PastVersion: React.FC<PastVersionProps> = ({
                             {pv.anchorText.length > 60 ? '...' : null} */}
                         </b>
                         {displayAfter && showAfter()}
-                    </p>
+                    </pre>
                 </div>
             </div>
         </div>
@@ -155,18 +169,22 @@ export const PastVersions: React.FC<PastVersionsProps> = ({
     displayAfter,
     pastVersions,
 }) => {
-    console.log('rendering past versions')
+    React.useEffect(() => {}, [pastVersions])
+
     return (
-        <Carousel autoPlay={false}>
-            {pastVersions.map((pv: AnchorOnCommit, index) => (
-                <PastVersion
-                    handleClick={handleClick}
-                    i={index}
-                    pastVersion={pv}
-                    displayAfter={displayAfter}
-                    displayBefore={displayBefore}
-                />
-            ))}
+        <Carousel autoPlay={false} index={pastVersions.length - 1}>
+            {pastVersions.map((pv: AnchorOnCommit, index) => {
+                return (
+                    <PastVersion
+                        key={pv.id + index + 'carousel'}
+                        handleClick={handleClick}
+                        i={index}
+                        pastVersion={pv}
+                        displayAfter={displayAfter}
+                        displayBefore={displayBefore}
+                    />
+                )
+            })}
         </Carousel>
     )
 }

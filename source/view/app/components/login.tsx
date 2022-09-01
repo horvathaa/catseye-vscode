@@ -26,7 +26,7 @@ const LogIn: React.FC<Props> = ({ vscode }) => {
 
     return (
         <div className={styles['AuthContainer']}>
-            <div className={`${styles.welcome}`}>Adamite for VS Code</div>
+            <div className={`${styles.welcome}`}>catseye for VS Code</div>
             <div className={`${styles.InputFieldContainer} ${styles.row}`}>
                 <input
                     type="text"

@@ -17,7 +17,7 @@ interface Props {
     disabled?: boolean
 }
 
-const AdamiteButton: React.FC<Props> = ({
+const catseyeButton: React.FC<Props> = ({
     buttonClicked = () => {},
     name,
     icon,
@@ -53,4 +53,4 @@ const AdamiteButton: React.FC<Props> = ({
     )
 }
 
-export default AdamiteButton
+export default catseyeButton

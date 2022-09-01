@@ -11,6 +11,7 @@ import AuthorOperationButtons from './authorOperationButtons'
 import TextEditor from './textEditor'
 import styles from '../../styles/annotation.module.css'
 import { Reply as ReplyInterface } from '../../../../constants/constants'
+import cn from 'classnames'
 
 interface Props {
     id?: string | undefined
@@ -26,6 +27,7 @@ interface Props {
     cancelHandler: () => void
     deleteHandler?: (id: string) => void
     focus?: boolean
+    lastItem?: boolean
 }
 
 export const Reply: React.FC<Props> = ({
@@ -42,6 +44,7 @@ export const Reply: React.FC<Props> = ({
     cancelHandler,
     deleteHandler = undefined,
     focus,
+    lastItem = false,
 }) => {
     const [editing, setEditing] = React.useState<boolean>(false)
     const [reply, setReply] = React.useState({
@@ -70,13 +73,26 @@ export const Reply: React.FC<Props> = ({
     const createReply = (replyFromCallback: ReplyInterface): void => {
         if (submissionHandler) {
             const { replyContent } = replyFromCallback
-            const replyToSend = { ...reply, replyContent, createdTimestamp }
+            const replyToSend = {
+                ...reply,
+                replyContent,
+                createdTimestamp,
+                githubUsername: githubUsername ? githubUsername : '',
+            }
             replyToSend && submissionHandler(replyToSend)
         }
     }
 
     const ReplyContent: React.ReactElement = (
-        <div className={styles['replyContainer']}>
+        <div
+            className={
+                // styles['replyContainer']}
+                cn({
+                    [styles['replyContainer']]: true,
+                    [styles['lastItem']]: lastItem,
+                })
+            }
+        >
             <div className={styles['topRow']}>
                 <UserProfile
                     githubUsername={githubUsername ? githubUsername : ''}
@@ -106,7 +122,7 @@ export const Reply: React.FC<Props> = ({
         </div>
     )
     // Ideally createdTimestamp is updated on Submit for creation (might be happening)
-    const ReplyEditor: React.ReactElement = replying ? (
+    const ReplyEditor: React.ReactElement | null = replying ? (
         <TextEditor
             content={reply}
             submissionHandler={createReply}
@@ -116,7 +132,7 @@ export const Reply: React.FC<Props> = ({
             focus={focus}
             placeholder={'Add reply'}
         />
-    ) : (
+    ) : submissionHandler ? (
         // This shouldn't update created Timestamp, maybe have a new edit time field though
         <TextEditor
             content={reply}
@@ -124,7 +140,7 @@ export const Reply: React.FC<Props> = ({
             cancelHandler={() => setEditing(false)}
             showSplitButton={false}
         />
-    )
+    ) : null
 
     return (
         <div style={{ width: `100%` }}>

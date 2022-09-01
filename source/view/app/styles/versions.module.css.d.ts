@@ -4,6 +4,11 @@ interface CssExports {
   'AnchorCode': string;
   'AnchorContainer': string;
   'AnchorWrapper': string;
+  'CodeLines': string;
+  'Merged': string;
+  'MergedAnchorContainer': string;
+  'ReanchorTitle': string;
+  'Selected': string;
   'Suggestion': string;
   'SuggestionTitle': string;
   'Suggestions': string;

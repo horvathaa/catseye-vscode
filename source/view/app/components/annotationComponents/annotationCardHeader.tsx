@@ -9,7 +9,7 @@ import PushPinIcon from '@mui/icons-material/PushPin'
 import { Annotation } from '../../../../constants/constants'
 import UserProfile from './userProfile'
 import styles from '../../styles/annotation.module.css'
-import AdamiteButton from './AdamiteButton'
+import CatseyeButton from './CatseyeButton'
 import { createTheme } from '@mui/material'
 import { useMediaQuery } from '@material-ui/core'
 import { breakpoints } from '../../utils/viewUtils'
@@ -79,6 +79,8 @@ const CardHeader = ({
                         style={{
                             display: 'flex',
                             flexDirection: 'column',
+                            marginLeft: 10,
+                            justifyContent: 'center',
                         }}
                     >
                         <div>
@@ -112,14 +114,14 @@ const CardHeader = ({
                     }}
                 >
                     {expanded === true && anno.sharedWith != 'group' ? (
-                        <AdamiteButton
+                        <CatseyeButton
                             buttonClicked={shareAnnotation}
                             name="Share"
                             icon={<ShareIcon fontSize="small" />}
                         />
                     ) : null}
                     {expanded === true ? (
-                        <AdamiteButton
+                        <CatseyeButton
                             buttonClicked={addAnchor}
                             name="Add Anchor"
                             icon={<AnchorIcon fontSize="small" />}
@@ -127,24 +129,24 @@ const CardHeader = ({
                     ) : null}
 
                     {anno.selected ? (
-                        <AdamiteButton
+                        <CatseyeButton
                             buttonClicked={pinAnnotation}
                             name="Pin"
                             icon={<PushPinIcon fontSize="small" />}
                         />
                     ) : (
-                        <AdamiteButton
+                        <CatseyeButton
                             buttonClicked={pinAnnotation}
                             name="Pin"
                             icon={<PushPinOutlinedIcon fontSize="small" />}
                         />
                     )}
-                    <AdamiteButton
+                    <CatseyeButton
                         buttonClicked={resolveAnnotation}
                         name="Resolve"
                         icon={<CheckIcon fontSize="small" />}
                     />
-                    <AdamiteButton
+                    <CatseyeButton
                         buttonClicked={deleteAnnotation}
                         name="Delete"
                         icon={<DeleteIcon fontSize="small" />}

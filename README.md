@@ -1,4 +1,4 @@
-# catseye in VS Code
+# Catseye in VS Code
 
 Description:
 

@@ -100,6 +100,15 @@ enum InsertionType {
     After = 'after',
 }
 
+enum DeletionType {
+    ContainsDeletion = 'containsDeletion',
+    DeletionContains = 'deletionContains',
+    DeletionStarts = 'deletionStarts',
+    DeletionEnds = 'deletionEnds',
+    AfterDeletion = 'afterDeletion',
+    NoRelation = 'noRelation',
+}
+
 interface UserAddedText {
     content: string
     githubUsername: string
@@ -198,79 +207,9 @@ const MergeAnnotations: React.FC<Props> = ({
 
         const arrToPrint = newList
             .map((i) => {
-                if (Array.isArray(i.offsets)) {
-                    const arr = []
-                    // let internalContent = ""
-                    i.offsets
-                        .sort((a, b) => a.startOffset - b.startOffset)
-                        .reduce((prevOffset, currOffset, idx, fullArr) => {
-                            const sizeOfGap =
-                                currOffset.startOffset - prevOffset.endOffset
-                            let init = 0
-                            const charsSeen: number = fullArr
-                                .map((sel, j) =>
-                                    j >= idx
-                                        ? 0
-                                        : sel.endOffset - sel.startOffset
-                                )
-                                .reduce((p, c) => p + c, init)
-                            // because substring isnt inclusive
-                            console.log('prev', prevOffset, 'curr', currOffset)
-                            // let contentLen = i.content.length
-
-                            const beginningIdx =
-                                currOffset.startOffset -
-                                currOffset.startOffset +
-                                sizeOfGap +
-                                charsSeen
-                            const endIdx =
-                                currOffset.endOffset -
-                                currOffset.startOffset +
-                                sizeOfGap +
-                                charsSeen
-                            // +
-                            // 1
-                            const contentStr = i.content.substring(
-                                beginningIdx,
-                                endIdx
-                            )
-                            console.log(
-                                'indices - start',
-                                beginningIdx,
-                                'end',
-                                endIdx,
-                                'size',
-                                sizeOfGap
-                            )
-                            console.log('contentStr??', contentStr)
-                            if (!arr.length) {
-                                const firstSubStr = i.content.substring(
-                                    prevOffset.startOffset -
-                                        prevOffset.startOffset,
-                                    prevOffset.endOffset -
-                                        prevOffset.startOffset
-                                    // +
-                                    // 1 // because substring isnt inclusive
-                                )
-
-                                arr.push({
-                                    content: firstSubStr,
-                                    startOffset: prevOffset.startOffset,
-                                })
-                            }
-                            arr.push({
-                                content: contentStr,
-                                startOffset: currOffset.startOffset,
-                            })
-                            return currOffset
-                        })
-                    console.log('arr?', arr)
-                    return arr
-                } else {
-                    return {
-                        content: i.content,
-                        startOffset: i.offsets.startOffset,
-                    }
+                return {
+                    content: i.content,
+                    startOffset: i.offsets.startOffset,
                 }
             })
             .flat()
@@ -295,8 +234,18 @@ const MergeAnnotations: React.FC<Props> = ({
     ): AnnotationBodyLocationMetaData[] => {
         let charDiff = 0
         let audited = []
+        let auditedIdx = 0
         newInternal.forEach((internal, i) => {
             let auditedInternal = { ...internal }
+            console.log('hewwo?', auditedInternal)
+            if (
+                auditedInternal.offsets.startOffset ===
+                    auditedInternal.offsets.endOffset ||
+                auditedInternal.content.length === 0
+            ) {
+                // dont push empty selections
+                return
+            }
             // make sure we are flush with beginning of textarea
             if (i === 0) {
                 const startOffsetIsZero = getStartOffset(auditedInternal) === 0
@@ -311,17 +260,34 @@ const MergeAnnotations: React.FC<Props> = ({
                     }
                 }
             } else {
-                const isStartOffsetFlushWithLastEndOffset =
-                    audited[i - 1].offsets.endOffset ===
-                    internal.offsets.startOffset // offsets are not inclusive
-                if (!isStartOffsetFlushWithLastEndOffset) {
+                console.log(
+                    'idx',
+                    auditedIdx,
+                    'indexed',
+                    audited[auditedIdx - 1]
+                )
+                if (auditedIdx > 0) {
+                    const isStartOffsetFlushWithLastEndOffset =
+                        audited[auditedIdx - 1].offsets.endOffset ===
+                        internal.offsets.startOffset // offsets are not inclusive
+                    if (!isStartOffsetFlushWithLastEndOffset) {
+                        auditedInternal = {
+                            ...auditedInternal,
+                            offsets: {
+                                startOffset:
+                                    audited[auditedIdx - 1].offsets.endOffset,
+                                endOffset:
+                                    audited[auditedIdx - 1].offsets.endOffset +
+                                    auditedInternal.content.length,
+                            },
+                        }
+                    }
+                } else if (auditedIdx === 0) {
                     auditedInternal = {
                         ...auditedInternal,
                         offsets: {
-                            startOffset: audited[i - 1].offsets.endOffset,
-                            endOffset:
-                                audited[i - 1].offsets.endOffset +
-                                auditedInternal.content.length,
+                            startOffset: 0,
+                            endOffset: auditedInternal.content.length,
                         },
                     }
                 }
@@ -339,15 +305,8 @@ const MergeAnnotations: React.FC<Props> = ({
                     },
                 }
             }
-            // if(Array.isArray(auditedInternal.offsets)) {
-            //     let newOffsets = []
-            //     auditedInternal.offsets.forEach((off) => {
-            //         let diff =
-            //     })
-            // }
-
+            auditedIdx++
             audited.push(auditedInternal)
-            // return auditedInternal
         })
         return audited
     }
@@ -379,8 +338,46 @@ const MergeAnnotations: React.FC<Props> = ({
                 return aOffset - bOffset
             })
         )
-        console.log('newList', newList)
 
+        const currAnnoIds = newList.map((a) => a.annoId)
+        const currReplyIds = newList
+            .map((a) => a.replyId)
+            .filter((a) => a !== undefined)
+        let replyInfo = []
+        let annoInfo = ''
+        annotations.forEach((anno) => {
+            if (currAnnoIds.includes(anno.id)) {
+                if (currReplyIds.length) {
+                    const replyIds = anno.replies.map((r) => r.id)
+                    if (replyIds.some((r) => currReplyIds.includes(r))) {
+                        const matchingReplies = anno.replies.filter((r) =>
+                            currReplyIds.includes(r.id)
+                        )
+                        replyInfo = matchingReplies.map((r) => {
+                            return { ...r, inAnnoBody: true, annoId: anno.id }
+                        })
+                    }
+                }
+
+                const isMatchingAnnotationText = newList.find(
+                    (i) => i.annoId === anno.id && !i.replyId
+                )
+                if (isMatchingAnnotationText) {
+                    annoInfo = isMatchingAnnotationText.content
+                }
+            }
+            setAnnotationsActuallyMerged(
+                new Map(
+                    annotationsActuallyMerged.set(anno.id, {
+                        ...annotationsActuallyMerged.get(anno.id),
+                        annotation: annoInfo,
+                        replies: replyInfo,
+                    })
+                )
+            )
+            annoInfo = ''
+            replyInfo = []
+        })
         _setInternalAnnotationBodyRepresentation(newList)
     }
 
@@ -779,9 +776,41 @@ const MergeAnnotations: React.FC<Props> = ({
                 }
             }
             case 'addReply': {
-                // const annoToUpdate = internalAnnotationBodyRepresentation.find(
-                //     (a) => a.annoId === representationToChange.annoId
-                // )
+                const annoToUpdate = internalAnnotationBodyRepresentation.find(
+                    (a) => a.annoId === representationToChange.annoId
+                )
+                if (!annoToUpdate) {
+                    // determine whether annotation was either partitioned or has not been added yet
+                    const partitionedAnno =
+                        internalAnnotationBodyRepresentation.find((a) =>
+                            a.annoId.includes(representationToChange.annoId)
+                        )
+                    // add to partition -- would be better to see whether there is a reply we can append after
+                    if (partitionedAnno) {
+                        const idx =
+                            internalAnnotationBodyRepresentation.findIndex(
+                                (a) =>
+                                    a.annoId.includes(
+                                        representationToChange.annoId
+                                    )
+                            )
+                        const startOffset = sortedList.length
+                            ? getEndOffset(sortedList[idx])
+                            : 0
+                        const endOffset =
+                            startOffset + representationToChange.content.length
+                        return { startOffset, endOffset }
+                    }
+                }
+                // append to the end
+                // else
+                const startOffset = sortedList.length
+                    ? getEndOffset(sortedList[sortedList.length - 1])
+                    : 0
+                const endOffset =
+                    startOffset + representationToChange.content.length
+                return { startOffset, endOffset }
+
                 // if (annoToUpdate) {
                 //     const newOffsets =
                 //         annoToUpdate.replies && annoToUpdate.replies.length
@@ -898,57 +927,57 @@ const MergeAnnotations: React.FC<Props> = ({
                             : reply.createdTimestamp,
                     content: reply.replyContent,
                     githubUsername: reply.githubUsername,
+                    replyId: reply.id,
                 }
                 const replyOffsets: Selection = getOffsets(
                     baseInternal,
                     typeOfChange
                 )
-                const annoToUpdate = internalAnnotationBodyRepresentation.find(
-                    (a) => a.annoId === reply.annoId
-                )
-                const newReply = {
+                console.log('offsets', replyOffsets)
+
+                const newReply: AnnotationBodyLocationMetaData = {
                     ...baseInternal,
                     offsets: {
                         startOffset: replyOffsets.startOffset,
                         endOffset: replyOffsets.endOffset,
                     },
                 }
-                // const newAnno = annoToUpdate
-                //     ? {
-                //           ...annoToUpdate,
-                //           replies:
-                //               annoToUpdate.replies &&
-                //               annoToUpdate.replies.length
-                //                   ? annoToUpdate.replies.concat(newReply)
-                //                   : [newReply],
-                //           offsets: {
-                //               startOffset: getStartOffset(annoToUpdate),
-                //               endOffset: newReply.offsets.endOffset,
-                //           },
-                //       }
-                // //     : newReply
+                const updatedList = updateOffsets(
+                    getInternalOffsets(newReply),
+                    internalAnnotationBodyRepresentation.sort(
+                        (a, b) => a.timestamp - b.timestamp
+                    )
+                )
+                setInternalAnnotationBodyRepresentation(
+                    updatedList.concat(newReply)
+                )
 
-                // const offsets = {
-                //     startOffset: newAnno.offsets.startOffset,
-                //     endOffset: newAnno.offsets.endOffset,
-                // }
-                // const updatedList = updateOffsets(
-                //     offsets,
-                //     internalAnnotationBodyRepresentation.sort(
-                //         (a, b) => a.timestamp - b.timestamp
-                //     )
-                // )
-                // setInternalAnnotationBodyRepresentation(updatedList)
+                break
+            }
+            case 'removeReply': {
+                const replyToRemove = internalAnnotationBodyRepresentation.find(
+                    (i) => i.replyId && i.replyId === obj.id
+                )
+                const updatedList = updateOffsets(
+                    getInternalOffsets(replyToRemove),
+                    internalAnnotationBodyRepresentation.sort(
+                        (a, b) => a.timestamp - b.timestamp
+                    ),
+                    'removing'
+                )
+                setInternalAnnotationBodyRepresentation(
+                    updatedList.filter((i) => i.replyId !== obj.id)
+                )
                 break
             }
             case 'userAddedText': {
                 const userAddition: UserAddedText = obj as UserAddedText
-                console.log('userAddition', userAddition)
-                const surroundingMetadata =
+                // console.log('userAddition', userAddition)
+                const surroundingMetadata: SurroundingMetadata =
                     internalAnnotationBodyRepresentation.length
                         ? findSurroundingAnnotationBodyMetaData(userAddition)
                         : null
-                console.log('surroundingMetadaata', surroundingMetadata)
+                // console.log('surroundingMetadaata', surroundingMetadata)
                 let baseInternal = null
                 let partitionA = null
                 let partitionB = null
@@ -1031,10 +1060,10 @@ const MergeAnnotations: React.FC<Props> = ({
 
                         partitionA = {
                             ...objWerePartitioning,
-                            annoId:
-                                objWerePartitioning.annoId +
-                                '-' +
-                                new Date().getTime(),
+                            annoId: objWerePartitioning.annoId,
+                            //  +
+                            // '-' +
+                            // new Date().getTime() -- not sure if we need unique IDs for this -- bring back if we decide we do need that for whatever reason
                             offsets: partitionedOffsets[0],
                             content: objWerePartitioning.content.substring(
                                 0,
@@ -1044,10 +1073,10 @@ const MergeAnnotations: React.FC<Props> = ({
                         }
                         partitionB = {
                             ...objWerePartitioning,
-                            annoId:
-                                objWerePartitioning.annoId +
-                                '-' +
-                                new Date().getTime(),
+                            annoId: objWerePartitioning.annoId,
+                            // +
+                            // '-' +
+                            // new Date().getTime()
                             offsets: partitionedOffsets[1],
                             content: objWerePartitioning.content.substring(
                                 partitionedOffsets[1].startOffset -
@@ -1088,6 +1117,90 @@ const MergeAnnotations: React.FC<Props> = ({
                         ? updatedList
                         : updatedList.concat(baseInternal)
                 )
+                break
+            }
+            case 'userRemovedText': {
+                const removal = obj as UserAddedText
+                console.log('removal', removal)
+                const deletionLen =
+                    removal.offsets.endOffset - removal.offsets.startOffset
+                const intersections = internalAnnotationBodyRepresentation
+                    .map((a, i) => {
+                        return {
+                            ...a,
+                            i,
+                            deletionType: getDeletionType(a, removal.offsets),
+                        }
+                    })
+                    .filter(
+                        (a) => a.deletionType !== DeletionType.DeletionContains
+                    )
+
+                const newList = intersections.map((a, i) => {
+                    const position =
+                        removal.offsets.startOffset - a.offsets.startOffset
+                    switch (a.deletionType) {
+                        case DeletionType.ContainsDeletion: {
+                            console.log(
+                                'new val',
+                                a.content.substring(0, position) +
+                                    a.content.substring(position)
+                            )
+                            return {
+                                ...a,
+                                offsets: {
+                                    startOffset: a.offsets.startOffset,
+                                    endOffset:
+                                        a.offsets.endOffset - deletionLen,
+                                },
+                                content:
+                                    a.content.substring(0, position) +
+                                    a.content.substring(position + deletionLen),
+                            }
+                        }
+                        case DeletionType.DeletionStarts: {
+                            return {
+                                ...a,
+                                offsets: {
+                                    startOffset: a.offsets.startOffset,
+                                    endOffset: removal.offsets.startOffset,
+                                },
+                                content: a.content.substring(0, position),
+                            }
+                        }
+                        case DeletionType.DeletionEnds: {
+                            return {
+                                ...a,
+                                offsets: {
+                                    startOffset:
+                                        removal.offsets.endOffset - deletionLen,
+                                    endOffset:
+                                        a.offsets.endOffset - deletionLen,
+                                },
+                                content: a.content.substring(
+                                    position + deletionLen
+                                ),
+                            }
+                        }
+                        case DeletionType.AfterDeletion: {
+                            return {
+                                ...a,
+                                offsets: {
+                                    startOffset:
+                                        a.offsets.startOffset - deletionLen,
+                                    endOffset:
+                                        a.offsets.endOffset - deletionLen,
+                                },
+                            }
+                        }
+                        case DeletionType.NoRelation: {
+                            return a
+                        }
+                    }
+                })
+                console.log('new list?', newList)
+                updateInternalRepresentationGithubUsernames(newList)
+                setInternalAnnotationBodyRepresentation(newList)
                 break
             }
             case 'githubUsernames': {
@@ -1213,6 +1326,35 @@ const MergeAnnotations: React.FC<Props> = ({
             off.endOffset >= sel.endOffset
         ) {
             return InsertionType.Inside
+        }
+    }
+
+    const inRange = (sel: Selection, num: number): boolean => {
+        return sel.startOffset <= num && num <= sel.endOffset
+    }
+
+    const getDeletionType = (
+        internal: AnnotationBodyLocationMetaData,
+        offset: Selection
+    ): DeletionType => {
+        if (
+            offset.startOffset < internal.offsets.startOffset &&
+            offset.endOffset > internal.offsets.endOffset
+        ) {
+            return DeletionType.DeletionContains
+        } else if (
+            inRange(internal.offsets, offset.startOffset) &&
+            inRange(internal.offsets, offset.endOffset)
+        ) {
+            return DeletionType.ContainsDeletion
+        } else if (inRange(internal.offsets, offset.startOffset)) {
+            return DeletionType.DeletionStarts
+        } else if (inRange(internal.offsets, offset.endOffset)) {
+            return DeletionType.DeletionEnds
+        } else if (internal.offsets.startOffset >= offset.endOffset) {
+            return DeletionType.AfterDeletion
+        } else {
+            return DeletionType.NoRelation
         }
     }
 
@@ -1429,35 +1571,8 @@ const MergeAnnotations: React.FC<Props> = ({
     }
 
     const removeAllAnnotationContent = (): void => {
-        let newAnnoBody = ''
-        let newUserSet = new Set<string>()
-        let hasRepliesInBody = false
-        annotationsActuallyMerged.forEach((value, key) => {
-            if (value.replies && value.replies.some((r) => r.inAnnoBody)) {
-                hasRepliesInBody = true
-                value.replies
-                    .filter((r) => r.inAnnoBody)
-                    .forEach((r) => {
-                        newAnnoBody = generateNewAnnotationContent(
-                            r.githubUsername,
-                            key,
-                            r.replyContent,
-                            newAnnoBody
-                        )
-                        newUserSet.add(r.githubUsername)
-                        // addAnnotationContent(r.githubUsername, key, r.replyContent, newAnnoBody)
-                    })
-            }
-        })
-        const finalAnnoBody = hasRepliesInBody
-            ? resetAuthorListByUsernames(newAnnoBody, [...newUserSet]).trim()
-            : ''
-        setNewAnnotation(
-            buildAnnotation({ ...newAnnotation, annotation: finalAnnoBody })
-        )
-        resetMapByField('annotation')
-        setGetAllAnnotation(false)
         removeAllAnnotationMetadata()
+        setGetAllAnnotation(false)
     }
 
     const getAllAnnotationMetadata = (): void => {
@@ -1516,53 +1631,23 @@ const MergeAnnotations: React.FC<Props> = ({
     }
 
     const getAllAnnotationContent = (): void => {
-        const { annotation } = newAnnotation
-        const combinedAnnotationBody: string = annotations
-            .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
-            .reduce((prevValue: string, currAnno: Annotation) => {
-                let content = prevValue
-                if (
-                    !annotationsActuallyMerged.get(currAnno.id).annotation ||
-                    annotationsActuallyMerged.get(currAnno.id).annotation === ''
-                ) {
-                    if (annotation !== '') {
-                        content = generateNewAnnotationContent(
-                            currAnno.githubUsername,
-                            currAnno.id,
-                            currAnno.annotation,
-                            content
-                        )
-                    } else if (
-                        currAnno.annotation &&
-                        currAnno.annotation.length > 0
-                    ) {
-                        content += generateNewAnnotationContent(
-                            currAnno.githubUsername,
-                            currAnno.id,
-                            currAnno.annotation
-                        )
-                    }
-                }
-                // updateInternalRepresentation('addAnnotation', currAnno)
-                return content
-            }, annotation)
         getAllAnnotationMetadata()
-        const combinedAnnotationBodyWithAuthors = resetAuthorListByUsernames(
-            combinedAnnotationBody,
-            [
-                ...new Set([
-                    ...githubUsernames,
-                    ...annotations.map((a) => a.githubUsername),
-                ]),
-            ]
-        ).trim()
+        // const combinedAnnotationBodyWithAuthors = resetAuthorListByUsernames(
+        //     combinedAnnotationBody,
+        //     [
+        //         ...new Set([
+        //             ...githubUsernames,
+        //             ...annotations.map((a) => a.githubUsername),
+        //         ]),
+        //     ]
+        // ).trim()
         setAllAnnotationsInMap(annotations, 'annotation')
-        setNewAnnotation(
-            buildAnnotation({
-                ...newAnnotation,
-                annotation: combinedAnnotationBodyWithAuthors,
-            })
-        )
+        // setNewAnnotation(
+        //     buildAnnotation({
+        //         ...newAnnotation,
+        //         annotation: combinedAnnotationBodyWithAuthors,
+        //     })
+        // )
         // addAnnotationContent(githubUsername)
         setGetAllAnnotation(true)
     }
@@ -1647,29 +1732,14 @@ const MergeAnnotations: React.FC<Props> = ({
             createAnnotationInternalRepresentation(
                 annotations.find((a) => a.id === annoId)
             )
-        console.log('newInternalRepresentation', newInternalRepresentation)
+
         const newList = updateOffsets(
             getInternalOffsets(newInternalRepresentation),
             internalAnnotationBodyRepresentation
         ).concat(newInternalRepresentation)
-        console.log('wha', newList)
 
         setInternalAnnotationBodyRepresentation(newList)
         updateInternalRepresentationGithubUsernames(newList)
-        // const newAnnotationContent = alreadyBuiltAnnotationContent
-        //     ? alreadyBuiltAnnotationContent
-        //     : generateNewAnnotationContent(
-        //           githubUsername,
-        //           annoId,
-        //           selectedAnnotation
-        //       )
-        // console.log('new content', newAnnotationContent)
-        // setNewAnnotation(
-        //     buildAnnotation({
-        //         ...newAnnotation,
-        //         annotation: newAnnotationContent.trim(),
-        //     })
-        // )
 
         setAnnotationsActuallyMerged(
             new Map(
@@ -1681,57 +1751,19 @@ const MergeAnnotations: React.FC<Props> = ({
         )
     }
 
-    const generateRemovedAnnotationContent = (
-        selectedAnnotation: string,
-        content?: string
-    ): string => {
-        const { annotation } = newAnnotation
-        const contentToRemoveFrom = content ? content : annotation
-        const beginningOfAnnotation = contentToRemoveFrom.indexOf(
-            '\n' + selectedAnnotation
-        )
-        const endOfAnnotation =
-            contentToRemoveFrom.indexOf('\n' + selectedAnnotation) +
-            selectedAnnotation.length +
-            1
-        const newAnnotationContent =
-            contentToRemoveFrom.substring(0, beginningOfAnnotation) +
-            contentToRemoveFrom.substring(
-                endOfAnnotation,
-                annotation.indexOf(`{${githubUsernames[0]}`)
-            )
-        return newAnnotationContent
-    }
-
     const removeAnnotationContent = (
         selectedAnnotation: string,
         githubUsername: string,
         annoId: string
     ) => {
+        console.log('hewwo?', internalAnnotationBodyRepresentation)
         const updatedList = internalAnnotationBodyRepresentation.filter(
-            (i) => !i.annoId.includes(annoId)
+            (i) => !i.annoId.includes(annoId) || i.replyId
         )
+        console.log('afterFilter', updatedList)
         setInternalAnnotationBodyRepresentation(updatedList)
         updateInternalRepresentationGithubUsernames(updatedList)
-        // const newAnnotationContent =
-        //     generateRemovedAnnotationContent(selectedAnnotation)
-        // const authorList = handleUpdateGithubUsernames(
-        //     githubUsername,
-        //     annoId,
-        //     'remove',
-        //     'annotation'
-        // )
-        // const finalStr = `${newAnnotationContent} ${authorList}`.trim()
-        // setNewAnnotation(
-        //     buildAnnotation({
-        //         ...newAnnotation,
-        //         annotation: finalStr,
-        //     })
-        // )
-        // console.log('set anno actually merged remove anno content', {
-        //     ...annotationsActuallyMerged.get(annoId),
-        //     annotation: '',
-        // })
+
         setAnnotationsActuallyMerged(
             new Map(
                 annotationsActuallyMerged.set(annoId, {
@@ -1848,33 +1880,34 @@ const MergeAnnotations: React.FC<Props> = ({
                 .get(object.annoId)
                 .replies.find((r) => r.id === object.id)
             if (mergedReply.inAnnoBody) {
-                const beginningOfReply = annotation.indexOf(
-                    '\n' + mergedReply.replyContent
-                )
-                const endOfReply =
-                    annotation.indexOf('\n' + mergedReply.replyContent) +
-                    mergedReply.replyContent.length +
-                    1
-                const newAnnotationContent =
-                    annotation.substring(0, beginningOfReply) +
-                    annotation.substring(
-                        endOfReply,
-                        annotation.indexOf(`{${githubUsernames[0]}`)
-                    )
-                const authorList = handleUpdateGithubUsernames(
-                    githubUsername,
-                    annoId,
-                    'remove',
-                    'replies',
-                    mergedReply.id
-                )
-                const finalStr = `${newAnnotationContent} ${authorList}`.trim()
-                setNewAnnotation(
-                    buildAnnotation({
-                        ...newAnnotation,
-                        annotation: finalStr,
-                    })
-                )
+                updateInternalRepresentation('removeReply', mergedReply)
+                // const beginningOfReply = annotation.indexOf(
+                //     '\n' + mergedReply.replyContent
+                // )
+                // const endOfReply =
+                //     annotation.indexOf('\n' + mergedReply.replyContent) +
+                //     mergedReply.replyContent.length +
+                //     1
+                // const newAnnotationContent =
+                //     annotation.substring(0, beginningOfReply) +
+                //     annotation.substring(
+                //         endOfReply,
+                //         annotation.indexOf(`{${githubUsernames[0]}`)
+                //     )
+                // const authorList = handleUpdateGithubUsernames(
+                //     githubUsername,
+                //     annoId,
+                //     'remove',
+                //     'replies',
+                //     mergedReply.id
+                // )
+                // const finalStr = `${newAnnotationContent} ${authorList}`.trim()
+                // setNewAnnotation(
+                //     buildAnnotation({
+                //         ...newAnnotation,
+                //         annotation: finalStr,
+                //     })
+                // )
 
                 setAnnotationsActuallyMerged(
                     new Map(
@@ -1916,32 +1949,33 @@ const MergeAnnotations: React.FC<Props> = ({
             }
         } else if (operation === 'add') {
             if (level === 'annotation') {
-                const partOfStringToAddTo = annotation.includes(
-                    '{' + githubUsernames[0]
-                )
-                    ? annotation.split('{' + githubUsernames[0])[0]
-                    : ''
+                updateInternalRepresentation('addReply', { annoId, ...rest })
+                // const partOfStringToAddTo = annotation.includes(
+                //     '{' + githubUsernames[0]
+                // )
+                //     ? annotation.split('{' + githubUsernames[0])[0]
+                //     : ''
                 const replyToAdd = { ...rest, inAnnoBody: true }
 
-                const listOfAuthors = handleUpdateGithubUsernames(
-                    githubUsername,
-                    annoId,
-                    'add',
-                    'replies'
-                    // replyToAdd.id
-                )
+                // const listOfAuthors = handleUpdateGithubUsernames(
+                //     githubUsername,
+                //     annoId,
+                //     'add',
+                //     'replies'
+                //     // replyToAdd.id
+                // )
 
-                const newAnnotationContent =
-                    annotation.trim() !== ''
-                        ? `${partOfStringToAddTo} \n${object.replyContent} ${listOfAuthors}`.trim()
-                        : `${object.replyContent} ${listOfAuthors}`.trim()
+                // const newAnnotationContent =
+                //     annotation.trim() !== ''
+                //         ? `${partOfStringToAddTo} \n${object.replyContent} ${listOfAuthors}`.trim()
+                //         : `${object.replyContent} ${listOfAuthors}`.trim()
 
-                setNewAnnotation(
-                    buildAnnotation({
-                        ...newAnnotation,
-                        annotation: newAnnotationContent,
-                    })
-                )
+                // setNewAnnotation(
+                //     buildAnnotation({
+                //         ...newAnnotation,
+                //         annotation: newAnnotationContent,
+                //     })
+                // )
 
                 const mergedReplies =
                     annotationsActuallyMerged.get(annoId).replies
@@ -2482,4 +2516,26 @@ export default MergeAnnotations
 //     }
 // } else {
 //     return ''
+// }
+
+// const generateRemovedAnnotationContent = (
+//     selectedAnnotation: string,
+//     content?: string
+// ): string => {
+//     const { annotation } = newAnnotation
+//     const contentToRemoveFrom = content ? content : annotation
+//     const beginningOfAnnotation = contentToRemoveFrom.indexOf(
+//         '\n' + selectedAnnotation
+//     )
+//     const endOfAnnotation =
+//         contentToRemoveFrom.indexOf('\n' + selectedAnnotation) +
+//         selectedAnnotation.length +
+//         1
+//     const newAnnotationContent =
+//         contentToRemoveFrom.substring(0, beginningOfAnnotation) +
+//         contentToRemoveFrom.substring(
+//             endOfAnnotation,
+//             annotation.indexOf(`{${githubUsernames[0]}`)
+//         )
+//     return newAnnotationContent
 // }

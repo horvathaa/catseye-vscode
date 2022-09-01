@@ -58,9 +58,15 @@ const TextEditor: React.FC<Props> = ({
     const [willBePinned, setWillBePinned] = React.useState<boolean>(false)
     const [hasSelectedRange, setHasSelectedRange] =
         React.useState<boolean>(false)
-    const [selectedRange, setSelectedRange] = React.useState<Selection | null>(
+    const [selectedRange, _setSelectedRange] = React.useState<Selection | null>(
         null
     )
+    const selectedRangeRef = React.useRef(selectedRange)
+    const setSelectedRange = (newSelectedRange: Selection): void => {
+        console.log('setting...', newSelectedRange)
+        selectedRangeRef.current = newSelectedRange
+        _setSelectedRange(newSelectedRange)
+    }
 
     const [clipboardText, _setClipboardText] = React.useState<string>('')
 
@@ -145,14 +151,28 @@ const TextEditor: React.FC<Props> = ({
         if (typeof text === 'string') {
             const textArea = e.target as HTMLTextAreaElement
             const nativeEvent = e.nativeEvent as InputEvent
+            if (nativeEvent.inputType.includes('deleteContent')) {
+                return
+            }
             const userText =
                 nativeEvent.inputType == 'insertFromPaste'
                     ? clipboardText
+                    : nativeEvent.inputType.includes('deleteContent')
+                    ? ''
                     : (e.nativeEvent as InputEvent).data
-
+            console.log(
+                'selectedRange',
+                selectedRange,
+                'hewwo?',
+                window.getSelection()?.toString()
+            )
             const selection: Selection = {
-                startOffset: textArea.selectionStart - userText.length, // REALLY stupid im so mad holy shit
-                endOffset: textArea.selectionEnd, // slightly less stupid
+                startOffset: nativeEvent.inputType.includes('deleteContent')
+                    ? selectedRangeRef.current.startOffset
+                    : textArea.selectionStart - userText.length, // REALLY stupid im so mad holy shit
+                endOffset: nativeEvent.inputType.includes('deleteContent')
+                    ? selectedRangeRef.current.endOffset
+                    : textArea.selectionEnd, // slightly less stupid
             }
 
             const newText = textArea.value
@@ -197,6 +217,7 @@ const TextEditor: React.FC<Props> = ({
             } else if (key === 'Backspace') {
                 onChange(textArea.value, '', selectedRange)
             }
+            console.log('here????')
             setHasSelectedRange(false)
             setSelectedRange(null)
         }
@@ -210,11 +231,16 @@ const TextEditor: React.FC<Props> = ({
         })
         if (target.selectionStart !== target.selectionEnd) {
             setHasSelectedRange(true)
+            console.log('ewiuofehjiu', {
+                startOffset: target.selectionStart,
+                endOffset: target.selectionEnd,
+            })
             setSelectedRange({
                 startOffset: target.selectionStart,
                 endOffset: target.selectionEnd,
             })
         } else if (hasSelectedRange) {
+            console.log('or here???')
             setHasSelectedRange(false)
             setSelectedRange(null)
         }

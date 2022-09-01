@@ -1,6 +1,6 @@
 /*
  *
- * catseye Terminal Link Provider
+ * Catseye Terminal Link Provider
  * Used to connect into the user's terminal for capturing code output
  * Not currently used as it is very limited (can only capture one line and require overriding default clickable link behavior)
  *
@@ -15,15 +15,15 @@ import {
     TerminalLink,
 } from 'vscode'
 
-interface catseyeTerminalLink extends TerminalLink {
+interface CatseyeTerminalLink extends TerminalLink {
     content: string
 }
 
-export class catseyeTerminalLinkProvider implements TerminalLinkProvider {
+export class CatseyeTerminalLinkProvider implements TerminalLinkProvider {
     public provideTerminalLinks(
         context: TerminalLinkContext,
         token: CancellationToken
-    ): ProviderResult<catseyeTerminalLink[]> {
+    ): ProviderResult<CatseyeTerminalLink[]> {
         if (view) {
             const startIndex: number = 0
             const lengthOfLink: number = context.line.length
@@ -41,7 +41,7 @@ export class catseyeTerminalLinkProvider implements TerminalLinkProvider {
         }
     }
 
-    public async handleTerminalLink(link: catseyeTerminalLink): Promise<void> {
+    public async handleTerminalLink(link: CatseyeTerminalLink): Promise<void> {
         view?.addTerminalMessage(link.content)
         // text
     }

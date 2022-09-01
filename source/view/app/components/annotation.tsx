@@ -75,7 +75,6 @@ const ReactAnnotation: React.FC<Props> = ({
     const [anno, setAnno] = React.useState<Annotation>(annotation)
     const [expanded, setExpanded] = React.useState(false)
     const [edit, setEdit] = React.useState<boolean>(false)
-    const [replying, setReplying] = React.useState<boolean>(false)
     const [anchored, setAnchored] = React.useState(true) // change later
     const [dynamicCardStyle, setDynamicCardStyle] = React.useState(cardStyle)
 
@@ -327,6 +326,7 @@ const ReactAnnotation: React.FC<Props> = ({
             replies: updatedReplies,
             lastEditTime,
         })
+        console.log('is this being called???', updatedReplies)
         setAnno(newAnno)
         annoRef.current = newAnno
         vscode.postMessage({
@@ -335,7 +335,6 @@ const ReactAnnotation: React.FC<Props> = ({
             key: 'replies',
             value: updatedReplies,
         })
-        setReplying(false)
         // consider notifying annotation list that this value changed
     }
 
@@ -461,7 +460,9 @@ const ReactAnnotation: React.FC<Props> = ({
                 {isMedOrMore && allowSelection && (
                     <Checkbox
                         checked={selected}
-                        onChange={() => annotationSelected(anno)}
+                        onChange={() =>
+                            annotationSelected && annotationSelected(anno)
+                        }
                         inputProps={{ 'aria-label': 'controlled' }}
                     />
                 )}
@@ -570,7 +571,7 @@ const ReactAnnotation: React.FC<Props> = ({
                                     username={username}
                                     userId={userId}
                                     submitReply={submitReply}
-                                    cancelReply={() => setReplying(false)}
+                                    cancelReply={() => {}}
                                     deleteReply={deleteReply}
                                 />
                             </div>

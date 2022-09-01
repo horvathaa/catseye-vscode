@@ -181,12 +181,15 @@ export default class ViewLoader {
         }
     }
 
-    public createNewAnno(selection: string, annotationList: Annotation[]) {
+    public createNewAnno(
+        anchorObject: AnchorObject,
+        annotationList: Annotation[]
+    ) {
         if (this._panel && this._panel.webview) {
             this._panel.webview.postMessage({
                 command: 'newAnno',
                 payload: {
-                    selection,
+                    anchorObject,
                     annotations: annotationList,
                 },
             })

@@ -77,6 +77,7 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
             backgroundColor: hoverText,
             color: editorBackground,
             border: 'none',
+            alignItems: 'center',
             '&:hover': {
                 backgroundColor: hoverText,
                 color: editorBackground,

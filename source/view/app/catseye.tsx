@@ -8,6 +8,7 @@
 import * as React from 'react'
 import { useState } from 'react'
 import {
+    AnchorObject,
     Annotation,
     AuthorOptions,
     FilterOptions,
@@ -51,9 +52,11 @@ const CatseyePanel: React.FC<Props> = ({
         window.username ? window.username : ''
     )
     const [uid, setUserId] = useState(window.userId ? window.userId : '')
-    const [selection, setSelection] = useState('')
-    const [showNewAnnotation, setShowNewAnnotation] = useState(false)
-    const [annosToConsolidate, setAnnosToConsolidate] = useState([])
+    const [anchorObject, setAnchorObject] = useState<AnchorObject>(null)
+    const [showNewAnnotation, setShowNewAnnotation] = useState<boolean>(false)
+    const [annosToConsolidate, setAnnosToConsolidate] = useState<Annotation[]>(
+        []
+    )
     const [filterOptions, setFilterOptions] =
         React.useState<FilterOptions>(defaultFilterOptions)
     const [currentProject, setCurrentProject] = useState(
@@ -87,7 +90,7 @@ const CatseyePanel: React.FC<Props> = ({
                 // console.log('message', message)
                 return
             case 'newAnno':
-                setSelection(message.payload.selection)
+                setAnchorObject(message.payload.anchorObject)
                 setShowNewAnnotation(true)
                 const newAnnoDiv: HTMLElement | null =
                     document.getElementById('NewAnnotation')
@@ -164,13 +167,6 @@ const CatseyePanel: React.FC<Props> = ({
         setAnnosToConsolidate([])
         // setShowMergeAnnotation(false)
     }
-
-    // const massOperationSelected = (
-    //     e: React.SyntheticEvent,
-    //     operation: string
-    // ) => {
-    //     console.log('Mass Oepration Selected')
-    // }
 
     // Alternative way of getting pinned files?
     // console.log('annotations?', annotations)
@@ -371,7 +367,7 @@ const CatseyePanel: React.FC<Props> = ({
         <React.Fragment>
             {showNewAnnotation ? (
                 <NewAnnotation
-                    selection={selection}
+                    anchorObject={anchorObject}
                     vscode={vscode}
                     notifyDone={notifyDone}
                 />

@@ -362,86 +362,8 @@ export const createNewAnnotation = async () => {
                 lastEditTime: createdTimestamp,
             }
             setTempAnno(utils.buildAnnotation(temp))
-            view?.createNewAnno(html, annotationList)
+            view?.createNewAnno(anchorObject, annotationList)
         })
-}
-
-// Allow user to create file-level annotation
-export const createFileAnnotation = async (
-    context: vscode.Uri
-): Promise<void> => {
-    if (!view) {
-        await vscode.commands.executeCommand('catseye.launch')
-    } else if (!view?._panel?.visible) {
-        view?._panel?.reveal(vscode.ViewColumn.Beside)
-    }
-    const newAnnoId: string = uuidv4()
-    const projectName: string = utils.getProjectName(context.fsPath)
-    const programmingLang: string = context.toString().split('.')[
-        context.toString().split('.').length - 1
-    ]
-    const visiblePath: string = vscode.workspace.workspaceFolders
-        ? utils.getVisiblePath(projectName, context.fsPath)
-        : context.fsPath
-    const createdTimestamp = new Date().getTime()
-    const anchorObject: AnchorObject = {
-        anchor: { startLine: 0, endLine: 0, startOffset: 0, endOffset: 0 },
-        anchorText: visiblePath,
-        html: visiblePath,
-        filename: context.toString(),
-        gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
-        stableGitUrl: utils.getGithubUrl(visiblePath, projectName, true),
-        gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : '',
-        gitBranch: gitInfo[projectName]?.branch
-            ? gitInfo[projectName]?.branch
-            : '',
-        gitCommit: gitInfo[projectName]?.commit
-            ? gitInfo[projectName]?.commit
-            : 'localChange',
-        anchorPreview: visiblePath,
-        visiblePath,
-        anchorId: uuidv4(),
-        originalCode: visiblePath,
-        parentId: newAnnoId,
-        programmingLang,
-        anchored: true,
-        createdTimestamp,
-        priorVersions: [],
-        path: [],
-        surroundingCode: {
-            linesBefore: [],
-            linesAfter: [],
-        },
-        potentialReanchorSpots: [],
-        anchorType: AnchorType.file,
-    }
-    const temp = {
-        id: newAnnoId,
-        anchors: [anchorObject],
-        annotation: '',
-        deleted: false,
-        outOfDate: false,
-        createdTimestamp,
-        authorId: user?.uid,
-        gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : '',
-        gitBranch: gitInfo[projectName]?.branch
-            ? gitInfo[projectName]?.branch
-            : '',
-        gitCommit: gitInfo[projectName]?.commit
-            ? gitInfo[projectName]?.commit
-            : 'localChange',
-        projectName: projectName,
-        githubUsername: gitInfo.author,
-        replies: [],
-        outputs: [],
-        codeSnapshots: [],
-        sharedWith: 'private',
-        selected: false,
-        needToUpdate: true,
-        lastEditTime: createdTimestamp,
-    }
-    setTempAnno(utils.buildAnnotation(temp))
-    view?.createNewAnno(visiblePath, annotationList)
 }
 
 // create highlight annotation
@@ -814,3 +736,81 @@ export const overridenRevealDefinitionAction = (
     console.log('this is what we are doing')
     vscode.commands.executeCommand('editor.action.showReferences')
 }
+
+// Allow user to create file-level annotation
+// export const createFileAnnotation = async (
+//     context: vscode.Uri
+// ): Promise<void> => {
+//     if (!view) {
+//         await vscode.commands.executeCommand('catseye.launch')
+//     } else if (!view?._panel?.visible) {
+//         view?._panel?.reveal(vscode.ViewColumn.Beside)
+//     }
+//     const newAnnoId: string = uuidv4()
+//     const projectName: string = utils.getProjectName(context.fsPath)
+//     const programmingLang: string = context.toString().split('.')[
+//         context.toString().split('.').length - 1
+//     ]
+//     const visiblePath: string = vscode.workspace.workspaceFolders
+//         ? utils.getVisiblePath(projectName, context.fsPath)
+//         : context.fsPath
+//     const createdTimestamp = new Date().getTime()
+//     const anchorObject: AnchorObject = {
+//         anchor: { startLine: 0, endLine: 0, startOffset: 0, endOffset: 0 },
+//         anchorText: visiblePath,
+//         html: visiblePath,
+//         filename: context.toString(),
+//         gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
+//         stableGitUrl: utils.getGithubUrl(visiblePath, projectName, true),
+//         gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : '',
+//         gitBranch: gitInfo[projectName]?.branch
+//             ? gitInfo[projectName]?.branch
+//             : '',
+//         gitCommit: gitInfo[projectName]?.commit
+//             ? gitInfo[projectName]?.commit
+//             : 'localChange',
+//         anchorPreview: visiblePath,
+//         visiblePath,
+//         anchorId: uuidv4(),
+//         originalCode: visiblePath,
+//         parentId: newAnnoId,
+//         programmingLang,
+//         anchored: true,
+//         createdTimestamp,
+//         priorVersions: [],
+//         path: [],
+//         surroundingCode: {
+//             linesBefore: [],
+//             linesAfter: [],
+//         },
+//         potentialReanchorSpots: [],
+//         anchorType: AnchorType.file,
+//     }
+//     const temp = {
+//         id: newAnnoId,
+//         anchors: [anchorObject],
+//         annotation: '',
+//         deleted: false,
+//         outOfDate: false,
+//         createdTimestamp,
+//         authorId: user?.uid,
+//         gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : '',
+//         gitBranch: gitInfo[projectName]?.branch
+//             ? gitInfo[projectName]?.branch
+//             : '',
+//         gitCommit: gitInfo[projectName]?.commit
+//             ? gitInfo[projectName]?.commit
+//             : 'localChange',
+//         projectName: projectName,
+//         githubUsername: gitInfo.author,
+//         replies: [],
+//         outputs: [],
+//         codeSnapshots: [],
+//         sharedWith: 'private',
+//         selected: false,
+//         needToUpdate: true,
+//         lastEditTime: createdTimestamp,
+//     }
+//     setTempAnno(utils.buildAnnotation(temp))
+//     view?.createNewAnno(visiblePath, annotationList)
+// }

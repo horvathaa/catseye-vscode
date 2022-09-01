@@ -247,10 +247,10 @@ export function activate(context: vscode.ExtensionContext) {
         'catseye.addAnnotation',
         () => commands.createNewAnnotation()
     )
-    let annotateFileDisposable = vscode.commands.registerCommand(
-        'catseye.addFileAnnotation',
-        (context: any) => commands.createFileAnnotation(context)
-    )
+    // let annotateFileDisposable = vscode.commands.registerCommand(
+    //     'catseye.addFileAnnotation',
+    //     (context: any) => commands.createFileAnnotation(context)
+    // )
     let highlightDisposable = vscode.commands.registerCommand(
         'catseye.addHighlight',
         () => commands.addNewHighlight()
@@ -307,7 +307,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(createViewDisposable)
     context.subscriptions.push(annotateDisposable)
-    context.subscriptions.push(annotateFileDisposable)
+    // context.subscriptions.push(annotateFileDisposable)
     context.subscriptions.push(highlightDisposable)
     context.subscriptions.push(selectedDisposable)
     context.subscriptions.push(navigateForwardSelectedDisposable)

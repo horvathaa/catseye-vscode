@@ -78,8 +78,6 @@ interface AnnotationBodyMetaData {
 }
 
 interface AnnotationBodyLocationMetaData extends AnnotationBodyMetaData {
-    // startOffset: number
-    // endOffset: number
     offsets: Selection
 }
 
@@ -128,38 +126,18 @@ interface Props {
 
 const getStartOffset = (a: AnnotationBodyLocationMetaData): number => {
     return a.offsets.startOffset
-    // Array.isArray(a.offsets)
-    //     ? a.offsets[0].startOffset
-    // :
 }
 
 const getEndOffset = (a: AnnotationBodyLocationMetaData): number => {
     return a.offsets.endOffset
-    // Array.isArray(a.offsets)
-    //     ? a.offsets[a.offsets.length - 1].endOffset
-    //     :
 }
 
 const getInternalOffsets = (a: AnnotationBodyLocationMetaData): Selection => {
     return a.offsets
-    // Array.isArray(a.offsets)
-    //     ? { startOffset: getStartOffset(a), endOffset: getEndOffset(a) }
-    //     :
 }
 
 const isUserAddedText = (obj: any): obj is UserAddedText => {
     return obj.source === AnnotationBodySources.User
-}
-
-const isSelection = (obj: any): obj is Selection => {
-    return obj.hasOwnProperty('startOffset') && obj.hasOwnProperty('endOffset')
-}
-
-const offsetsAreEqual = (off1: Selection, off2: Selection): boolean => {
-    return (
-        off1.endOffset === off2.endOffset &&
-        off1.startOffset === off2.startOffset
-    )
 }
 
 const MergeAnnotations: React.FC<Props> = ({
@@ -178,6 +156,7 @@ const MergeAnnotations: React.FC<Props> = ({
         newAnnotationRef.current = newAnno
         _setNewAnnotation(newAnno)
     }
+
     const [annotationsActuallyMerged, setAnnotationsActuallyMerged] =
         React.useState<Map<string, MergeInformation>>(new Map())
     const [duplicateBundles, setDuplicateBundles] = React.useState<DB>(null)
@@ -250,7 +229,7 @@ const MergeAnnotations: React.FC<Props> = ({
         newInternal: AnnotationBodyLocationMetaData[]
     ): AnnotationBodyLocationMetaData[] => {
         let charDiff = 0
-        let audited = []
+        let audited: AnnotationBodyLocationMetaData[] = []
         let auditedIdx = 0
         newInternal.forEach((internal, i) => {
             let auditedInternal = { ...internal }

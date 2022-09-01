@@ -182,7 +182,6 @@ const AnchorCarousel: React.FC<Props> = ({
 
     // why "null" as an option for removedAnchor?
     const handleReanchor = (removedAnchor: PotentialAnchorObject | null) => {
-        console.log('removedAnchor', removedAnchor)
         if (requestReanchor && removedAnchor) {
             const reanchor: ReanchorInformation = {
                 anchor: removedAnchor.anchor,

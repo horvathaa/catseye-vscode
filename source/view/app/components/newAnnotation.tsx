@@ -4,7 +4,7 @@
  * Component that's rendered when the user is authoring a new annotation.
  *
  */
-import { Card, CardContent, List, useMediaQuery } from '@material-ui/core'
+import { Card, CardContent } from '@material-ui/core'
 import * as React from 'react'
 
 import TextEditor from './annotationComponents/textEditor'
@@ -23,10 +23,6 @@ import CatseyeButton from './annotationComponents/CatseyeButton'
 import { PastVersion } from './annotationComponents/pastVersions'
 import { AnchorObject, Type } from '../../../constants/constants'
 import { createAnchorOnCommitFromAnchorObject } from './annotationComponents/anchorCarousel'
-
-interface SynProps {
-    html: string
-}
 
 interface Props {
     anchorObject: AnchorObject

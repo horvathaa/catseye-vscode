@@ -4,22 +4,12 @@ import {
     AnchorOnCommit,
     PotentialAnchorObject,
     isPotentialAnchorObject,
-    HIGH_SIMILARITY_THRESHOLD, // we are pretty confident the anchor is here
-    PASSABLE_SIMILARITY_THRESHOLD, // we are confident enough
     ReanchorInformation,
-    AnchorType,
     Anchor,
 } from '../../../../constants/constants'
 
-import { OldAnchorOnCommit, PastVersions } from './pastVersions'
+import { PastVersions } from './pastVersions'
 import { PotentialVersions } from './potentialVersions'
-
-import {
-    disabledIcon,
-    iconColor,
-    vscodeBorderColor,
-} from '../../styles/vscodeStyles'
-import catseyeButton from './catseyeButton'
 
 interface Props {
     priorVersions?: AnchorOnCommit[]
@@ -79,34 +69,15 @@ const AnchorCarousel: React.FC<Props> = ({
 
     React.useEffect(() => {
         if (priorVersions) {
-            //     console.log('hewwo??', currentAnchorObject)
             const pseudoPriorVersion: AnchorOnCommit =
                 createAnchorOnCommitFromAnchorObject(currentAnchorObject)
-            // console.log('psedi', pseudoPriorVersion)
-            // const foundCurrentAnchorToDisplay: boolean =
-            //     priorVersions.find((pv) => pv.id === pseudoPriorVersion.id)
-            //         ?.id === pseudoPriorVersion.id
-            // console.log('found', foundCurrentAnchorToDisplay)
-            setPastVersions(
-                // foundCurrentAnchorToDisplay
-                //     ?
-                [
-                    // ...priorVersions.filter(
-                    //     (a) => a.id !== pseudoPriorVersion.id
-                    // ),
-                    ...priorVersions,
-                    pseudoPriorVersion,
-                ]
-                // : //priorVersions.concat(pseudoPriorVersion)
-                //   priorVersions
-            )
+            setPastVersions([...priorVersions, pseudoPriorVersion])
         } else if (!potentialVersions) {
             setPastVersions([
                 createAnchorOnCommitFromAnchorObject(currentAnchorObject),
             ])
         }
         pastVersions && setIndex(pastVersions?.length - 1)
-        // }
     }, [currentAnchorObject]) //watch for any changes to current anchor and update
 
     const handleClick = (e: React.SyntheticEvent, aId: string): void => {
@@ -133,8 +104,6 @@ const AnchorCarousel: React.FC<Props> = ({
                 pv.surroundingCode?.linesBefore[
                     pv.surroundingCode?.linesBefore?.length - index
                 ]
-            // const length = lineBefore.length
-            // const tooLong = length > 60
             return lineBefore
             // return tooLong ? lineBefore.slice(0, 60).concat('...') : lineBefore
         }

@@ -11,12 +11,7 @@ import FormGroup from '@mui/material/FormGroup'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Checkbox from '@mui/material/Checkbox'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
-import { green } from '@material-ui/core/colors'
-import {
-    editorBackground,
-    textBoxBackground,
-    vscodeTextColor,
-} from '../../styles/vscodeStyles'
+import { textBoxBackground, vscodeTextColor } from '../../styles/vscodeStyles'
 import { TextareaAutosize } from '@material-ui/core'
 
 interface Selection {
@@ -125,8 +120,9 @@ const TextEditor: React.FC<Props> = ({
     })
 
     const updateAnnotationContent = (e: React.SyntheticEvent) => {
-        if (typeof text === 'string') {
-            const textArea = e.target as HTMLTextAreaElement
+        const textArea = e.target as HTMLTextAreaElement
+        const newText = textArea.value
+        if (typeof text === 'string' && onChange) {
             const nativeEvent = e.nativeEvent as InputEvent
             if (nativeEvent.inputType.includes('deleteContent')) {
                 return
@@ -158,12 +154,13 @@ const TextEditor: React.FC<Props> = ({
                         : textArea.selectionEnd, // slightly less stupid
             }
 
-            const newText = textArea.value
             setText(newText)
-            if (onChange && userText) {
+            if (userText) {
                 // const textAdded = (e.nativeEvent as InputEvent).data
                 onChange(newText, userText, selection)
             }
+        } else if (typeof text === 'string') {
+            setText(newText)
         } else if (text.hasOwnProperty('replyContent')) {
             // Checks if is reply
             setText({
@@ -203,7 +200,6 @@ const TextEditor: React.FC<Props> = ({
             } else if (key === 'Backspace' && selectedRange) {
                 onChange(textArea.value, '', selectedRange)
             }
-            console.log('here????')
             setHasSelectedRange(false)
             setSelectedRange(null)
         }

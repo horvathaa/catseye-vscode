@@ -20,10 +20,10 @@ import {
     selectedAnnotationsNavigations,
     setSelectedAnnotationsNavigations,
     astHelper,
-    trackedFiles,
-    setTrackedFiles,
+    // trackedFiles,
+    // setTrackedFiles,
 } from '../extension'
-import { AnchorObject, AnchorType, Annotation } from '../constants/constants'
+import { AnchorObject, Annotation } from '../constants/constants'
 import * as anchor from '../anchorFunctions/anchor'
 import * as vscode from 'vscode'
 import * as utils from '../utils/utils'
@@ -35,7 +35,7 @@ import {
     catseyeFoldingRangeProvider,
     refreshFoldingRanges,
 } from '../foldingRangeProvider/foldingRangeProvider'
-import { computeMostSimilarAnchor } from '../anchorFunctions/reanchor'
+// import { computeMostSimilarAnchor } from '../anchorFunctions/reanchor'
 
 // on launch, create auth session and sign in to FireStore
 export const init = async () => {
@@ -98,6 +98,7 @@ export const createView = async (context: vscode.ExtensionContext) => {
                     case 'copyTextFromWebview': {
                         const { text } = message
                         viewHelper.handleCopyText(text)
+                        break
                     }
                     case 'exportAnnotationAsComment': {
                         const { annoId } = message

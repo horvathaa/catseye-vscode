@@ -13,7 +13,6 @@ import {
 import { Syntax } from './anchor'
 // import { parseDiff, Diff, Hunk } from 'react-diff-view';
 
-import UserProfile from './userProfile'
 import AuthorOperationButtons from './authorOperationButtons'
 import TextEditor from './textEditor'
 import styles from '../../styles/annotation.module.css'

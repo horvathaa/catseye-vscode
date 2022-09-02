@@ -7,15 +7,19 @@
 
 import {
     DebugAdapterTracker,
-    DebugConsole,
+    // DebugConsole,
     DebugSession,
     window,
     debug,
     SourceBreakpoint,
+    Location,
 } from 'vscode'
-import { Location } from 'vscode'
+
 import { MessagingService } from './messagingService'
-import { DebugProtocol } from '@vscode/debugprotocol'
+import {
+    DebugProtocol,
+    // DebuggerCommunicationService,
+} from '@vscode/debugprotocol'
 import { annotationList, gitInfo, user } from '../extension'
 import { getAllAnnotationsWithAnchorInFile } from '../utils/utils'
 import {
@@ -36,25 +40,22 @@ export interface AnnoBreakpoint {
 }
 
 export class DebugAdapter implements DebugAdapterTracker {
-    private readonly _console: DebugConsole | undefined
     private readonly messagingService: MessagingService
-    private readonly debugSession: DebugSession
-    private needToUpdate: boolean
+    private debugSession: DebugSession
     private annoBreakpoints: AnnoBreakpoint[]
-    // private debugCommunicationService: DebuggerCommunicationService;
+    // private debugCommunicationService: DebuggerCommunicationService
     constructor(
         debugSession: DebugSession,
         messagingService: MessagingService
         // debugCommunicationService: DebuggerCommunicationService
     ) {
-        this.debugSession = debugSession
-        this._console = debugSession.configuration.console
         this.messagingService = messagingService
-        this.needToUpdate = false
         this.annoBreakpoints = []
+        this.debugSession = debugSession
         // this.debugCommunicationService = debugCommunicationService;
     }
     onWillStartSession() {
+        console.log('starting this session', this.debugSession)
         if (!window.activeTextEditor) {
             return
         }
@@ -191,11 +192,11 @@ export class DebugAdapter implements DebugAdapterTracker {
                         (b) => b.needToUpdate
                     )
                     if (abNeedsUpdating) {
-                        const mostRecentVariable =
-                            message.body.variables[
-                                message.body.variables.length - 1
-                            ]
-                        const output = JSON.stringify(mostRecentVariable)
+                        // const mostRecentVariable =
+                        //     message.body.variables[
+                        //         message.body.variables.length - 1
+                        //     ]
+                        // const output = JSON.stringify(mostRecentVariable)
                         // this.transmitAutoReply(abNeedsUpdating, output);
                         this.annoBreakpoints = this.annoBreakpoints.map((b) => {
                             return b.breakpointId ===

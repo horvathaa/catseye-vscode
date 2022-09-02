@@ -18,7 +18,6 @@ import {
     Annotation,
     AnchorObject,
     Reply,
-    Snapshot,
     Type,
     ReanchorInformation,
     Anchor,
@@ -84,6 +83,7 @@ const ReactAnnotation: React.FC<Props> = ({
 
     React.useEffect(() => {
         setAnno(annotation)
+        setAnchored(annotation.anchors.some((a) => a.anchored))
     }, [annotation])
 
     const theme = createTheme({
@@ -234,22 +234,6 @@ const ReactAnnotation: React.FC<Props> = ({
         })
     }
 
-    const handlePinnedClick = (): void => {
-        vscode.postMessage({
-            command: 'updateAnnotation',
-            annoId: anno.id,
-            key: 'selected',
-            value: !anno.selected,
-        })
-    }
-
-    const exportAnnotationAsComment = (): void => {
-        vscode.postMessage({
-            command: 'exportAnnotationAsComment',
-            annoId: anno.id,
-        })
-    }
-
     const requestReanchor = (newAnchor: ReanchorInformation): void => {
         vscode.postMessage({
             command: 'reanchor',
@@ -263,53 +247,6 @@ const ReactAnnotation: React.FC<Props> = ({
             command: 'addAnchor',
             annoId: anno.id,
         })
-    }
-    const snapshotCode = (id: string): void => {
-        vscode.postMessage({
-            command: 'snapshotCode',
-            annoId: anno.id,
-            anchorId: id,
-        })
-        const anchor: AnchorObject | undefined = anno.anchors.find(
-            (a) => a.anchorId === id
-        )
-        if (!anchor) {
-            console.error('could not find anchor - leaving annotation as is')
-            return
-        }
-        const newSnapshots: Snapshot[] = anno.codeSnapshots
-            ? anno.codeSnapshots.concat([
-                  {
-                      createdTimestamp: new Date().getTime(),
-                      snapshot: anchor.html,
-                      anchorText: anchor.anchorText,
-                      anchorId: anchor.anchorId,
-                      githubUsername: username,
-                      comment: '',
-                      id: '',
-                      diff: '',
-                      deleted: false,
-                  },
-              ])
-            : [
-                  {
-                      createdTimestamp: new Date().getTime(),
-                      snapshot: anchor.html,
-                      anchorText: anchor.anchorText,
-                      anchorId: anchor.anchorId,
-                      githubUsername: username,
-                      comment: '',
-                      id: '',
-                      diff: '',
-                      deleted: false,
-                  },
-              ]
-        const newAnno: Annotation = buildAnnotation({
-            ...anno,
-            codeSnapshots: newSnapshots,
-        })
-        setAnno(newAnno)
-        annoRef.current = newAnno
     }
 
     const submitReply = (reply: Reply): void => {
@@ -360,49 +297,6 @@ const ReactAnnotation: React.FC<Props> = ({
             annoId: anno.id,
             key: 'replies',
             value: updatedReplies,
-        })
-    }
-
-    const submitSnapshot = (snapshot: Snapshot): void => {
-        const updatedSnapshots: Snapshot[] = anno.codeSnapshots.map(
-            (s: Snapshot) => {
-                return s.id === snapshot.id ? snapshot : s
-            }
-        )
-        const newAnno: Annotation = buildAnnotation({
-            ...anno,
-            codeSnapshots: updatedSnapshots,
-        })
-        setAnno(newAnno)
-        annoRef.current = newAnno
-        vscode.postMessage({
-            command: 'updateAnnotation',
-            annoId: anno.id,
-            key: 'codeSnapshots',
-            value: updatedSnapshots,
-        })
-    }
-
-    const deleteSnapshot = (id: string): void => {
-        if (!id || id === '') {
-            console.error('Could not find snapshot.')
-            return
-        }
-        const updatedSnapshots = anno.codeSnapshots.map((s: Snapshot) => {
-            return s.id === id ? { ...s, deleted: true } : s
-        })
-
-        const newAnno: Annotation = buildAnnotation({
-            ...anno,
-            codeSnapshots: updatedSnapshots,
-        })
-        setAnno(newAnno)
-        annoRef.current = newAnno
-        vscode.postMessage({
-            command: 'updateAnnotation',
-            annoId: anno.id,
-            key: 'codeSnapshots',
-            value: updatedSnapshots,
         })
     }
 

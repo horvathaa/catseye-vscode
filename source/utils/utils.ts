@@ -9,7 +9,6 @@ import firebase from '../firebase/firebase'
 import {
     Annotation,
     AnchorObject,
-    Anchor,
     Snapshot,
     stringToShikiThemes,
     CommitObject,
@@ -39,15 +38,12 @@ import {
     setAnnotationList,
     outOfDateAnnotations,
     deletedAnnotations,
-    catseyeLog,
     setSelectedAnnotationsNavigations,
     currentColorTheme,
     activeEditor,
     setCurrentGitHubProject,
-    setCurrentColorTheme,
     currentGitHubProject,
     setCurrentGitHubCommit,
-    currentGitHubCommit,
     astHelper,
     trackedFiles,
     setTrackedFiles,
@@ -60,7 +56,7 @@ import {
 } from '../firebase/functions/functions'
 import { saveAnnotations as fbSaveAnnotations } from '../firebase/functions/functions'
 import { CodeContext } from '../astHelper/nodeHelper'
-let { parse } = require('what-the-diff')
+// let { parse } = require('what-the-diff')
 var shiki = require('shiki')
 import { simpleGit, SimpleGit } from 'simple-git'
 
@@ -109,8 +105,8 @@ const arraysEqual = (a1: any[], a2: any[]): boolean => {
 export const initializeAnnotations = async (
     user: firebase.User
 ): Promise<void> => {
-    const currFilename: string | undefined =
-        vscode.window.activeTextEditor?.document.uri.path.toString()
+    // const currFilename: string | undefined =
+    //     vscode.window.activeTextEditor?.document.uri.path.toString()
     const annotations: Annotation[] =
         //sortAnnotationsByLocation(
         await getAnnotationsOnSignIn(user, currentGitHubProject)
@@ -1125,6 +1121,7 @@ export const createAnchorObject = async (
         }
     } else {
         vscode.window.showInformationMessage('Must have open text editor!')
+        return undefined
     }
 }
 
@@ -1240,9 +1237,8 @@ export const findOpenFilesToSearch = async () => {
         filesToSearch = files.map((uris: vscode.Uri) => {
             return uris.fsPath
         })
-        // console.log('files', filesToSearch)
+        console.log('files', filesToSearch, 'folder', folder)
     })
-
     // if (vscode.workspace.workspaceFolders) {
     //     vscode.window.visibleTextEditors.forEach(
     //         (editor: vscode.TextEditor) => {
@@ -1258,7 +1254,7 @@ export const findOpenFilesToSearch = async () => {
             (editor: vscode.TextDocument) => {
                 const path = editor.uri.path
                 const fsPath = editor.uri.fsPath
-                // console.log('path', path, 'fspath', fsPath)
+                console.log('path', path, 'fspath', fsPath)
             }
         )
     }

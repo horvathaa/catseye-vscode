@@ -468,8 +468,9 @@
     border-radius: 4px; */
     font-family: var(--vscode-font-family);
     overflow-wrap: anywhere;
-    font-size: 1.3em;
+    font-size: 1.2em;
     padding: 1px 7px;
+    white-space: pre-wrap;
 }
 
 .collapseExpandButton {
@@ -595,9 +596,6 @@ mark {
 .SelectableContainer:hover {
     box-shadow: 0.5px 0.5px 5px 0.5px #dcdcdc;
 } */
-
-.ReferenceContainer {
-}
 
 .QuoteInfo {
     font-style: oblique;

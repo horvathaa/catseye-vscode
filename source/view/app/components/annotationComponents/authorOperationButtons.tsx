@@ -7,8 +7,6 @@
 import * as React from 'react'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
-import styles from '../../styles/annotation.module.css'
-import { Tooltip } from '@material-ui/core'
 import CatseyeButton from './CatseyeButton'
 
 interface Props {

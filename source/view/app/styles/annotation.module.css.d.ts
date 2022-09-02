@@ -28,7 +28,6 @@ interface CssExports {
   'OutputsContainer': string;
   'Pad': string;
   'QuoteInfo': string;
-  'ReferenceContainer': string;
   'ReplyArrowBox': string;
   'SelectableContainer': string;
   'TitleContainer': string;

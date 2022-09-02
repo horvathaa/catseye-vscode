@@ -10,7 +10,7 @@ import * as path from 'path'
 import {
     AnchorObject,
     Annotation,
-    AnnotationAnchorPair,
+    // AnnotationAnchorPair,
 } from '../constants/constants'
 import {
     annotationList,
@@ -20,10 +20,10 @@ import {
     catseyeLog,
 } from '../extension'
 import {
-    getGithubUrl,
+    // getGithubUrl,
     getProjectName,
     getStableGitHubUrl,
-    getVisiblePath,
+    // getVisiblePath,
 } from '../utils/utils'
 import { AnnotationAnchorDuplicatePair } from '../viewHelper/viewHelper'
 export default class ViewLoader {

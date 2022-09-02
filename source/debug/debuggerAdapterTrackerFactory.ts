@@ -14,19 +14,20 @@ import { MessagingService } from './messagingService'
 import { DebugAdapter } from './debugAdapter'
 
 export class DebugAdapterFactory implements DebugAdapterTrackerFactory {
-    private debugSession: DebugSession
     private messagingService: MessagingService
+    private debugSession: DebugSession
 
     constructor(
         debugSession: DebugSession,
         messagingService: MessagingService
     ) {
-        this.debugSession = debugSession
         this.messagingService = messagingService
+        this.debugSession = debugSession
     }
     public createDebugAdapterTracker(
         session: DebugSession
     ): ProviderResult<DebugAdapterTracker> {
-        return new DebugAdapter(session, this.messagingService)
+        this.debugSession = session
+        return new DebugAdapter(this.debugSession, this.messagingService)
     }
 }

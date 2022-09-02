@@ -9,7 +9,6 @@ import {
     vscodeTextColor,
 } from '../../styles/vscodeStyles'
 import { createTheme, styled } from '@mui/material/styles'
-import styles from '../../styles/annotation.module.css'
 import BugReportIcon from '@mui/icons-material/BugReport' // Issue
 import TaskIcon from '@mui/icons-material/Task' // Task
 import AssignmentIcon from '@mui/icons-material/Assignment' // Proposal
@@ -31,10 +30,7 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
     const [types, setTypes] = React.useState<Type[]>(currentTypes)
     const allTypes = Object.values(Type)
 
-    React.useEffect(() => {
-        // console.log('new types', currentTypes)
-        // console.log('old types', types)
-    }, [currentTypes])
+    React.useEffect(() => {}, [currentTypes])
 
     const typesWithIcons = {
         issue: <BugReportIcon fontSize="small" />,
@@ -42,8 +38,6 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
         task: <TaskIcon fontSize="small" />,
         question: <ContactSupport fontSize="small" />,
     }
-
-    // console.log('types state value', types)
 
     const theme = createTheme({
         breakpoints: breakpoints,
@@ -103,9 +97,6 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
             {allTypes.map((type: Type, id) => {
                 return (
                     <CustomChip
-                        // style={{
-                        //     display: 'flex',
-                        // }}
                         key={id}
                         label={isMedOrMore ? type : typesWithIcons[type]}
                         icon={isMedOrMore ? typesWithIcons[type] : undefined}

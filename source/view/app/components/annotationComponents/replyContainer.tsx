@@ -161,7 +161,7 @@ const ReplyContainer: React.FC<Props> = ({
                 <ReactReply
                     githubUsername={username}
                     id={`temp-${tempIdCounter}`}
-                    authorId={userId}
+                    authorId={userId ?? ''}
                     userId={userId}
                     replying={true}
                     createdTimestamp={new Date().getTime()}

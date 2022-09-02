@@ -52,7 +52,7 @@ const CatseyePanel: React.FC<Props> = ({
         window.username ? window.username : ''
     )
     const [uid, setUserId] = useState(window.userId ? window.userId : '')
-    const [anchorObject, setAnchorObject] = useState<AnchorObject>(null)
+    const [anchorObject, setAnchorObject] = useState<AnchorObject | null>(null)
     const [showNewAnnotation, setShowNewAnnotation] = useState<boolean>(false)
     const [annosToConsolidate, setAnnosToConsolidate] = useState<Annotation[]>(
         []
@@ -365,7 +365,7 @@ const CatseyePanel: React.FC<Props> = ({
 
     return (
         <React.Fragment>
-            {showNewAnnotation ? (
+            {showNewAnnotation && anchorObject ? (
                 <NewAnnotation
                     anchorObject={anchorObject}
                     vscode={vscode}
@@ -375,8 +375,8 @@ const CatseyePanel: React.FC<Props> = ({
             {annosToConsolidate.length > 0 ? (
                 <MergeAnnotations
                     vscode={vscode}
-                    username={username}
-                    userId={userId}
+                    username={username ?? ''}
+                    userId={userId ?? ''}
                     notifyDone={notifyMergeDone}
                     annotations={annosToConsolidate}
                 />

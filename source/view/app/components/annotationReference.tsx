@@ -106,17 +106,17 @@ const AnnotationReference: React.FC<Props> = ({
 
     const isAnnotationTextAlreadySelected = (): boolean => {
         return (
-            localMergeInformation &&
-            localMergeInformation.annotation &&
+            localMergeInformation !== undefined &&
+            localMergeInformation.annotation !== undefined &&
             localMergeInformation.annotation.length > 0
         )
     }
 
     const isMedOrMore = useMediaQuery(theme.breakpoints.up('md'))
 
-    const handleClick = (): void => {
-        console.log('SELECTED')
-    }
+    // const handleClick = (): void => {
+    //     console.log('SELECTED')
+    // }
 
     const handleSelectReply = (
         id: string,
@@ -156,10 +156,10 @@ const AnnotationReference: React.FC<Props> = ({
         anchorText?: string
     ) => {
         event.stopPropagation()
-        const selectedText = document?.getSelection().toString()
-        if (selectedText.length) {
+        const selectedText = document?.getSelection()?.toString()
+        if (selectedText && selectedText.length) {
             if (part === 'anchor') {
-                if (isAnchorAlreadySelected(anchorId)) return
+                if (anchorId && isAnchorAlreadySelected(anchorId)) return
                 partSelected(part, {
                     anchorId,
                     annotationId,

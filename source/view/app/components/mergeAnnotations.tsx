@@ -49,6 +49,7 @@ import { PastVersion } from './annotationComponents/pastVersions'
 import { createAnchorOnCommitFromAnchorObject } from './annotationComponents/anchorCarousel'
 import { format } from 'path'
 import { ConstructionOutlined } from '@mui/icons-material'
+import { AnnotationAnchorDuplicatePair } from '../../../viewHelper/viewHelper'
 
 interface DB {
     [anchorText: string]: DuplicateBundle
@@ -96,6 +97,7 @@ enum InsertionType {
     Inside = 'inside',
     Before = 'before',
     After = 'after',
+    NoRelation = 'noRelation',
 }
 
 enum DeletionType {
@@ -159,7 +161,9 @@ const MergeAnnotations: React.FC<Props> = ({
 
     const [annotationsActuallyMerged, setAnnotationsActuallyMerged] =
         React.useState<Map<string, MergeInformation>>(new Map())
-    const [duplicateBundles, setDuplicateBundles] = React.useState<DB>(null)
+    const [duplicateBundles, setDuplicateBundles] = React.useState<DB | null>(
+        null
+    )
     const [getAllAnnotation, setGetAllAnnotation] =
         React.useState<boolean>(false)
     const [getAllReplies, setGetAllReplies] = React.useState<boolean>(false)
@@ -326,7 +330,7 @@ const MergeAnnotations: React.FC<Props> = ({
         const currReplyIds = newList
             .map((a) => a.replyId)
             .filter((a) => a !== undefined)
-        let replyInfo = []
+        let replyInfo: ReplyMergeInformation[] = []
         let annoInfo = ''
         annotations.forEach((anno) => {
             if (currAnnoIds.includes(anno.id)) {
@@ -349,10 +353,14 @@ const MergeAnnotations: React.FC<Props> = ({
                     annoInfo = isMatchingAnnotationText.content
                 }
             }
+            const mapCopy = annotationsActuallyMerged.get(anno.id)
             setAnnotationsActuallyMerged(
                 new Map(
                     annotationsActuallyMerged.set(anno.id, {
-                        ...annotationsActuallyMerged.get(anno.id),
+                        anchors:
+                            mapCopy && mapCopy.anchors && mapCopy.anchors.length
+                                ? mapCopy.anchors
+                                : [],
                         annotation: annoInfo,
                         replies: replyInfo,
                     })
@@ -440,24 +448,31 @@ const MergeAnnotations: React.FC<Props> = ({
                     usedAnnoIds.forEach((annoId: string) => {
                         const usedAnchorIdsThatMatchThisAnno: AnchorInformation[] =
                             anchors
-                                .filter((a) => a.parentId === annoId)
+                                .filter(
+                                    (a: AnchorObject) => a.parentId === annoId
+                                )
                                 .map((a: AnchorObject) => {
-                                    const dupPairs = removedAnchorIds.flatMap(
-                                        (r) => {
-                                            const anchorIds = r.duplicateOf.map(
-                                                (ra) => ra.anchorId
-                                            )
-                                            const annoIds = r.duplicateOf.map(
-                                                (ra) => ra.annoId
-                                            )
-                                            return {
-                                                anchorIds,
-                                                annoIds,
-                                                dupAnchorId: r.anchorId,
-                                                dupAnnoId: r.annoId,
+                                    const dupPairs: { [key: string]: any }[] =
+                                        removedAnchorIds.flatMap(
+                                            (
+                                                r: AnnotationAnchorDuplicatePair
+                                            ) => {
+                                                const anchorIds =
+                                                    r.duplicateOf.map(
+                                                        (ra) => ra.anchorId
+                                                    )
+                                                const annoIds =
+                                                    r.duplicateOf.map(
+                                                        (ra) => ra.annoId
+                                                    )
+                                                return {
+                                                    anchorIds,
+                                                    annoIds,
+                                                    dupAnchorId: r.anchorId,
+                                                    dupAnnoId: r.annoId,
+                                                }
                                             }
-                                        }
-                                    )
+                                        )
                                     const hasDups = dupPairs
                                         .filter(
                                             (h) =>
@@ -495,8 +510,11 @@ const MergeAnnotations: React.FC<Props> = ({
                                 })
                         const anchorIdsForAnnoId: AnchorInformation[] =
                             removedAnchorIds
-                                .filter((a) => a.annoId === annoId)
-                                .map((a) => {
+                                .filter(
+                                    (a: AnnotationAnchorDuplicatePair) =>
+                                        a.annoId === annoId
+                                )
+                                .map((a: AnnotationAnchorDuplicatePair) => {
                                     return {
                                         anchorId: a.anchorId,
                                         duplicateOf: a.duplicateOf,
@@ -504,11 +522,21 @@ const MergeAnnotations: React.FC<Props> = ({
                                     }
                                 })
                                 .concat(usedAnchorIdsThatMatchThisAnno)
+                        const mapCopy = annotationsActuallyMerged.get(annoId)
                         setAnnotationsActuallyMerged(
                             new Map(
                                 annotationsActuallyMerged.set(annoId, {
-                                    ...annotationsActuallyMerged.get(annoId),
+                                    replies:
+                                        mapCopy &&
+                                        mapCopy.replies &&
+                                        mapCopy.replies.length
+                                            ? mapCopy.replies
+                                            : [],
                                     anchors: anchorIdsForAnnoId,
+                                    annotation:
+                                        mapCopy && mapCopy.annotation
+                                            ? mapCopy.annotation
+                                            : '',
                                 })
                             )
                         )
@@ -723,6 +751,7 @@ const MergeAnnotations: React.FC<Props> = ({
                 return { startOffset, endOffset }
             }
         }
+        return { startOffset: 0, endOffset: 0 } // shouldnt reach this
     }
 
     const createAnnotationInternalRepresentation = (
@@ -760,15 +789,18 @@ const MergeAnnotations: React.FC<Props> = ({
             case 'addAnnotation': {
                 const internalRepresentation =
                     createAnnotationInternalRepresentation(obj as Annotation)
-                const updatedList = updateOffsets(
-                    getInternalOffsets(internalRepresentation),
-                    internalAnnotationBodyRepresentation.sort(
-                        (a, b) => a.timestamp - b.timestamp
+                if (internalRepresentation) {
+                    const updatedList = updateOffsets(
+                        getInternalOffsets(internalRepresentation),
+                        internalAnnotationBodyRepresentation.sort(
+                            (a, b) => a.timestamp - b.timestamp
+                        )
                     )
-                )
-                setInternalAnnotationBodyRepresentation(
-                    updatedList.concat(internalRepresentation)
-                )
+                    setInternalAnnotationBodyRepresentation(
+                        updatedList.concat(internalRepresentation)
+                    )
+                }
+
                 break
             }
             case 'removeAnnotation': {
@@ -776,18 +808,21 @@ const MergeAnnotations: React.FC<Props> = ({
                     internalAnnotationBodyRepresentation.find(
                         (i) => i.annoId === obj.id
                     )
-                const updatedList = updateOffsets(
-                    getInternalOffsets(internalRepresentation),
-                    internalAnnotationBodyRepresentation.sort(
-                        (a, b) => a.timestamp - b.timestamp
-                    ),
-                    'removing'
-                )
-                setInternalAnnotationBodyRepresentation(
-                    updatedList.filter(
-                        (i) => i.annoId !== internalRepresentation.annoId
+                if (internalRepresentation) {
+                    const updatedList = updateOffsets(
+                        getInternalOffsets(internalRepresentation),
+                        internalAnnotationBodyRepresentation.sort(
+                            (a, b) => a.timestamp - b.timestamp
+                        ),
+                        'removing'
                     )
-                )
+                    setInternalAnnotationBodyRepresentation(
+                        updatedList.filter(
+                            (i) => i.annoId !== internalRepresentation.annoId
+                        )
+                    )
+                }
+
                 break
             }
             case 'addReply': {
@@ -833,27 +868,30 @@ const MergeAnnotations: React.FC<Props> = ({
                 const replyToRemove = internalAnnotationBodyRepresentation.find(
                     (i) => i.replyId && i.replyId === obj.id
                 )
-                const updatedList = updateOffsets(
-                    getInternalOffsets(replyToRemove),
-                    internalAnnotationBodyRepresentation.sort(
-                        (a, b) => a.timestamp - b.timestamp
-                    ),
-                    'removing'
-                )
-                setInternalAnnotationBodyRepresentation(
-                    updatedList.filter((i) => i.replyId !== obj.id)
-                )
+                if (replyToRemove) {
+                    const updatedList = updateOffsets(
+                        getInternalOffsets(replyToRemove),
+                        internalAnnotationBodyRepresentation.sort(
+                            (a, b) => a.timestamp - b.timestamp
+                        ),
+                        'removing'
+                    )
+                    setInternalAnnotationBodyRepresentation(
+                        updatedList.filter((i) => i.replyId !== obj.id)
+                    )
+                }
+
                 break
             }
             case 'userAddedText': {
                 const userAddition: UserAddedText = obj as UserAddedText
-                const surroundingMetadata: SurroundingMetadata =
+                const surroundingMetadata: SurroundingMetadata | null =
                     internalAnnotationBodyRepresentation.length
                         ? findSurroundingAnnotationBodyMetaData(userAddition)
                         : null
-                let baseInternal = null
-                let partitionA = null
-                let partitionB = null
+                let baseInternal: AnnotationBodyLocationMetaData | null = null
+                let partitionA: AnnotationBodyLocationMetaData | null = null
+                let partitionB: AnnotationBodyLocationMetaData | null = null
                 let didPartition = false
                 let didAddToText = false
                 if (
@@ -952,9 +990,10 @@ const MergeAnnotations: React.FC<Props> = ({
                     baseInternal.offsets,
                     internalAnnotationBodyRepresentation
                 )
-                if (didPartition) {
+                if (didPartition && partitionB) {
                     updatedList = internalAnnotationBodyRepresentation
                         .map((internal, i) =>
+                            surroundingMetadata &&
                             surroundingMetadata.index === i
                                 ? partitionA
                                 : internal
@@ -964,7 +1003,7 @@ const MergeAnnotations: React.FC<Props> = ({
 
                 if (didAddToText) {
                     updatedList = updatedList.map((internal, i) =>
-                        surroundingMetadata.index === i
+                        surroundingMetadata && surroundingMetadata.index === i
                             ? baseInternal
                             : internal
                     )
@@ -1048,6 +1087,8 @@ const MergeAnnotations: React.FC<Props> = ({
                         case DeletionType.NoRelation: {
                             return a
                         }
+                        default:
+                            return a
                     }
                 })
                 updateInternalRepresentationGithubUsernames(newList)
@@ -1255,6 +1296,7 @@ const MergeAnnotations: React.FC<Props> = ({
         ) {
             return InsertionType.Inside
         }
+        return InsertionType.NoRelation
     }
 
     const inRange = (sel: Selection, num: number): boolean => {
@@ -1288,9 +1330,9 @@ const MergeAnnotations: React.FC<Props> = ({
 
     const findSurroundingAnnotationBodyMetaData = (
         userAddition: UserAddedText
-    ): SurroundingMetadata => {
-        let surroundingMetadata: SurroundingMetadata = null
-        let insertionType: InsertionType = null
+    ): SurroundingMetadata | null => {
+        let surroundingMetadata: SurroundingMetadata | null = null
+        let insertionType: InsertionType | null = null
         let otherInformation = null
 
         const isMatchingOtherUserText = internalAnnotationBodyRepresentation
@@ -1483,6 +1525,7 @@ const MergeAnnotations: React.FC<Props> = ({
                 }
             }
         }
+        return surroundingMetadata
     }
 
     const removeAllAnnotationContent = (): void => {
@@ -1510,25 +1553,7 @@ const MergeAnnotations: React.FC<Props> = ({
                 },
                 internalAnnotationBodyRepresentation
             )
-        // console.log('im a reduce pro now', newList)
-        const usernameList = [
-            ...new Set([
-                ...internalAnnotationBodyRepresentation
-                    .filter(
-                        (a) =>
-                            a.githubUsername.length > 0 &&
-                            a.source !== AnnotationBodySources.AuthorNameList
-                    )
-                    .map((i) => i.githubUsername),
-                ...newList
-                    .filter(
-                        (a) =>
-                            a.githubUsername.length > 0 &&
-                            a.source !== AnnotationBodySources.AuthorNameList
-                    )
-                    .map((i) => i.githubUsername),
-            ]),
-        ]
+
         updateInternalRepresentationGithubUsernames(newList)
     }
 
@@ -1545,10 +1570,10 @@ const MergeAnnotations: React.FC<Props> = ({
     }
 
     const addAnnotationContent = (annoId: string) => {
+        const anno = annotations.find((a) => a.id === annoId)
+        if (!anno) return
         const newInternalRepresentation =
-            createAnnotationInternalRepresentation(
-                annotations.find((a) => a.id === annoId)
-            )
+            createAnnotationInternalRepresentation(anno)
 
         const newList = updateOffsets(
             getInternalOffsets(newInternalRepresentation),
@@ -1558,10 +1583,12 @@ const MergeAnnotations: React.FC<Props> = ({
         setInternalAnnotationBodyRepresentation(newList)
         updateInternalRepresentationGithubUsernames(newList)
 
+        const mapCopy = annotationsActuallyMerged.get(annoId)
         setAnnotationsActuallyMerged(
             new Map(
                 annotationsActuallyMerged.set(annoId, {
-                    ...annotationsActuallyMerged.get(annoId),
+                    anchors: mapCopy?.anchors ?? [],
+                    replies: mapCopy?.replies ?? [],
                     annotation: newInternalRepresentation.content.trim(),
                 })
             )
@@ -1575,10 +1602,12 @@ const MergeAnnotations: React.FC<Props> = ({
         setInternalAnnotationBodyRepresentation(updatedList)
         updateInternalRepresentationGithubUsernames(updatedList)
 
+        const map = annotationsActuallyMerged.get(annoId)
         setAnnotationsActuallyMerged(
             new Map(
                 annotationsActuallyMerged.set(annoId, {
-                    ...annotationsActuallyMerged.get(annoId),
+                    replies: map && map.replies ? map.replies : [],
+                    anchors: map && map.anchors ? map.anchors : [],
                     annotation: '',
                 })
             )
@@ -1586,9 +1615,11 @@ const MergeAnnotations: React.FC<Props> = ({
     }
 
     const handleUpdateAnnotationContent = (annoId: string) => {
+        const map = annotationsActuallyMerged.get(annoId)
         if (
-            annotationsActuallyMerged.get(annoId).annotation === '' ||
-            !annotationsActuallyMerged.get(annoId).annotation // map is empty/this anno hasnt been added
+            !map ||
+            map.annotation === '' ||
+            !map.annotation // map is empty/this anno hasnt been added
         ) {
             addAnnotationContent(annoId)
         } else {
@@ -1614,18 +1645,21 @@ const MergeAnnotations: React.FC<Props> = ({
             anchorText = object.anchorText
         }
 
-        const anchorToCopy = annotations
-            .find((a) => a.id === annotationId)
-            .anchors.find((a) => a.anchorId === anchorId)
+        const anno = annotations.find((a) => a.id === annotationId)
+        if (!anno) return
+        const anchorToCopy = anno.anchors.find((a) => a.anchorId === anchorId)
         // console.log('newAnnotation', newAnnotation)
         setNewAnnotation(
             buildAnnotation({
                 ...newAnnotation,
-                anchors: newAnnotation.anchors.concat(anchorToCopy),
+                anchors: newAnnotation.anchors.concat(anchorToCopy ?? []),
             })
         )
-
-        if (duplicateBundles[text] || duplicateBundles[anchorText]) {
+        const map = annotationsActuallyMerged.get(annotationId)
+        if (
+            duplicateBundles &&
+            (duplicateBundles[text] || duplicateBundles[anchorText])
+        ) {
             // consider switching this to use our map instead of this separate obj
             duplicateBundles[anchorText].annoIds.forEach((annoId, i) => {
                 const otherDups = duplicateBundles[anchorText].annoIds
@@ -1639,20 +1673,36 @@ const MergeAnnotations: React.FC<Props> = ({
                         )
                     })
                     .filter((an) => typeof an !== 'boolean') // stupid
+                const mapToUpdate = annotationsActuallyMerged.get(annoId)
                 setAnnotationsActuallyMerged(
                     new Map(
                         annotationsActuallyMerged.set(annoId, {
-                            ...annotationsActuallyMerged.get(annoId),
-                            anchors: annotationsActuallyMerged
-                                .get(annoId)
-                                .anchors.concat({
-                                    anchorId:
-                                        duplicateBundles[anchorText].anchorIds[
-                                            i
-                                        ],
-                                    duplicateOf: [],
-                                    hasDuplicates: otherDups,
-                                }), // need to double check if this is true
+                            replies:
+                                mapToUpdate && mapToUpdate.replies
+                                    ? mapToUpdate.replies
+                                    : [],
+                            annotation:
+                                mapToUpdate && mapToUpdate.annotation
+                                    ? mapToUpdate.annotation
+                                    : '',
+                            anchors:
+                                mapToUpdate && mapToUpdate.anchors
+                                    ? mapToUpdate.anchors.concat({
+                                          anchorId:
+                                              duplicateBundles[anchorText]
+                                                  .anchorIds[i],
+                                          duplicateOf: [],
+                                          hasDuplicates: otherDups,
+                                      })
+                                    : [
+                                          {
+                                              anchorId:
+                                                  duplicateBundles[anchorText]
+                                                      .anchorIds[i],
+                                              duplicateOf: [],
+                                              hasDuplicates: otherDups,
+                                          },
+                                      ], // need to double check if this is true
                         })
                     )
                 )
@@ -1661,14 +1711,22 @@ const MergeAnnotations: React.FC<Props> = ({
             setAnnotationsActuallyMerged(
                 new Map(
                     annotationsActuallyMerged.set(annotationId, {
-                        ...annotationsActuallyMerged.get(annotationId),
-                        anchors: annotationsActuallyMerged
-                            .get(annotationId)
-                            .anchors.concat({
-                                anchorId,
-                                duplicateOf: [],
-                                hasDuplicates: [],
-                            }), // need to double check if this is true
+                        replies: map && map.replies ? map.replies : [],
+                        annotation: map && map.annotation ? map.annotation : '',
+                        anchors:
+                            map && map.anchors
+                                ? map.anchors.concat({
+                                      anchorId,
+                                      duplicateOf: [],
+                                      hasDuplicates: [],
+                                  })
+                                : [
+                                      {
+                                          anchorId,
+                                          duplicateOf: [],
+                                          hasDuplicates: [],
+                                      },
+                                  ], // need to double check if this is true
                     })
                 )
             )
@@ -1677,29 +1735,31 @@ const MergeAnnotations: React.FC<Props> = ({
 
     const handleUpdateReplies = (object: any) => {
         const { level, operation, annoId, ...rest } = object
+        const map = annotationsActuallyMerged.get(annoId)
         if (operation === 'remove') {
-            const mergedReply = annotationsActuallyMerged
-                .get(object.annoId)
-                .replies.find((r) => r.id === object.id)
-            if (mergedReply.inAnnoBody) {
+            const mergedReply =
+                map && map.replies.find((r) => r.id === object.id)
+            if (mergedReply && mergedReply.inAnnoBody) {
                 updateInternalRepresentation('removeReply', mergedReply)
+
                 setAnnotationsActuallyMerged(
                     new Map(
                         annotationsActuallyMerged.set(annoId, {
-                            ...annotationsActuallyMerged.get(annoId),
-                            replies: annotationsActuallyMerged
-                                .get(annoId)
-                                .replies.filter((r) => r.id !== mergedReply.id),
+                            annotation:
+                                map && map.annotation ? map.annotation : '',
+                            anchors: map && map.anchors ? map.anchors : [],
+                            replies: map
+                                ? map.replies.filter(
+                                      (r) => r.id !== mergedReply.id
+                                  )
+                                : [],
                         })
                     )
                 )
             } else if (
-                annotationsActuallyMerged.get(object.annoId) &&
-                annotationsActuallyMerged.get(object.annoId).replies &&
-                annotationsActuallyMerged
-                    .get(object.annoId)
-                    .replies.map((r) => r.id)
-                    .includes(object.id)
+                map &&
+                map.replies &&
+                map.replies.map((r) => r.id).includes(object.id)
             ) {
                 const newReplies = newAnnotation.replies.filter(
                     (r) => r.id !== object.id
@@ -1710,13 +1770,16 @@ const MergeAnnotations: React.FC<Props> = ({
                         replies: newReplies,
                     })
                 )
+
                 setAnnotationsActuallyMerged(
                     new Map(
                         annotationsActuallyMerged.set(object.annoId, {
-                            ...annotationsActuallyMerged.get(object.annoId),
-                            replies: annotationsActuallyMerged
-                                .get(object.annoId)
-                                .replies.filter((r) => r.id !== object.id), // need to double check if this is true
+                            anchors: map && map.anchors ? map.anchors : [],
+                            annotation:
+                                map && map.annotation ? map.annotation : '',
+                            replies:
+                                map &&
+                                map.replies.filter((r) => r.id !== object.id), // need to double check if this is true
                         })
                     )
                 )
@@ -1725,13 +1788,14 @@ const MergeAnnotations: React.FC<Props> = ({
             if (level === 'annotation') {
                 updateInternalRepresentation('addReply', { annoId, ...rest })
                 const replyToAdd = { ...rest, inAnnoBody: true }
-                const mergedReplies =
-                    annotationsActuallyMerged.get(annoId).replies
+                const mergedReplies = map ? map.replies : []
 
                 setAnnotationsActuallyMerged(
                     new Map(
                         annotationsActuallyMerged.set(annoId, {
-                            ...annotationsActuallyMerged.get(annoId),
+                            anchors: map && map.anchors ? map.anchors : [],
+                            annotation:
+                                map && map.annotation ? map.annotation : '',
                             replies: mergedReplies
                                 ? mergedReplies.concat(replyToAdd)
                                 : [replyToAdd],
@@ -1747,12 +1811,13 @@ const MergeAnnotations: React.FC<Props> = ({
                         replies: newReplies,
                     })
                 )
-                const mergedReplies =
-                    annotationsActuallyMerged.get(annoId).replies
+                const mergedReplies = map ? map.replies : []
                 setAnnotationsActuallyMerged(
                     new Map(
                         annotationsActuallyMerged.set(annoId, {
-                            ...annotationsActuallyMerged.get(annoId),
+                            annotation:
+                                map && map.annotation ? map.annotation : '',
+                            anchors: map && map.anchors ? map.anchors : [],
                             replies:
                                 mergedReplies && mergedReplies.length
                                     ? mergedReplies.concat(rest)
@@ -1794,7 +1859,7 @@ const MergeAnnotations: React.FC<Props> = ({
         annoId: string,
         anchorId: string
     ): AnnotationAnchorPair[] => {
-        let dups = []
+        let dups: AnnotationAnchorPair[] = []
         annotationsActuallyMerged.forEach((val, key) => {
             if (key === annoId) {
                 // if(val.anchors) {
@@ -1860,15 +1925,17 @@ const MergeAnnotations: React.FC<Props> = ({
             })
         )
         anchorsToRemove.forEach((d) => {
+            const map = annotationsActuallyMerged.get(d.annoId)
             setAnnotationsActuallyMerged(
                 new Map(
                     annotationsActuallyMerged.set(d.annoId, {
-                        ...annotationsActuallyMerged.get(d.annoId),
-                        anchors: annotationsActuallyMerged
-                            .get(d.annoId)
-                            .anchors.filter(
-                                (anchId) => d.anchorId !== anchId.anchorId
-                            ),
+                        annotation: map && map.annotation ? map.annotation : '',
+                        replies: map && map.replies ? map.replies : [],
+                        anchors: map
+                            ? map.anchors.filter(
+                                  (anchId) => d.anchorId !== anchId.anchorId
+                              )
+                            : [],
                     })
                 )
             )
@@ -2033,6 +2100,8 @@ const MergeAnnotations: React.FC<Props> = ({
                     >
                         {annotations.map((a: Annotation, i: number) => {
                             const map = annotationsActuallyMerged.get(a.id)
+                                ? annotationsActuallyMerged.get(a.id)
+                                : { anchors: [], annotation: '', replies: [] }
                             return (
                                 <Grid item xs={4} md={6}>
                                     <AnnotationReference

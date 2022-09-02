@@ -62,7 +62,7 @@ const TextEditor: React.FC<Props> = ({
         null
     )
     const selectedRangeRef = React.useRef(selectedRange)
-    const setSelectedRange = (newSelectedRange: Selection): void => {
+    const setSelectedRange = (newSelectedRange: Selection | null): void => {
         selectedRangeRef.current = newSelectedRange
         _setSelectedRange(newSelectedRange)
     }
@@ -133,7 +133,7 @@ const TextEditor: React.FC<Props> = ({
             }
             // worlds worst ternary
             const userText =
-                nativeEvent.inputType == 'insertFromPaste'
+                nativeEvent.inputType == 'insertFromPaste' && clipboardText
                     ? clipboardText
                     : nativeEvent.inputType.includes('deleteContent')
                     ? ''
@@ -144,19 +144,23 @@ const TextEditor: React.FC<Props> = ({
             const selection: Selection = {
                 startOffset:
                     nativeEvent.inputType.includes('deleteContent') &&
-                    selectedRangeRef !== null
+                    selectedRangeRef !== null &&
+                    selectedRangeRef.current
                         ? selectedRangeRef.current.startOffset
-                        : textArea.selectionStart - userText.length, // REALLY stupid im so mad holy shit
+                        : userText
+                        ? textArea.selectionStart - userText.length
+                        : textArea.selectionStart, // REALLY stupid im so mad holy shit
                 endOffset:
                     nativeEvent.inputType.includes('deleteContent') &&
-                    selectedRangeRef
+                    selectedRangeRef !== null &&
+                    selectedRangeRef.current
                         ? selectedRangeRef.current.endOffset
                         : textArea.selectionEnd, // slightly less stupid
             }
 
             const newText = textArea.value
             setText(newText)
-            if (onChange) {
+            if (onChange && userText) {
                 // const textAdded = (e.nativeEvent as InputEvent).data
                 onChange(newText, userText, selection)
             }
@@ -189,11 +193,14 @@ const TextEditor: React.FC<Props> = ({
                 // probably input event
                 // could add redundancy check to see if the value of the input changed as well uhguig
 
-                if (textArea.selectionStart === selectedRange.startOffset + 1) {
+                if (
+                    selectedRange &&
+                    textArea.selectionStart === selectedRange.startOffset + 1
+                ) {
                     // replaced range with char
                     onChange(textArea.value, key, selectedRange)
                 }
-            } else if (key === 'Backspace') {
+            } else if (key === 'Backspace' && selectedRange) {
                 onChange(textArea.value, '', selectedRange)
             }
             console.log('here????')
@@ -266,7 +273,7 @@ const TextEditor: React.FC<Props> = ({
                                     ...text,
                                     createdTimestamp: new Date().getTime(),
                                 })
-                                console.log('new content!', text)
+
                                 submissionHandler(text)
                                 setText({
                                     ...text,

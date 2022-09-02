@@ -225,7 +225,7 @@ const AnchorCarousel: React.FC<Props> = ({
             {/* POTENTIAL VERSIONS -- lot of redundant code between this and prior versions - should fix */}
             {potentialVersions ? (
                 <PotentialVersions
-                    potentialVersions={futureVersions}
+                    potentialVersions={futureVersions ?? []}
                     handleClick={handleClick}
                     displayBefore={displayBefore}
                     displayAfter={displayAfter}

@@ -4,9 +4,8 @@
  * Component that's rendered when the user is authoring a new annotation.
  *
  */
-import { Card, CardContent, useMediaQuery } from '@material-ui/core'
+import { Card, CardContent } from '@material-ui/core'
 import { Grid, Checkbox } from '@mui/material'
-import List from '@mui/material/List'
 import * as React from 'react'
 import styles from '../styles/annotation.module.css'
 import TextEditor from './annotationComponents/textEditor'
@@ -14,7 +13,6 @@ import {
     breakpoints,
     buildAnnotation,
     buildEmptyAnnotation,
-    getStringDifference,
 } from '../utils/viewUtils'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import DeleteIcon from '@mui/icons-material/Delete'
@@ -30,7 +28,6 @@ import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
 import {
     AnchorInformation,
     AnchorObject,
-    AnchorOnCommit,
     Annotation,
     AnnotationAnchorPair,
     isAnchorObject,
@@ -42,13 +39,10 @@ import {
 import CatseyeButton from './annotationComponents/CatseyeButton'
 import AnchorIcon from '@mui/icons-material/Anchor'
 import ReplyContainer from './annotationComponents/replyContainer'
-import ReactAnnotation from './annotation'
 import AnnotationReference from './annotationReference'
-import Carousel from 'react-material-ui-carousel'
 import { PastVersion } from './annotationComponents/pastVersions'
 import { createAnchorOnCommitFromAnchorObject } from './annotationComponents/anchorCarousel'
-import { format } from 'path'
-import { ConstructionOutlined } from '@mui/icons-material'
+
 import { AnnotationAnchorDuplicatePair } from '../../../viewHelper/viewHelper'
 
 interface DB {
@@ -889,7 +883,17 @@ const MergeAnnotations: React.FC<Props> = ({
                     internalAnnotationBodyRepresentation.length
                         ? findSurroundingAnnotationBodyMetaData(userAddition)
                         : null
-                let baseInternal: AnnotationBodyLocationMetaData | null = null
+                let baseInternal: AnnotationBodyLocationMetaData = {
+                    source: AnnotationBodySources.User,
+                    annoId: userAddition.id,
+                    timestamp: userAddition.timestamp,
+                    content: userAddition.content,
+                    githubUsername: userAddition.githubUsername,
+                    offsets: {
+                        startOffset: userAddition.offsets.startOffset,
+                        endOffset: userAddition.offsets.endOffset,
+                    },
+                }
                 let partitionA: AnnotationBodyLocationMetaData | null = null
                 let partitionB: AnnotationBodyLocationMetaData | null = null
                 let didPartition = false
@@ -986,28 +990,40 @@ const MergeAnnotations: React.FC<Props> = ({
                     }
                 }
 
-                let updatedList = updateOffsets(
+                let updatedList: any[] = updateOffsets(
                     baseInternal.offsets,
                     internalAnnotationBodyRepresentation
                 )
-                if (didPartition && partitionB) {
+                if (
+                    didPartition &&
+                    partitionB &&
+                    partitionA &&
+                    surroundingMetadata &&
+                    updatedList
+                ) {
+                    const idx = surroundingMetadata.index ?? 0
                     updatedList = internalAnnotationBodyRepresentation
-                        .map((internal, i) =>
-                            surroundingMetadata &&
-                            surroundingMetadata.index === i
-                                ? partitionA
-                                : internal
-                        )
-                        .concat(partitionB)
-                }
-
-                if (didAddToText) {
+                        ? internalAnnotationBodyRepresentation
+                              .filter((internal) => internal !== null) // ?????
+                              .map((internal, i) =>
+                                  // surroundingMetadata &&
+                                  idx === i ? partitionA : internal
+                              )
+                              .concat(partitionB)
+                        : [partitionB]
+                } else if (
+                    didAddToText &&
+                    surroundingMetadata &&
+                    baseInternal &&
+                    updatedList
+                ) {
                     updatedList = updatedList.map((internal, i) =>
-                        surroundingMetadata && surroundingMetadata.index === i
+                        surroundingMetadata.index === i
                             ? baseInternal
                             : internal
                     )
                 }
+                updatedList = updatedList.filter((a) => a !== null)
 
                 setInternalAnnotationBodyRepresentation(
                     didAddToText
@@ -1664,15 +1680,21 @@ const MergeAnnotations: React.FC<Props> = ({
             duplicateBundles[anchorText].annoIds.forEach((annoId, i) => {
                 const otherDups = duplicateBundles[anchorText].annoIds
                     .map((a, idx) => {
-                        return (
-                            idx !== i && {
-                                annoId: a,
-                                anchorId:
-                                    duplicateBundles[anchorText].anchorIds[idx],
-                            }
-                        )
+                        return idx !== i
+                            ? {
+                                  annoId: a,
+                                  anchorId:
+                                      duplicateBundles[anchorText].anchorIds[
+                                          idx
+                                      ],
+                              }
+                            : {
+                                  annoId: a,
+                                  anchorId: '',
+                              }
                     })
-                    .filter((an) => typeof an !== 'boolean') // stupid
+                    .filter((an) => an.anchorId.length > 0)
+                // .filter((an) => typeof an !== 'string') // stupid
                 const mapToUpdate = annotationsActuallyMerged.get(annoId)
                 setAnnotationsActuallyMerged(
                     new Map(
@@ -2099,9 +2121,15 @@ const MergeAnnotations: React.FC<Props> = ({
                         // sx={{ width: '100%' }} component="div" disablePadding
                     >
                         {annotations.map((a: Annotation, i: number) => {
-                            const map = annotationsActuallyMerged.get(a.id)
-                                ? annotationsActuallyMerged.get(a.id)
-                                : { anchors: [], annotation: '', replies: [] }
+                            let map: MergeInformation | undefined =
+                                annotationsActuallyMerged.get(a.id)
+
+                            if (!map)
+                                map = {
+                                    anchors: [],
+                                    replies: [],
+                                    annotation: '',
+                                }
                             return (
                                 <Grid item xs={4} md={6}>
                                     <AnnotationReference

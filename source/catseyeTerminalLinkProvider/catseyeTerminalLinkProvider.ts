@@ -43,6 +43,5 @@ export class CatseyeTerminalLinkProvider implements TerminalLinkProvider {
 
     public async handleTerminalLink(link: CatseyeTerminalLink): Promise<void> {
         view?.addTerminalMessage(link.content)
-        // text
     }
 }

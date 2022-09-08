@@ -4,33 +4,26 @@
  * Component that's rendered when the user is authoring a new annotation.
  *
  */
-import { Card, CardContent, List, useMediaQuery } from '@material-ui/core'
+import { useMediaQuery } from '@material-ui/core'
 import { Checkbox } from '@mui/material'
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import * as React from 'react'
-import annoStyles from '../styles/annotation.module.css'
-import TextEditor from './annotationComponents/textEditor'
 import { breakpoints } from '../utils/viewUtils'
-import { ThemeProvider, createTheme } from '@mui/material/styles'
+import { createTheme } from '@mui/material/styles'
 import cn from 'classnames'
 import {
     editorBackground,
     iconColor,
     vscodeTextColor,
-    cardStyle,
 } from '../styles/vscodeStyles'
 import styles from '../styles/annotation.module.css'
 import anchorStyles from '../styles/versions.module.css'
-import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
 import {
     AnchorObject,
     Annotation,
     MergeInformation,
-    Reply,
-    Type,
 } from '../../../constants/constants'
-import Carousel from 'react-material-ui-carousel'
 import ReplyContainer from './annotationComponents/replyContainer'
 import { PastVersion } from './annotationComponents/pastVersions'
 import { createAnchorOnCommitFromAnchorObject } from './annotationComponents/anchorCarousel'
@@ -113,17 +106,17 @@ const AnnotationReference: React.FC<Props> = ({
 
     const isAnnotationTextAlreadySelected = (): boolean => {
         return (
-            localMergeInformation &&
-            localMergeInformation.annotation &&
+            localMergeInformation !== undefined &&
+            localMergeInformation.annotation !== undefined &&
             localMergeInformation.annotation.length > 0
         )
     }
 
     const isMedOrMore = useMediaQuery(theme.breakpoints.up('md'))
 
-    const handleClick = (): void => {
-        console.log('SELECTED')
-    }
+    // const handleClick = (): void => {
+    //     console.log('SELECTED')
+    // }
 
     const handleSelectReply = (
         id: string,
@@ -163,10 +156,10 @@ const AnnotationReference: React.FC<Props> = ({
         anchorText?: string
     ) => {
         event.stopPropagation()
-        const selectedText = document?.getSelection().toString()
-        if (selectedText.length) {
+        const selectedText = document?.getSelection()?.toString()
+        if (selectedText && selectedText.length) {
             if (part === 'anchor') {
-                if (isAnchorAlreadySelected(anchorId)) return
+                if (anchorId && isAnchorAlreadySelected(anchorId)) return
                 partSelected(part, {
                     anchorId,
                     annotationId,
@@ -222,14 +215,6 @@ const AnnotationReference: React.FC<Props> = ({
                             )}
                             <div
                                 id={anchor.parentId + '%' + anchor.anchorId}
-                                // className={cn({
-                                //     // [anchorStyles['AnchorContainer']]: true,
-                                //     [anchorStyles['MergedAnchorContainer']]: true,
-                                //     [anchorStyles['Selected']]:
-                                //         alreadySelectedAnchors.includes(
-                                //             anchor.anchorId
-                                //         ),
-                                // })}
                                 className={
                                     anchorStyles['MergedAnchorContainer']
                                 }

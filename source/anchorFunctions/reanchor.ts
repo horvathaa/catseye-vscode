@@ -13,10 +13,10 @@ import {
 import { astHelper, gitInfo } from '../extension'
 import {
     arrayUniqueByKey,
-    getFirstLineOfHtml,
+    // getFirstLineOfHtml,
     getGithubUrl,
     getProjectName,
-    getShikiCodeHighlighting,
+    // getShikiCodeHighlighting,
     getVisiblePath,
     levenshteinDistance,
     objectsEqual,
@@ -26,8 +26,8 @@ import {
     createRangeFromObject,
     getAnchorType,
     getSurroundingCodeArea,
-    getSurroundingLinesAfterAnchor,
-    getSurroundingLinesBeforeAnchor,
+    // getSurroundingLinesAfterAnchor,
+    // getSurroundingLinesBeforeAnchor,
 } from './anchor'
 
 // toggle to true for more console messages
@@ -144,6 +144,7 @@ function numRange(size: number, startAt: number = 0): number[] {
 const getCodeAtLine = (cl: CodeLine[], l: number): CodeLine | undefined => {
     const match = cl.find((c) => c.line === l)
     if (match) return match
+    return undefined
 }
 
 const getRangeOfCodeBetweenLines = (

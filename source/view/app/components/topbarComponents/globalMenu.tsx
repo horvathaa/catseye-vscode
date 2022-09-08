@@ -14,7 +14,7 @@ import { VscMenu } from 'react-icons/vsc'
 import {
     editorBackground,
     vscodeTextColor,
-    hoverBackground,
+    // hoverBackground,
     hoverText,
 } from '../../styles/vscodeStyles'
 

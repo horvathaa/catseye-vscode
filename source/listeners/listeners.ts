@@ -19,16 +19,16 @@ import {
     deletedAnnotations,
     setDeletedAnnotationList,
     setInsertSpaces,
-    changes,
-    setChangeEvents,
-    incrementNumChangeEventsCompleted,
-    numChangeEventsCompleted,
+    // changes,
+    // setChangeEvents,
+    // incrementNumChangeEventsCompleted,
+    // numChangeEventsCompleted,
     setCurrentColorTheme,
     gitInfo,
     currentGitHubProject,
     gitApi,
-    tsFiles,
-    setTsFiles,
+    // tsFiles,
+    // setTsFiles,
     floatingDecorations,
     astHelper,
     setEventsToTransmitOnSave,
@@ -43,8 +43,8 @@ import * as utils from '../utils/utils'
 import {
     Annotation,
     AnchorObject,
-    ChangeEvent,
-    PotentialAnchorObject,
+    // ChangeEvent,
+    // PotentialAnchorObject,
     EventType,
     // AnnotationAnchorTextPair,
     // Timer
@@ -52,8 +52,8 @@ import {
 import { createEvent } from '../utils/utils'
 import { emitEvent } from '../firebase/functions/functions'
 
-let timeSinceLastEdit: number = -1
-let tempChanges: any[] = []
+// let timeSinceLastEdit: number = -1
+// let tempChanges: any[] = []
 // Update our internal representation of the color theme so Shiki (our package for code formatting) uses appropriate colors
 export const handleDidChangeActiveColorTheme = (
     colorTheme: vscode.ColorTheme
@@ -152,6 +152,7 @@ const updateAnnotationsAnchorsOnSave = (
             computeMostSimilarAnchor(document, a)
         )
         initialAnnotations = utils.updateAnnotationsWithAnchors(newAnchors)
+        console.log('initial annotations after update', initialAnnotations)
     }
 
     const annosWithNewSurroundingContext: Annotation[] =
@@ -190,57 +191,6 @@ export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
             gitUrl,
             TextDocument
         )
-}
-
-const logChanges = (e: vscode.TextDocumentChangeEvent): void => {
-    let currentTime = new Date().getTime()
-    const projectName: string = utils.getProjectName(e.document.uri.toString())
-    if (timeSinceLastEdit === -1 || currentTime - timeSinceLastEdit <= 2000) {
-        timeSinceLastEdit = currentTime
-        tempChanges.push({
-            text: e.contentChanges
-                .map((c) =>
-                    c.text !== ''
-                        ? c.text
-                        : `Delete: removed ${c.rangeLength} characters`
-                )
-                .join(' '),
-            file: e.document.fileName,
-            lines: e.contentChanges
-                .map((c) =>
-                    c.range.start.line !== c.range.end.line
-                        ? c.range.start.line + ' to ' + c.range.end.line
-                        : `${c.range.start.line}`
-                )
-                .join(' '),
-            characterChanges: e.contentChanges.flatMap((c) => {
-                return { added: c.text.length, removed: c.rangeLength }
-            }),
-        })
-    } else if (currentTime - timeSinceLastEdit >= 2000) {
-        timeSinceLastEdit = -1
-        const characterData = tempChanges.flatMap((a) => a.characterChanges)
-        setChangeEvents([
-            ...changes,
-            {
-                time: currentTime,
-                textAdded: tempChanges.map((t) => t.text).join(''),
-                commit: gitInfo[projectName].commit,
-                branch: gitInfo[projectName].branch,
-                file: [...new Set(tempChanges.map((t) => t.file))].join('; '),
-                line: [...new Set(tempChanges.map((t) => t.lines))].join('; '),
-                charactersAdded: characterData.reduce(
-                    (accumulator, t) => accumulator + t.added,
-                    0
-                ),
-                charactersRemoved: characterData.reduce(
-                    (accumulator, t) => accumulator + t.removed,
-                    0
-                ),
-            },
-        ])
-        tempChanges = []
-    }
 }
 
 const compareAnnotationAnchorTextPairs = (
@@ -472,4 +422,55 @@ export const handleDidChangeTextEditorSelection = async (
 
 // export const handleDidOpenTextDocument = (e: vscode.TextDocument): void => {
 //     console.log('hewwo???', e)
+// }
+
+// const logChanges = (e: vscode.TextDocumentChangeEvent): void => {
+//     let currentTime = new Date().getTime()
+//     const projectName: string = utils.getProjectName(e.document.uri.toString())
+//     if (timeSinceLastEdit === -1 || currentTime - timeSinceLastEdit <= 2000) {
+//         timeSinceLastEdit = currentTime
+//         tempChanges.push({
+//             text: e.contentChanges
+//                 .map((c) =>
+//                     c.text !== ''
+//                         ? c.text
+//                         : `Delete: removed ${c.rangeLength} characters`
+//                 )
+//                 .join(' '),
+//             file: e.document.fileName,
+//             lines: e.contentChanges
+//                 .map((c) =>
+//                     c.range.start.line !== c.range.end.line
+//                         ? c.range.start.line + ' to ' + c.range.end.line
+//                         : `${c.range.start.line}`
+//                 )
+//                 .join(' '),
+//             characterChanges: e.contentChanges.flatMap((c) => {
+//                 return { added: c.text.length, removed: c.rangeLength }
+//             }),
+//         })
+//     } else if (currentTime - timeSinceLastEdit >= 2000) {
+//         timeSinceLastEdit = -1
+//         const characterData = tempChanges.flatMap((a) => a.characterChanges)
+//         setChangeEvents([
+//             ...changes,
+//             {
+//                 time: currentTime,
+//                 textAdded: tempChanges.map((t) => t.text).join(''),
+//                 commit: gitInfo[projectName].commit,
+//                 branch: gitInfo[projectName].branch,
+//                 file: [...new Set(tempChanges.map((t) => t.file))].join('; '),
+//                 line: [...new Set(tempChanges.map((t) => t.lines))].join('; '),
+//                 charactersAdded: characterData.reduce(
+//                     (accumulator, t) => accumulator + t.added,
+//                     0
+//                 ),
+//                 charactersRemoved: characterData.reduce(
+//                     (accumulator, t) => accumulator + t.removed,
+//                     0
+//                 ),
+//             },
+//         ])
+//         tempChanges = []
+//     }
 // }

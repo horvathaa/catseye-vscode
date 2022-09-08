@@ -5,7 +5,6 @@
  *
  */
 import * as React from 'react'
-import { Annotation, Reply } from '../../../../constants/constants'
 import { BiSearch } from 'react-icons/bi'
 import styles from '../../styles/topbar.module.css'
 
@@ -16,11 +15,6 @@ interface Props {
 const SearchBar: React.FC<Props> = ({ searchValueUpdated }) => {
     const [value, setValue] = React.useState('')
     // const link = ['url']
-
-    const onChange = (value: string) => {
-        // console.log('Search Bar Filtered Called')
-    }
-
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const newVal = (event.target as HTMLInputElement).value
         setValue(newVal)
@@ -28,8 +22,6 @@ const SearchBar: React.FC<Props> = ({ searchValueUpdated }) => {
             // onChange('')
             searchValueUpdated('')
         } else {
-            console.log('newVal:', newVal)
-            console.log('val:', value)
             searchValueUpdated(newVal)
         }
     }

@@ -78,6 +78,7 @@ export class AstHelper {
         document: vscode.TextDocument
     ): SourceFile | undefined {
         if (this.isTsJsJsxTsx(document)) return this.createSourceFile(document)
+        return undefined
     }
 
     private refreshSourceFile(

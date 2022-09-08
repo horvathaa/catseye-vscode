@@ -9,7 +9,6 @@ import * as React from 'react'
 import {
     Anchor,
     AnchorObject,
-    PotentialAnchorObject,
     ReanchorInformation,
 } from '../../../../constants/constants'
 import Carousel from './anchorCarousel'
@@ -63,7 +62,6 @@ const AnchorVersions: React.FC<Props> = ({
     return (
         <div>
             {anchors.map((anchor: AnchorObject, i) => {
-                // console.log('rendering this anchor', anchor)
                 anchor.priorVersions && anchor.priorVersions.reverse()
                 if (anchor.priorVersions) {
                     return (
@@ -75,13 +73,8 @@ const AnchorVersions: React.FC<Props> = ({
                                     i +
                                     '-pv'
                                 }
-                                // potentialVersions={
-                                //     anchor.potentialReanchorSpots
-                                // }
                                 priorVersions={anchor.priorVersions}
                                 currentAnchorObject={anchor}
-                                // handleSelected={scrollInEditor}
-
                                 scrollInEditor={scrollInEditor}
                                 scrollToRange={scrollToRange}
                             ></Carousel>

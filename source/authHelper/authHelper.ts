@@ -22,7 +22,7 @@ import {
     getUserGithubData,
     fbSignOut,
     signInWithGithubCredential,
-    setUserGithubAccount,
+    // setUserGithubAccount,
 } from '../firebase/functions/functions'
 const path = require('path')
 require('dotenv').config({
@@ -58,7 +58,7 @@ export const initializeAuth = async () => {
         const { accessToken, account } = session
         setGitInfo({ ...gitInfo, author: account.label })
         const id = account.id.toString()
-        let result, operationMessage
+        let result // operationMessage
         try {
             // use FireStore worker account to sign in so we can make cloud function calls
             if (process.env.FB_SU_EMAIL && process.env.FB_SU_PASSWORD)
@@ -109,13 +109,6 @@ export const initializeAuth = async () => {
             } else {
                 setAnnotationList([])
             }
-            // try {
-            //     operationMessage = await setUserGithubAccount({ uid: user.uid, username: account.label });
-            // }
-            // catch(e) {
-            //     catseyeLog.appendLine('Could not set GitHub data');
-            //     console.error(e);
-            // }
         } catch (e) {
             catseyeLog.appendLine(
                 'Could not sign in to Firebase with GitHub data'

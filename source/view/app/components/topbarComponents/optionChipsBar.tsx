@@ -54,6 +54,7 @@ const OptionChipsBar: React.FC<OptionsProps> = ({
             backgroundColor: hoverText,
             color: editorBackground,
             border: 'none',
+            alignItems: 'center',
             '&:hover': {
                 backgroundColor: hoverText,
                 color: editorBackground,

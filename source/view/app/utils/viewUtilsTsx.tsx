@@ -13,7 +13,6 @@ import PersonIcon from '@mui/icons-material/Person'
 import {
     Annotation,
     Type,
-    Option,
     AuthorOptions,
     FilterOptions,
     OptionGroup,

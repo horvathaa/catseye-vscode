@@ -10,7 +10,7 @@ import * as path from 'path'
 import {
     AnchorObject,
     Annotation,
-    AnnotationAnchorPair,
+    // AnnotationAnchorPair,
 } from '../constants/constants'
 import {
     annotationList,
@@ -20,10 +20,10 @@ import {
     catseyeLog,
 } from '../extension'
 import {
-    getGithubUrl,
+    // getGithubUrl,
     getProjectName,
     getStableGitHubUrl,
-    getVisiblePath,
+    // getVisiblePath,
 } from '../utils/utils'
 import { AnnotationAnchorDuplicatePair } from '../viewHelper/viewHelper'
 export default class ViewLoader {
@@ -181,12 +181,15 @@ export default class ViewLoader {
         }
     }
 
-    public createNewAnno(selection: string, annotationList: Annotation[]) {
+    public createNewAnno(
+        anchorObject: AnchorObject,
+        annotationList: Annotation[]
+    ) {
         if (this._panel && this._panel.webview) {
             this._panel.webview.postMessage({
                 command: 'newAnno',
                 payload: {
-                    selection,
+                    anchorObject,
                     annotations: annotationList,
                 },
             })

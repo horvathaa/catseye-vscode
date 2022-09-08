@@ -10,8 +10,8 @@ import { displayAnchorText } from '../../utils/viewUtilsTsx'
 
 interface PotentialVersionProps {
     handleClick: (e: React.SyntheticEvent, aId: string) => void
-    displayBefore: (pv: PotentialAnchorObject, i: number) => string
-    displayAfter: (pv: PotentialAnchorObject, i: number) => string
+    displayBefore: (pv: PotentialAnchorObject, i: number) => string | null
+    displayAfter: (pv: PotentialAnchorObject, i: number) => string | null
     handleRemoveSuggestion: (pv: PotentialAnchorObject) => void
     handleReanchor: (pv: PotentialAnchorObject) => void
     potentialVersion?: PotentialAnchorObject

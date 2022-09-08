@@ -5,7 +5,6 @@
  *
  */
 import * as React from 'react'
-import styles from '../styles/topbar.module.css'
 import CheckIcon from '@mui/icons-material/Check'
 import DeleteIcon from '@mui/icons-material/Delete'
 import MergeIcon from '@mui/icons-material/Merge'

@@ -7,8 +7,9 @@
  */
 import * as React from 'react'
 import styles from '../../styles/annotation.module.css'
-import { breakpoints, formatTimestamp } from '../../utils/viewUtils'
-import { createTheme, useMediaQuery } from '@mui/material'
+import { formatTimestamp } from '../../utils/viewUtils'
+// import { breakpoints, formatTimestamp } from '../../utils/viewUtils'
+// import { createTheme } from '@mui/material'
 
 interface Props {
     githubUsername: string
@@ -26,11 +27,11 @@ const UserProfile: React.FC<Props> = ({
     const time: string = formatTimestamp(createdTimestamp)
     const editTime: string = formatTimestamp(lastEditTime)
 
-    const theme = createTheme({
-        breakpoints: breakpoints,
-    })
+    // const theme = createTheme({
+    //     breakpoints: breakpoints,
+    // })
 
-    const isSmOrMore = useMediaQuery(theme.breakpoints.up('sm'))
+    // const isSmOrMore = useMediaQuery(theme.breakpoints.up('sm'))
 
     return (
         <div className={styles['userContainer']}>

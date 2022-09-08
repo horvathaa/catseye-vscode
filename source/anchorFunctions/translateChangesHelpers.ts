@@ -539,9 +539,7 @@ export const shrinkOrExpandFrontOfRange = (
         const isOffsetBetweenChangeRangeEndAndAnnoStart =
             changeRange.end.line === originalStartLine &&
             changeRange.end.character < originalStartOffset
-        const relevantTextLength: number = changeText.substring(
-            changeText.lastIndexOf('\n') + 1
-        ).length
+
         newRange.startLine =
             changeRange.start.line === originalStartLine &&
             changeRange.start.character <= originalStartOffset

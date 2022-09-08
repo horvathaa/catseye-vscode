@@ -7,16 +7,9 @@
  *
  */
 import * as React from 'react'
-import cn from 'classnames'
 import styles from '../../styles/annotation.module.css'
 import { Tooltip } from '@material-ui/core'
-import {
-    VscChevronUp,
-    VscChevronDown,
-    VscChevronLeft,
-    VscChevronRight,
-    VscDeviceCamera,
-} from 'react-icons/vsc'
+import { VscChevronLeft, VscChevronRight } from 'react-icons/vsc'
 interface SynProps {
     html: string
     anchorPreview?: string
@@ -26,11 +19,12 @@ interface SynProps {
 export const Syntax: React.FC<SynProps> = ({
     html,
     anchorPreview,
-    collapsed,
+    // collapsed,
 }) => {
-    if (collapsed && anchorPreview) {
-        return <code dangerouslySetInnerHTML={{ __html: anchorPreview }}></code>
-    } else if (anchorPreview) {
+    // if (collapsed && anchorPreview) {
+    //     return <code dangerouslySetInnerHTML={{ __html: anchorPreview }}></code>
+    // } else
+    if (anchorPreview) {
         return <code dangerouslySetInnerHTML={{ __html: html }}></code>
     } else {
         return (
@@ -62,41 +56,12 @@ const Anchor: React.FC<Props> = ({
     startLine,
     endLine,
     scrollInEditor,
-    snapshotCode,
+    // snapshotCode,
     originalCode,
 }) => {
-    const [collapsed, setCollapsed] = React.useState<boolean>(false)
+    // const [collapsed, setCollapsed] = React.useState<boolean>(false)
     const [showingOriginalCode, setShowingOriginalCode] =
         React.useState<boolean>(false)
-    const isSingleLineAnchor: boolean = endLine - startLine === 0
-
-    const collapseExpandToggle = (): React.ReactElement<any> => {
-        return collapsed ? (
-            <Tooltip title="Expand Code">
-                <div>
-                    <VscChevronDown
-                        onClick={(e: React.SyntheticEvent) => {
-                            e.stopPropagation()
-                            setCollapsed(!collapsed)
-                        }}
-                        className={styles['IconContainer']}
-                    />
-                </div>
-            </Tooltip>
-        ) : (
-            <Tooltip title="Collapse Code">
-                <div>
-                    <VscChevronUp
-                        onClick={(e: React.SyntheticEvent) => {
-                            e.stopPropagation()
-                            setCollapsed(!collapsed)
-                        }}
-                        className={styles['IconContainer']}
-                    />
-                </div>
-            </Tooltip>
-        )
-    }
 
     const collapseExpandOriginalCode = (): React.ReactElement<any> => {
         return showingOriginalCode ? (
@@ -137,40 +102,6 @@ const Anchor: React.FC<Props> = ({
 
     return (
         <div className={styles['AnchorContainer']}>
-            {/* DISABLED SNAPSHOT FEATURE 
-
-            <div className={styles['DropdownItemOverwrite']}>
-                <div
-                    className={styles['DropdownIconsWrapper']}
-                    onClick={(e: React.SyntheticEvent) => {
-                        e.stopPropagation()
-                        snapshotCode(anchorId)
-                    }}
-                >
-                    <Tooltip title="Snapshot code">
-                        <div>
-                            <VscDeviceCamera
-                                className={styles['profileMenu']}
-                            />
-                        </div>
-                    </Tooltip>
-                </div>
-                <div className={styles['LocationWrapper']}>
-                    <div
-                        className={cn({
-                            [styles['LocationContainer']]: true,
-                            [styles['multiLine']]: !isSingleLineAnchor,
-                        })}
-                        onClick={(e: React.SyntheticEvent) => {
-                            e.stopPropagation()
-                            scrollInEditor(anchorId)
-                        }}
-                    ></div>
-                    <div className={styles['AnchorButtonContainer']}>
-                        {!isSingleLineAnchor && collapseExpandToggle()}
-                    </div>
-                </div>
-            </div> */}
             <div className={styles['AnchorDescription']}>
                 <i>{visiblePath}</i>
             </div>
@@ -188,7 +119,7 @@ const Anchor: React.FC<Props> = ({
                         <Syntax
                             html={html}
                             anchorPreview={anchorPreview}
-                            collapsed={collapsed}
+                            // collapsed={collapsed}
                         />
                         {collapseExpandOriginalCode()}
                     </React.Fragment>

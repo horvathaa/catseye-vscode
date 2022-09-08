@@ -11,12 +11,7 @@ import FormGroup from '@mui/material/FormGroup'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Checkbox from '@mui/material/Checkbox'
 import { createTheme, ThemeProvider } from '@mui/material/styles'
-import { green } from '@material-ui/core/colors'
-import {
-    editorBackground,
-    textBoxBackground,
-    vscodeTextColor,
-} from '../../styles/vscodeStyles'
+import { textBoxBackground, vscodeTextColor } from '../../styles/vscodeStyles'
 import { TextareaAutosize } from '@material-ui/core'
 
 interface Selection {
@@ -62,8 +57,7 @@ const TextEditor: React.FC<Props> = ({
         null
     )
     const selectedRangeRef = React.useRef(selectedRange)
-    const setSelectedRange = (newSelectedRange: Selection): void => {
-        console.log('setting...', newSelectedRange)
+    const setSelectedRange = (newSelectedRange: Selection | null): void => {
         selectedRangeRef.current = newSelectedRange
         _setSelectedRange(newSelectedRange)
     }
@@ -122,65 +116,51 @@ const TextEditor: React.FC<Props> = ({
                     },
                 },
             },
-            // MuiButtonBase: {
-            //     styleOverrides: {
-            //         root: {
-            //             color: green[400],
-            //         },
-            //     },
-            // },
-            // MuiButton: {
-            //     styleOverrides: {
-            //         root: {
-            //             color: green[400],
-            //         },
-            //     },
-            // },
         },
     })
 
     const updateAnnotationContent = (e: React.SyntheticEvent) => {
-        console.log(
-            'e',
-            e,
-            'selectionstart',
-            (e.target as HTMLTextAreaElement).selectionStart,
-            'selend',
-            (e.target as HTMLTextAreaElement).selectionStart
-        )
-        if (typeof text === 'string') {
-            const textArea = e.target as HTMLTextAreaElement
+        const textArea = e.target as HTMLTextAreaElement
+        const newText = textArea.value
+        if (typeof text === 'string' && onChange) {
             const nativeEvent = e.nativeEvent as InputEvent
             if (nativeEvent.inputType.includes('deleteContent')) {
                 return
             }
+            // worlds worst ternary
             const userText =
-                nativeEvent.inputType == 'insertFromPaste'
+                nativeEvent.inputType == 'insertFromPaste' && clipboardText
                     ? clipboardText
                     : nativeEvent.inputType.includes('deleteContent')
                     ? ''
-                    : (e.nativeEvent as InputEvent).data
-            console.log(
-                'selectedRange',
-                selectedRange,
-                'hewwo?',
-                window.getSelection()?.toString()
-            )
+                    : (e.nativeEvent as InputEvent).data !== null
+                    ? (e.nativeEvent as InputEvent).data
+                    : ''
+
             const selection: Selection = {
-                startOffset: nativeEvent.inputType.includes('deleteContent')
-                    ? selectedRangeRef.current.startOffset
-                    : textArea.selectionStart - userText.length, // REALLY stupid im so mad holy shit
-                endOffset: nativeEvent.inputType.includes('deleteContent')
-                    ? selectedRangeRef.current.endOffset
-                    : textArea.selectionEnd, // slightly less stupid
+                startOffset:
+                    nativeEvent.inputType.includes('deleteContent') &&
+                    selectedRangeRef !== null &&
+                    selectedRangeRef.current
+                        ? selectedRangeRef.current.startOffset
+                        : userText
+                        ? textArea.selectionStart - userText.length
+                        : textArea.selectionStart, // REALLY stupid im so mad holy shit
+                endOffset:
+                    nativeEvent.inputType.includes('deleteContent') &&
+                    selectedRangeRef !== null &&
+                    selectedRangeRef.current
+                        ? selectedRangeRef.current.endOffset
+                        : textArea.selectionEnd, // slightly less stupid
             }
 
-            const newText = textArea.value
             setText(newText)
-            if (onChange) {
+            if (userText) {
                 // const textAdded = (e.nativeEvent as InputEvent).data
                 onChange(newText, userText, selection)
             }
+        } else if (typeof text === 'string') {
+            setText(newText)
         } else if (text.hasOwnProperty('replyContent')) {
             // Checks if is reply
             setText({
@@ -210,14 +190,16 @@ const TextEditor: React.FC<Props> = ({
                 // probably input event
                 // could add redundancy check to see if the value of the input changed as well uhguig
 
-                if (textArea.selectionStart === selectedRange.startOffset + 1) {
+                if (
+                    selectedRange &&
+                    textArea.selectionStart === selectedRange.startOffset + 1
+                ) {
                     // replaced range with char
                     onChange(textArea.value, key, selectedRange)
                 }
-            } else if (key === 'Backspace') {
+            } else if (key === 'Backspace' && selectedRange) {
                 onChange(textArea.value, '', selectedRange)
             }
-            console.log('here????')
             setHasSelectedRange(false)
             setSelectedRange(null)
         }
@@ -225,28 +207,21 @@ const TextEditor: React.FC<Props> = ({
 
     const handleMouseUp = (e: React.MouseEvent): void => {
         const target = e.target as HTMLTextAreaElement
-        console.log('what', target, 'mom', {
-            startOffset: target.selectionStart,
-            endOffset: target.selectionEnd,
-        })
+
         if (target.selectionStart !== target.selectionEnd) {
             setHasSelectedRange(true)
-            console.log('ewiuofehjiu', {
-                startOffset: target.selectionStart,
-                endOffset: target.selectionEnd,
-            })
             setSelectedRange({
                 startOffset: target.selectionStart,
                 endOffset: target.selectionEnd,
             })
         } else if (hasSelectedRange) {
-            console.log('or here???')
             setHasSelectedRange(false)
             setSelectedRange(null)
         }
     }
 
     const handleSubmission = (shareWith: string) => {
+        console.log('how does this work again lol', shareWith)
         if (text.hasOwnProperty('comment')) {
             cancelHandler()
         }
@@ -294,6 +269,7 @@ const TextEditor: React.FC<Props> = ({
                                     ...text,
                                     createdTimestamp: new Date().getTime(),
                                 })
+
                                 submissionHandler(text)
                                 setText({
                                     ...text,

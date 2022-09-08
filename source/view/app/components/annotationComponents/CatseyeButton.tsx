@@ -7,7 +7,6 @@
 import * as React from 'react'
 import styles from '../../styles/annotation.module.css'
 import { Tooltip } from '@material-ui/core'
-import { disabledIcon } from '../../styles/vscodeStyles'
 
 interface Props {
     buttonClicked: (e: React.SyntheticEvent) => void

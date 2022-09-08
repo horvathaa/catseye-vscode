@@ -22,11 +22,11 @@ import {
     getGithubUrl,
     getAnnotationsInFile,
     getAllAnnotationFilenames,
-    getAnnotationsWithStableGitUrl,
+    // getAnnotationsWithStableGitUrl,
     getAllAnnotationStableGitUrls,
-    getAnnotationsNotInFile,
-    handleSaveCloseEvent,
-    levenshteinDistance,
+    // getAnnotationsNotInFile,
+    // handleSaveCloseEvent,
+    // levenshteinDistance,
     buildAnnotation,
     removeNulls,
     partition,
@@ -34,7 +34,7 @@ import {
 } from '../utils/utils'
 import {
     annotationDecorations,
-    setOutOfDateAnnotationList,
+    // setOutOfDateAnnotationList,
     view,
     annotationList,
     setAnnotationList,
@@ -50,11 +50,8 @@ import {
     shrinkOrExpandBackOfRange,
     shrinkOrExpandFrontOfRange,
 } from './translateChangesHelpers'
-import {
-    saveAnnotations,
-    saveOutOfDateAnnotations,
-} from '../firebase/functions/functions'
-import { computeMostSimilarAnchor } from './reanchor'
+
+// import { computeMostSimilarAnchor } from './reanchor'
 import { refreshFoldingRanges } from '../foldingRangeProvider/foldingRangeProvider'
 
 // Used for finding new anchor point given copy/paste operation
@@ -1044,6 +1041,8 @@ const handleInvalidAnchors = (
                     needToUpdate: true,
                     // outOfDate: true,
                 })
+            } else {
+                return null
             }
         })
     )

@@ -27,31 +27,27 @@
         "commands": [
             {
                 "command": "catseye.launch",
-                "title": "catseye: Launch catseye"
+                "title": "Catseye: Launch catseye"
             },
             {
                 "command": "catseye.addAnnotation",
-                "title": "catseye: Create Annotation"
-            },
-            {
-                "command": "catseye.addFileAnnotation",
-                "title": "catseye: Create File Annotation"
+                "title": "Catseye: Create Annotation"
             },
             {
                 "command": "catseye.addHighlight",
-                "title": "catseye: Create Highlight"
+                "title": "Catseye: Create Highlight"
             },
             {
                 "command": "catseye.addSelectedAnnotation",
-                "title": "catseye: Create Pinned Annotation"
+                "title": "Catseye: Create Pinned Annotation"
             },
             {
                 "command": "catseye.navigateForward",
-                "title": "catseye: Go to Next Pinned Annotation"
+                "title": "Catseye: Go to Next Pinned Annotation"
             },
             {
                 "command": "catseye.navigateBack",
-                "title": "catseye: Go to Last Pinned Annotation"
+                "title": "Catseye: Go to Last Pinned Annotation"
             }
         ],
         "keybindings": [
@@ -105,12 +101,6 @@
                 {
                     "when": "editorHasSelection",
                     "command": "catseye.addSelectedAnnotation",
-                    "group": "2_catseye"
-                }
-            ],
-            "explorer/context": [
-                {
-                    "command": "catseye.addFileAnnotation",
                     "group": "2_catseye"
                 }
             ]

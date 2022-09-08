@@ -49,11 +49,11 @@ import {
     getAllAnnotationFilenames,
     createAnchorObject,
     getAllAnnotationStableGitUrls,
-    getGithubUrl,
+    // getGithubUrl,
     getStableGitHubUrl,
-    partition,
+    // partition,
     objectsEqual,
-    getVisiblePath,
+    // getVisiblePath,
     createEvent,
 } from '../utils/utils'
 import {
@@ -64,7 +64,7 @@ import {
     createRangeFromAnchorObject,
     createRangeFromObject,
     createRangesFromAnnotation,
-    updateAnchorInAnchorObject,
+    // updateAnchorInAnchorObject,
 } from '../anchorFunctions/anchor'
 import {
     emitEvent,
@@ -207,7 +207,8 @@ export const handleAddAnchor = async (id: string): Promise<void> => {
             )
         }
         setAnnotationList(
-            annotationList.filter((anno) => anno.id !== id).concat([newAnno])
+            annotationList.map((a) => (a.id === id ? newAnno : a))
+            // filter((anno) => anno.id !== id).concat([newAnno])
         )
         console.log('annotation list after setting', annotationList)
         const textEditorToHighlight: vscode.TextEditor = vscode.window
@@ -216,6 +217,7 @@ export const handleAddAnchor = async (id: string): Promise<void> => {
             : vscode.window.visibleTextEditors[0]
         if (newAnchor && textEditorToHighlight)
             addHighlightsToEditor(annotationList, textEditorToHighlight)
+        view?.updateDisplay(annotationList)
     } else if (anno) {
         vscode.window.showInformationMessage(
             'Select the code you want to add as an anchor!'
@@ -894,12 +896,4 @@ export const handleReanchor = (
                 addHighlightsToEditor(annotationList, currTextEditor)
         }
     }
-}
-function mergedAnnotations(
-    mergedAnnotations: Annotation[],
-    merge: any
-):
-    | import('../constants/constants').AnnotationEvent
-    | import('../constants/constants').AnnotationEvent[] {
-    throw new Error('Function not implemented.')
 }

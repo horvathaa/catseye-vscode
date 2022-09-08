@@ -6,11 +6,7 @@
  *
  */
 import { Annotation, Selection } from '../../../constants/constants'
-import {
-    // getAllAnnotationFilenames,
-    getAllAnnotationStableGitUrls,
-    sortAnnotationsByLocation,
-} from '../utils/viewUtils'
+
 import ReactAnnotation from '../components/annotation'
 import * as React from 'react'
 import List from '@mui/material/List'
@@ -22,10 +18,8 @@ import {
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { useState } from 'react'
 import MassOperationsBar from './massOperationsBar'
-import { StringifyOptions } from 'querystring'
 import {
     deleteAnnotation,
-    mergeAnnotations,
     pinAnnotation,
     resolveAnnotation,
     shareAnnotation,
@@ -51,7 +45,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
     window,
     username,
     userId,
-    consolidateAnnos
+    consolidateAnnos,
 }) => {
     const [selectedAnnoIds, setSelectedAnnoIds] = useState<string[]>([])
     const [selectionStatus, setSelectionStatus] = useState<Selection>(

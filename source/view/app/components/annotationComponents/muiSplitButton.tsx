@@ -14,7 +14,7 @@ import Paper from '@mui/material/Paper'
 import Popper from '@mui/material/Popper'
 import MenuItem from '@mui/material/MenuItem'
 import MenuList from '@mui/material/MenuList'
-import { green } from '@material-ui/core/colors'
+
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import {
     editorBackground,
@@ -22,7 +22,7 @@ import {
     hoverText,
 } from '../../styles/vscodeStyles'
 
-const options = ['Post as Private', 'Post to Collaborators']
+const options = ['Post to Collaborators', 'Post as Private']
 
 interface Props {
     submissionHandler: (shareWith: string) => void
@@ -108,7 +108,7 @@ const SplitButton: React.FC<Props> = ({ submissionHandler }) => {
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         event.stopPropagation()
-        const shareWith: string = selectedIndex === 0 ? 'private' : 'group'
+        const shareWith: string = selectedIndex === 0 ? 'group' : 'private'
         submissionHandler(shareWith)
     }
 

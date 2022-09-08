@@ -6,19 +6,14 @@
  */
 import * as React from 'react'
 import {
-    Annotation,
-    Type,
-    Option,
     FilterOptions,
     Sort,
-    AuthorOptions,
     OptionGroup,
     Scope,
 } from '../../../constants/constants'
 import SearchBar from './topbarComponents/searchbar'
 import GlobalMenu from './topbarComponents/globalMenu'
 import styles from '../styles/topbar.module.css'
-import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
 import SortBy from './topbarComponents/sortBy'
 import OptionChipsBar from './topbarComponents/optionChipsBar'
 import {
@@ -28,16 +23,8 @@ import {
     FormGroup,
     ThemeProvider,
 } from '@mui/material'
-import {
-    editorBackground,
-    iconColor,
-    vscodeTextColor,
-} from '../styles/vscodeStyles'
-import {
-    defaultAuthorOptions,
-    defaultFilterOptions,
-} from '../utils/viewUtilsTsx'
-import { defaultSort } from '../utils/viewUtils'
+import { vscodeTextColor } from '../styles/vscodeStyles'
+import { defaultFilterOptions } from '../utils/viewUtilsTsx'
 import ScopeMenu from './topbarComponents/scopeMenu'
 interface Props {
     saveAnnotationsToJson: () => void
@@ -54,29 +41,24 @@ const TopBar: React.FC<Props> = ({
         React.useState<FilterOptions>(defaultFilterOptions)
 
     const annotationTypesUpdated = (newOptions: OptionGroup): void => {
-        console.log('Types Updated')
         const newFilterOptions = { ...filterOptions, typeOptions: newOptions }
         setFilterOptions(newFilterOptions)
         filtersUpdated(newFilterOptions)
     }
 
     const optionsUpdated = (newOptions: OptionGroup) => {
-        console.log('Option Updated')
         const newFilterOptions = { ...filterOptions, authorOptions: newOptions }
         setFilterOptions(newFilterOptions)
         filtersUpdated(newFilterOptions)
     }
 
     const sortUpdated = (selected: Sort) => {
-        console.log('Sort Updated')
         const newFilterOptions = { ...filterOptions, sort: selected }
         setFilterOptions(newFilterOptions)
         filtersUpdated(newFilterOptions)
     }
 
     const scopeUpdated = (selected: Scope) => {
-        console.log('HI')
-        console.log('filter updated', selected)
         const newFilterOptions = { ...filterOptions, scope: selected }
         setFilterOptions(newFilterOptions)
         filtersUpdated(newFilterOptions)
@@ -199,12 +181,6 @@ const TopBar: React.FC<Props> = ({
                             }
                             label="Unanchored Only"
                         />
-                        {/* <FormControlLabel
-                            control={
-                                <Checkbox onChange={showAnchoredUpdated} />
-                            }
-                            label="Unanchored Only"
-                        /> */}
                     </FormGroup>
                 </div>
             </ThemeProvider>

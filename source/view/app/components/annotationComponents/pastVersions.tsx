@@ -9,8 +9,8 @@ interface PastVersionProps {
     handleClick: (e: React.SyntheticEvent, aId: string) => void
     i: number
     pastVersion: AnchorOnCommit | OldAnchorOnCommit
-    displayBefore?: (pv: AnchorOnCommit, index: number) => string
-    displayAfter?: (pv: AnchorOnCommit, index: number) => string
+    displayBefore?: (pv: AnchorOnCommit, index: number) => string | null
+    displayAfter?: (pv: AnchorOnCommit, index: number) => string | null
     mergeSelection?: boolean
 }
 
@@ -159,8 +159,8 @@ export const PastVersion: React.FC<PastVersionProps> = ({
 interface PastVersionsProps {
     pastVersions: AnchorOnCommit[]
     handleClick: (e: React.SyntheticEvent, aId: string) => void
-    displayBefore: (pv: AnchorOnCommit, index: number) => string
-    displayAfter: (pv: AnchorOnCommit, index: number) => string
+    displayBefore: (pv: AnchorOnCommit, index: number) => string | null
+    displayAfter: (pv: AnchorOnCommit, index: number) => string | null
 }
 
 export const PastVersions: React.FC<PastVersionsProps> = ({

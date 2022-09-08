@@ -71,6 +71,7 @@ export const Reply: React.FC<Props> = ({
     }, [id])
 
     const createReply = (replyFromCallback: ReplyInterface): void => {
+        console.log('uh', replyFromCallback)
         if (submissionHandler) {
             const { replyContent } = replyFromCallback
             const replyToSend = {
@@ -117,7 +118,7 @@ export const Reply: React.FC<Props> = ({
                 )}
             </div>
             <div className={styles['replyContentContainer']}>
-                {replyContent}
+                {reply.replyContent}
             </div>
         </div>
     )
@@ -136,7 +137,10 @@ export const Reply: React.FC<Props> = ({
         // This shouldn't update created Timestamp, maybe have a new edit time field though
         <TextEditor
             content={reply}
-            submissionHandler={submissionHandler}
+            submissionHandler={(content) => {
+                submissionHandler(content)
+                setEditing(false)
+            }}
             cancelHandler={() => setEditing(false)}
             showSplitButton={false}
         />

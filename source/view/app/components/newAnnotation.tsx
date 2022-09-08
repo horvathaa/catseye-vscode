@@ -4,9 +4,9 @@
  * Component that's rendered when the user is authoring a new annotation.
  *
  */
-import { Card, CardContent, List, useMediaQuery } from '@material-ui/core'
+import { Card, CardContent } from '@material-ui/core'
 import * as React from 'react'
-import annoStyles from '../styles/annotation.module.css'
+
 import TextEditor from './annotationComponents/textEditor'
 import { breakpoints } from '../utils/viewUtils'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
@@ -18,28 +18,20 @@ import {
 } from '../styles/vscodeStyles'
 import styles from '../styles/annotation.module.css'
 import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
-import { Annotation, Reply, Type } from '../../../constants/constants'
-import catseyeButton from './annotationComponents/CatseyeButton'
 import AnchorIcon from '@mui/icons-material/Anchor'
-import ReplyContainer from './annotationComponents/replyContainer'
-import ReactAnnotation from './annotation'
 import CatseyeButton from './annotationComponents/CatseyeButton'
+import { PastVersion } from './annotationComponents/pastVersions'
+import { AnchorObject, Type } from '../../../constants/constants'
+import { createAnchorOnCommitFromAnchorObject } from './annotationComponents/anchorCarousel'
 
-interface SynProps {
-    html: string
-}
-
-const Syntax: React.FC<SynProps> = ({ html }) => {
-    return <code dangerouslySetInnerHTML={{ __html: html }}></code>
-}
 interface Props {
-    selection: string
+    anchorObject: AnchorObject
     vscode: any
     notifyDone: () => void
 }
 
 const NewAnnotation: React.FC<Props> = ({
-    selection,
+    anchorObject,
     vscode,
     notifyDone = () => {},
 }) => {
@@ -82,6 +74,15 @@ const NewAnnotation: React.FC<Props> = ({
         },
         breakpoints: breakpoints,
     })
+
+    const scrollWithRangeAndFile = (e: React.SyntheticEvent): void => {
+        e.stopPropagation()
+        vscode.postMessage({
+            command: 'scrollWithRangeAndFile',
+            anchor: anchorObject.anchor,
+            gitUrl: anchorObject.stableGitUrl,
+        })
+    }
 
     const cancelAnnotation = () => {
         notifyDone()
@@ -127,7 +128,14 @@ const NewAnnotation: React.FC<Props> = ({
             <ThemeProvider theme={theme}>
                 <Card style={cardStyle}>
                     <CardContent>
-                        <Syntax html={selection} />
+                        {/* <Syntax html={selection} /> */}
+                        <PastVersion
+                            handleClick={scrollWithRangeAndFile}
+                            i={0}
+                            pastVersion={createAnchorOnCommitFromAnchorObject(
+                                anchorObject
+                            )}
+                        />
 
                         <div className={styles['ContentContainer']}>
                             <div

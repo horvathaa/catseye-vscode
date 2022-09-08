@@ -64,6 +64,8 @@ const ReplyContainer: React.FC<Props> = ({
         setHasBeenSelected(map)
     }, [mergeInformation])
 
+    React.useEffect(() => {}, [replies])
+
     const createReply = (reply: Reply): void => {
         submitReply && submitReply(reply)
         setTempIdCounter(tempIdCounter + 1)
@@ -79,7 +81,8 @@ const ReplyContainer: React.FC<Props> = ({
                             setHasBeenSelected(
                                 new Map(hasBeenSelected.set(r.id, false))
                             )
-                            handleSelectReply(r.id, 'remove')
+                            handleSelectReply &&
+                                handleSelectReply(r.id, 'remove')
                         }}
                     />
                 </div>
@@ -93,7 +96,8 @@ const ReplyContainer: React.FC<Props> = ({
                             setHasBeenSelected(
                                 new Map(hasBeenSelected.set(r.id, true))
                             )
-                            handleSelectReply(r.id, 'add', 'annotation')
+                            handleSelectReply &&
+                                handleSelectReply(r.id, 'add', 'annotation')
                         }}
                     />
                     <ArrowUpwardIcon
@@ -102,7 +106,8 @@ const ReplyContainer: React.FC<Props> = ({
                             setHasBeenSelected(
                                 new Map(hasBeenSelected.set(r.id, true))
                             )
-                            handleSelectReply(r.id, 'add', 'reply')
+                            handleSelectReply &&
+                                handleSelectReply(r.id, 'add', 'reply')
                         }}
                     />
                 </div>
@@ -156,7 +161,7 @@ const ReplyContainer: React.FC<Props> = ({
                 <ReactReply
                     githubUsername={username}
                     id={`temp-${tempIdCounter}`}
-                    authorId={userId}
+                    authorId={userId ?? ''}
                     userId={userId}
                     replying={true}
                     createdTimestamp={new Date().getTime()}

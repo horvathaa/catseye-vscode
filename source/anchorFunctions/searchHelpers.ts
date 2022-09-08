@@ -67,7 +67,7 @@ export const getVisibileOpenFiles = (): string[] => {
 // grabs modified, not_added (untracked), created (tracked), FOR LATER: conflicted
 export const getWorkInProgressFiles = async () => {
     let filesToSearch: string[] = []
-    const { modified, not_added, created, conflicted } = await git.status()
+    const { modified, not_added, created } = await git.status()
     filesToSearch = filesToSearch.concat(modified, not_added, created) // ADD conflicted to test merge cases
     filesToSearch = filesToSearch.map((baseFile) => {
         return gitRootDir.concat('/', baseFile)

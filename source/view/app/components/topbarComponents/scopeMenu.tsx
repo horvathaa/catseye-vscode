@@ -1,23 +1,15 @@
 import * as React from 'react'
-import { styled, alpha } from '@mui/material/styles'
 import Button from '@mui/material/Button'
-import Menu, { MenuProps } from '@mui/material/Menu'
+import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
-import EditIcon from '@mui/icons-material/Edit'
-import Divider from '@mui/material/Divider'
-import ArchiveIcon from '@mui/icons-material/Archive'
-import FileCopyIcon from '@mui/icons-material/FileCopy'
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import {
     editorBackground,
     vscodeTextColor,
-    hoverBackground,
     hoverText,
 } from '../../styles/vscodeStyles'
-import { yellow } from '@mui/material/colors'
-import { EnumType } from 'typescript'
+
 import { Scope } from '../../../../constants/constants'
 
 interface Props {
@@ -150,38 +142,6 @@ const ScopeMenu: React.FC<Props> = ({ initScope, scopeOptionSelected }) => {
                             </MenuItem>
                         )
                     })}
-                    {/* <MenuItem
-                        href=""
-                        onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-                            e.stopPropagation()
-                            handleClose(e)
-                            setScope(selected)
-                            scopeOptionSelected(selected)
-                        }}
-                    >
-                        Relevance
-                    </MenuItem>
-                    <MenuItem
-                        href=""
-                        onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-                            e.stopPropagation()
-                            handleClose(e)
-                            setScope(selected)
-                            scopeOptionSelected(selected)
-                        }}
-                    >
-                        Location
-                    </MenuItem>
-                    <MenuItem
-                        href=""
-                        onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-                            e.stopPropagation()
-                            handleClose(e)
-                            scopeOptionSelected(selected)
-                        }}
-                    >
-                        Time
-                    </MenuItem> */}
                 </Menu>
             </ThemeProvider>
         </>

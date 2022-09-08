@@ -18,14 +18,18 @@ import {
     hoverText,
 } from '../../styles/vscodeStyles'
 
+const { version } = require('../../../../../package.json')
+
 interface Props {
     saveAnnotationsToJson: () => void
-    showKeyboardShortcuts: () => void
+    // showKeyboardShortcuts: () => void
+    vscode: any
 }
 
 const GlobalMenu: React.FC<Props> = ({
     saveAnnotationsToJson,
-    showKeyboardShortcuts,
+    // showKeyboardShortcuts,
+    vscode,
 }) => {
     const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
     const open = Boolean(anchorEl)
@@ -118,12 +122,20 @@ const GlobalMenu: React.FC<Props> = ({
                     >
                         Save Annotations to JSON
                     </MenuItem>
-                    {/* <MenuItem 
+                    <MenuItem
                         href=""
-                        onClick={(e: React.MouseEvent<HTMLAnchorElement>) => { e.stopPropagation();  handleClose(e); showKeyboardShortcuts(); }}
+                        divider
+                        onClick={() => {
+                            vscode.postMessage({
+                                command: 'requestOpenDocumentation',
+                            })
+                        }}
                     >
-                        Show Keyboard Shortcuts
-                    </MenuItem> */}
+                        View Documentation
+                    </MenuItem>
+                    <MenuItem style={{ cursor: 'default' }} href="">
+                        Catseye version {version}
+                    </MenuItem>
                 </Menu>
             </ThemeProvider>
         </>

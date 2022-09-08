@@ -13,8 +13,10 @@ import {
     setDeletedAnnotationList,
     selectedAnnotationsNavigations,
     setSelectedAnnotationsNavigations,
+    view,
+    setAnnotationList,
 } from '../extension'
-import { createRangeFromObject } from './anchor'
+import { addHighlightsToEditor, createRangeFromObject } from './anchor'
 import { Annotation, Anchor, AnchorObject } from '../constants/constants'
 import { buildAnnotation } from '../utils/utils'
 import * as vscode from 'vscode'
@@ -47,8 +49,23 @@ export const userDeletedAnchor = (
             deleted: true,
         }
         const deletedAnno = buildAnnotation(newAnno)
-        setDeletedAnnotationList(deletedAnnotations.concat([deletedAnno]))
-        // if(view) addHighlightsToEditor(annotationList.filter(a => a.id !== deletedAnno.id));
+        // setDeletedAnnotationList(deletedAnnotations.concat([deletedAnno]))
+        setAnnotationList(
+            annotationList.map((a) =>
+                a.id === deletedAnno.id ? deletedAnno : a
+            )
+        )
+        if (view) {
+            addHighlightsToEditor(
+                annotationList.filter((a) => a.id !== deletedAnno.id),
+                vscode.window.activeTextEditor ??
+                    vscode.window.visibleTextEditors[0]
+            )
+
+            view.updateDisplay(
+                annotationList.filter((a) => a.id !== deletedAnno.id)
+            )
+        }
         return null
     }
     return null

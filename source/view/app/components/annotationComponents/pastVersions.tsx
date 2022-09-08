@@ -128,7 +128,7 @@ export const PastVersion: React.FC<PastVersionProps> = ({
                 </span>
             )}
             <span>
-                <i>made on {formatTimestamp(pv.createdTimestamp)}</i>
+                <i>created on {formatTimestamp(pv.createdTimestamp)}</i>
             </span>
             <div
                 style={{
@@ -169,11 +169,52 @@ export const PastVersions: React.FC<PastVersionsProps> = ({
     displayAfter,
     pastVersions,
 }) => {
-    React.useEffect(() => {}, [pastVersions])
+    const [versionsToRender, setVersionsToRender] = React.useState<
+        AnchorOnCommit[]
+    >([])
+    // double check that this array is in the correct order
+    // (i.e., last index === most recent)
+    React.useEffect(() => {
+        const versions: AnchorOnCommit[] = []
+        pastVersions.forEach((currAnch, i) => {
+            if (i === 0) {
+                versions.push(currAnch)
+            } else {
+                if (
+                    // tbd whether to lower case is a good check
+                    // (maybe should leave since camelcasing may matter to some folks idk)
+                    currAnch.anchorText.toLowerCase().replace(/\s+/g, '') !==
+                    pastVersions[i - 1].anchorText
+                        .toLowerCase()
+                        .replace(/\s+/g, '')
+                ) {
+                    versions.push(currAnch)
+                }
+            }
+        })
+        setVersionsToRender(versions)
+    }, [pastVersions])
+
+    const activeProps =
+        versionsToRender.length === 1
+            ? { display: 'none' }
+            : {
+                  color: '#7fae42',
+                  '&:hover': {
+                      color: '#7fae4285',
+                  },
+                  transition: '200ms',
+              }
 
     return (
-        <Carousel autoPlay={false} index={pastVersions.length - 1}>
-            {pastVersions.map((pv: AnchorOnCommit, index) => {
+        <Carousel
+            autoPlay={false}
+            index={versionsToRender.length - 1}
+            activeIndicatorIconButtonProps={{
+                style: activeProps,
+            }}
+        >
+            {versionsToRender.map((pv: AnchorOnCommit, index) => {
                 return (
                     <PastVersion
                         key={pv.id + index + 'carousel'}

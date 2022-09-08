@@ -36,6 +36,8 @@ import {
     outOfDateAnnotations,
     deletedAnnotations,
     setDeletedAnnotationList,
+    setEventsToTransmitOnSave,
+    setShowResolved,
 } from '../extension'
 import {
     initializeAnnotations,
@@ -55,6 +57,7 @@ import {
     objectsEqual,
     // getVisiblePath,
     createEvent,
+    // getGithubUrl,
 } from '../utils/utils'
 import {
     addHighlightsToEditor,
@@ -73,7 +76,7 @@ import {
 import { v4 as uuidv4 } from 'uuid'
 
 // Opens and reloads the webview -- this is invoked when the user uses the "catseye: Launch catseye" command (ctrl/cmd + shift + A).
-export const handlecatseyeWebviewLaunch = (): void => {
+export const handleCatseyeWebviewLaunch = (): void => {
     const currFilename: string | undefined =
         vscode.window.activeTextEditor?.document.uri.path.toString()
     view?._panel?.reveal()
@@ -192,7 +195,7 @@ export const handleAddAnchor = async (id: string): Promise<void> => {
             id,
             new vscode.Range(currentSelection.start, currentSelection.end)
         )
-        console.log('new anchor', newAnchor)
+
         const newAnno: Annotation = newAnchor
             ? buildAnnotation({
                   ...anno,
@@ -200,7 +203,7 @@ export const handleAddAnchor = async (id: string): Promise<void> => {
                   lastEditTime: new Date().getTime(),
               })
             : anno
-        console.log('new annotation with anchor', newAnno)
+
         if (!newAnchor) {
             console.error(
                 'could not make new anchor - returning original annotation...'
@@ -210,7 +213,7 @@ export const handleAddAnchor = async (id: string): Promise<void> => {
             annotationList.map((a) => (a.id === id ? newAnno : a))
             // filter((anno) => anno.id !== id).concat([newAnno])
         )
-        console.log('annotation list after setting', annotationList)
+        // console.log('annotation list after setting', annotationList)
         const textEditorToHighlight: vscode.TextEditor = vscode.window
             .activeTextEditor
             ? vscode.window.activeTextEditor
@@ -419,6 +422,7 @@ export const handleCreateAnnotation = (
             )
             setTempAnno(null)
             setAnnotationList(annotationList)
+            fbSaveAnnotations(annotationList)
             view?.updateDisplay(annotationList)
             if (text) addHighlightsToEditor(annotationList, text)
             if (willBePinned) {
@@ -530,18 +534,23 @@ export const handleDeleteResolveAnnotation = (
     })
 
     if (resolve) {
-        updatedAnno.resolved = true
+        updatedAnno.resolved = !updatedAnno.resolved
     } else {
         updatedAnno.deleted = true
     }
-    const updatedList = annotationList
-        .filter((a) => a.id !== id)
-        .concat([updatedAnno])
-    saveAnnotations(updatedList, '') // bad - that should point to JSON but we are also not using that rn so whatever
-    const annotationFiles: string[] = getAllAnnotationFilenames([updatedAnno])
+    const updatedList = annotationList.map((a) =>
+        a.id === id ? updatedAnno : a
+    )
+    // .filter((a) => a.id !== id)
+    // .concat([updatedAnno])
+    fbSaveAnnotations(updatedList) // bad - that should point to JSON but we are also not using that rn so whatever
+    // const annotationFiles: string[] = getAllAnnotationFilenames([updatedAnno])
+    const annotationUrls: string[] = getAllAnnotationStableGitUrls([
+        updatedAnno,
+    ])
     const visible: vscode.TextEditor = vscode.window.visibleTextEditors.filter(
         (v: vscode.TextEditor) =>
-            annotationFiles.includes(v.document.uri.toString())
+            annotationUrls.includes(getStableGitHubUrl(v.document.uri.fsPath))
     )[0]
 
     setAnnotationList(removeOutOfDateAnnotations(updatedList))
@@ -575,7 +584,7 @@ export const handleSignInWithEmailAndPassword = async (
             .auth()
             .signInWithEmailAndPassword(email, password)
         user ? await initializeAnnotations(user) : setAnnotationList([])
-        handlecatseyeWebviewLaunch()
+        handleCatseyeWebviewLaunch()
     } catch (e) {
         console.error(e)
         view?.logIn()
@@ -890,10 +899,74 @@ export const handleReanchor = (
             const currTextEditor: vscode.TextEditor =
                 vscode.window.activeTextEditor ??
                 vscode.window.visibleTextEditors[0]
-            console.log('currText', currTextEditor)
+            // console.log('currText', currTextEditor)
             newAnchor.stableGitUrl ===
                 getStableGitHubUrl(currTextEditor.document.uri.fsPath) &&
                 addHighlightsToEditor(annotationList, currTextEditor)
         }
     }
+}
+
+export const handleManualReanchor = async (
+    oldAnchor: AnchorObject,
+    annoId: string
+): Promise<void> => {
+    const anno = annotationList.find((a) => a.id === annoId)
+    if (anno) {
+        const currEditor: vscode.TextEditor = vscode.window.activeTextEditor
+            ? vscode.window.activeTextEditor
+            : vscode.window.visibleTextEditors[0]
+        const currentSelection = currEditor.selection
+        if (
+            !currentSelection ||
+            currentSelection.start.isEqual(currentSelection.end)
+        ) {
+            vscode.window.showInformationMessage(
+                'Select some text to manually reanchor!'
+            )
+            return
+        }
+        const newAnchor: AnchorObject | undefined = await createAnchorObject(
+            annoId,
+            currentSelection,
+            oldAnchor
+        )
+        if (newAnchor) {
+            const anchors = anno.anchors.map((a) =>
+                a.anchorId === newAnchor.anchorId ? newAnchor : a
+            )
+            const newAnno = buildAnnotation({
+                ...anno,
+                anchors,
+                lastEditTime: new Date().getTime(),
+                needToUpdate: true,
+            })
+            setAnnotationList(
+                annotationList.map((a) => (a.id === annoId ? newAnno : a))
+            )
+            view?.updateDisplay(annotationList)
+            addHighlightsToEditor(annotationList, currEditor)
+            setEventsToTransmitOnSave(createEvent(newAnno, EventType.reanchor))
+        } else {
+            console.error('Could not build new anchor')
+        }
+        return
+    } else {
+        console.error('Could not find anno')
+        return
+    }
+}
+
+export const handleShowResolvedUpdated = (showResolved: boolean): void => {
+    setShowResolved(showResolved)
+    addHighlightsToEditor(
+        annotationList,
+        vscode.window.activeTextEditor ?? vscode.window.visibleTextEditors[0]
+    )
+    return
+}
+
+export const handleOpenDocumentation = (): void => {
+    vscode.env.openExternal(vscode.Uri.parse('https://www.catseye.tech'))
+    return
 }

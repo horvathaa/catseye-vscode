@@ -39,6 +39,7 @@ import {
     annotationList,
     setAnnotationList,
     gitInfo,
+    showResolved,
 } from '../extension'
 import {
     userDeletedAnchor,
@@ -137,10 +138,17 @@ export const handleUpdatingTranslatedAnnotations = (
                 change.text
             )
     )
-    // console.log('??????')
+    if (translate.every((n) => n === null)) {
+        return buildAnnotation({
+            ...a,
+            deleted: true,
+            needToUpdate: true,
+            anchors: anchorsToTranslate.map((anch: AnchorObject) => {
+                return { ...anch, anchored: false }
+            }),
+        })
+    }
     const translatedAnchors = removeNulls(translate)
-    // a.id === 'fa718d3f-2e8f-43e2-a869-c995f0c9b7a8' &&
-    //     console.log('post translate', translatedAnchors)
     const translatedPotentialAnchors: PotentialAnchorObject[] = removeNulls(
         potentialAnchorsToTranslate.map((a: PotentialAnchorObject) => {
             return translateChanges(
@@ -537,7 +545,6 @@ export const translateChanges = (
 
     // user deleted the code that contained the original anchor point
     if (isDeleteOperation && changeRange.contains(originalRange)) {
-        // console.log('userDeletedAnchor');
         return userDeletedAnchor(anchorObject.parentId, anchorObject.anchorId)
     }
 
@@ -896,9 +903,12 @@ const mergeAnnotationAndAnchorIds = (pairs: AnnotationAnchorPair[]) => {
 
 // Function to actually decorate each file with our annotation highlights
 export const addHighlightsToEditor = (
-    annotationsToHighlight: Annotation[],
+    annosToHighlight: Annotation[],
     text: vscode.TextEditor
 ): void => {
+    const annotationsToHighlight = annosToHighlight.filter(
+        (a) => !a.deleted && !a.outOfDate
+    )
     const filenames = getAllAnnotationFilenames(annotationsToHighlight)
     const githubUrls = getAllAnnotationStableGitUrls(annotationsToHighlight)
     const projectName = getProjectName(text?.document.uri.toString())
@@ -916,10 +926,17 @@ export const addHighlightsToEditor = (
         (filenames.includes(text.document.uri.toString()) ||
             githubUrls.includes(textUrl))
     ) {
-        let anchors: AnchorObject[] = annotationsToHighlight
-            .flatMap((a) => a.anchors)
-            .filter((a) => a.stableGitUrl === textUrl)
-            .filter((a) => a.anchored)
+        let anchors: AnchorObject[] = showResolved
+            ? annotationsToHighlight
+                  .flatMap((a) => a.anchors)
+                  .filter((a) => a.stableGitUrl === textUrl)
+                  .filter((a) => a.anchored)
+            : annotationsToHighlight
+                  .filter((a) => !a.resolved)
+                  .flatMap((a) => a.anchors)
+                  .filter((a) => a.stableGitUrl === textUrl)
+                  .filter((a) => a.anchored)
+        // console.log('anchors', anchors)
         let ranges: AnnotationRange[] = anchors
             .map((a) => {
                 return {
@@ -985,7 +1002,6 @@ export const addHighlightsToEditor = (
 
     // nothing
     else {
-        console.log('nothing to highlight -- updating anyways')
         view?.updateDisplay(annotationList) // update that list is empty ?
         text?.setDecorations(annotationDecorations, [])
     }

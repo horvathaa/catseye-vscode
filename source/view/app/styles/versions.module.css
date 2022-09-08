@@ -92,6 +92,13 @@ span {
     font-family: Consolas, 'Menlo';
 }
 
+.AnchorCodeText {
+    color: rgba(255, 255, 255, 0.805);
+    font-weight: 400;
+    background-color: #93c0ff1c;
+    border: 0.2px solid rgba(217, 234, 247, 0.25);
+}
+
 .AnchorCode {
     display: flex;
     flex-direction: column;

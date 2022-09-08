@@ -294,7 +294,6 @@ export const saveCommit = (commit: CommitObject) => {
 }
 
 export const emitEvent = (event: AnnotationEvent | AnnotationEvent[]) => {
-    console.log('emitting this event', event)
     if (user) {
         Array.isArray(event)
             ? event.forEach((e) => eventsRef.doc(e.id).set(e))

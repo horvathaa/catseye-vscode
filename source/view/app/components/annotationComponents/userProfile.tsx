@@ -24,8 +24,8 @@ const UserProfile: React.FC<Props> = ({
 }) => {
     const userHasImage: boolean =
         githubUsername !== undefined && githubUsername !== ''
-    const time: string = formatTimestamp(createdTimestamp)
-    const editTime: string = formatTimestamp(lastEditTime)
+    const timeString: string = `created on ${formatTimestamp(createdTimestamp)}`
+    const editTimeJsx = <i>last edited on {formatTimestamp(lastEditTime)}</i>
 
     // const theme = createTheme({
     //     breakpoints: breakpoints,
@@ -51,8 +51,8 @@ const UserProfile: React.FC<Props> = ({
                 >
                     {githubUsername}
                 </a>
-                {time}
-                <i>last edited on {editTime}</i>
+                {timeString}
+                {createdTimestamp !== lastEditTime ? editTimeJsx : null}
             </div>
         </div>
     )

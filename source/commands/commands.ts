@@ -181,6 +181,20 @@ export const createView = async (context: vscode.ExtensionContext) => {
                         viewHelper.handleReanchor(annoId, newAnchor)
                         break
                     }
+                    case 'manualReanchor': {
+                        const { annoId, oldAnchor } = message
+                        viewHelper.handleManualReanchor(oldAnchor, annoId)
+                        break
+                    }
+                    case 'showResolvedUpdated': {
+                        const { showResolved } = message
+                        viewHelper.handleShowResolvedUpdated(showResolved)
+                        break
+                    }
+                    case 'requestOpenDocumentation': {
+                        viewHelper.handleOpenDocumentation()
+                        break
+                    }
                     default: {
                         break
                     }
@@ -655,6 +669,7 @@ export const overriddenClipboardCopyAction = (
                 },
             }
         })
+        console.log('hewwo?', annosWithCopyMetaData)
         setCopiedAnnotationList(annosWithCopyMetaData)
     } else if (copiedAnnotations.length) {
         setCopiedAnnotationList([]) // we no longer are copying annotations
@@ -670,9 +685,13 @@ export const overriddenClipboardCutAction = (
     edit: vscode.TextEditorEdit,
     args: any[]
 ) => {
-    const annotationsInEditor = utils.getAnnotationsInFile(
+    // const annotationsInEditor = utils.getAnnotationsInFile(
+    //     annotationList,
+    //     textEditor.document.uri.toString()
+    // )
+    const annotationsInEditor = utils.getAnnotationsWithStableGitUrl(
         annotationList,
-        textEditor.document.uri.toString()
+        utils.getStableGitHubUrl(textEditor.document.uri.fsPath)
     )
     const anchorsInRange = anchor.getAnchorsInRange(
         textEditor.selection,
@@ -684,13 +703,16 @@ export const overriddenClipboardCutAction = (
         const remainingAnnos = annotationList.filter(
             (id) => !annoIds.includes(id)
         )
-        const cutAnnos = annotationList.filter((id) => annoIds.includes(id))
+        const cutAnnos = annotationsInEditor.filter((a) =>
+            annoIds.includes(a.id)
+        )
+
         if (view) anchor.addHighlightsToEditor(remainingAnnos, textEditor) // why only when view???
         const { start } = textEditor.selection
         const annosWithCopyMetaData = anchorsInRange.map((a) => {
             return {
                 anchor: a.anchor,
-                anno: cutAnnos.filter((a) => annoIds.includes(a.id))[0],
+                anno: cutAnnos.filter((a) => annoIds.includes(a.id))[0], // stupid
                 offsetInCopy: {
                     startLine:
                         a.range.start.line - start.line < 0

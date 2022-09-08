@@ -249,6 +249,14 @@ const ReactAnnotation: React.FC<Props> = ({
         })
     }
 
+    const requestManualReanchor = (oldAnchor: AnchorObject): void => {
+        vscode.postMessage({
+            command: 'manualReanchor',
+            annoId: anno.id,
+            oldAnchor,
+        })
+    }
+
     const submitReply = (reply: Reply): void => {
         const lastEditTime = new Date().getTime()
         const replyIds: string[] = anno.replies?.map((r) => r.id)
@@ -389,6 +397,7 @@ const ReactAnnotation: React.FC<Props> = ({
                                 scrollInEditor={scrollInEditor}
                                 requestReanchor={requestReanchor}
                                 scrollToRange={scrollToRange}
+                                requestManualReanchor={requestManualReanchor}
                             />
                             <div className={styles['ContentContainer']}>
                                 {edit ? (

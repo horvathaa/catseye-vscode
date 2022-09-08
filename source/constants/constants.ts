@@ -364,6 +364,7 @@ export enum EventType {
     commit = 'Commit',
     deleted = 'Deleted',
     textChange = 'Text Change on Save',
+    reanchor = 'Reanchored',
 }
 export interface AnnotationEvent {
     id: string

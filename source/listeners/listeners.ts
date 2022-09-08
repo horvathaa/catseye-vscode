@@ -311,9 +311,8 @@ export const handleDidChangeTextDocument = (
 
             // update and remove any annotation given the translate change handler in anchor.ts
             // mark any annotation that has changed for saving to FireStore
-            translatedAnnotations = utils.removeOutOfDateAnnotations(
-                translatedAnnotations.map((a: Annotation) => {
-                    // console.log('mapping...', a)
+            translatedAnnotations = translatedAnnotations.map(
+                (a: Annotation) => {
                     return anchor.handleUpdatingTranslatedAnnotations(
                         a,
                         stableGitPath,
@@ -321,7 +320,7 @@ export const handleDidChangeTextDocument = (
                         diff,
                         e
                     )
-                })
+                }
             )
 
             const pairsAfterTranslate = createAnnotationAnchorTextPairs(
@@ -386,7 +385,7 @@ export const handleDidChangeTextDocument = (
         } else {
             setAnnotationList(
                 //utils.sortAnnotationsByLocation(
-                annotationList
+                annotationList // why just annotationList and not newAnnotationList???
                 //    )
             )
         }

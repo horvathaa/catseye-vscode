@@ -26,16 +26,19 @@ import {
 import { vscodeTextColor } from '../styles/vscodeStyles'
 import { defaultFilterOptions } from '../utils/viewUtilsTsx'
 import ScopeMenu from './topbarComponents/scopeMenu'
+
 interface Props {
     saveAnnotationsToJson: () => void
-    showKeyboardShortcuts: () => void
+    // showKeyboardShortcuts: () => void
     filtersUpdated: (filters: FilterOptions) => void
+    vscode: any
 }
 // Add a bell/notification
 const TopBar: React.FC<Props> = ({
     saveAnnotationsToJson,
-    showKeyboardShortcuts,
+    // showKeyboardShortcuts,
     filtersUpdated,
+    vscode,
 }) => {
     const [filterOptions, setFilterOptions] =
         React.useState<FilterOptions>(defaultFilterOptions)
@@ -79,6 +82,14 @@ const TopBar: React.FC<Props> = ({
         }
         setFilterOptions(newFilterOptions)
         filtersUpdated(newFilterOptions)
+        console.log('posting message', {
+            command: 'showResolvedUpdated',
+            showResolved: !filterOptions.showResolved,
+        })
+        vscode.postMessage({
+            command: 'showResolvedUpdated',
+            showResolved: !filterOptions.showResolved,
+        })
     }
 
     const pinnedOnlyUpdated = () => {
@@ -144,7 +155,8 @@ const TopBar: React.FC<Props> = ({
                     <SearchBar searchValueUpdated={searchValueUpdated} />
                     <GlobalMenu
                         saveAnnotationsToJson={saveAnnotationsToJson}
-                        showKeyboardShortcuts={showKeyboardShortcuts}
+                        // showKeyboardShortcuts={showKeyboardShortcuts}
+                        vscode={vscode}
                     />
                 </div>
                 <div className={styles['OptionsContainer']}>

@@ -181,6 +181,11 @@ export const createView = async (context: vscode.ExtensionContext) => {
                         viewHelper.handleReanchor(annoId, newAnchor)
                         break
                     }
+                    case 'manualReanchor': {
+                        const { annoId, oldAnchor } = message
+                        viewHelper.handleManualReanchor(oldAnchor, annoId)
+                        break
+                    }
                     default: {
                         break
                     }

@@ -91,15 +91,7 @@ const PotentialVersion: React.FC<PotentialVersionProps> = ({
                             {displayBefore(potentialVersion, 2)}
                         </pre>
                         <pre className={styles['CodeLines']}>
-                            <b>
-                                {displayAnchorText(potentialVersion, styles)}
-                                {/* {potentialVersion.anchorText.length > 60
-                                    ? potentialVersion.anchorText.slice(0, 60)
-                                    : potentialVersion.anchorText}
-                                {potentialVersion.anchorText.length > 60
-                                    ? '...'
-                                    : null} */}
-                            </b>
+                            <b>{displayAnchorText(potentialVersion, styles)}</b>
                         </pre>
                         <pre
                             className={styles['CodeLines']}
@@ -137,7 +129,7 @@ const PotentialVersion: React.FC<PotentialVersionProps> = ({
                     className={styles['reanchor']}
                     onClick={(e: React.SyntheticEvent) => {
                         e.stopPropagation()
-                        handleReanchor(potentialVersion) // TO DO
+                        handleReanchor(potentialVersion)
                     }}
                 >
                     Reanchor
@@ -160,7 +152,7 @@ export const PotentialVersions: React.FC<PotentialVersionsProps> = ({
     handleRemoveSuggestion,
 }) => {
     return (
-        <Carousel autoPlay={false} index={potentialVersions.length - 1}>
+        <Carousel autoPlay={false} index={0}>
             {potentialVersions.map((pv: PotentialAnchorObject, index) => {
                 return (
                     <PotentialVersion

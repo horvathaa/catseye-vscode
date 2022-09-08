@@ -180,7 +180,7 @@ export const setTrackedFiles = (
 }
 
 export const setEventsToTransmitOnSave = (
-    newEventsToTransmitOnSave: AnnotationEvent[]
+    newEventsToTransmitOnSave: AnnotationEvent[] | AnnotationEvent
 ): void => {
     eventsToTransmitOnSave = eventsToTransmitOnSave.concat(
         newEventsToTransmitOnSave

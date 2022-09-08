@@ -13,11 +13,14 @@ import {
 } from '../../../../constants/constants'
 import Carousel from './anchorCarousel'
 import styles from '../../styles/versions.module.css'
+import CatseyeButton from './CatseyeButton'
+import AnchorIcon from '@mui/icons-material/Anchor'
 interface Props {
     anchors: AnchorObject[]
     scrollInEditor: (id: string) => void
     requestReanchor: (newAnchor: ReanchorInformation) => void
     scrollToRange: (anchor: Anchor, filename: string, gitUrl: string) => void
+    requestManualReanchor: (oldAnchor: AnchorObject) => void
 }
 
 const AnchorVersions: React.FC<Props> = ({
@@ -25,6 +28,7 @@ const AnchorVersions: React.FC<Props> = ({
     scrollInEditor,
     requestReanchor,
     scrollToRange,
+    requestManualReanchor,
 }) => {
     const [showSuggestions, setShowSuggestions] = React.useState<boolean>(true)
 
@@ -44,7 +48,20 @@ const AnchorVersions: React.FC<Props> = ({
 
         return (
             <>
-                {unanchorText}
+                <div
+                    style={{ display: 'flex', justifyContent: 'space-between' }}
+                >
+                    {unanchorText}{' '}
+                    <>
+                        {' '}
+                        Manually Reanchor{' '}
+                        <CatseyeButton
+                            buttonClicked={() => requestManualReanchor(anchor)}
+                            name="Manually Reanchor"
+                            icon={<AnchorIcon fontSize="small" />}
+                        />
+                    </>
+                </div>
                 {showSuggestions && (
                     <Carousel
                         key={anchor.anchorId + '-reanchor'}

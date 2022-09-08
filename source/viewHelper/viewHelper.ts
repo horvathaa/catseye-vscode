@@ -36,6 +36,7 @@ import {
     outOfDateAnnotations,
     deletedAnnotations,
     setDeletedAnnotationList,
+    setEventsToTransmitOnSave,
 } from '../extension'
 import {
     initializeAnnotations,
@@ -55,6 +56,7 @@ import {
     objectsEqual,
     // getVisiblePath,
     createEvent,
+    getGithubUrl,
 } from '../utils/utils'
 import {
     addHighlightsToEditor,
@@ -210,7 +212,7 @@ export const handleAddAnchor = async (id: string): Promise<void> => {
             annotationList.map((a) => (a.id === id ? newAnno : a))
             // filter((anno) => anno.id !== id).concat([newAnno])
         )
-        console.log('annotation list after setting', annotationList)
+        // console.log('annotation list after setting', annotationList)
         const textEditorToHighlight: vscode.TextEditor = vscode.window
             .activeTextEditor
             ? vscode.window.activeTextEditor
@@ -890,10 +892,59 @@ export const handleReanchor = (
             const currTextEditor: vscode.TextEditor =
                 vscode.window.activeTextEditor ??
                 vscode.window.visibleTextEditors[0]
-            console.log('currText', currTextEditor)
+            // console.log('currText', currTextEditor)
             newAnchor.stableGitUrl ===
                 getStableGitHubUrl(currTextEditor.document.uri.fsPath) &&
                 addHighlightsToEditor(annotationList, currTextEditor)
         }
+    }
+}
+
+export const handleManualReanchor = async (
+    oldAnchor: AnchorObject,
+    annoId: string
+): Promise<void> => {
+    const anno = annotationList.find((a) => a.id === annoId)
+    if (anno) {
+        const currEditor: vscode.TextEditor = vscode.window.activeTextEditor
+            ? vscode.window.activeTextEditor
+            : vscode.window.visibleTextEditors[0]
+        const currentSelection = currEditor.selection
+        if (
+            !currentSelection ||
+            currentSelection.start.isEqual(currentSelection.end)
+        ) {
+            vscode.window.showInformationMessage(
+                'Select some text to manually reanchor!'
+            )
+            return
+        }
+        const newAnchor: AnchorObject | undefined = await createAnchorObject(
+            annoId,
+            currentSelection,
+            oldAnchor
+        )
+        if (newAnchor) {
+            const anchors = anno.anchors.map((a) =>
+                a.anchorId === newAnchor.anchorId ? newAnchor : a
+            )
+            const newAnno = buildAnnotation({
+                ...anno,
+                anchors,
+                lastEditTime: new Date().getTime(),
+            })
+            setAnnotationList(
+                annotationList.map((a) => (a.id === annoId ? newAnno : a))
+            )
+            view?.updateDisplay(annotationList)
+            addHighlightsToEditor(annotationList, currEditor)
+            setEventsToTransmitOnSave(createEvent(newAnno, EventType.reanchor))
+        } else {
+            console.error('Could not build new anchor')
+        }
+        return
+    } else {
+        console.error('Could not find anno')
+        return
     }
 }

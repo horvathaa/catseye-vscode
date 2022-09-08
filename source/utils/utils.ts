@@ -1020,7 +1020,8 @@ export const buildAnnotation = (
 // helper function for creating anchor objects from other standards
 export const createAnchorObject = async (
     annoId: string,
-    range: vscode.Range
+    range: vscode.Range,
+    oldAnchor?: AnchorObject
 ): Promise<AnchorObject | undefined> => {
     const textEditor: vscode.TextEditor = vscode.window.activeTextEditor
         ? vscode.window.activeTextEditor
@@ -1071,53 +1072,83 @@ export const createAnchorObject = async (
         }
         const newAnchor = createAnchorFromRange(range)
         const anchorType = getAnchorType(newAnchor, textEditor.document)
-        return {
-            parentId: annoId,
-            anchorId: anchorId,
-            anchorText,
-            html,
-            anchorPreview: firstLineOfHtml,
-            originalCode: html,
-            gitUrl,
-            stableGitUrl,
-            gitRepo: gitInfo[projectName]?.repo
-                ? gitInfo[projectName]?.repo
-                : '',
-            gitBranch: gitInfo[projectName]?.branch
-                ? gitInfo[projectName]?.branch
-                : '',
-            gitCommit: gitInfo[projectName]?.commit
-                ? gitInfo[projectName]?.commit
-                : 'localChange',
-            anchor: newAnchor,
-            programmingLang,
-            filename,
-            visiblePath,
-            anchored: true,
-            createdTimestamp: createdTimestamp,
-            priorVersions: [
-                {
-                    id: anchorId,
-                    createdTimestamp: createdTimestamp,
-                    html: html,
-                    anchorText: anchorText,
-                    commitHash: gitInfo[projectName]?.commit
-                        ? gitInfo[projectName]?.commit
-                        : 'localChange',
-                    branchName: gitInfo[projectName]?.branch
-                        ? gitInfo[projectName]?.branch
-                        : '',
-                    anchor: anc,
-                    stableGitUrl,
-                    path: visiblePath,
-                    surroundingCode: surrounding,
-                    anchorType,
-                },
-            ],
-            path,
-            potentialReanchorSpots: [],
-            surroundingCode: surrounding,
-            anchorType,
+        if (oldAnchor) {
+            return {
+                ...oldAnchor,
+                anchorText,
+                html,
+                anchorPreview: firstLineOfHtml,
+                originalCode: html,
+                gitUrl,
+                stableGitUrl,
+                gitRepo: gitInfo[projectName]?.repo
+                    ? gitInfo[projectName]?.repo
+                    : '',
+                gitBranch: gitInfo[projectName]?.branch
+                    ? gitInfo[projectName]?.branch
+                    : '',
+                gitCommit: gitInfo[projectName]?.commit
+                    ? gitInfo[projectName]?.commit
+                    : 'localChange',
+                anchor: newAnchor,
+                programmingLang,
+                filename,
+                visiblePath,
+                anchored: true,
+                path,
+                potentialReanchorSpots: [],
+                surroundingCode: surrounding,
+                anchorType,
+            }
+        } else {
+            return {
+                parentId: annoId,
+                anchorId: anchorId,
+                anchorText,
+                html,
+                anchorPreview: firstLineOfHtml,
+                originalCode: html,
+                gitUrl,
+                stableGitUrl,
+                gitRepo: gitInfo[projectName]?.repo
+                    ? gitInfo[projectName]?.repo
+                    : '',
+                gitBranch: gitInfo[projectName]?.branch
+                    ? gitInfo[projectName]?.branch
+                    : '',
+                gitCommit: gitInfo[projectName]?.commit
+                    ? gitInfo[projectName]?.commit
+                    : 'localChange',
+                anchor: newAnchor,
+                programmingLang,
+                filename,
+                visiblePath,
+                anchored: true,
+                createdTimestamp: createdTimestamp,
+                priorVersions: [
+                    {
+                        id: anchorId,
+                        createdTimestamp: createdTimestamp,
+                        html: html,
+                        anchorText: anchorText,
+                        commitHash: gitInfo[projectName]?.commit
+                            ? gitInfo[projectName]?.commit
+                            : 'localChange',
+                        branchName: gitInfo[projectName]?.branch
+                            ? gitInfo[projectName]?.branch
+                            : '',
+                        anchor: anc,
+                        stableGitUrl,
+                        path: visiblePath,
+                        surroundingCode: surrounding,
+                        anchorType,
+                    },
+                ],
+                path,
+                potentialReanchorSpots: [],
+                surroundingCode: surrounding,
+                anchorType,
+            }
         }
     } else {
         vscode.window.showInformationMessage('Must have open text editor!')
@@ -1303,10 +1334,13 @@ export const handleAuditNewFile = (document: vscode.TextDocument): void => {
     if (
         anchors.length &&
         annos.length &&
-        !anchors.every((a: AnchorObject) => validateAnchor(a, document))
+        (!anchors.every((a: AnchorObject) => validateAnchor(a, document)) ||
+            anchors.some((a) => !a.anchored))
     ) {
         const updatedAnchors: AnchorObject[] = anchors
-            .filter((a: AnchorObject) => !validateAnchor(a, document))
+            .filter(
+                (a: AnchorObject) => !validateAnchor(a, document) || !a.anchored
+            )
             .map((a: AnchorObject): AnchorObject => {
                 return {
                     ...computeMostSimilarAnchor(document, a),

@@ -27,7 +27,7 @@
         "commands": [
             {
                 "command": "catseye.launch",
-                "title": "Catseye: Launch catseye"
+                "title": "Catseye: Launch Catseye"
             },
             {
                 "command": "catseye.addAnnotation",

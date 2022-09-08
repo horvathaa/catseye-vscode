@@ -2,6 +2,7 @@ import * as React from 'react'
 import { TbAnchor, TbAnchorOff } from 'react-icons/tb'
 import IconButton from '@mui/material/IconButton'
 import CheckIcon from '@mui/icons-material/Check'
+import CheckBoxIcon from '@mui/icons-material/CheckBox'
 import DeleteIcon from '@mui/icons-material/Delete'
 import ShareIcon from '@mui/icons-material/Share'
 import PushPinIcon from '@mui/icons-material/PushPin'
@@ -137,11 +138,19 @@ const CardHeader = ({
                             icon={<PushPinOutlinedIcon fontSize="small" />}
                         />
                     )}
-                    <CatseyeButton
-                        buttonClicked={resolveAnnotation}
-                        name="Resolve"
-                        icon={<CheckIcon fontSize="small" />}
-                    />
+                    {anno.resolved ? (
+                        <CatseyeButton
+                            buttonClicked={resolveAnnotation}
+                            name="Un-resolve"
+                            icon={<CheckBoxIcon fontSize="small" />}
+                        />
+                    ) : (
+                        <CatseyeButton
+                            buttonClicked={resolveAnnotation}
+                            name="Resolve"
+                            icon={<CheckIcon fontSize="small" />}
+                        />
+                    )}
                     <CatseyeButton
                         buttonClicked={deleteAnnotation}
                         name="Delete"

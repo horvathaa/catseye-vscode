@@ -227,6 +227,7 @@ const TextEditor: React.FC<Props> = ({
         }
         submissionHandler(text, shareWith, willBePinned)
     }
+
     // Ideally this textbox isn't a significantly different color and is not of fixed size.
     return (
         <div className={styles['textboxContainer']}>
@@ -255,30 +256,35 @@ const TextEditor: React.FC<Props> = ({
                     {showSplitButton ? (
                         <SplitButton submissionHandler={handleSubmission} />
                     ) : (
-                        <button
-                            className={styles['submit']}
-                            onClick={(e: React.SyntheticEvent) => {
-                                e.stopPropagation()
-                                // Is this a checker for Snapshots?
-                                if (text.hasOwnProperty('comment')) {
-                                    cancelHandler()
-                                }
+                        <>
+                            {!showCancel && text.replyContent.length ? (
+                                <button
+                                    className={styles['submit']}
+                                    onClick={(e: React.SyntheticEvent) => {
+                                        e.stopPropagation()
+                                        // Is this a checker for Snapshots?
+                                        if (text.hasOwnProperty('comment')) {
+                                            cancelHandler()
+                                        }
 
-                                // TODO: Update timestamp
-                                setText({
-                                    ...text,
-                                    createdTimestamp: new Date().getTime(),
-                                })
+                                        // TODO: Update timestamp
+                                        setText({
+                                            ...text,
+                                            createdTimestamp:
+                                                new Date().getTime(),
+                                        })
 
-                                submissionHandler(text)
-                                setText({
-                                    ...text,
-                                    replyContent: '',
-                                })
-                            }}
-                        >
-                            Submit
-                        </button>
+                                        submissionHandler(text)
+                                        setText({
+                                            ...text,
+                                            replyContent: '',
+                                        })
+                                    }}
+                                >
+                                    Submit
+                                </button>
+                            ) : null}
+                        </>
                     )}
 
                     {showCancel && (

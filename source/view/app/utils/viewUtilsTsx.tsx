@@ -247,8 +247,8 @@ export const displayAnchorText = (
                         } else {
                             return (
                                 <span
-                                    style={{ fontWeight: 600 }}
-                                    className={styles.codeStyle}
+                                    // style={{ fontWeight: 600 }}
+                                    className={`${styles.codeStyle} ${anchorStyles['AnchorCodeText']}`}
                                     key={'span-anchor' + a}
                                 >
                                     {a}
@@ -260,7 +260,9 @@ export const displayAnchorText = (
             )
         case AnchorType.oneline:
             return (
-                <pre className={anchorStyles['CodeLines']}>
+                <pre
+                    className={`${anchorStyles['CodeLines']} ${anchorStyles['AnchorCodeText']}`}
+                >
                     {/* {' '} */}
                     {pv.anchorText}
                     {/* {pv.anchorText.length > 60
@@ -280,8 +282,8 @@ export const displayAnchorText = (
                                 key={'ml-anchor-' + a + i}
                             >
                                 <b
-                                    style={{ fontWeight: 600 }}
-                                    className={styles.codeStyle}
+                                    // style={{ fontWeight: 600 }}
+                                    className={`${styles.codeStyle} ${anchorStyles['AnchorCodeText']}`}
                                 >
                                     {a}
                                     {/* {a.length > 60 ? a.slice(0, 60) + '...' : a} */}

@@ -71,7 +71,6 @@ export const Reply: React.FC<Props> = ({
     }, [id])
 
     const createReply = (replyFromCallback: ReplyInterface): void => {
-        console.log('uh', replyFromCallback)
         if (submissionHandler) {
             const { replyContent } = replyFromCallback
             const replyToSend = {
@@ -86,13 +85,10 @@ export const Reply: React.FC<Props> = ({
 
     const ReplyContent: React.ReactElement = (
         <div
-            className={
-                // styles['replyContainer']}
-                cn({
-                    [styles['replyContainer']]: true,
-                    [styles['lastItem']]: lastItem,
-                })
-            }
+            className={cn({
+                [styles['replyContainer']]: true,
+                [styles['lastItem']]: lastItem,
+            })}
         >
             <div className={styles['topRow']}>
                 <UserProfile

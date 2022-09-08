@@ -147,12 +147,13 @@ const CatseyePanel: React.FC<Props> = ({
         return
     }
 
-    const showKeyboardShortcuts = (): void => {
-        vscode.postMessage({
-            command: 'showKeyboardShortcuts',
-        })
-        return
-    }
+    // would be nice to have
+    // const showKeyboardShortcuts = (): void => {
+    //     vscode.postMessage({
+    //         command: 'showKeyboardShortcuts',
+    //     })
+    //     return
+    // }
 
     const filtersUpdated = (filters: FilterOptions): void => {
         console.log(filters)
@@ -198,7 +199,6 @@ const CatseyePanel: React.FC<Props> = ({
     }
 
     const filterScope = (annos: Annotation[], scope: Scope): Annotation[] => {
-        console.log('filter scope: ', scope)
         switch (scope) {
             case Scope.all:
                 return annos
@@ -337,7 +337,7 @@ const CatseyePanel: React.FC<Props> = ({
     // this solution is adapted from here: https://stackoverflow.com/questions/8517089/js-search-in-object-values
     const filtered: Annotation[] = annotations
         ? filterOptions.pinnedOnly
-            ? pinned
+            ? pinned.filter((a) => !a.deleted && !a.outOfDate)
             : sortAnnotationByFilter(
                   optionSearch(
                       optionSearch(
@@ -356,7 +356,7 @@ const CatseyePanel: React.FC<Props> = ({
                       filterOptions.typeOptions
                   ),
                   filterOptions.sort
-              )
+              ).filter((a) => !a.deleted && !a.outOfDate)
         : []
 
     const consolidateAnnos = (annos: Annotation[]) => {
@@ -365,13 +365,6 @@ const CatseyePanel: React.FC<Props> = ({
 
     return (
         <React.Fragment>
-            {showNewAnnotation && anchorObject ? (
-                <NewAnnotation
-                    anchorObject={anchorObject}
-                    vscode={vscode}
-                    notifyDone={notifyDone}
-                />
-            ) : null}
             {annosToConsolidate.length > 0 ? (
                 <MergeAnnotations
                     vscode={vscode}
@@ -385,12 +378,20 @@ const CatseyePanel: React.FC<Props> = ({
                 <div style={{ padding: '0 8px' }}>
                     <TopBar
                         saveAnnotationsToJson={saveAnnotationsToJson}
-                        showKeyboardShortcuts={showKeyboardShortcuts}
+                        // showKeyboardShortcuts={showKeyboardShortcuts}
                         filtersUpdated={filtersUpdated}
+                        vscode={vscode}
                     />
                     {/* <MassOperationsBar
                         massOperationSelected={massOperationSelected}
                     ></MassOperationsBar> */}
+                    {showNewAnnotation && anchorObject ? (
+                        <NewAnnotation
+                            anchorObject={anchorObject}
+                            vscode={vscode}
+                            notifyDone={notifyDone}
+                        />
+                    ) : null}
                     <AnnotationList
                         title=""
                         parentId="main"

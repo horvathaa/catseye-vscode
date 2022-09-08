@@ -83,31 +83,31 @@ const MassOperationsBar: React.FC<Props> = ({
                 <Card sx={{ flexGrow: 2 }}>
                     <CatseyeButton
                         buttonClicked={(e) => massOperationSelected(e, 'merge')}
-                        name="Merge"
+                        name="Merge Selected Annotations"
                         icon={<MergeIcon fontSize="small" />}
                     />
                     <CatseyeButton
                         buttonClicked={(e) => massOperationSelected(e, 'pin')}
-                        name="Pin"
+                        name="Pin Selected Annotations"
                         icon={<PushPinOutlinedIcon fontSize="small" />}
                     />
                     <CatseyeButton
                         buttonClicked={(e) => massOperationSelected(e, 'share')}
-                        name="Share"
+                        name="Share Selected Annotations"
                         icon={<ShareIcon fontSize="small" />}
                     />
                     <CatseyeButton
                         buttonClicked={(e) =>
                             massOperationSelected(e, 'resolve')
                         }
-                        name="Resolve"
+                        name="Resolve Selected Annotations"
                         icon={<CheckIcon fontSize="small" />}
                     />
                     <CatseyeButton
                         buttonClicked={(e) =>
                             massOperationSelected(e, 'delete')
                         }
-                        name="Delete"
+                        name="Delete Selected Annotations"
                         icon={<DeleteIcon fontSize="small" />}
                     />
                 </Card>

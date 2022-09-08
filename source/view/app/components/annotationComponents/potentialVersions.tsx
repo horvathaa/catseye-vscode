@@ -152,7 +152,19 @@ export const PotentialVersions: React.FC<PotentialVersionsProps> = ({
     handleRemoveSuggestion,
 }) => {
     return (
-        <Carousel autoPlay={false} index={0}>
+        <Carousel
+            autoPlay={false}
+            index={0}
+            activeIndicatorIconButtonProps={{
+                style: {
+                    color: '#dcdcaa5e',
+                    '&:hover': {
+                        color: '#dcdcaa5e',
+                    },
+                    transition: '200ms',
+                },
+            }}
+        >
             {potentialVersions.map((pv: PotentialAnchorObject, index) => {
                 return (
                     <PotentialVersion

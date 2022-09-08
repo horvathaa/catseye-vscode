@@ -220,7 +220,7 @@ export const removeOutOfDateAnnotations = (
         if (a.deleted || a.outOfDate) {
             console.log('removing this anno', a)
         }
-        return !(a.deleted || a.outOfDate)
+        return !a.deleted && !a.outOfDate
     })
 }
 
@@ -247,6 +247,7 @@ export const reconstructAnnotations = (
     doc: vscode.TextDocument
 ): Annotation[] => {
     return annotationOffsetList.map((a: { [key: string]: any }) => {
+        console.log('a', a)
         const visiblePath: string = vscode.workspace.workspaceFolders
             ? getVisiblePath(
                   a.anno.projectName,
@@ -296,7 +297,7 @@ export const reconstructAnnotations = (
             potentialReanchorSpots: [],
             anchorType: vscode.window.activeTextEditor
                 ? getAnchorType(
-                      a.anchor,
+                      a.anchor.anchor,
                       vscode.window.activeTextEditor.document
                   )
                 : AnchorType.partialLine,
@@ -505,13 +506,15 @@ export const handleSaveCloseEvent = async (
         let newList = await updateHtml(annotationsInCurrentFile, doc)
 
         const ids: string[] = newList.map((a) => a.id)
-        const visibleAnnotations: Annotation[] =
+        const visibleAnnotations: Annotation[] = removeOutOfDateAnnotations(
             currentFile === 'all'
                 ? newList
                 : annotationList
                       .filter((a) => !ids.includes(a.id))
                       .concat(newList)
+        )
         setAnnotationList(visibleAnnotations)
+
         view?.updateDisplay(visibleAnnotations)
         if (annosToSave.some((a: Annotation) => a.needToUpdate)) {
             lastSavedAnnotations = annosToSave

@@ -22,6 +22,8 @@ import * as utils from './utils/utils'
 import * as debug from './debug/debug'
 import ViewLoader from './view/ViewLoader'
 import { AstHelper } from './astHelper/astHelper'
+import { partition } from './utils/utils'
+import { saveAnnotations } from './firebase/functions/functions'
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports
 export const gitApi = gitExtension?.getAPI(1)
 console.log('gitApi', gitApi)
@@ -52,25 +54,24 @@ export let tsFiles: TsFile[] = []
 export let trackedFiles: vscode.TextDocument[] = []
 export let astHelper: AstHelper = new AstHelper()
 export let eventsToTransmitOnSave: AnnotationEvent[] = []
+export let showResolved: boolean = false
 
 export const annotationDecorations =
     vscode.window.createTextEditorDecorationType({
-        // borderWidth: '0.25px',
-        // borderStyle: 'solid',
         overviewRulerLane: vscode.OverviewRulerLane.Right,
-
         light: {
             // this color will be used in light color themes
             // borderColor: 'darkblue',
-            border: '0.15px solid rgba(0, 0, 0, .25)',
+            border: '0.2px solid rgba(0, 0, 0, .25)',
             overviewRulerColor: 'darkgreen',
         },
         dark: {
             // this color will be used in dark color themes
             // borderColor: ,
-            border: '0.15px solid rgba(217, 234, 247, .25)',
+            border: '0.2px solid rgba(217, 234, 247, .25)',
             overviewRulerColor: 'lightgreen',
         },
+        backgroundColor: '#93c0ff1c',
         rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
     })
 
@@ -111,8 +112,12 @@ export const setInsertSpaces = (newInsertSpaces: boolean | string): void => {
 }
 
 export const setAnnotationList = (newAnnotationList: Annotation[]): void => {
-    annotationList = newAnnotationList
-    // console.log(annotationList)
+    const [annosToSet, annosToRemove] = partition(
+        newAnnotationList,
+        (a) => !a.deleted && !a.outOfDate
+    )
+    saveAnnotations(annosToRemove)
+    annotationList = annosToSet
 }
 
 export const setCopiedAnnotationList = (
@@ -185,6 +190,10 @@ export const setEventsToTransmitOnSave = (
     eventsToTransmitOnSave = eventsToTransmitOnSave.concat(
         newEventsToTransmitOnSave
     )
+}
+
+export const setShowResolved = (newShowResolved: boolean): void => {
+    showResolved = newShowResolved
 }
 
 // this method is called when the extension is activated
@@ -272,8 +281,14 @@ export function activate(context: vscode.ExtensionContext) {
         (id) => commands.showAnnoInWebview(id)
     )
 
-    // let copyDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCopyAction', commands.overriddenClipboardCopyAction);
-    // let cutDisposable = vscode.commands.registerTextEditorCommand('editor.action.clipboardCutAction', commands.overriddenClipboardCutAction);
+    let copyDisposable = vscode.commands.registerTextEditorCommand(
+        'editor.action.clipboardCopyAction',
+        commands.overriddenClipboardCopyAction
+    )
+    let cutDisposable = vscode.commands.registerTextEditorCommand(
+        'editor.action.clipboardCutAction',
+        commands.overriddenClipboardCutAction
+    )
 
     /*************************************************************************************/
     /******************************************* MISC ************************************/
@@ -313,8 +328,8 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(navigateForwardSelectedDisposable)
     context.subscriptions.push(navigateBackSelectedDisposable)
     context.subscriptions.push(scrollDisposable)
-    // context.subscriptions.push(copyDisposable);
-    // context.subscriptions.push(cutDisposable);
+    context.subscriptions.push(copyDisposable)
+    context.subscriptions.push(cutDisposable)
 
     // context.subscriptions.push(foldingRangeProviderDisposable)
 }

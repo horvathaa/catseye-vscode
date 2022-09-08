@@ -74,7 +74,7 @@ const ReactAnnotation: React.FC<Props> = ({
     const [anno, setAnno] = React.useState<Annotation>(annotation)
     const [expanded, setExpanded] = React.useState(false)
     const [edit, setEdit] = React.useState<boolean>(false)
-    const [anchored, setAnchored] = React.useState(true) // change later
+    const [anchored, setAnchored] = React.useState(true)
     const [dynamicCardStyle, setDynamicCardStyle] = React.useState(cardStyle)
 
     const annoRef: React.MutableRefObject<Annotation> = React.useRef(anno)

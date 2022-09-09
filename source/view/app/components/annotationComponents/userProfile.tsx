@@ -11,6 +11,28 @@ import { formatTimestamp } from '../../utils/viewUtils'
 // import { breakpoints, formatTimestamp } from '../../utils/viewUtils'
 // import { createTheme } from '@mui/material'
 
+interface UserIconProps {
+    githubUsername: string
+    style?: React.CSSProperties
+    size?: number
+}
+
+export const UserIcon: React.FC<UserIconProps> = ({
+    githubUsername,
+    style,
+    size,
+}) => {
+    const sizeStr = size ? `?size=${size}` : '?size=40'
+    return (
+        <img
+            src={'https://github.com/' + githubUsername + '.png' + sizeStr}
+            className={`${styles['userProfilePhoto']} ${styles['profilePhoto']}`}
+            alt="github user profile image"
+            style={style}
+        />
+    )
+}
+
 interface Props {
     githubUsername: string
     createdTimestamp: number
@@ -35,15 +57,7 @@ const UserProfile: React.FC<Props> = ({
 
     return (
         <div className={styles['userContainer']}>
-            {userHasImage && (
-                <img
-                    src={
-                        'https://github.com/' + githubUsername + '.png?size=40'
-                    }
-                    className={`${styles['userProfilePhoto']} ${styles['profilePhoto']}`}
-                    alt="github user profile image"
-                />
-            )}
+            {userHasImage && <UserIcon githubUsername={githubUsername} />}
             <div className={styles['usernameAndTimeContainer']}>
                 <a
                     href={'https://github.com/' + githubUsername}

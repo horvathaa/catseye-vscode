@@ -1,9 +1,15 @@
 import { AnchorOnCommit } from '../../../../constants/constants'
 import * as React from 'react'
-import { formatTimestamp } from '../../utils/viewUtils'
+import {
+    formatTimestamp,
+    getActiveIndicatorIconProps,
+    getIndicatorIconProps,
+} from '../../utils/viewUtils'
 import Carousel from 'react-material-ui-carousel'
 import styles from '../../styles/versions.module.css'
 import { displayAnchorText } from '../../utils/viewUtilsTsx'
+// import { ExtendButtonBase, IconButtonTypeMap } from '@mui/material'
+import { ReactJSXElement } from '@emotion/react/types/jsx-namespace'
 
 interface PastVersionProps {
     handleClick: (e: React.SyntheticEvent, aId: string) => void
@@ -12,6 +18,7 @@ interface PastVersionProps {
     displayBefore?: (pv: AnchorOnCommit, index: number) => string | null
     displayAfter?: (pv: AnchorOnCommit, index: number) => string | null
     mergeSelection?: boolean
+    anchorIcon?: ReactJSXElement
 }
 
 export interface OldAnchorOnCommit extends AnchorOnCommit {
@@ -34,6 +41,7 @@ export const PastVersion: React.FC<PastVersionProps> = ({
     displayBefore,
     displayAfter,
     mergeSelection,
+    anchorIcon,
 }) => {
     const [pv, setPv] = React.useState<AnchorOnCommit>(pastVersion)
     React.useEffect(() => {
@@ -111,25 +119,37 @@ export const PastVersion: React.FC<PastVersionProps> = ({
                     : `${styles['AnchorContainer']}`
             }
         >
-            <span>
-                <i> {pv.path} </i>
-            </span>
-            {pv.anchor?.endLine - pv.anchor?.startLine > 0 ? (
-                <span>
-                    lines {pv.anchor?.startLine + 1}-{pv.anchor?.endLine + 1} on{' '}
-                    {pv.branchName} {pv.commitHash !== '' ? ':' : null}{' '}
-                    {pv.commitHash.slice(0, 7)}
-                </span>
-            ) : (
-                <span>
-                    line {pv.anchor?.startLine + 1} on {pv.branchName}
-                    {pv.commitHash !== '' ? ':' : null}{' '}
-                    {pv.commitHash.slice(0, 6)}
-                </span>
-            )}
-            <span>
-                <i>created on {formatTimestamp(pv.createdTimestamp)}</i>
-            </span>
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    cursor: 'default',
+                }}
+            >
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span>
+                        <i> {pv.path} </i>
+                    </span>
+                    {pv.anchor?.endLine - pv.anchor?.startLine > 0 ? (
+                        <span>
+                            lines {pv.anchor?.startLine + 1}-
+                            {pv.anchor?.endLine + 1} on {pv.branchName}{' '}
+                            {pv.commitHash !== '' ? ':' : null}{' '}
+                            {pv.commitHash.slice(0, 7)}
+                        </span>
+                    ) : (
+                        <span>
+                            line {pv.anchor?.startLine + 1} on {pv.branchName}
+                            {pv.commitHash !== '' ? ':' : null}{' '}
+                            {pv.commitHash.slice(0, 6)}
+                        </span>
+                    )}
+                    <span>
+                        <i>created on {formatTimestamp(pv.createdTimestamp)}</i>
+                    </span>
+                </div>
+                {anchorIcon ? anchorIcon : null}
+            </div>
             <div
                 style={{
                     display: 'flex',
@@ -161,6 +181,7 @@ interface PastVersionsProps {
     handleClick: (e: React.SyntheticEvent, aId: string) => void
     displayBefore: (pv: AnchorOnCommit, index: number) => string | null
     displayAfter: (pv: AnchorOnCommit, index: number) => string | null
+    anchorIcon: ReactJSXElement
 }
 
 export const PastVersions: React.FC<PastVersionsProps> = ({
@@ -168,6 +189,7 @@ export const PastVersions: React.FC<PastVersionsProps> = ({
     displayBefore,
     displayAfter,
     pastVersions,
+    anchorIcon,
 }) => {
     const [versionsToRender, setVersionsToRender] = React.useState<
         AnchorOnCommit[]
@@ -195,37 +217,33 @@ export const PastVersions: React.FC<PastVersionsProps> = ({
         setVersionsToRender(versions)
     }, [pastVersions])
 
-    const activeProps =
-        versionsToRender.length === 1
-            ? { display: 'none' }
-            : {
-                  color: '#7fae42',
-                  '&:hover': {
-                      color: '#7fae4285',
-                  },
-                  transition: '200ms',
-              }
-
     return (
-        <Carousel
-            autoPlay={false}
-            index={versionsToRender.length - 1}
-            activeIndicatorIconButtonProps={{
-                style: activeProps,
-            }}
-        >
-            {versionsToRender.map((pv: AnchorOnCommit, index) => {
-                return (
-                    <PastVersion
-                        key={pv.id + index + 'carousel'}
-                        handleClick={handleClick}
-                        i={index}
-                        pastVersion={pv}
-                        displayAfter={displayAfter}
-                        displayBefore={displayBefore}
-                    />
-                )
-            })}
-        </Carousel>
+        <>
+            {/* {anchorIcon} */}
+            <Carousel
+                autoPlay={false}
+                index={versionsToRender.length - 1}
+                activeIndicatorIconButtonProps={{
+                    style: getActiveIndicatorIconProps(versionsToRender),
+                }}
+                indicatorIconButtonProps={{
+                    style: getIndicatorIconProps(versionsToRender),
+                }}
+            >
+                {versionsToRender.map((pv: AnchorOnCommit, index) => {
+                    return (
+                        <PastVersion
+                            key={pv.id + index + 'carousel'}
+                            handleClick={handleClick}
+                            i={index}
+                            pastVersion={pv}
+                            displayAfter={displayAfter}
+                            displayBefore={displayBefore}
+                            anchorIcon={anchorIcon}
+                        />
+                    )
+                })}
+            </Carousel>
+        </>
     )
 }

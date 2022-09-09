@@ -26,6 +26,7 @@ import TaskIcon from '@mui/icons-material/Task' // Task
 import AssignmentIcon from '@mui/icons-material/Assignment' // Proposal
 import { ContactSupport } from '@mui/icons-material'
 import CodeOffIcon from '@mui/icons-material/CodeOff'
+import { UserIcon } from '../components/annotationComponents/userProfile'
 
 // toggle button used for expanding and collapsing snapshots, etc.
 export const collapseExpandToggle = (
@@ -85,6 +86,32 @@ export const showHideLine = (
             <div className={styles['showHideLineButton']}>{subjectString}</div>
         </div>
     )
+}
+
+export const renderAuthorOptions = (githubUsername: string): OptionGroup => {
+    if (githubUsername) {
+        return {
+            label: 'Author',
+            options: [
+                {
+                    name: githubUsername,
+                    selected: true,
+                    icon: (
+                        <UserIcon
+                            githubUsername={githubUsername}
+                            style={{ width: '20px', height: '20px' }}
+                        />
+                    ),
+                },
+                {
+                    name: AuthorOptions.others,
+                    selected: true,
+                    icon: <Groups fontSize="small" />,
+                },
+            ],
+        }
+    }
+    return defaultAuthorOptions
 }
 
 export const defaultAuthorOptions: OptionGroup = {

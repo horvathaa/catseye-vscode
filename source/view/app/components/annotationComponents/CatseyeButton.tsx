@@ -12,6 +12,7 @@ interface Props {
     buttonClicked: (e: React.SyntheticEvent) => void
     name: string
     icon: React.ReactElement
+    style?: React.CSSProperties
     noMargin?: boolean
     disabled?: boolean
 }
@@ -20,9 +21,16 @@ const catseyeButton: React.FC<Props> = ({
     buttonClicked = () => {},
     name,
     icon,
+    style,
     noMargin: noMargin = false,
     disabled: disabled = false,
 }) => {
+    const inlineStyle: React.CSSProperties | undefined =
+        disabled && style
+            ? { cursor: 'default', pointerEvents: 'none', ...style }
+            : style
+            ? style
+            : undefined
     return (
         <React.Fragment>
             <div
@@ -31,11 +39,7 @@ const catseyeButton: React.FC<Props> = ({
                     buttonClicked(e)
                 }}
                 className={styles['DropdownItemOverwrite']}
-                style={
-                    disabled
-                        ? { cursor: 'default', pointerEvents: 'none' }
-                        : undefined
-                }
+                style={inlineStyle}
             >
                 <div
                     className={styles['DropdownIconsWrapper']}

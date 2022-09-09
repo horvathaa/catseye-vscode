@@ -10,6 +10,8 @@ import {
 
 import { PastVersions } from './pastVersions'
 import { PotentialVersions } from './potentialVersions'
+import { TbAnchor, TbAnchorOff } from 'react-icons/tb'
+import { IconButton, Tooltip } from '@mui/material'
 
 interface Props {
     priorVersions?: AnchorOnCommit[]
@@ -178,17 +180,33 @@ const AnchorCarousel: React.FC<Props> = ({
                 flexDirection: 'column',
             }}
         >
-            {/* PRIOR VERISONS  */}
+            {/* <div style={{ display: 'flex', flexDirection: 'row' }}>
+                {/* PRIOR VERISONS  */}
+            {/* {} */}
             {pastVersions ? (
                 <PastVersions
                     pastVersions={pastVersions}
                     handleClick={handleClick}
                     displayBefore={displayBefore}
                     displayAfter={displayAfter}
+                    anchorIcon={
+                        currentAnchorObject.anchored ? (
+                            <Tooltip title={'Currently anchored'}>
+                                <IconButton size="small">
+                                    <TbAnchor />
+                                </IconButton>
+                            </Tooltip>
+                        ) : (
+                            <Tooltip title={'Un-anchored'}>
+                                <IconButton size="small">
+                                    <TbAnchorOff />
+                                </IconButton>
+                            </Tooltip>
+                        )
+                    }
                 />
-            ) : // <div style={{ display: 'flex', flexDirection: 'row' }}>
-
-            null}
+            ) : null}
+            {/* </div> */}
             {/* POTENTIAL VERSIONS  */}
 
             {/* POTENTIAL VERSIONS -- lot of redundant code between this and prior versions - should fix */}

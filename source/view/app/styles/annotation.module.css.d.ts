@@ -45,6 +45,7 @@ interface CssExports {
   'dropdown': string;
   'dropdown-toggle': string;
   'inFocus': string;
+  'inlineReply': string;
   'lastItem': string;
   'multiLine': string;
   'outOfFocus': string;

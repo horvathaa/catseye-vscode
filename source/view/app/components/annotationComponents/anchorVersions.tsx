@@ -37,6 +37,7 @@ const AnchorVersions: React.FC<Props> = ({
     const showPotentialAnchors = (anchor: AnchorObject): React.ReactElement => {
         const unanchorText = (
             <p
+                style={{ paddingBottom: 0 }}
                 onClick={() => setShowSuggestions(!showSuggestions)}
                 className={`${styles['SuggestionTitle']} ${styles['ReanchorTitle']}`}
             >
@@ -49,18 +50,23 @@ const AnchorVersions: React.FC<Props> = ({
         return (
             <>
                 <div
-                    style={{ display: 'flex', justifyContent: 'space-between' }}
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}
                 >
                     {unanchorText}{' '}
-                    <>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
                         {' '}
                         Manually Reanchor{' '}
                         <CatseyeButton
                             buttonClicked={() => requestManualReanchor(anchor)}
                             name="Manually Reanchor"
                             icon={<AnchorIcon fontSize="small" />}
+                            style={{ paddingLeft: '4px' }}
                         />
-                    </>
+                    </div>
                 </div>
                 {showSuggestions && (
                     <Carousel

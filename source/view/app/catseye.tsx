@@ -156,7 +156,6 @@ const CatseyePanel: React.FC<Props> = ({
     // }
 
     const filtersUpdated = (filters: FilterOptions): void => {
-        console.log(filters)
         setFilterOptions(filters)
     }
 
@@ -217,11 +216,11 @@ const CatseyePanel: React.FC<Props> = ({
     }
 
     const filterMine = (annos: Annotation[]): Annotation[] => {
-        return annos.filter((anno) => anno['authorId'] === userId)
+        return annos.filter((anno) => anno['authorId'] === uid)
     }
 
     const filterOthers = (annos: Annotation[]): Annotation[] => {
-        return annos.filter((anno) => anno['authorId'] !== userId)
+        return annos.filter((anno) => anno['authorId'] !== uid)
     }
 
     const filterAuthors = (annos: Annotation[], optionGroup: OptionGroup) => {
@@ -233,7 +232,8 @@ const CatseyePanel: React.FC<Props> = ({
         } else if (
             optionGroup.options.filter(
                 (option) =>
-                    option['name'] === AuthorOptions.mine &&
+                    (option['name'] === AuthorOptions.mine ||
+                        option['name'] === userName) &&
                     option['selected'] === true
             ).length > 0
         ) {
@@ -368,7 +368,7 @@ const CatseyePanel: React.FC<Props> = ({
             {annosToConsolidate.length > 0 ? (
                 <MergeAnnotations
                     vscode={vscode}
-                    username={username ?? ''}
+                    username={userName ?? ''}
                     userId={userId ?? ''}
                     notifyDone={notifyMergeDone}
                     annotations={annosToConsolidate}
@@ -381,6 +381,7 @@ const CatseyePanel: React.FC<Props> = ({
                         // showKeyboardShortcuts={showKeyboardShortcuts}
                         filtersUpdated={filtersUpdated}
                         vscode={vscode}
+                        githubUsername={userName ?? ''}
                     />
                     {/* <MassOperationsBar
                         massOperationSelected={massOperationSelected}

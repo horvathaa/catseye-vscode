@@ -168,6 +168,7 @@ const MergeAnnotations: React.FC<Props> = ({
         _setInternalAnnotationBodyRepresentation,
     ] = React.useState<AnnotationBodyLocationMetaData[]>([])
     const [githubUsername, setGithubUsername] = React.useState<string>(username)
+    const [cursorPosition, setCursorPosition] = React.useState<number>(0)
 
     React.useEffect(() => {
         setGithubUsername(username)
@@ -229,74 +230,99 @@ const MergeAnnotations: React.FC<Props> = ({
         let charDiff = 0
         let audited: AnnotationBodyLocationMetaData[] = []
         let auditedIdx = 0
-        newInternal.forEach((internal, i) => {
-            let auditedInternal = { ...internal }
-            if (
-                auditedInternal.offsets.startOffset ===
-                    auditedInternal.offsets.endOffset ||
-                auditedInternal.content.length === 0
-            ) {
-                // dont push empty selections
-                // ideally wouldnt have empty selections at all but whatever
-                return
-            }
-            // make sure we are flush with beginning of textarea
-            if (i === 0) {
-                const startOffsetIsZero = getStartOffset(auditedInternal) === 0
-                if (!startOffsetIsZero) {
-                    charDiff -= getStartOffset(auditedInternal)
-                    auditedInternal = {
-                        ...auditedInternal,
-                        offsets: addNumberToOffset(
-                            auditedInternal.offsets,
-                            charDiff
-                        ),
-                    }
+        newInternal
+            .filter(
+                (internal) =>
+                    internal.source !== AnnotationBodySources.AuthorNameList
+            )
+            .forEach((internal, i) => {
+                let auditedInternal = { ...internal }
+                if (
+                    auditedInternal.offsets.startOffset ===
+                        auditedInternal.offsets.endOffset ||
+                    auditedInternal.content.length === 0
+                ) {
+                    // dont push empty selections
+                    // ideally wouldnt have empty selections at all but whatever
+                    return
                 }
-            } else {
-                if (auditedIdx > 0) {
-                    const isStartOffsetFlushWithLastEndOffset =
-                        audited[auditedIdx - 1].offsets.endOffset ===
-                        internal.offsets.startOffset // offsets are not inclusive
-                    if (!isStartOffsetFlushWithLastEndOffset) {
+                // make sure we are flush with beginning of textarea
+                if (i === 0) {
+                    const startOffsetIsZero =
+                        getStartOffset(auditedInternal) === 0
+                    if (!startOffsetIsZero) {
+                        charDiff -= getStartOffset(auditedInternal)
+                        auditedInternal = {
+                            ...auditedInternal,
+                            offsets: addNumberToOffset(
+                                auditedInternal.offsets,
+                                charDiff
+                            ),
+                        }
+                    }
+                } else {
+                    if (auditedIdx > 0) {
+                        const isStartOffsetFlushWithLastEndOffset =
+                            audited[auditedIdx - 1].offsets.endOffset ===
+                            internal.offsets.startOffset // offsets are not inclusive
+                        if (!isStartOffsetFlushWithLastEndOffset) {
+                            auditedInternal = {
+                                ...auditedInternal,
+                                offsets: {
+                                    startOffset:
+                                        audited[auditedIdx - 1].offsets
+                                            .endOffset,
+                                    endOffset:
+                                        audited[auditedIdx - 1].offsets
+                                            .endOffset +
+                                        auditedInternal.content.length,
+                                },
+                            }
+                        }
+                    } else if (auditedIdx === 0) {
                         auditedInternal = {
                             ...auditedInternal,
                             offsets: {
-                                startOffset:
-                                    audited[auditedIdx - 1].offsets.endOffset,
-                                endOffset:
-                                    audited[auditedIdx - 1].offsets.endOffset +
-                                    auditedInternal.content.length,
+                                startOffset: 0,
+                                endOffset: auditedInternal.content.length,
                             },
                         }
                     }
-                } else if (auditedIdx === 0) {
+                }
+                const isLenOfContentSameAsOffsetDiff =
+                    checkOffsetsEqualTextLength(auditedInternal)
+                if (!isLenOfContentSameAsOffsetDiff) {
                     auditedInternal = {
                         ...auditedInternal,
                         offsets: {
-                            startOffset: 0,
-                            endOffset: auditedInternal.content.length,
+                            startOffset: auditedInternal.offsets.startOffset,
+                            endOffset:
+                                auditedInternal.offsets.startOffset +
+                                auditedInternal.content.length,
                         },
                     }
                 }
-            }
-            const isLenOfContentSameAsOffsetDiff =
-                checkOffsetsEqualTextLength(auditedInternal)
-            if (!isLenOfContentSameAsOffsetDiff) {
-                auditedInternal = {
-                    ...auditedInternal,
-                    offsets: {
-                        startOffset: auditedInternal.offsets.startOffset,
-                        endOffset:
-                            auditedInternal.offsets.startOffset +
-                            auditedInternal.content.length,
-                    },
-                }
-            }
-            auditedIdx++
-            audited.push(auditedInternal)
-        })
-        return audited
+                auditedIdx++
+                audited.push(auditedInternal)
+            })
+        const usernames = generateList(getGithubUsernames(audited, true))
+        const githubUsernames: AnnotationBodyLocationMetaData = {
+            annoId: 'github-usernames',
+            content: usernames,
+            offsets: {
+                startOffset: audited.length
+                    ? audited[audited.length - 1].offsets.endOffset
+                    : 0,
+                endOffset: audited.length
+                    ? audited[audited.length - 1].offsets.endOffset +
+                      usernames.length
+                    : usernames.length,
+            },
+            source: AnnotationBodySources.AuthorNameList,
+            timestamp: new Date().getTime(),
+            githubUsername: usernames,
+        }
+        return audited.concat(githubUsernames)
     }
 
     const checkOffsetsEqualTextLength = (
@@ -613,6 +639,7 @@ const MergeAnnotations: React.FC<Props> = ({
             offsets: selectedRange ?? { startOffset: 0, endOffset: 0 },
             source: AnnotationBodySources.User,
         }
+
         userText.length
             ? updateInternalRepresentation('userAddedText', userContent)
             : updateInternalRepresentation('userRemovedText', userContent)
@@ -883,6 +910,10 @@ const MergeAnnotations: React.FC<Props> = ({
                     internalAnnotationBodyRepresentation.length
                         ? findSurroundingAnnotationBodyMetaData(userAddition)
                         : null
+                console.log(
+                    'hewwwoooooo?????',
+                    internalAnnotationBodyRepresentation
+                )
                 let baseInternal: AnnotationBodyLocationMetaData = {
                     source: AnnotationBodySources.User,
                     annoId: userAddition.id,
@@ -898,6 +929,7 @@ const MergeAnnotations: React.FC<Props> = ({
                 let partitionB: AnnotationBodyLocationMetaData | null = null
                 let didPartition = false
                 let didAddToText = false
+                console.log('surrounding', surroundingMetadata)
                 if (
                     surroundingMetadata &&
                     surroundingMetadata.otherInformation &&
@@ -927,6 +959,7 @@ const MergeAnnotations: React.FC<Props> = ({
                         ),
                     }
                 } else {
+                    console.log('in else')
                     baseInternal = {
                         source: AnnotationBodySources.User,
                         annoId: userAddition.id,
@@ -943,6 +976,7 @@ const MergeAnnotations: React.FC<Props> = ({
                         surroundingMetadata.insertionType ===
                             InsertionType.Inside
                     ) {
+                        console.log('in if!')
                         didPartition = true
                         const objWerePartitioning =
                             internalAnnotationBodyRepresentation[
@@ -960,7 +994,8 @@ const MergeAnnotations: React.FC<Props> = ({
                             {
                                 startOffset: userAddition.offsets.endOffset,
                                 endOffset:
-                                    offsetWhichContainsUserAddition.endOffset,
+                                    offsetWhichContainsUserAddition.endOffset +
+                                    userAddition.content.length,
                             },
                         ]
 
@@ -995,13 +1030,20 @@ const MergeAnnotations: React.FC<Props> = ({
                     internalAnnotationBodyRepresentation
                 )
                 if (
-                    didPartition &&
-                    partitionB &&
-                    partitionA &&
-                    surroundingMetadata &&
-                    updatedList
+                    didPartition
+                    // &&
+                    // partitionB &&
+                    // partitionA &&
+                    // surroundingMetadata &&
+                    // updatedList
                 ) {
-                    const idx = surroundingMetadata.index ?? 0
+                    console.log(
+                        'did partition! -a',
+                        partitionA,
+                        ' b',
+                        partitionB
+                    )
+                    const idx = surroundingMetadata?.index ?? 0
                     updatedList = internalAnnotationBodyRepresentation
                         ? internalAnnotationBodyRepresentation
                               .filter((internal) => internal !== null) // ?????
@@ -1012,18 +1054,22 @@ const MergeAnnotations: React.FC<Props> = ({
                               .concat(partitionB)
                         : [partitionB]
                 } else if (
-                    didAddToText &&
-                    surroundingMetadata &&
-                    baseInternal &&
-                    updatedList
+                    didAddToText
+                    // &&
+                    // surroundingMetadata &&
+                    // baseInternal &&
+                    // updatedList
                 ) {
                     updatedList = updatedList.map((internal, i) =>
-                        surroundingMetadata.index === i
+                        surroundingMetadata?.index === i
                             ? baseInternal
                             : internal
                     )
                 }
-                updatedList = updatedList.filter((a) => a !== null)
+                // updatedList = updateOffsets(
+                //     baseInternal.offsets,
+                //     updatedList.filter((a) => a !== null)
+                // )
 
                 setInternalAnnotationBodyRepresentation(
                     didAddToText
@@ -1035,7 +1081,10 @@ const MergeAnnotations: React.FC<Props> = ({
             case 'userRemovedText': {
                 const removal = obj as UserAddedText
                 const deletionLen =
-                    removal.offsets.endOffset - removal.offsets.startOffset
+                    removal.offsets.endOffset !== removal.offsets.startOffset
+                        ? removal.offsets.endOffset -
+                          removal.offsets.startOffset
+                        : 1
                 const intersections = internalAnnotationBodyRepresentation
                     .map((a, i) => {
                         return {
@@ -1109,6 +1158,7 @@ const MergeAnnotations: React.FC<Props> = ({
                 })
                 updateInternalRepresentationGithubUsernames(newList)
                 setInternalAnnotationBodyRepresentation(newList)
+                setCursorPosition(removal.offsets.startOffset)
                 break
             }
             case 'githubUsernames': {
@@ -1209,59 +1259,67 @@ const MergeAnnotations: React.FC<Props> = ({
         setGetAllReplies(false)
     }
 
+    const getGithubUsernames = (
+        internalRepresentationList?: AnnotationBodyLocationMetaData[],
+        resetList?: boolean
+    ): string[] => {
+        return resetList && internalRepresentationList
+            ? [
+                  ...new Set([
+                      ...internalRepresentationList
+                          .filter(
+                              (a) =>
+                                  a.githubUsername.length > 0 &&
+                                  a.source !==
+                                      AnnotationBodySources.AuthorNameList
+                          )
+                          .map((i) => i.githubUsername),
+                  ]),
+              ]
+            : internalRepresentationList
+            ? [
+                  ...new Set([
+                      ...internalAnnotationBodyRepresentation
+                          .filter(
+                              (a) =>
+                                  a.githubUsername.length > 0 &&
+                                  a.source !==
+                                      AnnotationBodySources.AuthorNameList
+                          )
+                          .map((i) => i.githubUsername),
+                      ...internalRepresentationList
+                          .filter(
+                              (a) =>
+                                  a.githubUsername.length > 0 &&
+                                  a.source !==
+                                      AnnotationBodySources.AuthorNameList
+                          )
+                          .map((i) => i.githubUsername),
+                  ]),
+              ]
+            : [
+                  ...new Set([
+                      ...internalAnnotationBodyRepresentation
+                          .filter(
+                              (a) =>
+                                  a.githubUsername.length > 0 &&
+                                  a.source !==
+                                      AnnotationBodySources.AuthorNameList
+                          )
+                          .map((i) => i.githubUsername),
+                  ]),
+              ]
+    }
+
     const updateInternalRepresentationGithubUsernames = (
         // list: string,
         internalRepresentationList?: AnnotationBodyLocationMetaData[],
         resetList?: boolean
     ): void => {
-        const usernameList =
-            resetList && internalRepresentationList
-                ? [
-                      ...new Set([
-                          ...internalRepresentationList
-                              .filter(
-                                  (a) =>
-                                      a.githubUsername.length > 0 &&
-                                      a.source !==
-                                          AnnotationBodySources.AuthorNameList
-                              )
-                              .map((i) => i.githubUsername),
-                      ]),
-                  ]
-                : internalRepresentationList
-                ? [
-                      ...new Set([
-                          ...internalAnnotationBodyRepresentation
-                              .filter(
-                                  (a) =>
-                                      a.githubUsername.length > 0 &&
-                                      a.source !==
-                                          AnnotationBodySources.AuthorNameList
-                              )
-                              .map((i) => i.githubUsername),
-                          ...internalRepresentationList
-                              .filter(
-                                  (a) =>
-                                      a.githubUsername.length > 0 &&
-                                      a.source !==
-                                          AnnotationBodySources.AuthorNameList
-                              )
-                              .map((i) => i.githubUsername),
-                      ]),
-                  ]
-                : [
-                      ...new Set([
-                          ...internalAnnotationBodyRepresentation
-                              .filter(
-                                  (a) =>
-                                      a.githubUsername.length > 0 &&
-                                      a.source !==
-                                          AnnotationBodySources.AuthorNameList
-                              )
-                              .map((i) => i.githubUsername),
-                      ]),
-                  ]
-
+        const usernameList = getGithubUsernames(
+            internalRepresentationList,
+            resetList
+        )
         const list = generateList(usernameList)
         // const list = obj
         const internalRepresentation = internalRepresentationList
@@ -1399,11 +1457,17 @@ const MergeAnnotations: React.FC<Props> = ({
                 const startOffset = getStartOffset(m)
                 const endOffset = getEndOffset(m)
                 return (
-                    startOffset < userAddition.offsets.startOffset &&
-                    endOffset > userAddition.offsets.endOffset
+                    startOffset <= userAddition.offsets.startOffset &&
+                    endOffset >= userAddition.offsets.endOffset
                 )
+                // return (
+                //     (startOffset === userAddition.offsets.endOffset ||
+                //         endOffset === userAddition.offsets.startOffset ||
+                //         (startOffset <= userAddition.offsets.startOffset &&
+                //             endOffset >= userAddition.offsets.endOffset))
+                // )
             })
-
+        console.log('objs', objs)
         if (objs.length) {
             insertionType = InsertionType.Inside
             let obj
@@ -2098,6 +2162,7 @@ const MergeAnnotations: React.FC<Props> = ({
                                 submissionHandler={mergeAnnotations}
                                 cancelHandler={cancelAnnotation}
                                 showSplitButton={true}
+                                setCursorAt={cursorPosition}
                                 focus={true}
                                 placeholder={'Add annotation text'}
                                 onChange={handleUserAddedAnnotationContent}

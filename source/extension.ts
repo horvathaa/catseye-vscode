@@ -24,6 +24,7 @@ import ViewLoader from './view/ViewLoader'
 import { AstHelper } from './astHelper/astHelper'
 import { partition } from './utils/utils'
 import { saveAnnotations } from './firebase/functions/functions'
+import { HoverController } from './hovers/hoverController'
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports
 export const gitApi = gitExtension?.getAPI(1)
 console.log('gitApi', gitApi)
@@ -300,11 +301,8 @@ export function activate(context: vscode.ExtensionContext) {
         true
     )
 
-    // let foldingRangeProviderDisposable =
-    //     vscode.languages.registerFoldingRangeProvider(
-    //         '*',
-    //         catseyeFoldingRangeProvider
-    //     )
+    const provider = new HoverController()
+    context.subscriptions.push(provider) // not sure if this is right
 
     /*************************************************************************************/
     /**************************************** DISPOSABLES ********************************/
@@ -331,7 +329,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(copyDisposable)
     context.subscriptions.push(cutDisposable)
 
-    // context.subscriptions.push(foldingRangeProviderDisposable)
+    // context.subscriptions.push(hoverProviderDisposable)
 }
 
 // // this method is called when your extension is deactivated

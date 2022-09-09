@@ -27,6 +27,10 @@ const OptionChipsBar: React.FC<OptionsProps> = ({
 }) => {
     const [options, setOptions] = React.useState<Option[]>(initOptions.options)
 
+    React.useEffect(() => {
+        setOptions(initOptions.options)
+    }, [initOptions])
+
     const theme = createTheme({
         breakpoints: breakpoints,
     })
@@ -82,7 +86,7 @@ const OptionChipsBar: React.FC<OptionsProps> = ({
             {options.map((option: Option, id) => {
                 return (
                     <CustomChip
-                        key={id}
+                        key={'chip' + option.name + id}
                         label={isMedOrMore ? option.name : option.icon}
                         icon={isMedOrMore ? option.icon : undefined}
                         color={option.selected === true ? 'primary' : 'default'}

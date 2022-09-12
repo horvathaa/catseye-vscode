@@ -182,6 +182,7 @@ export default class ViewLoader {
     }
 
     public createNewAnno(
+        annoId: string,
         anchorObject: AnchorObject,
         annotationList: Annotation[]
     ) {
@@ -189,7 +190,8 @@ export default class ViewLoader {
             this._panel.webview.postMessage({
                 command: 'newAnno',
                 payload: {
-                    anchorObject,
+                    annoId,
+                    anchorObject: [anchorObject],
                     annotations: annotationList,
                 },
             })
@@ -238,6 +240,17 @@ export default class ViewLoader {
                     anchors,
                     removedAnchorIds,
                     usedAnnoIds,
+                },
+            })
+        }
+    }
+
+    public sendNewAnchorForNewAnnotation(anchor: AnchorObject) {
+        if (this._panel && this._panel.webview) {
+            this._panel.webview.postMessage({
+                command: 'newAnchorForNewAnnotation',
+                payload: {
+                    anchor,
                 },
             })
         }

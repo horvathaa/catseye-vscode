@@ -21,17 +21,19 @@ import AnnotationTypesBar from './annotationComponents/annotationTypesBar'
 import AnchorIcon from '@mui/icons-material/Anchor'
 import CatseyeButton from './annotationComponents/CatseyeButton'
 import { PastVersion } from './annotationComponents/pastVersions'
-import { AnchorObject, Type } from '../../../constants/constants'
+import { Anchor, AnchorObject, Type } from '../../../constants/constants'
 import { createAnchorOnCommitFromAnchorObject } from './annotationComponents/anchorCarousel'
 
 interface Props {
-    anchorObject: AnchorObject
+    newAnchors: AnchorObject[]
+    newAnnoId: string
     vscode: any
     notifyDone: () => void
 }
 
 const NewAnnotation: React.FC<Props> = ({
-    anchorObject,
+    newAnchors,
+    newAnnoId,
     vscode,
     notifyDone = () => {},
 }) => {
@@ -75,12 +77,12 @@ const NewAnnotation: React.FC<Props> = ({
         breakpoints: breakpoints,
     })
 
-    const scrollWithRangeAndFile = (e: React.SyntheticEvent): void => {
-        e.stopPropagation()
+    const scrollWithRangeAndFile = (anchor: Anchor, gitUrl: string): void => {
+        // e.stopPropagation()
         vscode.postMessage({
             command: 'scrollWithRangeAndFile',
-            anchor: anchorObject.anchor,
-            gitUrl: anchorObject.stableGitUrl,
+            anchor,
+            gitUrl,
         })
     }
 
@@ -111,11 +113,10 @@ const NewAnnotation: React.FC<Props> = ({
     }
 
     const addAnchor = (): void => {
-        console.log('We should add an anchor using the specified methods here!')
-        // vscode.postMessage({
-        //     command: 'addAnchor',
-        //     annoId: id,
-        // })
+        vscode.postMessage({
+            command: 'addAnchor',
+            annoId: newAnnoId,
+        })
     }
 
     return (
@@ -128,14 +129,21 @@ const NewAnnotation: React.FC<Props> = ({
             <ThemeProvider theme={theme}>
                 <Card style={cardStyle}>
                     <CardContent>
-                        {/* <Syntax html={selection} /> */}
-                        <PastVersion
-                            handleClick={scrollWithRangeAndFile}
-                            i={0}
-                            pastVersion={createAnchorOnCommitFromAnchorObject(
-                                anchorObject
-                            )}
-                        />
+                        {newAnchors.map((a) => (
+                            <PastVersion
+                                key={'new-anno-' + a.anchorId}
+                                handleClick={() =>
+                                    scrollWithRangeAndFile(
+                                        a.anchor,
+                                        a.stableGitUrl
+                                    )
+                                }
+                                i={0}
+                                pastVersion={createAnchorOnCommitFromAnchorObject(
+                                    a
+                                )}
+                            />
+                        ))}
 
                         <div className={styles['ContentContainer']}>
                             <div

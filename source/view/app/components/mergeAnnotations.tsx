@@ -910,10 +910,10 @@ const MergeAnnotations: React.FC<Props> = ({
                     internalAnnotationBodyRepresentation.length
                         ? findSurroundingAnnotationBodyMetaData(userAddition)
                         : null
-                console.log(
-                    'hewwwoooooo?????',
-                    internalAnnotationBodyRepresentation
-                )
+                // console.log(
+                //     'hewwwoooooo?????',
+                //     internalAnnotationBodyRepresentation
+                // )
                 let baseInternal: AnnotationBodyLocationMetaData = {
                     source: AnnotationBodySources.User,
                     annoId: userAddition.id,
@@ -929,7 +929,7 @@ const MergeAnnotations: React.FC<Props> = ({
                 let partitionB: AnnotationBodyLocationMetaData | null = null
                 let didPartition = false
                 let didAddToText = false
-                console.log('surrounding', surroundingMetadata)
+                // console.log('surrounding', surroundingMetadata)
                 if (
                     surroundingMetadata &&
                     surroundingMetadata.otherInformation &&
@@ -1999,6 +1999,13 @@ const MergeAnnotations: React.FC<Props> = ({
             checkMapForAnchorDuplicates(annoId, anchorId)
         )
 
+        if (anchorsToRemove.some((a) => a.annoId === 'temp-merge')) {
+            vscode.postMessage({
+                command: 'removeTempMergeAnchor',
+                anchorsToRemove,
+            })
+        }
+
         const ids = anchorsToRemove.map((a) => a.anchorId)
         let newAnchorList = newAnnotation.anchors.filter(
             (a) => !ids.includes(a.anchorId)
@@ -2069,7 +2076,7 @@ const MergeAnnotations: React.FC<Props> = ({
                                     i +
                                     'merge-anchor-list-delete'
                                 }
-                                name="Delete"
+                                name="Remove anchor from merged annotation"
                                 icon={<DeleteIcon fontSize="small" />}
                             />
                         </div>
@@ -2114,38 +2121,40 @@ const MergeAnnotations: React.FC<Props> = ({
                                     justifyContent: 'space-between',
                                 }}
                             >
-                                <AnnotationTypesBar
-                                    currentTypes={types}
-                                    editTypes={updateAnnotationTypes}
-                                />
-                                <div>
-                                    <Checkbox
-                                        onChange={() =>
-                                            !getAllAnnotation
-                                                ? getAllAnnotationContent()
-                                                : removeAllAnnotationContent()
-                                        }
-                                        inputProps={{
-                                            'aria-label': 'controlled',
-                                        }}
-                                        checked={getAllAnnotation}
-                                    />
-                                    Add all annotation bodies?
-                                </div>
-                                <div>
-                                    <Checkbox
-                                        onChange={() =>
-                                            !getAllReplies
-                                                ? getAllReplyContent()
-                                                : removeAllReplyContent()
-                                        }
-                                        inputProps={{
-                                            'aria-label': 'controlled',
-                                        }}
-                                        checked={getAllReplies}
-                                    />
-                                    Add all replies?
-                                </div>
+                                {annotations.some(
+                                    (a) => a.annotation !== ''
+                                ) ? (
+                                    <div>
+                                        <Checkbox
+                                            onChange={() =>
+                                                !getAllAnnotation
+                                                    ? getAllAnnotationContent()
+                                                    : removeAllAnnotationContent()
+                                            }
+                                            inputProps={{
+                                                'aria-label': 'controlled',
+                                            }}
+                                            checked={getAllAnnotation}
+                                        />
+                                        Add all annotation bodies?
+                                    </div>
+                                ) : null}
+                                {annotations.some((a) => a.replies.length) ? (
+                                    <div>
+                                        <Checkbox
+                                            onChange={() =>
+                                                !getAllReplies
+                                                    ? getAllReplyContent()
+                                                    : removeAllReplyContent()
+                                            }
+                                            inputProps={{
+                                                'aria-label': 'controlled',
+                                            }}
+                                            checked={getAllReplies}
+                                        />
+                                        Add all replies?
+                                    </div>
+                                ) : null}
                                 <CatseyeButton
                                     buttonClicked={addAnchor}
                                     name="Add Anchor"
@@ -2155,6 +2164,10 @@ const MergeAnnotations: React.FC<Props> = ({
                             {newAnnotation.anchors.length > 0
                                 ? renderAnchors()
                                 : null}
+                            <AnnotationTypesBar
+                                currentTypes={types}
+                                editTypes={updateAnnotationTypes}
+                            />
                             <TextEditor
                                 content={
                                     printInternalAnnotationBodyRepresentation
@@ -2196,7 +2209,12 @@ const MergeAnnotations: React.FC<Props> = ({
                                     annotation: '',
                                 }
                             return (
-                                <Grid item xs={4} md={6}>
+                                <Grid
+                                    key={'grid-item-' + a.id}
+                                    item
+                                    xs={4}
+                                    md={6}
+                                >
                                     <AnnotationReference
                                         key={`merge-tsx-` + a.id}
                                         annotation={a}

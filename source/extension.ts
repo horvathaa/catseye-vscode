@@ -11,6 +11,7 @@
 import * as vscode from 'vscode'
 import firebase from './firebase/firebase'
 import {
+    AnchorObject,
     Annotation,
     AnnotationEvent,
     ChangeEvent,
@@ -56,6 +57,7 @@ export let trackedFiles: vscode.TextDocument[] = []
 export let astHelper: AstHelper = new AstHelper()
 export let eventsToTransmitOnSave: AnnotationEvent[] = []
 export let showResolved: boolean = false
+export let tempMergedAnchors: AnchorObject[] = []
 
 export const annotationDecorations =
     vscode.window.createTextEditorDecorationType({
@@ -197,6 +199,14 @@ export const setShowResolved = (newShowResolved: boolean): void => {
     showResolved = newShowResolved
 }
 
+export const setTempMergedAnchors = (
+    newTempMergedAnchors: AnchorObject | AnchorObject[]
+): void => {
+    tempMergedAnchors = Array.isArray(newTempMergedAnchors)
+        ? newTempMergedAnchors
+        : tempMergedAnchors.concat(newTempMergedAnchors)
+}
+
 // this method is called when the extension is activated
 // the extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -301,8 +311,7 @@ export function activate(context: vscode.ExtensionContext) {
         true
     )
 
-    const provider = new HoverController()
-    context.subscriptions.push(provider) // not sure if this is right
+    let hoverProviderDisposable = new HoverController()
 
     /*************************************************************************************/
     /**************************************** DISPOSABLES ********************************/
@@ -329,7 +338,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(copyDisposable)
     context.subscriptions.push(cutDisposable)
 
-    // context.subscriptions.push(hoverProviderDisposable)
+    context.subscriptions.push(hoverProviderDisposable)
 }
 
 // // this method is called when your extension is deactivated

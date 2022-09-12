@@ -52,7 +52,13 @@ const CatseyePanel: React.FC<Props> = ({
         window.username ? window.username : ''
     )
     const [uid, setUserId] = useState(window.userId ? window.userId : '')
-    const [anchorObject, setAnchorObject] = useState<AnchorObject | null>(null)
+    const [newAnchors, _setNewAnchors] = useState<AnchorObject[]>([])
+    const newAnchorsRef = React.useRef(newAnchors)
+    const setNewAnchors = (newAnchorsArr: AnchorObject[]): void => {
+        newAnchorsRef.current = newAnchorsArr
+        _setNewAnchors(newAnchorsArr)
+    }
+    const [newAnnotationId, setNewAnnotationId] = useState<string>('')
     const [showNewAnnotation, setShowNewAnnotation] = useState<boolean>(false)
     const [annosToConsolidate, setAnnosToConsolidate] = useState<Annotation[]>(
         []
@@ -90,8 +96,9 @@ const CatseyePanel: React.FC<Props> = ({
                 // console.log('message', message)
                 return
             case 'newAnno':
-                setAnchorObject(message.payload.anchorObject)
+                setNewAnchors(message.payload.anchorObject)
                 setShowNewAnnotation(true)
+                setNewAnnotationId(message.payload.annoId)
                 const newAnnoDiv: HTMLElement | null =
                     document.getElementById('NewAnnotation')
                 newAnnoDiv?.scrollIntoView({
@@ -99,6 +106,11 @@ const CatseyePanel: React.FC<Props> = ({
                     block: 'center',
                     inline: 'center',
                 })
+                return
+            case 'newAnchorForNewAnnotation':
+                setNewAnchors(
+                    newAnchorsRef.current.concat(message.payload.anchor)
+                )
                 return
         }
     }
@@ -386,9 +398,10 @@ const CatseyePanel: React.FC<Props> = ({
                     {/* <MassOperationsBar
                         massOperationSelected={massOperationSelected}
                     ></MassOperationsBar> */}
-                    {showNewAnnotation && anchorObject ? (
+                    {showNewAnnotation && newAnchors ? (
                         <NewAnnotation
-                            anchorObject={anchorObject}
+                            newAnnoId={newAnnotationId}
+                            newAnchors={newAnchors}
                             vscode={vscode}
                             notifyDone={notifyDone}
                         />

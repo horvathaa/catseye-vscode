@@ -1,5 +1,4 @@
 import {
-    // CancellationToken,
     languages,
     Range,
     Disposable,
@@ -8,30 +7,25 @@ import {
     MarkdownString,
     Position,
     TextDocument,
-    // DecorationOptions,
 } from 'vscode'
 import { annotationList } from '../extension'
 import {
     createRangeFromAnchorObject,
-    // getAnchorsInCurrentFile,
     getAnchorsWithGitUrl,
 } from '../anchorFunctions/anchor'
 import {
     getAnnotationsWithStableGitUrl,
     getStableGitHubUrl,
 } from '../utils/utils'
-const maxSmallIntegerV8 = 2 ** 30 // Max number that can be stored in V8's smis (small integers)
+const maxSmallIntegerV8 = 2 ** 30
 export class HoverController implements Disposable {
-    // private readonly _disposable: Disposable;
     private _hoverProviderDisposable: Disposable | undefined
-    // private _uri: Uri | undefined
 
     constructor() {
         this.register()
     }
 
     dispose() {
-        // this._uri = undefined
         this._hoverProviderDisposable?.dispose()
     }
 

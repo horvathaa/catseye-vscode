@@ -76,6 +76,8 @@ const TextEditor: React.FC<Props> = ({
             'mergedTextArea'
         ) as HTMLTextAreaElement
         // not sure why this isnt actually setting the cursor position since the vals seem correct?
+        // update -- sets properly for double-click then delete, and regular highlight then delete, but
+        // NOT for ctrl+shift select? Weird? Not sure why? Probably gonna ignore for now
         if (textArea && setCursorAt) {
             textArea.focus()
             textArea.selectionStart = setCursorAt
@@ -241,7 +243,6 @@ const TextEditor: React.FC<Props> = ({
     }
 
     const handleSubmission = (shareWith: string) => {
-        console.log('how does this work again lol', shareWith)
         if (text.hasOwnProperty('comment')) {
             cancelHandler()
         }

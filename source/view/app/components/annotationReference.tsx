@@ -5,7 +5,7 @@
  *
  */
 import { useMediaQuery } from '@material-ui/core'
-import { Checkbox } from '@mui/material'
+import { Checkbox, Tooltip } from '@mui/material'
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import * as React from 'react'
@@ -186,6 +186,11 @@ const AnnotationReference: React.FC<Props> = ({
             </p>
             <div>
                 {annotation.anchors.map((anchor: AnchorObject, i) => {
+                    const anchorTooltipText = isAnchorAlreadySelected(
+                        anchor.anchorId
+                    )
+                        ? 'Remove anchor from merged annotation'
+                        : 'Add anchor to merged annotation'
                     // consider bringing back prior versions in carousel view -- for now, not bothering
                     return (
                         <div
@@ -193,25 +198,29 @@ const AnnotationReference: React.FC<Props> = ({
                             style={{ display: 'flex' }}
                         >
                             {isMedOrMore && (
-                                <Checkbox
-                                    // Needs work
-                                    onChange={() =>
-                                        isAnchorAlreadySelected(anchor.anchorId)
-                                            ? removeAnchorFromMergeAnnotation(
-                                                  anchor.anchorId,
-                                                  anchor.parentId
-                                              )
-                                            : partSelected('anchor', anchor)
-                                    }
-                                    inputProps={{
-                                        'aria-label': 'controlled',
-                                    }}
-                                    checked={
-                                        isAnchorAlreadySelected(
-                                            anchor.anchorId
-                                        ) ?? false
-                                    }
-                                />
+                                <Tooltip title={anchorTooltipText}>
+                                    <Checkbox
+                                        // Needs work
+                                        onChange={() =>
+                                            isAnchorAlreadySelected(
+                                                anchor.anchorId
+                                            )
+                                                ? removeAnchorFromMergeAnnotation(
+                                                      anchor.anchorId,
+                                                      anchor.parentId
+                                                  )
+                                                : partSelected('anchor', anchor)
+                                        }
+                                        inputProps={{
+                                            'aria-label': 'controlled',
+                                        }}
+                                        checked={
+                                            isAnchorAlreadySelected(
+                                                anchor.anchorId
+                                            ) ?? false
+                                        }
+                                    />
+                                </Tooltip>
                             )}
                             <div
                                 id={anchor.parentId + '%' + anchor.anchorId}
@@ -250,15 +259,25 @@ const AnnotationReference: React.FC<Props> = ({
                         }
                     >
                         {isAnnotationTextAlreadySelected() ? (
-                            <ArrowDownwardIcon
-                                onClick={bringBackAnnotation}
-                                style={{ cursor: 'pointer' }}
-                            />
+                            <Tooltip
+                                title={
+                                    'Remove text from merged annotation body'
+                                }
+                            >
+                                <ArrowDownwardIcon
+                                    onClick={bringBackAnnotation}
+                                    style={{ cursor: 'pointer' }}
+                                />
+                            </Tooltip>
                         ) : (
-                            <ArrowUpwardIcon
-                                onClick={elevateAnnotation}
-                                style={{ cursor: 'pointer' }}
-                            />
+                            <Tooltip
+                                title={'Add text to merged annotation body'}
+                            >
+                                <ArrowUpwardIcon
+                                    onClick={elevateAnnotation}
+                                    style={{ cursor: 'pointer' }}
+                                />
+                            </Tooltip>
                         )}
 
                         <div

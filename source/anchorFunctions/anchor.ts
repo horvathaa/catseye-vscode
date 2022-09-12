@@ -766,7 +766,7 @@ export interface AnnotationRange extends AnnotationAnchorPair {
     valid?: boolean
 }
 
-interface AnnotationAnchorPair {
+export interface AnnotationAnchorPair {
     annotationId: string
     anchorId: string | string[]
 }
@@ -829,7 +829,9 @@ export const addTempAnnotationHighlight = (
     const ranges = anchors.map((a) => createRangeFromAnchorObject(a))
     const decorationObjects: vscode.DecorationOptions[] = ranges.map((r) => {
         let markdownArr = new Array<vscode.MarkdownString>()
-        markdownArr.push(new vscode.MarkdownString('New Merged Anchor Point'))
+        markdownArr.push(
+            new vscode.MarkdownString("New Annotation's Anchor Point")
+        )
         return {
             range: r,
             hoverMessage: markdownArr,

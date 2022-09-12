@@ -830,7 +830,7 @@ export const addTempAnnotationHighlight = (
     const decorationObjects: vscode.DecorationOptions[] = ranges.map((r) => {
         let markdownArr = new Array<vscode.MarkdownString>()
         markdownArr.push(
-            new vscode.MarkdownString("New Annotation's Anchor Point")
+            new vscode.MarkdownString("New annotation's anchor point")
         )
         return {
             range: r,
@@ -956,6 +956,14 @@ export const addHighlightsToEditor = (
             unanchoredAnnotations.length && view?.updateDisplay(annotationList)
             try {
                 text.setDecorations(annotationDecorations, validRanges)
+                refreshFoldingRanges()
+            } catch (error) {
+                console.error("Couldn't highlight: ", error)
+            }
+        } else {
+            // no ranges to highlight for this file -- reset
+            try {
+                text.setDecorations(annotationDecorations, [])
                 refreshFoldingRanges()
             } catch (error) {
                 console.error("Couldn't highlight: ", error)

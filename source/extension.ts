@@ -26,6 +26,7 @@ import { AstHelper } from './astHelper/astHelper'
 import { partition } from './utils/utils'
 import { saveAnnotations } from './firebase/functions/functions'
 import { HoverController } from './hovers/hoverController'
+import { addHighlightsToEditor } from './anchorFunctions/anchor'
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports
 export const gitApi = gitExtension?.getAPI(1)
 console.log('gitApi', gitApi)
@@ -114,12 +115,20 @@ export const setInsertSpaces = (newInsertSpaces: boolean | string): void => {
     insertSpaces = newInsertSpaces
 }
 
+// probably worth doing an audit to ensure that we're no longer doing the removing
+// and saving of deleted annotations outside of this set
 export const setAnnotationList = (newAnnotationList: Annotation[]): void => {
     const [annosToSet, annosToRemove] = partition(
         newAnnotationList,
         (a) => !a.deleted && !a.outOfDate
     )
-    saveAnnotations(annosToRemove)
+    if (annosToRemove.length) {
+        saveAnnotations(annosToRemove)
+        vscode.window.visibleTextEditors.forEach((t) => {
+            addHighlightsToEditor(annosToSet, t)
+        })
+    }
+
     annotationList = annosToSet
 }
 

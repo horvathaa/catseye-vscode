@@ -588,10 +588,10 @@ export const handleDeleteResolveAnnotation = (
             annotationUrls.includes(getStableGitHubUrl(v.document.uri.fsPath))
     )[0]
 
-    setAnnotationList(removeOutOfDateAnnotations(updatedList))
-    view?.updateDisplay(annotationList)
+    setAnnotationList(updatedList)
+    view?.updateDisplay(updatedList)
     if (visible) {
-        addHighlightsToEditor(annotationList, visible)
+        addHighlightsToEditor(updatedList, visible)
     }
     if (selectedAnnotationsNavigations.map((a) => a.id).includes(id)) {
         setSelectedAnnotationsNavigations(

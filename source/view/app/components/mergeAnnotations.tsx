@@ -976,7 +976,7 @@ const MergeAnnotations: React.FC<Props> = ({
                         surroundingMetadata.insertionType ===
                             InsertionType.Inside
                     ) {
-                        console.log('in if!')
+                        // console.log('in if!')
                         didPartition = true
                         const objWerePartitioning =
                             internalAnnotationBodyRepresentation[
@@ -1999,12 +1999,10 @@ const MergeAnnotations: React.FC<Props> = ({
             checkMapForAnchorDuplicates(annoId, anchorId)
         )
 
-        if (anchorsToRemove.some((a) => a.annoId === 'temp-merge')) {
-            vscode.postMessage({
-                command: 'removeTempMergeAnchor',
-                anchorsToRemove,
-            })
-        }
+        vscode.postMessage({
+            command: 'removeTempMergeAnchor',
+            anchorsToRemove,
+        })
 
         const ids = anchorsToRemove.map((a) => a.anchorId)
         let newAnchorList = newAnnotation.anchors.filter(

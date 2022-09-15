@@ -90,6 +90,7 @@ span {
 .CodeLines {
     margin: 0;
     font-family: Consolas, 'Menlo';
+    font-size: 12px;
 }
 
 .AnchorCodeText {

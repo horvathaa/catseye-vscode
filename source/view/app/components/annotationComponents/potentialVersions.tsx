@@ -7,6 +7,10 @@ import {
 } from '../../../../constants/constants' // we are confident enough } from '../../../../constants/constants'
 import Carousel from 'react-material-ui-carousel' // https://www.npmjs.com/package/react-material-ui-carousel
 import { displayAnchorText } from '../../utils/viewUtilsTsx'
+import {
+    getActiveIndicatorIconProps,
+    getIndicatorIconProps,
+} from '../../utils/viewUtils'
 
 interface PotentialVersionProps {
     handleClick: (e: React.SyntheticEvent, aId: string) => void
@@ -156,13 +160,10 @@ export const PotentialVersions: React.FC<PotentialVersionsProps> = ({
             autoPlay={false}
             index={0}
             activeIndicatorIconButtonProps={{
-                style: {
-                    color: '#dcdcaa5e',
-                    '&:hover': {
-                        color: '#dcdcaa5e',
-                    },
-                    transition: '200ms',
-                },
+                style: getActiveIndicatorIconProps(potentialVersions),
+            }}
+            indicatorIconButtonProps={{
+                style: getIndicatorIconProps(potentialVersions),
             }}
         >
             {potentialVersions.map((pv: PotentialAnchorObject, index) => {

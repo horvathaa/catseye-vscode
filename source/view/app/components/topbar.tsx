@@ -24,7 +24,10 @@ import {
     ThemeProvider,
 } from '@mui/material'
 import { vscodeTextColor } from '../styles/vscodeStyles'
-import { defaultFilterOptions } from '../utils/viewUtilsTsx'
+import {
+    defaultFilterOptions,
+    renderAuthorOptions,
+} from '../utils/viewUtilsTsx'
 import ScopeMenu from './topbarComponents/scopeMenu'
 
 interface Props {
@@ -32,6 +35,7 @@ interface Props {
     // showKeyboardShortcuts: () => void
     filtersUpdated: (filters: FilterOptions) => void
     vscode: any
+    githubUsername: string
 }
 // Add a bell/notification
 const TopBar: React.FC<Props> = ({
@@ -39,9 +43,19 @@ const TopBar: React.FC<Props> = ({
     // showKeyboardShortcuts,
     filtersUpdated,
     vscode,
+    githubUsername,
 }) => {
     const [filterOptions, setFilterOptions] =
         React.useState<FilterOptions>(defaultFilterOptions)
+
+    React.useEffect(() => {
+        if (githubUsername) {
+            setFilterOptions({
+                ...filterOptions,
+                authorOptions: renderAuthorOptions(githubUsername),
+            })
+        }
+    }, [githubUsername])
 
     const annotationTypesUpdated = (newOptions: OptionGroup): void => {
         const newFilterOptions = { ...filterOptions, typeOptions: newOptions }
@@ -82,10 +96,6 @@ const TopBar: React.FC<Props> = ({
         }
         setFilterOptions(newFilterOptions)
         filtersUpdated(newFilterOptions)
-        console.log('posting message', {
-            command: 'showResolvedUpdated',
-            showResolved: !filterOptions.showResolved,
-        })
         vscode.postMessage({
             command: 'showResolvedUpdated',
             showResolved: !filterOptions.showResolved,
@@ -148,6 +158,7 @@ const TopBar: React.FC<Props> = ({
             },
         },
     })
+
     return (
         <div className={styles['TopBarContainer']}>
             <ThemeProvider theme={theme}>

@@ -20,6 +20,8 @@ import {
     selectedAnnotationsNavigations,
     setSelectedAnnotationsNavigations,
     astHelper,
+    setTempMergedAnchors,
+    tempMergedAnchors,
     // trackedFiles,
     // setTrackedFiles,
 } from '../extension'
@@ -165,6 +167,11 @@ export const createView = async (context: vscode.ExtensionContext) => {
                         )
                         break
                     }
+                    case 'removeTempMergeAnchor': {
+                        const { anchorsToRemove } = message
+                        viewHelper.handleRemoveTempMergeAnchor(anchorsToRemove)
+                        break
+                    }
                     case 'findMatchingAnchors': {
                         const { annotations } = message
                         viewHelper.handleFindMatchingAnchors(annotations)
@@ -279,6 +286,7 @@ export const createNewAnnotation = async () => {
                 : activeTextEditor.document.uri.fsPath
             const anc = anchor.createAnchorFromRange(r)
             const anchorId = uuidv4()
+
             const createdTimestamp = new Date().getTime()
 
             const stableGitUrl = utils.getGithubUrl(
@@ -349,6 +357,11 @@ export const createNewAnnotation = async () => {
                 surroundingCode: surrounding,
                 anchorType,
             }
+            setTempMergedAnchors(anchorObject)
+            anchor.addTempAnnotationHighlight(
+                tempMergedAnchors,
+                activeTextEditor
+            )
             const temp = {
                 id: newAnnoId,
                 anchors: [anchorObject],
@@ -377,7 +390,7 @@ export const createNewAnnotation = async () => {
                 lastEditTime: createdTimestamp,
             }
             setTempAnno(utils.buildAnnotation(temp))
-            view?.createNewAnno(anchorObject, annotationList)
+            view?.createNewAnno(newAnnoId, anchorObject, annotationList)
         })
 }
 

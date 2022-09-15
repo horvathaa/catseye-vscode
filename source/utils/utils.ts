@@ -354,7 +354,7 @@ export const checkIfChangeIncludesAnchor = (
 }
 
 const getShikiTheme = (pl: string): string => {
-    let theme
+    let theme = ''
     if (pl === 'css') {
         theme = stringToShikiThemes[pl]
     } else if (stringToShikiThemes[currentColorTheme]) {

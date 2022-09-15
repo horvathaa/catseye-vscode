@@ -9,7 +9,9 @@
 import * as vscode from 'vscode'
 import {
     AnchorObject,
+    AnchorOnCommit,
     Annotation,
+    PotentialAnchorObject,
     Scope,
     Sort,
 } from '../../../constants/constants'
@@ -351,4 +353,32 @@ export function getStringDifference(a: string, b: string): string {
         j++
     }
     return result
+}
+
+export const getActiveIndicatorIconProps = (
+    versionsToRender: AnchorOnCommit[] | PotentialAnchorObject[]
+): any => {
+    return versionsToRender.length === 1
+        ? { display: 'none' }
+        : {
+              color: 'white',
+              '&:hover': {
+                  color: '#7fae4285',
+              },
+              transition: '200ms',
+          }
+}
+
+export const getIndicatorIconProps = (
+    versionsToRender: AnchorOnCommit[] | PotentialAnchorObject[]
+): any => {
+    return versionsToRender.length === 1
+        ? { display: 'none' }
+        : {
+              color: '#e3dfdf91',
+              '&:hover': {
+                  color: '##e3dfdf40',
+              },
+              transition: '200ms',
+          }
 }

@@ -39,6 +39,7 @@ export const initializeAuth = async () => {
     const authSessionOptions: vscode.AuthenticationGetSessionOptions = {
         clearSessionPreference: false,
         createIfNone: true,
+        // forceNewSession: true, // -- use for debugging and screenshot grabbing of first time user experience
     }
     try {
         // create VS Code GitHub auth session

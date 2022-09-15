@@ -760,45 +760,13 @@ export function createRangesFromAnnotation(
     )
 }
 
-// Function to make VS Code decoration objects (the highlights that appear in the editor) with our metadata added
-const createDecorationOptions = (
-    ranges: AnnotationRange[],
-    annotationList: Annotation[]
-): vscode.DecorationOptions[] => {
-    // console.log('annotationList', annotationList, 'ranges', ranges);
-    return ranges.map((r) => {
-        let markdownArr = new Array<vscode.MarkdownString>()
-        markdownArr.push(
-            new vscode.MarkdownString(
-                annotationList.find((a) => a.id === r.annotationId)?.annotation
-            )
-        )
-        const showAnnoInWebviewCommand = vscode.Uri.parse(
-            `command:catseye.showAnnoInWebview?${encodeURIComponent(
-                JSON.stringify(r.annotationId)
-            )}`
-        )
-        let showAnnoInWebviewLink: vscode.MarkdownString =
-            new vscode.MarkdownString()
-        showAnnoInWebviewLink.isTrusted = true
-        showAnnoInWebviewLink.appendMarkdown(
-            `[Show Annotation](${showAnnoInWebviewCommand})`
-        )
-        markdownArr.push(showAnnoInWebviewLink)
-        return {
-            range: r.range,
-            hoverMessage: markdownArr,
-        }
-    })
-}
-
 export interface AnnotationRange extends AnnotationAnchorPair {
     anchorText: string
     range: vscode.Range
     valid?: boolean
 }
 
-interface AnnotationAnchorPair {
+export interface AnnotationAnchorPair {
     annotationId: string
     anchorId: string | string[]
 }
@@ -861,7 +829,9 @@ export const addTempAnnotationHighlight = (
     const ranges = anchors.map((a) => createRangeFromAnchorObject(a))
     const decorationObjects: vscode.DecorationOptions[] = ranges.map((r) => {
         let markdownArr = new Array<vscode.MarkdownString>()
-        markdownArr.push(new vscode.MarkdownString('New Merged Anchor Point'))
+        markdownArr.push(
+            new vscode.MarkdownString("New annotation's anchor point")
+        )
         return {
             range: r,
             hoverMessage: markdownArr,
@@ -984,19 +954,20 @@ export const addHighlightsToEditor = (
 
             setAnnotationList(newAnnotationList.concat(unanchoredAnnotations))
             unanchoredAnnotations.length && view?.updateDisplay(annotationList)
-
             try {
-                const decorationOptions: vscode.DecorationOptions[] =
-                    createDecorationOptions(validRanges, newAnnotationList)
-                text.setDecorations(annotationDecorations, decorationOptions)
+                text.setDecorations(annotationDecorations, validRanges)
                 refreshFoldingRanges()
             } catch (error) {
                 console.error("Couldn't highlight: ", error)
             }
-
-            // if (vscode.workspace.workspaceFolders) {
-            //     view?.updateDisplay(newAnnotationList)
-            // }
+        } else {
+            // no ranges to highlight for this file -- reset
+            try {
+                text.setDecorations(annotationDecorations, [])
+                refreshFoldingRanges()
+            } catch (error) {
+                console.error("Couldn't highlight: ", error)
+            }
         }
     }
 

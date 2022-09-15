@@ -38,6 +38,8 @@ import {
     setDeletedAnnotationList,
     setEventsToTransmitOnSave,
     setShowResolved,
+    setTempMergedAnchors,
+    tempMergedAnchors,
 } from '../extension'
 import {
     initializeAnnotations,
@@ -165,13 +167,39 @@ export const handleAddAnchor = async (id: string): Promise<void> => {
             id,
             new vscode.Range(currentSelection.start, currentSelection.end)
         )
+        // console.log('newAnchor??', newAnchor)
         if (newAnchor) {
             view?.sendAnchorsToMergeAnnotation([newAnchor], [], [])
+            setTempMergedAnchors(newAnchor)
             const textEditorToHighlight: vscode.TextEditor = vscode.window
                 .activeTextEditor
                 ? vscode.window.activeTextEditor
                 : vscode.window.visibleTextEditors[0]
-            addTempAnnotationHighlight([newAnchor], textEditorToHighlight)
+            addTempAnnotationHighlight(tempMergedAnchors, textEditorToHighlight)
+        } else {
+            console.log('couldnt create anchor')
+        }
+
+        return
+    } else if (tempAnno && tempAnno.id === id) {
+        const newAnchor: AnchorObject | undefined = await createAnchorObject(
+            id,
+            new vscode.Range(currentSelection.start, currentSelection.end)
+        )
+        // console.log('newAnchor??', newAnchor)
+        if (newAnchor) {
+            // view?.sendAnchorsToMergeAnnotation([newAnchor], [], [])
+            setTempAnno({
+                ...tempAnno,
+                anchors: tempAnno.anchors.concat(newAnchor),
+            })
+            setTempMergedAnchors(newAnchor)
+            const textEditorToHighlight: vscode.TextEditor = vscode.window
+                .activeTextEditor
+                ? vscode.window.activeTextEditor
+                : vscode.window.visibleTextEditors[0]
+            addTempAnnotationHighlight(tempMergedAnchors, textEditorToHighlight)
+            view?.sendNewAnchorForNewAnnotation(newAnchor)
         } else {
             console.log('couldnt create anchor')
         }
@@ -420,11 +448,18 @@ export const handleCreateAnnotation = (
                     doc.document.uri.toString() ===
                     tempAnno?.anchors[0].filename
             )
+            const anchorIds = newAnno.anchors.map((a) => a.anchorId)
+            setTempMergedAnchors(
+                tempMergedAnchors.filter((a) => !anchorIds.includes(a.anchorId))
+            )
             setTempAnno(null)
             setAnnotationList(annotationList)
             fbSaveAnnotations(annotationList)
             view?.updateDisplay(annotationList)
-            if (text) addHighlightsToEditor(annotationList, text)
+            if (text) {
+                addHighlightsToEditor(annotationList, text)
+                addTempAnnotationHighlight(tempMergedAnchors, text)
+            }
             if (willBePinned) {
                 setSelectedAnnotationsNavigations([
                     ...selectedAnnotationsNavigations,
@@ -553,10 +588,10 @@ export const handleDeleteResolveAnnotation = (
             annotationUrls.includes(getStableGitHubUrl(v.document.uri.fsPath))
     )[0]
 
-    setAnnotationList(removeOutOfDateAnnotations(updatedList))
-    view?.updateDisplay(annotationList)
+    setAnnotationList(updatedList)
+    view?.updateDisplay(updatedList)
     if (visible) {
-        addHighlightsToEditor(annotationList, visible)
+        addHighlightsToEditor(updatedList, visible)
     }
     if (selectedAnnotationsNavigations.map((a) => a.id).includes(id)) {
         setSelectedAnnotationsNavigations(
@@ -570,6 +605,14 @@ export const handleCancelAnnotation = (): void => {
     // reset temp object and re-render
     setTempAnno(null)
     view?.updateDisplay(removeOutOfDateAnnotations(annotationList))
+    if (tempMergedAnchors.length) {
+        setTempMergedAnchors([])
+        addTempAnnotationHighlight(
+            [],
+            vscode.window.activeTextEditor ??
+                vscode.window.visibleTextEditors[0]
+        )
+    }
 }
 
 // NOT USED ANYMORE
@@ -710,11 +753,11 @@ export const handleMergeAnnotation = (
     setAnnotationList([
         ...annotationList.filter((a) => !ids.includes(a.id)),
         newAnnotation,
-        // ...mergedAnnotations,
     ])
     const newEvent = createEvent(mergedAnnotations, EventType.merge)
     emitEvent(newEvent)
     view?.updateDisplay(annotationList)
+    setTempMergedAnchors([])
     vscode.window.visibleTextEditors.forEach((t) => {
         addHighlightsToEditor(annotationList, t)
         addTempAnnotationHighlight([], t)
@@ -857,6 +900,11 @@ export const handleFindMatchingAnchors = (annotations: Annotation[]): void => {
         anchorsThatWereUsedButNotTransmitting,
         annoIdArr
     )
+    setTempMergedAnchors(anchorObjs)
+    addTempAnnotationHighlight(
+        anchorObjs,
+        vscode.window.activeTextEditor ?? vscode.window.visibleTextEditors[0]
+    )
 }
 
 export const handleReanchor = (
@@ -969,4 +1017,19 @@ export const handleShowResolvedUpdated = (showResolved: boolean): void => {
 export const handleOpenDocumentation = (): void => {
     vscode.env.openExternal(vscode.Uri.parse('https://www.catseye.tech'))
     return
+}
+
+export const handleRemoveTempMergeAnchor = (
+    anchorsToRemove: AnnotationAnchorPair[]
+): void => {
+    const anchorIds = anchorsToRemove.map((a) => a.anchorId)
+    const tempAnchorsToHighlight = tempMergedAnchors.filter(
+        (a) => !anchorIds.includes(a.anchorId)
+    )
+    setTempMergedAnchors(tempAnchorsToHighlight)
+    const textEditorToHighlight: vscode.TextEditor = vscode.window
+        .activeTextEditor
+        ? vscode.window.activeTextEditor
+        : vscode.window.visibleTextEditors[0]
+    addTempAnnotationHighlight(tempMergedAnchors, textEditorToHighlight)
 }

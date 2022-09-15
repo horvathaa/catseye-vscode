@@ -9,8 +9,6 @@ import {
     tabSize,
     insertSpaces,
     annotationList,
-    deletedAnnotations,
-    setDeletedAnnotationList,
     selectedAnnotationsNavigations,
     setSelectedAnnotationsNavigations,
     view,

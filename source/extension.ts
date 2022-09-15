@@ -11,6 +11,7 @@
 import * as vscode from 'vscode'
 import firebase from './firebase/firebase'
 import {
+    AnchorObject,
     Annotation,
     AnnotationEvent,
     ChangeEvent,
@@ -24,6 +25,8 @@ import ViewLoader from './view/ViewLoader'
 import { AstHelper } from './astHelper/astHelper'
 import { partition } from './utils/utils'
 import { saveAnnotations } from './firebase/functions/functions'
+import { HoverController } from './hovers/hoverController'
+import { addHighlightsToEditor } from './anchorFunctions/anchor'
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports
 export const gitApi = gitExtension?.getAPI(1)
 console.log('gitApi', gitApi)
@@ -55,6 +58,7 @@ export let trackedFiles: vscode.TextDocument[] = []
 export let astHelper: AstHelper = new AstHelper()
 export let eventsToTransmitOnSave: AnnotationEvent[] = []
 export let showResolved: boolean = false
+export let tempMergedAnchors: AnchorObject[] = []
 
 export const annotationDecorations =
     vscode.window.createTextEditorDecorationType({
@@ -111,12 +115,20 @@ export const setInsertSpaces = (newInsertSpaces: boolean | string): void => {
     insertSpaces = newInsertSpaces
 }
 
+// probably worth doing an audit to ensure that we're no longer doing the removing
+// and saving of deleted annotations outside of this set
 export const setAnnotationList = (newAnnotationList: Annotation[]): void => {
     const [annosToSet, annosToRemove] = partition(
         newAnnotationList,
         (a) => !a.deleted && !a.outOfDate
     )
-    saveAnnotations(annosToRemove)
+    if (annosToRemove.length) {
+        saveAnnotations(annosToRemove)
+        vscode.window.visibleTextEditors.forEach((t) => {
+            addHighlightsToEditor(annosToSet, t)
+        })
+    }
+
     annotationList = annosToSet
 }
 
@@ -194,6 +206,14 @@ export const setEventsToTransmitOnSave = (
 
 export const setShowResolved = (newShowResolved: boolean): void => {
     showResolved = newShowResolved
+}
+
+export const setTempMergedAnchors = (
+    newTempMergedAnchors: AnchorObject | AnchorObject[]
+): void => {
+    tempMergedAnchors = Array.isArray(newTempMergedAnchors)
+        ? newTempMergedAnchors
+        : tempMergedAnchors.concat(newTempMergedAnchors)
 }
 
 // this method is called when the extension is activated
@@ -300,11 +320,7 @@ export function activate(context: vscode.ExtensionContext) {
         true
     )
 
-    // let foldingRangeProviderDisposable =
-    //     vscode.languages.registerFoldingRangeProvider(
-    //         '*',
-    //         catseyeFoldingRangeProvider
-    //     )
+    let hoverProviderDisposable = new HoverController()
 
     /*************************************************************************************/
     /**************************************** DISPOSABLES ********************************/
@@ -331,7 +347,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(copyDisposable)
     context.subscriptions.push(cutDisposable)
 
-    // context.subscriptions.push(foldingRangeProviderDisposable)
+    context.subscriptions.push(hoverProviderDisposable)
 }
 
 // // this method is called when your extension is deactivated

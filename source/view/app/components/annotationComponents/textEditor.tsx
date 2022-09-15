@@ -5,6 +5,7 @@
  * Split button is used for annotation creation support, while regular "submit" button is used for replies and snapshots.
  */
 import * as React from 'react'
+import cn from 'classnames'
 import SplitButton from './muiSplitButton'
 import styles from '../../styles/annotation.module.css'
 import FormGroup from '@mui/material/FormGroup'
@@ -36,6 +37,7 @@ interface Props {
         userText: string,
         selectedRange: Selection
     ) => void
+    setCursorAt?: number
 }
 // Having default props is weirdly supported in React, this way means showCancel is an optional
 // See: https://dev.to/bytebodger/default-props-in-react-typescript-2o5o
@@ -48,6 +50,7 @@ const TextEditor: React.FC<Props> = ({
     focus = true,
     placeholder = '',
     onChange,
+    setCursorAt,
 }) => {
     const [text, setText] = React.useState<any>(content)
     const [willBePinned, setWillBePinned] = React.useState<boolean>(false)
@@ -67,6 +70,20 @@ const TextEditor: React.FC<Props> = ({
     React.useEffect(() => {
         setText(content)
     }, [content])
+
+    React.useEffect(() => {
+        let textArea = document.getElementById(
+            'mergedTextArea'
+        ) as HTMLTextAreaElement
+        // not sure why this isnt actually setting the cursor position since the vals seem correct?
+        // update -- sets properly for double-click then delete, and regular highlight then delete, but
+        // NOT for ctrl+shift select? Weird? Not sure why? Probably gonna ignore for now
+        if (textArea && setCursorAt) {
+            textArea.focus()
+            textArea.selectionStart = setCursorAt
+            textArea.selectionEnd = setCursorAt
+        }
+    }, [setCursorAt])
 
     React.useEffect(() => {
         window.document.addEventListener('keydown', setClipboardText)
@@ -177,15 +194,15 @@ const TextEditor: React.FC<Props> = ({
     }
 
     const handleEnter = (e: React.KeyboardEvent): void => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        const key = e.key
+        const textArea = e.target as HTMLTextAreaElement
+        if ((e.ctrlKey || e.metaKey) && key === 'Enter') {
             submissionHandler(text, 'private', willBePinned)
             setText({
                 ...text,
                 replyContent: '',
             })
         } else if (hasSelectedRange && onChange) {
-            const key = e.key
-            const textArea = e.target as HTMLTextAreaElement
             if (key !== 'Backspace' && !(e.metaKey || e.ctrlKey || e.altKey)) {
                 // probably input event
                 // could add redundancy check to see if the value of the input changed as well uhguig
@@ -202,6 +219,11 @@ const TextEditor: React.FC<Props> = ({
             }
             setHasSelectedRange(false)
             setSelectedRange(null)
+        } else if (onChange && key === 'Backspace') {
+            onChange(textArea.value, '', {
+                startOffset: textArea.selectionStart - 1,
+                endOffset: textArea.selectionEnd,
+            })
         }
     }
 
@@ -221,20 +243,32 @@ const TextEditor: React.FC<Props> = ({
     }
 
     const handleSubmission = (shareWith: string) => {
-        console.log('how does this work again lol', shareWith)
         if (text.hasOwnProperty('comment')) {
             cancelHandler()
         }
         submissionHandler(text, shareWith, willBePinned)
     }
 
+    const styleProps = text.hasOwnProperty('replyContent')
+        ? {
+              backgroundColor: textBoxBackground,
+              width: text.replyContent.length ? '80%' : '98%',
+              marginRight: '8px',
+          }
+        : { backgroundColor: textBoxBackground }
     // Ideally this textbox isn't a significantly different color and is not of fixed size.
     return (
-        <div className={styles['textboxContainer']}>
+        <div
+            className={cn({
+                [styles['textboxContainer']]: true,
+                [styles['inlineReply']]: text.hasOwnProperty('replyContent'),
+            })}
+        >
             <TextareaAutosize
+                id={setCursorAt !== undefined ? 'mergedTextArea' : ''}
                 minRows={1}
                 className={styles['textbox']}
-                style={{ backgroundColor: textBoxBackground }}
+                style={styleProps}
                 autoFocus={focus}
                 placeholder={placeholder}
                 value={
@@ -259,7 +293,11 @@ const TextEditor: React.FC<Props> = ({
                         <>
                             {!showCancel && text.replyContent.length ? (
                                 <button
-                                    className={styles['submit']}
+                                    className={cn({
+                                        [styles['submit']]: true,
+                                        [styles['inlineReply']]:
+                                            text.hasOwnProperty('replyContent'),
+                                    })}
                                     onClick={(e: React.SyntheticEvent) => {
                                         e.stopPropagation()
                                         // Is this a checker for Snapshots?

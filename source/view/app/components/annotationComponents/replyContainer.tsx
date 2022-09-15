@@ -13,6 +13,7 @@ import styles from '../../styles/annotation.module.css'
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import KeyboardDoubleArrowUpIcon from '@mui/icons-material/KeyboardDoubleArrowUp'
+import Tooltip from '@mui/material/Tooltip/Tooltip'
 
 interface Props {
     replying: boolean
@@ -75,41 +76,47 @@ const ReplyContainer: React.FC<Props> = ({
         if (hasBeenSelected.get(r.id)) {
             return (
                 <div className={styles['ReplyArrowBox']}>
-                    <ArrowDownwardIcon
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => {
-                            setHasBeenSelected(
-                                new Map(hasBeenSelected.set(r.id, false))
-                            )
-                            handleSelectReply &&
-                                handleSelectReply(r.id, 'remove')
-                        }}
-                    />
+                    <Tooltip title={'Remove reply from merged annotation'}>
+                        <ArrowDownwardIcon
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => {
+                                setHasBeenSelected(
+                                    new Map(hasBeenSelected.set(r.id, false))
+                                )
+                                handleSelectReply &&
+                                    handleSelectReply(r.id, 'remove')
+                            }}
+                        />
+                    </Tooltip>
                 </div>
             )
         } else {
             return (
                 <div className={styles['ReplyArrowBox']}>
-                    <KeyboardDoubleArrowUpIcon
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => {
-                            setHasBeenSelected(
-                                new Map(hasBeenSelected.set(r.id, true))
-                            )
-                            handleSelectReply &&
-                                handleSelectReply(r.id, 'add', 'annotation')
-                        }}
-                    />
-                    <ArrowUpwardIcon
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => {
-                            setHasBeenSelected(
-                                new Map(hasBeenSelected.set(r.id, true))
-                            )
-                            handleSelectReply &&
-                                handleSelectReply(r.id, 'add', 'reply')
-                        }}
-                    />
+                    <Tooltip title={'Add reply to merged annotation body'}>
+                        <KeyboardDoubleArrowUpIcon
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => {
+                                setHasBeenSelected(
+                                    new Map(hasBeenSelected.set(r.id, true))
+                                )
+                                handleSelectReply &&
+                                    handleSelectReply(r.id, 'add', 'annotation')
+                            }}
+                        />
+                    </Tooltip>
+                    <Tooltip title={'Add reply to merged annotation'}>
+                        <ArrowUpwardIcon
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => {
+                                setHasBeenSelected(
+                                    new Map(hasBeenSelected.set(r.id, true))
+                                )
+                                handleSelectReply &&
+                                    handleSelectReply(r.id, 'add', 'reply')
+                            }}
+                        />
+                    </Tooltip>
                 </div>
             )
         }

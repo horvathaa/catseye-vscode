@@ -7,7 +7,7 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import ShareIcon from '@mui/icons-material/Share'
 import PushPinIcon from '@mui/icons-material/PushPin'
 import { Annotation } from '../../../../constants/constants'
-import UserProfile from './userProfile'
+import UserProfile, { UserIcon } from './userProfile'
 import CatseyeButton from './CatseyeButton'
 import { createTheme } from '@mui/material'
 import { useMediaQuery } from '@material-ui/core'
@@ -69,9 +69,19 @@ const CardHeader = ({
                         flexWrap: 'wrap',
                     }}
                 >
-                    <IconButton size="small">
-                        {anchored === true ? <TbAnchor /> : <TbAnchorOff />}
-                    </IconButton>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <UserIcon
+                            githubUsername={annotation.githubUsername}
+                            style={{
+                                width: '20px',
+                                height: '20px',
+                            }}
+                            size={20}
+                        />
+                        <IconButton size="small">
+                            {anchored === true ? <TbAnchor /> : <TbAnchorOff />}
+                        </IconButton>
+                    </div>
                     <div
                         style={{
                             display: 'flex',

@@ -793,3 +793,36 @@ const generateLineMetadata = (h: {
 
 // const hover = await hoverController.provideAnnotationCreationHover(textEditor.document, activeSelection.end);
 // console.log('hover', hover);
+
+// Function to make VS Code decoration objects (the highlights that appear in the editor) with our metadata added
+// replaced in favor of HoverController -- bring back if hover controller does not work for some reason
+// const createDecorationOptions = (
+//     ranges: AnnotationRange[],
+//     annotationList: Annotation[]
+// ): vscode.DecorationOptions[] => {
+//     // console.log('annotationList', annotationList, 'ranges', ranges);
+//     return ranges.map((r) => {
+//         let markdownArr = new Array<vscode.MarkdownString>()
+//         markdownArr.push(
+//             new vscode.MarkdownString(
+//                 annotationList.find((a) => a.id === r.annotationId)?.annotation
+//             )
+//         )
+//         const showAnnoInWebviewCommand = vscode.Uri.parse(
+//             `command:catseye.showAnnoInWebview?${encodeURIComponent(
+//                 JSON.stringify(r.annotationId)
+//             )}`
+//         )
+//         let showAnnoInWebviewLink: vscode.MarkdownString =
+//             new vscode.MarkdownString()
+//         showAnnoInWebviewLink.isTrusted = true
+//         showAnnoInWebviewLink.appendMarkdown(
+//             `[Show Annotation](${showAnnoInWebviewCommand})`
+//         )
+//         markdownArr.push(showAnnoInWebviewLink)
+//         return {
+//             range: r.range,
+//             hoverMessage: markdownArr,
+//         }
+//     })
+// }

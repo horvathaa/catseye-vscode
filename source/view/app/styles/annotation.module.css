@@ -286,8 +286,10 @@
 }
 
 .profilePhoto {
-    width: 30px !important;
-    height: 30px !important;
+    /* width: 30px !important; */
+    /* height: 30px !important; */
+    width: 30px;
+    height: 30px;
 }
 
 .usernameAndTimeContainer {
@@ -316,6 +318,12 @@
     border: 1.5px solid var(--vscode-editor-foreground); */
     margin-top: 8px;
     margin-bottom: 4px;
+}
+
+.inlineReply.textboxContainer {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 .AnchorDescription {
@@ -556,6 +564,10 @@ button.submit:hover {
     filter: brightness(1);
     transition: opacity 0.55s ease-in-out;
     background-color: #7fae42;
+}
+
+button.submit.inlineReply {
+    margin-bottom: 4px;
 }
 
 button.cancel {

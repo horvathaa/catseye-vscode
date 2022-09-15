@@ -748,7 +748,12 @@ export const translateChanges = (
                 : originalGitCommit,
     }
 
-    return newAnchor
+    const newAnchorWithSurroundingContext: AnchorObject = {
+        ...newAnchor,
+        surroundingCode: getSurroundingCodeArea(doc, newAnchor),
+    }
+
+    return newAnchorWithSurroundingContext
 }
 
 // Helper function to transform all anchors into an array of VS Code ranges

@@ -784,6 +784,114 @@ const rangeOnlyEqualsRange = (
     return arr.some((anno) => a.range.isEqual(anno.range))
 }
 
+// const rangeOnlyEqualsRange = (
+//     a: AnnotationAnchorRange,
+//     arr: AnnotationAnchorRange[]
+// ): boolean => {
+//     console.log(
+//         'what is this returning- arr',
+//         arr,
+//         'a',
+//         a
+//         // 'b',
+//         // arr.some((anno) => a.range.contains(anno.range))
+//     )
+//     return arr.some((anno) => {
+//         console.log('anno', anno, 'contains', a.range.contains(anno.range))
+//         return a.anchorId !== anno.anchorId && a.range.contains(anno.range)
+//     })
+// }
+
+// interface AnnotationAnchorFileRange extends AnnotationAnchorRange {
+//     gitUrl: string
+// }
+
+// const createMap = (
+//     arr: AnnotationAnchorFileRange[],
+//     files: string[]
+// ): Map<string, AnnotationAnchorFileRange[]> => {
+//     let map = new Map()
+//     files.forEach((f) => {
+//         map.set(
+//             f,
+//             arr.filter((a) => f === a.gitUrl)
+//         )
+//     })
+//     return map
+// }
+
+// would be preferable to do this -- just need a system for marking how all of the anchors
+// are related to one another such that when user toggles on and off certain anchors
+// it updates the correct corresponding anchors
+// i'm just too tired to figure that out rn/don't want to
+
+// const getRangesWhichContainRanges = (arr: AnnotationAnchorFileRange[]): any => {
+//     // first split arr by file(s)
+//     // then, for each set of anno/anchors per file, sort by range size (biggest first)
+//     // with range -- first, check for which ranges it encompases then throw those out
+//     // then check if it intersects any ranges, if so, merge
+//     // then, update -- for merged and thrown out anchors, skip since they've already been "used"
+//     // repeat per file
+
+//     const files = [...new Set(arr.map((a) => a.gitUrl))]
+//     const setsMap = createMap(arr, files)
+//     const pairsToUse = []
+//     const dupPairs = []
+//     files.forEach((f) => {
+//         const pairsToUseThisFile: AnnotationAnchorFileRange[] = []
+//         let dupPairsThisFile: AnnotationAnchorFileRange[] = []
+//         const sorted = setsMap
+//             .get(f)
+//             ?.sort((pairA, pairB) =>
+//                 pairA.range.start.isBefore(pairB.range.start) ? -1 : 1
+//             )
+//         sorted?.forEach((s) => {
+//             // this is a dup -- continue
+//             if (
+//                 dupPairsThisFile.find(
+//                     (dup) =>
+//                         dup.anchorId === s.anchorId &&
+//                         dup.annotationId === s.annotationId
+//                 )
+//             ) {
+//                 return
+//             }
+//             // range has no overlap
+//             else if (
+//                 sorted.every(
+//                     (ss) =>
+//                         ss.anchorId !== s.anchorId &&
+//                         !s.range.intersection(ss.range)
+//                 )
+//             ) {
+//                 pairsToUse.push(s)
+//             }
+//             // range has some overlap
+//             else {
+//                 // find ranges this range contains and remove
+//                 if (
+//                     sorted.some(
+//                         (ss) =>
+//                             ss.anchorId !== s.anchorId &&
+//                             s.range.contains(ss.range)
+//                     )
+//                 ) {
+//                     dupPairsThisFile = dupPairsThisFile.concat(
+//                         sorted.filter((ss) => s.range.contains(ss.range))
+//                     )
+//                 }
+//             }
+//         })
+//     })
+
+//     // let dupInfo = []
+//     // arr.forEach((a) => {
+//     //     if(arr.some((aar) => a.anchorId !== aar.anchorId && a.range.contains(aar.range))) {
+
+//     //     }
+//     // })
+// }
+
 interface DupInfo {
     annoId: string
     anchorId: string
@@ -853,6 +961,8 @@ export const handleFindMatchingAnchors = (annotations: Annotation[]): void => {
     const equals = annoAnchorRanges.filter((a) => {
         return rangeOnlyEqualsRange(a, annoAnchorRanges)
     })
+
+    // console.log('i forget how this works', equals)
     // since equals will have duplicates of each range, we only want one of each
     // const equalRanges = equals.map((a) => createAnchorFromRange(a.range))
     const uniqueIndices = getIndicesOfUnique(equals)
@@ -886,7 +996,7 @@ export const handleFindMatchingAnchors = (annotations: Annotation[]): void => {
                 }),
             }
         })
-
+    // console.log('huh???', anchorsThatWereUsedButNotTransmitting)
     const anchorIdsThatWeAreSending = anchorsToTransmit.map((id) => {
         annoIds.add(id.annotationId)
         return id.anchorId

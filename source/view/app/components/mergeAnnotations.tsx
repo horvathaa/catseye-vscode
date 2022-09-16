@@ -2109,9 +2109,6 @@ const MergeAnnotations: React.FC<Props> = ({
                 <Card style={cardStyle}>
                     <CardContent>
                         <div className={styles['ContentContainer']}>
-                            <p className={anchorStyles['SuggestionTitle']}>
-                                Merged Annotation
-                            </p>
                             <div
                                 style={{
                                     display: 'flex',
@@ -2119,45 +2116,58 @@ const MergeAnnotations: React.FC<Props> = ({
                                     justifyContent: 'space-between',
                                 }}
                             >
-                                {annotations.some(
-                                    (a) => a.annotation !== ''
-                                ) ? (
-                                    <div>
-                                        <Checkbox
-                                            onChange={() =>
-                                                !getAllAnnotation
-                                                    ? getAllAnnotationContent()
-                                                    : removeAllAnnotationContent()
-                                            }
-                                            inputProps={{
-                                                'aria-label': 'controlled',
-                                            }}
-                                            checked={getAllAnnotation}
-                                        />
-                                        Add all annotation bodies?
-                                    </div>
-                                ) : null}
-                                {annotations.some((a) => a.replies.length) ? (
-                                    <div>
-                                        <Checkbox
-                                            onChange={() =>
-                                                !getAllReplies
-                                                    ? getAllReplyContent()
-                                                    : removeAllReplyContent()
-                                            }
-                                            inputProps={{
-                                                'aria-label': 'controlled',
-                                            }}
-                                            checked={getAllReplies}
-                                        />
-                                        Add all replies?
-                                    </div>
-                                ) : null}
-                                <CatseyeButton
-                                    buttonClicked={addAnchor}
-                                    name="Add Anchor"
-                                    icon={<AnchorIcon fontSize="small" />}
-                                />
+                                <p className={anchorStyles['SuggestionTitle']}>
+                                    Merged Annotation
+                                </p>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'row',
+                                        justifyContent: 'space-between',
+                                    }}
+                                >
+                                    {annotations.some(
+                                        (a) => a.annotation !== ''
+                                    ) ? (
+                                        <div>
+                                            <Checkbox
+                                                onChange={() =>
+                                                    !getAllAnnotation
+                                                        ? getAllAnnotationContent()
+                                                        : removeAllAnnotationContent()
+                                                }
+                                                inputProps={{
+                                                    'aria-label': 'controlled',
+                                                }}
+                                                checked={getAllAnnotation}
+                                            />
+                                            Add all annotation bodies?
+                                        </div>
+                                    ) : null}
+                                    {annotations.some(
+                                        (a) => a.replies.length
+                                    ) ? (
+                                        <div>
+                                            <Checkbox
+                                                onChange={() =>
+                                                    !getAllReplies
+                                                        ? getAllReplyContent()
+                                                        : removeAllReplyContent()
+                                                }
+                                                inputProps={{
+                                                    'aria-label': 'controlled',
+                                                }}
+                                                checked={getAllReplies}
+                                            />
+                                            Add all replies?
+                                        </div>
+                                    ) : null}
+                                    <CatseyeButton
+                                        buttonClicked={addAnchor}
+                                        name="Add Anchor"
+                                        icon={<AnchorIcon fontSize="small" />}
+                                    />
+                                </div>
                             </div>
                             {newAnnotation.anchors.length > 0
                                 ? renderAnchors()

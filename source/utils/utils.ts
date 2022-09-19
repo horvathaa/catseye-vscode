@@ -1176,7 +1176,7 @@ export const createAnchorObject = async (
 export const getLastGitCommitHash = async () => {
     const options = ["--pretty=format:'%H'", '--skip=1', '--max-count=1']
     const result = await git.log(options)
-    const lastCommit = result.all[0].hash.slice(1, -1)
+    const lastCommit = result.all[0]?.hash.slice(1, -1)
     return lastCommit
 }
 

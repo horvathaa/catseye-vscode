@@ -10,6 +10,7 @@ import styles from '../../styles/versions.module.css'
 import { displayAnchorText } from '../../utils/viewUtilsTsx'
 // import { ExtendButtonBase, IconButtonTypeMap } from '@mui/material'
 import { ReactJSXElement } from '@emotion/react/types/jsx-namespace'
+import { ThemeContext } from '../../catseye'
 
 interface PastVersionProps {
     handleClick: (e: React.SyntheticEvent, aId: string) => void
@@ -44,6 +45,7 @@ export const PastVersion: React.FC<PastVersionProps> = ({
     anchorIcon,
 }) => {
     const [pv, setPv] = React.useState<AnchorOnCommit>(pastVersion)
+    const theme = React.useContext(ThemeContext)
     React.useEffect(() => {
         if (isOldAnchorOnCommit(pastVersion)) {
             const { startLine, endLine, ...rest } = pastVersion
@@ -162,7 +164,7 @@ export const PastVersion: React.FC<PastVersionProps> = ({
                     <pre className={styles['CodeLines']}>
                         {displayBefore && showBefore()}
                         <b>
-                            {displayAnchorText(pv, styles)}
+                            {displayAnchorText(pv, styles, theme)}
                             {/* {pv.anchorText.length > 60
                                 ? pv.anchorText.slice(0, 60)
                                 : pv.anchorText}

@@ -15,8 +15,10 @@ import Carousel from './anchorCarousel'
 import styles from '../../styles/versions.module.css'
 import CatseyeButton from './CatseyeButton'
 import AnchorIcon from '@mui/icons-material/Anchor'
+import { ColorTheme } from 'vscode'
 interface Props {
     anchors: AnchorObject[]
+
     scrollInEditor: (id: string) => void
     requestReanchor: (newAnchor: ReanchorInformation) => void
     scrollToRange: (anchor: Anchor, filename: string, gitUrl: string) => void
@@ -25,6 +27,7 @@ interface Props {
 
 const AnchorVersions: React.FC<Props> = ({
     anchors,
+
     scrollInEditor,
     requestReanchor,
     scrollToRange,

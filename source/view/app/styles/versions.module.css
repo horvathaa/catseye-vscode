@@ -100,6 +100,13 @@ span {
     border: 0.2px solid rgba(217, 234, 247, 0.25);
 }
 
+.AnchorCodeTextLight {
+    color: rgba(102, 115, 124, 0.945);
+    font-weight: 400;
+    background-color: #ffffff1c;
+    border: 0.2px solid rgba(217, 234, 247, 0.25);
+}
+
 .AnchorCode {
     display: flex;
     flex-direction: column;

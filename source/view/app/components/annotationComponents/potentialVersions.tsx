@@ -11,6 +11,7 @@ import {
     getActiveIndicatorIconProps,
     getIndicatorIconProps,
 } from '../../utils/viewUtils'
+import { ThemeContext } from '../../catseye'
 
 interface PotentialVersionProps {
     handleClick: (e: React.SyntheticEvent, aId: string) => void
@@ -41,6 +42,8 @@ const PotentialVersion: React.FC<PotentialVersionProps> = ({
     if (!potentialVersion) {
         return null
     }
+    const theme = React.useContext(ThemeContext)
+
     return (
         <div>
             <div
@@ -95,7 +98,13 @@ const PotentialVersion: React.FC<PotentialVersionProps> = ({
                             {displayBefore(potentialVersion, 2)}
                         </pre>
                         <pre className={styles['CodeLines']}>
-                            <b>{displayAnchorText(potentialVersion, styles)}</b>
+                            <b>
+                                {displayAnchorText(
+                                    potentialVersion,
+                                    styles,
+                                    theme
+                                )}
+                            </b>
                         </pre>
                         <pre
                             className={styles['CodeLines']}

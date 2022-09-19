@@ -73,6 +73,7 @@ export default class ViewLoader {
         const annotationJson = JSON.stringify(annotationList)
         const userId = JSON.stringify(user?.uid)
         const username = JSON.stringify(gitInfo.author)
+        const colorTheme = JSON.stringify(vscode.window.activeColorTheme)
         const currentProject = JSON.stringify(
             getProjectName(activeEditor?.document.uri.toString())
         )
@@ -103,6 +104,7 @@ export default class ViewLoader {
             window.acquireVsCodeApi = acquireVsCodeApi;
             window.data = ${annotationJson}
             window.userId = ${userId}
+            window.colorTheme = ${colorTheme}
             window.username = ${username}
             window.currentFile = ${currentFile}
             window.currentProject = ${currentProject}
@@ -251,6 +253,17 @@ export default class ViewLoader {
                 command: 'newAnchorForNewAnnotation',
                 payload: {
                     anchor,
+                },
+            })
+        }
+    }
+
+    public sendNewColorTheme(theme: vscode.ColorTheme) {
+        if (this._panel && this._panel.webview) {
+            this._panel.webview.postMessage({
+                command: 'newColorTheme',
+                payload: {
+                    theme,
                 },
             })
         }

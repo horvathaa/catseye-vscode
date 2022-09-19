@@ -45,6 +45,7 @@ import CollapsedCardHeader from './annotationComponents/annotationCardHeader'
 import EditIcon from '@mui/icons-material/Edit'
 import CatseyeButton from './annotationComponents/CatseyeButton'
 import { useMediaQuery } from '@material-ui/core'
+import { ColorTheme } from 'vscode'
 // import AnnotationList from './annotationList'
 
 interface Props {
@@ -53,6 +54,7 @@ interface Props {
     window: Window
     username: string
     userId: string
+
     annotationSelected?: (anno: Annotation) => void
     annotations?: Annotation[] // Likely unnecessary
     selected?: boolean
@@ -66,6 +68,7 @@ const ReactAnnotation: React.FC<Props> = ({
     window,
     username,
     userId,
+
     annotationSelected,
     annotations,
     selected,
@@ -79,6 +82,7 @@ const ReactAnnotation: React.FC<Props> = ({
 
     const annoRef: React.MutableRefObject<Annotation> = React.useRef(anno)
     const tryingSomethingNew = 'rgb(48 47 47)'
+    console.log('editorBackground', editorBackground)
     // MUI doesn't accept CSS version of this for some reason..?
 
     React.useEffect(() => {
@@ -89,12 +93,12 @@ const ReactAnnotation: React.FC<Props> = ({
     const theme = createTheme({
         palette: {
             primary: {
-                // main: `${editorBackground}`,
-                main: `${tryingSomethingNew}`,
+                main: `${editorBackground}`,
+                // main: `${tryingSomethingNew}`,
             },
             background: {
-                // paper: `${editorBackground}`,
-                paper: `${tryingSomethingNew}`,
+                paper: `${editorBackground}`,
+                // paper: `${tryingSomethingNew}`,
             },
         },
         typography: {

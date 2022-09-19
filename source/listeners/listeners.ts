@@ -46,6 +46,7 @@ import {
     // ChangeEvent,
     // PotentialAnchorObject,
     EventType,
+    ColorTheme,
     // AnnotationAnchorTextPair,
     // Timer
 } from '../constants/constants'
@@ -67,6 +68,7 @@ export const handleDidChangeActiveColorTheme = (
                     vscode.workspace.workspaceFolders[0].uri
             ).colorTheme
         )
+        view?.sendNewColorTheme(vscode.window.activeColorTheme)
     }, 3000)
 }
 

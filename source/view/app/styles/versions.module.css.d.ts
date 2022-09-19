@@ -3,6 +3,7 @@
 interface CssExports {
   'AnchorCode': string;
   'AnchorCodeText': string;
+  'AnchorCodeTextLight': string;
   'AnchorContainer': string;
   'AnchorWrapper': string;
   'CodeLines': string;

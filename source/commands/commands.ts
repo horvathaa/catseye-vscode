@@ -202,6 +202,10 @@ export const createView = async (context: vscode.ExtensionContext) => {
                         viewHelper.handleOpenDocumentation()
                         break
                     }
+                    case 'requestOpenBugReportForm': {
+                        viewHelper.handleOpenBugReportForm()
+                        break
+                    }
                     default: {
                         break
                     }

@@ -133,6 +133,17 @@ const GlobalMenu: React.FC<Props> = ({
                     >
                         View Documentation
                     </MenuItem>
+                    <MenuItem
+                        href=""
+                        divider
+                        onClick={() => {
+                            vscode.postMessage({
+                                command: 'requestOpenBugReportForm',
+                            })
+                        }}
+                    >
+                        Report a Bug
+                    </MenuItem>
                     <MenuItem style={{ cursor: 'default' }} href="">
                         Catseye version {version}
                     </MenuItem>

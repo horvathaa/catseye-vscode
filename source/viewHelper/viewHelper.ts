@@ -1129,6 +1129,13 @@ export const handleOpenDocumentation = (): void => {
     return
 }
 
+export const handleOpenBugReportForm = (): void => {
+    vscode.env.openExternal(
+        vscode.Uri.parse('https://forms.gle/Q2BSeAreCBAeGa29A')
+    )
+    return
+}
+
 export const handleRemoveTempMergeAnchor = (
     anchorsToRemove: AnnotationAnchorPair[]
 ): void => {

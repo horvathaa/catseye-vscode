@@ -24,7 +24,7 @@ import {
     resolveAnnotation,
     shareAnnotation,
 } from '../utils/viewUtilsTsx'
-import { ColorTheme } from 'vscode'
+// import { ColorTheme } from 'vscode'
 
 interface AnnoListProps {
     title: string

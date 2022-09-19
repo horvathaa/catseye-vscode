@@ -15,7 +15,7 @@ import Carousel from './anchorCarousel'
 import styles from '../../styles/versions.module.css'
 import CatseyeButton from './CatseyeButton'
 import AnchorIcon from '@mui/icons-material/Anchor'
-import { ColorTheme } from 'vscode'
+// import { ColorTheme } from 'vscode'
 interface Props {
     anchors: AnchorObject[]
 

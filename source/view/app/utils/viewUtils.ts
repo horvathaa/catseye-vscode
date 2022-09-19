@@ -454,7 +454,7 @@ export const pSBC = (p: any, c0: any, c1: any, l: any) => {
         )
 }
 
-pSBC.pSBCr = (d) => {
+pSBC.pSBCr = (d: any) => {
     const i = parseInt
     let n: number = d.length,
         x: any = {}

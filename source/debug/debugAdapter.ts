@@ -55,7 +55,7 @@ export class DebugAdapter implements DebugAdapterTracker {
         // this.debugCommunicationService = debugCommunicationService;
     }
     onWillStartSession() {
-        // console.log('starting this session', this.debugSession)
+        console.log('starting this session', this.debugSession)
         if (!window.activeTextEditor) {
             return
         }

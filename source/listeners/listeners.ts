@@ -46,7 +46,6 @@ import {
     // ChangeEvent,
     // PotentialAnchorObject,
     EventType,
-    ColorTheme,
     // AnnotationAnchorTextPair,
     // Timer
 } from '../constants/constants'

@@ -45,7 +45,7 @@ import CollapsedCardHeader from './annotationComponents/annotationCardHeader'
 import EditIcon from '@mui/icons-material/Edit'
 import CatseyeButton from './annotationComponents/CatseyeButton'
 import { useMediaQuery } from '@material-ui/core'
-import { ColorTheme } from 'vscode'
+
 // import AnnotationList from './annotationList'
 
 interface Props {
@@ -81,7 +81,7 @@ const ReactAnnotation: React.FC<Props> = ({
     const [dynamicCardStyle, setDynamicCardStyle] = React.useState(cardStyle)
 
     const annoRef: React.MutableRefObject<Annotation> = React.useRef(anno)
-    const tryingSomethingNew = 'rgb(48 47 47)'
+    // const tryingSomethingNew = 'rgb(48 47 47)'
     console.log('editorBackground', editorBackground)
     // MUI doesn't accept CSS version of this for some reason..?
 

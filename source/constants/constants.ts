@@ -397,8 +397,3 @@ export interface AnnotationAtEvent {
 // export interface AnnotationAnchorTextPair {
 //     [annoId: string]: AnchorTextPair[]
 // }
-
-export enum ColorTheme {
-    Dark = 'dark',
-    Light = 'light',
-}

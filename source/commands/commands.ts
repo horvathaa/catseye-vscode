@@ -540,6 +540,7 @@ export const addNewHighlight = (
                 needToUpdate: true,
                 lastEditTime: createdTimestamp,
             }
+            console.log('made this highlight', temp)
             setAnnotationList(
                 annotationList.concat([utils.buildAnnotation(temp)])
             )

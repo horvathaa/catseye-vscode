@@ -689,6 +689,18 @@ const getEndUrl = (visiblePath: string, projectName: string): string => {
     return endUrl
 }
 
+export const getBaseGithubUrl = (repo: string): string => {
+    const url = new URL(repo)
+    const host: string = url.host.includes('www.')
+        ? url.host.split('www.')[1]
+        : url.host
+    const pathname: string = url.pathname.includes('.git')
+        ? url.pathname.split('.git')[0]
+        : url.pathname
+    const jointUrl = `https://${host}${pathname}`
+    return jointUrl
+}
+
 export const getGithubUrl = (
     visiblePath: string | undefined,
     projectName: string,
@@ -699,8 +711,10 @@ export const getGithubUrl = (
         : visiblePath
     if (!gitInfo[projectName]?.repo || gitInfo[projectName]?.repo === '')
         return ''
-    const baseUrl: string = gitInfo[projectName].repo.split('.git')[0]
+    const baseUrl: string = getBaseGithubUrl(gitInfo[projectName].repo) // gitInfo[projectName].repo.split('.git')[0]
+    // console.log('func return', baseUrl)
     const endUrl = getEndUrl(visPath, projectName)
+    // console.log('endUrl/', endUrl)
     return gitInfo[projectName].commit === 'localChange' || returnStable
         ? baseUrl + '/tree/' + gitInfo[projectName].nameOfPrimaryBranch + endUrl
         : baseUrl + '/tree/' + gitInfo[projectName].commit + endUrl
@@ -1162,7 +1176,7 @@ export const createAnchorObject = async (
 export const getLastGitCommitHash = async () => {
     const options = ["--pretty=format:'%H'", '--skip=1', '--max-count=1']
     const result = await git.log(options)
-    const lastCommit = result.all[0].hash.slice(1, -1)
+    const lastCommit = result.all[0]?.hash.slice(1, -1)
     return lastCommit
 }
 

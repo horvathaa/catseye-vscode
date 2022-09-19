@@ -301,14 +301,14 @@ export function activate(context: vscode.ExtensionContext) {
         (id) => commands.showAnnoInWebview(id)
     )
 
-    let copyDisposable = vscode.commands.registerTextEditorCommand(
-        'editor.action.clipboardCopyAction',
-        commands.overriddenClipboardCopyAction
-    )
-    let cutDisposable = vscode.commands.registerTextEditorCommand(
-        'editor.action.clipboardCutAction',
-        commands.overriddenClipboardCutAction
-    )
+    // let copyDisposable = vscode.commands.registerTextEditorCommand(
+    //     'editor.action.clipboardCopyAction',
+    //     commands.overriddenClipboardCopyAction
+    // )
+    // let cutDisposable = vscode.commands.registerTextEditorCommand(
+    //     'editor.action.clipboardCutAction',
+    //     commands.overriddenClipboardCutAction
+    // )
 
     /*************************************************************************************/
     /******************************************* MISC ************************************/
@@ -344,8 +344,8 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(navigateForwardSelectedDisposable)
     context.subscriptions.push(navigateBackSelectedDisposable)
     context.subscriptions.push(scrollDisposable)
-    context.subscriptions.push(copyDisposable)
-    context.subscriptions.push(cutDisposable)
+    // context.subscriptions.push(copyDisposable)
+    // context.subscriptions.push(cutDisposable)
 
     context.subscriptions.push(hoverProviderDisposable)
 }

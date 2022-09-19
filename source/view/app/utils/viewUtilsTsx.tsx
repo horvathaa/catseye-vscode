@@ -27,6 +27,7 @@ import AssignmentIcon from '@mui/icons-material/Assignment' // Proposal
 import { ContactSupport } from '@mui/icons-material'
 import CodeOffIcon from '@mui/icons-material/CodeOff'
 import { UserIcon } from '../components/annotationComponents/userProfile'
+import { ColorTheme } from 'vscode'
 
 // toggle button used for expanding and collapsing snapshots, etc.
 export const collapseExpandToggle = (
@@ -246,8 +247,11 @@ export const mergeAnnotations = (
 
 export const displayAnchorText = (
     pv: AnchorOnCommit | PotentialAnchorObject,
-    styles: any
+    styles: any,
+    theme: ColorTheme
 ): React.ReactElement => {
+    const additionalStyle =
+        theme.kind === 2 ? '' : anchorStyles['AnchorCodeTextLight']
     switch (pv.anchorType) {
         case AnchorType.partialLine:
             const wholeLine: string = pv.surroundingCode.linesAfter[0]
@@ -275,7 +279,7 @@ export const displayAnchorText = (
                             return (
                                 <span
                                     // style={{ fontWeight: 600 }}
-                                    className={`${styles.codeStyle} ${anchorStyles['AnchorCodeText']}`}
+                                    className={`${styles.codeStyle} ${anchorStyles['AnchorCodeText']} ${additionalStyle}`}
                                     key={'span-anchor' + a}
                                 >
                                     {a}
@@ -288,7 +292,7 @@ export const displayAnchorText = (
         case AnchorType.oneline:
             return (
                 <pre
-                    className={`${anchorStyles['CodeLines']} ${anchorStyles['AnchorCodeText']}`}
+                    className={`${anchorStyles['CodeLines']} ${anchorStyles['AnchorCodeText']} ${additionalStyle}`}
                 >
                     {/* {' '} */}
                     {pv.anchorText}
@@ -310,7 +314,7 @@ export const displayAnchorText = (
                             >
                                 <b
                                     // style={{ fontWeight: 600 }}
-                                    className={`${styles.codeStyle} ${anchorStyles['AnchorCodeText']}`}
+                                    className={`${styles.codeStyle} ${anchorStyles['AnchorCodeText']} ${additionalStyle}`}
                                 >
                                     {a}
                                     {/* {a.length > 60 ? a.slice(0, 60) + '...' : a} */}
@@ -324,7 +328,7 @@ export const displayAnchorText = (
             return (
                 <pre
                     style={{ fontWeight: 600 }}
-                    className={`${anchorStyles['CodeLines']} ${styles.anchorCode}`}
+                    className={`${anchorStyles['CodeLines']} ${styles.anchorCode} ${additionalStyle}`}
                 >
                     {pv.anchorText}
                 </pre>

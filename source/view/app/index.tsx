@@ -9,12 +9,14 @@ import * as React from 'react'
 import * as ReactDOM from 'react-dom'
 import CatseyePanel from './catseye'
 import { Annotation } from '../../constants/constants'
+import { ColorTheme } from 'vscode'
 
 declare global {
     // data that we want to pass from the extension into the webview
     interface Window {
         acquireVsCodeApi(): any
         data: Annotation[]
+        colorTheme: ColorTheme
         userId: string
         username: string
         currentFile: string

@@ -1,3 +1,5 @@
+import { pSBC } from '../utils/viewUtils'
+
 // plain text color
 export const vscodeTextColor: string = getComputedStyle(
     document.body
@@ -81,11 +83,11 @@ function lightenDarkenColor(col: string, amt: number) {
     return (usePound ? '#' : '') + (g | (b << 8) | (r << 16)).toString(16)
 }
 
-const tryingSomethingNew = 'rgb(44, 43, 43)'
+// const tryingSomethingNew = 'rgb(44, 43, 43)'
 
 export const cardStyle = {
-    // backgroundColor: editorBackground,
-    backgroundColor: tryingSomethingNew,
+    backgroundColor: `${pSBC(0.1, editorBackground, false, true)}`,
+    // backgroundColor: tryingSomethingNew,
     color: vscodeTextColor,
     margin: 4,
     // border: '1.5px',

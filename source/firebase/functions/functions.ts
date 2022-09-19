@@ -77,6 +77,7 @@ export const getAnnotationsOnSignIn = async (
         await getCommitsByProject(currentGitProject)
     )
     const lastCommit = await getLastGitCommitHash()
+    if (!lastCommit) return dataAnnotations
     const lastCommitObject: CommitObject | undefined = allCommits.find(
         (commit) => commit.commit === lastCommit
     )

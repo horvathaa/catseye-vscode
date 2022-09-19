@@ -24,6 +24,7 @@ import {
     resolveAnnotation,
     shareAnnotation,
 } from '../utils/viewUtilsTsx'
+import { ColorTheme } from 'vscode'
 
 interface AnnoListProps {
     title: string
@@ -129,7 +130,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
         e: React.SyntheticEvent,
         operation: string
     ) => {
-        console.log('mass operation selected')
+        // console.log('mass operation selected')
         switch (operation) {
             case 'select':
                 selectAllAnnos()

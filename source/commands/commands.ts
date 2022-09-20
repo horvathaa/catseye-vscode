@@ -25,7 +25,12 @@ import {
     // trackedFiles,
     // setTrackedFiles,
 } from '../extension'
-import { AnchorObject, Annotation } from '../constants/constants'
+import {
+    AnchorObject,
+    Annotation,
+    GitDiffPathLog,
+    HistoryAnchorObject,
+} from '../constants/constants'
 import * as anchor from '../anchorFunctions/anchor'
 import * as vscode from 'vscode'
 import * as utils from '../utils/utils'
@@ -37,6 +42,11 @@ import {
     catseyeFoldingRangeProvider,
     refreshFoldingRanges,
 } from '../foldingRangeProvider/foldingRangeProvider'
+// import parseGitDiff from 'parse-git-diff'
+import { parse } from 'diff2html'
+import { DefaultLogFields, ListLogLine } from 'simple-git'
+import { GitDiff } from 'parse-git-diff/build/types'
+
 // import { computeMostSimilarAnchor } from '../anchorFunctions/reanchor'
 
 // on launch, create auth session and sign in to FireStore
@@ -776,6 +786,155 @@ export const overridenRevealDefinitionAction = (
 ) => {
     console.log('this is what we are doing')
     vscode.commands.executeCommand('editor.action.showReferences')
+}
+
+export const createHistoryAnnotation = async () => {
+    const { activeTextEditor } = vscode.window
+    if (!activeTextEditor) {
+        vscode.window.showInformationMessage('No text editor is open!')
+        return
+    }
+    if (!view) {
+        await vscode.commands.executeCommand('catseye.launch')
+    } else if (!view?._panel?.visible) {
+        view?._panel?.reveal(vscode.ViewColumn.Beside)
+    }
+
+    console.log('selection', activeTextEditor.selection)
+    const text = activeTextEditor.document.getText(activeTextEditor.selection)
+    const file = activeTextEditor.document.uri.fsPath
+    const projectName = utils.getProjectName(
+        activeTextEditor.document.uri.toString()
+    )
+    const visiblePath = utils.getVisiblePath(
+        projectName,
+        activeTextEditor.document.uri.fsPath
+    )
+    const relativePath = `./${visiblePath}`.replace(/\\/g, '/')
+    console.log('hewwo???', relativePath)
+    console.log('utils.git', utils.git)
+    const line = activeTextEditor.selection.start.line + 1
+    const rawOptions = ['log', '-C', `-L${line},+1:${file}`]
+    const regOpts = [`-L${line},+1:${file}`]
+    console.log('rawOptions', rawOptions)
+    try {
+        const result = await utils.git.raw(rawOptions)
+        const resRawSplit = result
+            .split('diff')
+            .filter((s) => s.includes('--git'))
+            .map((s) => 'diff' + s)
+        // .filter((s) => s.includes('diff'))
+        console.log('lol', resRawSplit)
+        const regResult = await utils.git.log(regOpts)
+        const outputs: GitDiffPathLog[] = regResult.all.map((log, i) => {
+            console.log('hewwo?', parse(resRawSplit[i]))
+            // outputs.push(
+            return {
+                simpleGit: log,
+                gitDiff: parse(resRawSplit[i]),
+            }
+            // )
+        })
+        console.log('wowie!', outputs)
+        console.log('regresult', regResult)
+        const newAnnoId = uuidv4()
+        const anchorId = uuidv4()
+        const createdTimestamp = new Date().getTime()
+        const anc = anchor.createAnchorFromRange(activeTextEditor.selection)
+
+        const stableGitUrl = utils.getGithubUrl(visiblePath, projectName, true)
+        const surrounding = anchor.getSurroundingCodeArea(
+            activeTextEditor.document,
+            activeTextEditor.selection
+        )
+        const anchorType = anchor.getAnchorType(anc, activeTextEditor.document)
+        const anchorObject: HistoryAnchorObject = {
+            anchor: anc,
+            anchorText: text,
+            html: '',
+            filename: activeTextEditor.document.uri.toString(),
+            gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
+            stableGitUrl,
+            gitRepo: gitInfo[projectName]?.repo
+                ? gitInfo[projectName]?.repo
+                : '',
+            gitBranch: gitInfo[projectName]?.branch
+                ? gitInfo[projectName]?.branch
+                : '',
+            gitCommit: gitInfo[projectName]?.commit
+                ? gitInfo[projectName]?.commit
+                : 'localChange',
+            anchorPreview: '',
+            visiblePath,
+            anchorId: anchorId,
+            originalCode: '',
+            parentId: newAnnoId,
+            programmingLang: outputs[0].gitDiff[0].language,
+            anchored: true,
+            createdTimestamp: createdTimestamp,
+            priorVersions: [
+                {
+                    id: anchorId,
+                    createdTimestamp: createdTimestamp,
+                    html: '',
+                    anchorText: text,
+                    commitHash: gitInfo[projectName]?.commit
+                        ? gitInfo[projectName]?.commit
+                        : 'localChange',
+                    branchName: gitInfo[projectName]?.branch
+                        ? gitInfo[projectName]?.branch
+                        : '',
+                    // startLine: anc.startLine,
+                    // endLine: anc.endLine,
+                    anchor: anc,
+                    stableGitUrl,
+                    path: visiblePath,
+                    surroundingCode: surrounding,
+                    anchorType,
+                },
+            ],
+            path: astHelper.generateCodeContextPath(
+                activeTextEditor.selection,
+                activeTextEditor.document
+            ),
+            potentialReanchorSpots: [],
+            surroundingCode: surrounding,
+            anchorType,
+            gitDiffPast: outputs,
+        }
+        const temp = {
+            id: newAnnoId,
+            anchors: [anchorObject],
+            annotation: '',
+            deleted: false,
+            outOfDate: false,
+            createdTimestamp,
+            authorId: user?.uid,
+            gitRepo: gitInfo[projectName]?.repo
+                ? gitInfo[projectName]?.repo
+                : '',
+            gitBranch: gitInfo[projectName]?.branch
+                ? gitInfo[projectName]?.branch
+                : '',
+            gitCommit: gitInfo[projectName]?.commit
+                ? gitInfo[projectName]?.commit
+                : 'localChange',
+            projectName: projectName,
+            githubUsername: gitInfo.author,
+            replies: [],
+            outputs: [],
+            codeSnapshots: [],
+            sharedWith: 'private',
+            selected: false,
+            needToUpdate: true,
+            lastEditTime: createdTimestamp,
+        }
+        setAnnotationList(annotationList.concat([utils.buildAnnotation(temp)]))
+        view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList))
+        anchor.addHighlightsToEditor(annotationList, activeTextEditor)
+    } catch (error) {
+        console.error('whyyy', error)
+    }
 }
 
 // Allow user to create file-level annotation

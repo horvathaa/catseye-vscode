@@ -355,9 +355,7 @@ export function getStringDifference(a: string, b: string): string {
     return result
 }
 
-export const getActiveIndicatorIconProps = (
-    versionsToRender: AnchorOnCommit[] | PotentialAnchorObject[]
-): any => {
+export const getActiveIndicatorIconProps = (versionsToRender: any[]): any => {
     return versionsToRender.length === 1
         ? { display: 'none' }
         : {
@@ -369,9 +367,7 @@ export const getActiveIndicatorIconProps = (
           }
 }
 
-export const getIndicatorIconProps = (
-    versionsToRender: AnchorOnCommit[] | PotentialAnchorObject[]
-): any => {
+export const getIndicatorIconProps = (versionsToRender: any[]): any => {
     return versionsToRender.length === 1
         ? { display: 'none' }
         : {

@@ -48,6 +48,10 @@
             {
                 "command": "catseye.navigateBack",
                 "title": "Catseye: Go to Last Pinned Annotation"
+            },
+            {
+                "command": "catseye.createHistoryAnnotation",
+                "title": "Catseye: Create History Annotation"
             }
         ],
         "keybindings": [
@@ -102,6 +106,11 @@
                     "when": "editorHasSelection",
                     "command": "catseye.addSelectedAnnotation",
                     "group": "2_catseye"
+                },
+                {
+                    "when": "editorHasSelection",
+                    "command": "catseye.createHistoryAnnotation",
+                    "group": "2_catseye"
                 }
             ]
         }
@@ -155,10 +164,12 @@
         "create-react-app": "^4.0.3",
         "css-loader": "^6.2.0",
         "css-modules-typescript-loader": "^4.0.1",
+        "diff2html": "^3.4.19",
         "dotenv": "^10.0.0",
         "esnext": "^3.3.1",
         "firebase": "^8.10.0",
         "npm-run-all": "^4.1.5",
+        "parse-git-diff": "^0.0.6",
         "react-bootstrap": "^1.6.4",
         "react-material-ui-carousel": "^3.4.2",
         "react-scripts": "^4.0.3",

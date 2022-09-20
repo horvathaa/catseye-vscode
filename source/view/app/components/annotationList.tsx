@@ -5,7 +5,11 @@
  * including pinned, current file, and current project.
  *
  */
-import { Annotation, Selection } from '../../../constants/constants'
+import {
+    Annotation,
+    isHistoryAnchorObject,
+    Selection,
+} from '../../../constants/constants'
 
 import ReactAnnotation from '../components/annotation'
 import * as React from 'react'
@@ -24,6 +28,7 @@ import {
     resolveAnnotation,
     shareAnnotation,
 } from '../utils/viewUtilsTsx'
+import HistoryAnnotation from './historyAnnotation'
 // import { ColorTheme } from 'vscode'
 
 interface AnnoListProps {
@@ -193,7 +198,11 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                 ></MassOperationsBar>
                 <List sx={{ width: '100%' }} component="div" disablePadding>
                     {annotations.map((a: Annotation) => {
-                        return (
+                        const annoToRender = a.anchors.some((anch) =>
+                            isHistoryAnchorObject(anch)
+                        ) ? (
+                            <HistoryAnnotation annotation={a} vscode={vscode} />
+                        ) : (
                             <ReactAnnotation
                                 key={`annotationList-${parentId}tsx-` + a.id}
                                 annotation={a}
@@ -208,6 +217,8 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                                 allowSelection={true}
                             />
                         )
+
+                        return annoToRender
                     })}
                 </List>
             </ThemeProvider>

@@ -17,6 +17,8 @@ import {
     AnnotationEvent,
     AnnotationAtEvent,
     AnchorOnCommit,
+    HistoryAnchorObject,
+    isHistoryAnchorObject,
 } from '../constants/constants'
 import {
     computeRangeFromOffset,
@@ -561,6 +563,56 @@ const translateSnapshotStandard = (snapshots: any[]): Snapshot[] => {
     })
 }
 
+export const convertHistoryAnchor = (
+    anchor: HistoryAnchorObject
+): { [key: string]: any } => {
+    return {
+        ...anchor,
+        gitDiffPast: anchor.gitDiffPast.map((anch) => {
+            const diffSummary = anch.simpleGit.diff
+                ? Object.assign({}, anch.simpleGit.diff)
+                : {}
+            const sanitizedGitDiff = anch.gitDiff.map((g) => {
+                if (g.blocks) {
+                    return {
+                        ...g,
+                        blocks: g.blocks.map((b) => {
+                            return {
+                                ...b,
+                                lines: b.lines.map((l) => {
+                                    return {
+                                        content: l.content ?? '',
+                                        newNumber: l.newNumber ?? null,
+                                        oldNumber: l.oldNumber ?? null,
+                                        type: l.type ?? '',
+                                    }
+                                }),
+                            }
+                        }),
+                    }
+                }
+                return g
+            })
+            return {
+                simpleGit: { ...anch.simpleGit, diff: diffSummary }, // Object.assign({}, anch.simpleGit),
+                gitDiff: sanitizedGitDiff,
+            }
+        }),
+    }
+}
+
+const convertHistoryAnchors = (
+    anchors: HistoryAnchorObject[] | AnchorObject[]
+): { [key: string]: any }[] => {
+    return anchors.map((a) => {
+        if (isHistoryAnchorObject(a)) {
+            console.log('converting')
+            return convertHistoryAnchor(a)
+        }
+        return a
+    })
+}
+
 // convers annotation class items into regular JavaScript objects for saving to FireStore
 export const makeObjectListFromAnnotations = (
     annotationList: Annotation[]
@@ -569,7 +621,11 @@ export const makeObjectListFromAnnotations = (
         return {
             id: a.id ? a.id : uuidv4(),
             annotation: a.annotation ? a.annotation : '',
-            anchors: a.anchors ? a.anchors : [], // ok to send on save/close bc CommitObject handles changes
+            anchors: a.anchors
+                ? a.anchors.some((anch) => isHistoryAnchorObject(anch))
+                    ? convertHistoryAnchors(a.anchors)
+                    : a.anchors
+                : [], // ok to send on save/close bc CommitObject handles changes
             authorId: a.authorId ? a.authorId : '',
             createdTimestamp: a.createdTimestamp
                 ? a.createdTimestamp
@@ -767,11 +823,15 @@ export const updateAnnotationCommit = (
         gitRepo: repo,
         branchName: lastBranch,
         anchorsOnCommit: anchorsOnCommit.map((a) => {
-            const { priorVersions, ...x } = a
-            return x
+            const { priorVersions, ...temp } = a
+            const anchToSave = isHistoryAnchorObject(temp)
+                ? convertHistoryAnchor(temp)
+                : temp
+            return anchToSave
         }),
         createdTimestamp: new Date().getTime(),
     }
+    console.log('wtf', commitObject)
     saveCommit(commitObject)
     fbSaveAnnotations(annosOnCommit) // smarter - only send edited annotations, get all annotations on commit
     setAnnotationList([

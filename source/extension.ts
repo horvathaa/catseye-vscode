@@ -301,6 +301,11 @@ export function activate(context: vscode.ExtensionContext) {
         (id) => commands.showAnnoInWebview(id)
     )
 
+    let createHistoryDisposable = vscode.commands.registerCommand(
+        'catseye.createHistoryAnnotation',
+        () => commands.createHistoryAnnotation()
+    )
+
     // let copyDisposable = vscode.commands.registerTextEditorCommand(
     //     'editor.action.clipboardCopyAction',
     //     commands.overriddenClipboardCopyAction
@@ -344,6 +349,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(navigateForwardSelectedDisposable)
     context.subscriptions.push(navigateBackSelectedDisposable)
     context.subscriptions.push(scrollDisposable)
+    context.subscriptions.push(createHistoryDisposable)
     // context.subscriptions.push(copyDisposable)
     // context.subscriptions.push(cutDisposable)
 

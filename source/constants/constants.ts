@@ -1,3 +1,6 @@
+import { ListLogLine } from 'simple-git/dist/typings/response'
+import { DefaultLogFields } from 'simple-git/dist/typings/types'
+import { DiffFile } from 'diff2html/lib/types'
 import * as ts from 'typescript'
 import { CodeContext } from '../astHelper/nodeHelper'
 
@@ -253,7 +256,7 @@ export interface CommitObject {
     commit: string
     gitRepo: string
     branchName: string
-    anchorsOnCommit: AnchorObject[]
+    anchorsOnCommit: AnchorObject[] | { [key: string]: any }[]
     createdTimestamp: number
 }
 export interface TsFile {
@@ -397,3 +400,16 @@ export interface AnnotationAtEvent {
 // export interface AnnotationAnchorTextPair {
 //     [annoId: string]: AnchorTextPair[]
 // }
+
+export interface GitDiffPathLog {
+    simpleGit: DefaultLogFields & ListLogLine
+    gitDiff: DiffFile[]
+}
+
+export interface HistoryAnchorObject extends AnchorObject {
+    gitDiffPast: GitDiffPathLog[]
+}
+
+export const isHistoryAnchorObject = (obj: any): obj is HistoryAnchorObject => {
+    return obj.hasOwnProperty('gitDiffPast')
+}

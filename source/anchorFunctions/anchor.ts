@@ -815,7 +815,7 @@ const tempDecoration = vscode.window.createTextEditorDecorationType({
         // borderColor: 'darkblue',
         border: '0.15px solid rgba(0, 0, 0, .25)',
         overviewRulerColor: 'darkgreen',
-        backgroundColor: 'darkgreen',
+        backgroundColor: '#cde8c5',
     },
     dark: {
         // this color will be used in dark color themes

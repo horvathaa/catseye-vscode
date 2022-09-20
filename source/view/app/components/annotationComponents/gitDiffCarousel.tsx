@@ -30,7 +30,7 @@ const GitDiff: React.FC<GitProps> = ({ gitDiff }) => {
             <div className={styles['d2h-file-list-wrapper']}>
                 <div className={styles['d2h-file-list-header']}>
                     <span className={styles['d2h-file-list-title']}>
-                        Files changed (1)
+                        Files changed {gitDiff.gitDiff.length}
                     </span>
                     {/* <a className={styles["d2h-file-switch d2h-hide"]}>hide</a>
                     <a className="d2h-file-switch d2h-show">show</a> */}
@@ -52,7 +52,8 @@ const GitDiff: React.FC<GitProps> = ({ gitDiff }) => {
                                 href="#d2h-032315"
                                 className={styles['d2h-file-name']}
                             >
-                                source/anchorFunctions/anchor.ts
+                                {/* source/anchorFunctions/anchor.ts */}
+                                {/* {gitDiff.gitDiff.} */}
                             </a>
                             <span className={styles['d2h-file-stats']}>
                                 <span className={styles['d2h-lines-added']}>

@@ -9,9 +9,9 @@
 import * as vscode from 'vscode'
 import {
     AnchorObject,
-    AnchorOnCommit,
+    // AnchorOnCommit,
     Annotation,
-    PotentialAnchorObject,
+    // PotentialAnchorObject,
     Scope,
     Sort,
 } from '../../../constants/constants'

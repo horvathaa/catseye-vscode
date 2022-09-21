@@ -5,7 +5,7 @@ import {
     Type,
 } from '../../../constants/constants'
 import { Card, CardContent, Collapse } from '@material-ui/core'
-import { Checkbox, useMediaQuery } from '@mui/material'
+// import { Checkbox, useMediaQuery } from '@mui/material'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CollapsedCardHeader from './annotationComponents/annotationCardHeader'
 import { breakpoints, buildAnnotation } from '../utils/viewUtils'
@@ -35,9 +35,9 @@ interface Props {
 }
 
 const HistoryAnnotation: React.FC<Props> = ({ annotation, vscode }) => {
-    const [dynamicCardStyle, setDynamicCardStyle] = React.useState(cardStyle)
+    // const [dynamicCardStyle, setDynamicCardStyle] = React.useState(cardStyle)
     const [expanded, setExpanded] = React.useState(false)
-    const [anchored, setAnchored] = React.useState(true)
+    // const [anchored, setAnchored] = React.useState(true)
     const [edit, setEdit] = React.useState<boolean>(false)
     const [anno, setAnno] = React.useState<Annotation>(annotation)
 
@@ -97,7 +97,7 @@ const HistoryAnnotation: React.FC<Props> = ({ annotation, vscode }) => {
         breakpoints: breakpoints,
     })
 
-    const isMedOrMore = useMediaQuery(theme.breakpoints.up('md'))
+    // const isMedOrMore = useMediaQuery(theme.breakpoints.up('md'))
 
     const addAnchor = (): void => {
         vscode.postMessage({
@@ -166,11 +166,12 @@ const HistoryAnnotation: React.FC<Props> = ({ annotation, vscode }) => {
                         inputProps={{ 'aria-label': 'controlled' }}
                     />
                 )} */}
-                <Card style={dynamicCardStyle}>
+                <Card style={cardStyle}>
                     <CollapsedCardHeader
                         expanded={expanded}
                         setExpanded={setExpanded}
-                        anchored={anchored}
+                        // anchored={anchored}
+                        anchored={true}
                         anno={anno}
                         deleteAnnotation={(e) =>
                             deleteAnnotation(e, vscode, anno)
@@ -194,7 +195,15 @@ const HistoryAnnotation: React.FC<Props> = ({ annotation, vscode }) => {
                                 if (isHistoryAnchorObject(a)) {
                                     return (
                                         <GitDiffCarousel
+                                            key={
+                                                'carousel' +
+                                                a.parentId +
+                                                a.anchorId +
+                                                a.gitDiffPast[0].simpleGit.refs
+                                            }
                                             gitDiffPast={a.gitDiffPast}
+                                            annoId={a.parentId}
+                                            anchorId={a.anchorId}
                                         />
                                     )
                                 }

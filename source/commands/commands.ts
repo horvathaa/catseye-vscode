@@ -44,8 +44,8 @@ import {
 } from '../foldingRangeProvider/foldingRangeProvider'
 // import parseGitDiff from 'parse-git-diff'
 import { parse } from 'diff2html'
-import { DefaultLogFields, ListLogLine } from 'simple-git'
-import { GitDiff } from 'parse-git-diff/build/types'
+// import { DefaultLogFields, ListLogLine } from 'simple-git'
+// import { GitDiff } from 'parse-git-diff/build/types'
 
 // import { computeMostSimilarAnchor } from '../anchorFunctions/reanchor'
 
@@ -800,7 +800,7 @@ export const createHistoryAnnotation = async () => {
         view?._panel?.reveal(vscode.ViewColumn.Beside)
     }
 
-    console.log('selection', activeTextEditor.selection)
+    // console.log('selection', activeTextEditor.selection)
     const text = activeTextEditor.document.getText(activeTextEditor.selection)
     const file = activeTextEditor.document.uri.fsPath
     const projectName = utils.getProjectName(
@@ -811,23 +811,24 @@ export const createHistoryAnnotation = async () => {
         activeTextEditor.document.uri.fsPath
     )
     const relativePath = `./${visiblePath}`.replace(/\\/g, '/')
-    console.log('hewwo???', relativePath)
-    console.log('utils.git', utils.git)
+    // console.log('hewwo???', relativePath)
+    // console.log('utils.git', utils.git)
     const line = activeTextEditor.selection.start.line + 1
     const rawOptions = ['log', '-C', `-L${line},+1:${file}`]
     const regOpts = [`-L${line},+1:${file}`]
-    console.log('rawOptions', rawOptions)
+    // console.log('rawOptions', rawOptions)
     try {
         const result = await utils.git.raw(rawOptions)
+        // console.log('result?', result)
         const resRawSplit = result
             .split('diff')
             .filter((s) => s.includes('--git'))
             .map((s) => 'diff' + s)
         // .filter((s) => s.includes('diff'))
-        console.log('lol', resRawSplit)
+        // console.log('lol', resRawSplit)
         const regResult = await utils.git.log(regOpts)
         const outputs: GitDiffPathLog[] = regResult.all.map((log, i) => {
-            console.log('hewwo?', parse(resRawSplit[i]))
+            // console.log('hewwo?', parse(resRawSplit[i]))
             // outputs.push(
             return {
                 simpleGit: log,
@@ -835,8 +836,8 @@ export const createHistoryAnnotation = async () => {
             }
             // )
         })
-        console.log('wowie!', outputs)
-        console.log('regresult', regResult)
+        // console.log('wowie!', outputs)
+        // console.log('regresult', regResult)
         const newAnnoId = uuidv4()
         const anchorId = uuidv4()
         const createdTimestamp = new Date().getTime()

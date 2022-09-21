@@ -201,7 +201,11 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                         const annoToRender = a.anchors.some((anch) =>
                             isHistoryAnchorObject(anch)
                         ) ? (
-                            <HistoryAnnotation annotation={a} vscode={vscode} />
+                            <HistoryAnnotation
+                                key={`annotationList-${parentId}tsx-` + a.id}
+                                annotation={a}
+                                vscode={vscode}
+                            />
                         ) : (
                             <ReactAnnotation
                                 key={`annotationList-${parentId}tsx-` + a.id}

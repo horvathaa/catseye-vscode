@@ -91,6 +91,8 @@ export default class ViewLoader {
       <html lang="en">
       <head>
           <meta charset="UTF-8">
+          <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/github.min.css" />
+          <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>catseye</title>
 

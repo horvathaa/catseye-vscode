@@ -8,6 +8,10 @@
     height: 35px;
     padding: 5px 10px;
 }
+.d2h-file-header.darkMode {
+    /* background-color: #f7f7f747; */
+    border-bottom: 1px solid #37373d24;
+}
 .d2h-file-header,
 .d2h-file-stats {
     display: -webkit-box;
@@ -26,6 +30,57 @@
     text-align: right;
     vertical-align: middle;
 }
+
+.d2h-lines-added.darkMode {
+    background-color: #b4e2b4;
+}
+
+.flexSpaceBetween {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.darkModeTheme .d2h-lines-added {
+    background-color: #b4e2b4;
+}
+
+.darkModeTheme .d2h-lines-deleted {
+    background-color: #e9aeae;
+}
+
+.p4 {
+    padding: 1rem;
+}
+
+.p2 {
+    padding: 0.5rem;
+}
+
+.font-14 {
+    font-size: 14px;
+}
+
+.mb-4 {
+    margin-bottom: 1rem;
+}
+
+.font-500 {
+    font-weight: 500;
+}
+
+.font-size-medium {
+    font-size: medium;
+}
+
+/* .bg-white {
+    background-color: #fff;
+} */
+
+.bg-white table {
+    background-color: #fff;
+}
+
 .d2h-lines-deleted {
     border: 1px solid #e9aeae;
     border-radius: 0 5px 5px 0;
@@ -35,6 +90,15 @@
     text-align: left;
     vertical-align: middle;
 }
+
+.d2h-file-wrapper.darkMode {
+    border: 1px solid #dddddd70;
+}
+
+.d2h-lines-deleted.darkMode {
+    background-color: #e9aeae;
+}
+
 .d2h-file-name-wrapper {
     -webkit-box-align: center;
     -ms-flex-align: center;
@@ -115,6 +179,21 @@
     white-space: nowrap;
     width: 100%;
 }
+
+.d2h-code-line.darkMode {
+    background-color: #ffffffd4;
+}
+
+.d2h-del > .d2h-code-line.darkMode {
+    background-color: #fee8e9;
+    border-color: #e9aeae;
+}
+
+.d2h-ins > .d2h-code-line.darkMode {
+    background-color: #dfd;
+    border-color: #b4e2b4;
+}
+
 .d2h-code-side-line {
     padding: 0 4.5em;
 }
@@ -131,6 +210,14 @@
     white-space: pre;
     width: 100%;
 }
+
+.td {
+    box-sizing: inherit;
+    vertical-align: top;
+    padding: 0;
+    border-spacing: 0;
+}
+
 .d2h-code-line del,
 .d2h-code-side-line del {
     background-color: #ffb6ba;
@@ -238,6 +325,12 @@
     border-color: #d5e4f2;
     color: rgba(0, 0, 0, 0.3);
 }
+
+.d2h-info.darkMode {
+    background-color: #cccccc;
+    color: rgb(55, 55, 61);
+}
+
 .d2h-file-diff .d2h-del.d2h-change {
     background-color: #fdf2d0;
 }
@@ -322,4 +415,12 @@
 }
 .d2h-moved-tag {
     border: 1px solid #3572b0;
+}
+
+.darkMode {
+    color: #37373df0;
+}
+
+.d2h-file-name.darkMode {
+    color: #545454;
 }

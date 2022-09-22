@@ -309,3 +309,19 @@ export const emitEvent = (event: AnnotationEvent | AnnotationEvent[]) => {
             : eventsRef.doc(event.id).set(event)
     }
 }
+
+export const listenForSearch = () => {
+    if (!user) {
+        return
+    }
+    return db
+        .collection(DB_COLLECTIONS.SEARCH)
+        .where('uid', '==', user.uid)
+        .where('createdTimestamp', '<', new Date().getTime())
+        .onSnapshot((searchSnapshot) => {
+            // console.log('got search')
+            searchSnapshot.docChanges().forEach((change) => {
+                console.log('got these', change.doc.data())
+            })
+        })
+}

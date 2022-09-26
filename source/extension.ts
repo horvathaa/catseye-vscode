@@ -16,6 +16,7 @@ import {
     AnnotationEvent,
     ChangeEvent,
     TsFile,
+    WebSearchEvent,
 } from './constants/constants'
 import * as commands from './commands/commands'
 import * as eventHandlers from './listeners/listeners'
@@ -59,6 +60,7 @@ export let astHelper: AstHelper = new AstHelper()
 export let eventsToTransmitOnSave: AnnotationEvent[] = []
 export let showResolved: boolean = false
 export let tempMergedAnchors: AnchorObject[] = []
+export const searchEvents: WebSearchEvent[] = []
 
 export const annotationDecorations =
     vscode.window.createTextEditorDecorationType({
@@ -218,7 +220,7 @@ export const setTempMergedAnchors = (
 
 // this method is called when the extension is activated
 // the extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
     catseyeLog.appendLine('Starting activate')
     // initialize authentication and listeners for annotations
     commands.init()
@@ -308,12 +310,21 @@ export function activate(context: vscode.ExtensionContext) {
 
     // let copyDisposable = vscode.commands.registerTextEditorCommand(
     //     'editor.action.clipboardCopyAction',
-    //     commands.overriddenClipboardCopyAction
+    //     commands.overriddenClipboardPasteAction
     // )
     // let cutDisposable = vscode.commands.registerTextEditorCommand(
     //     'editor.action.clipboardCutAction',
     //     commands.overriddenClipboardCutAction
     // )
+
+    let pasteDisposable = vscode.commands.registerTextEditorCommand(
+        'editor.action.clipboardPasteAction',
+        commands.overriddenClipboardPasteAction
+    )
+
+    console.log('huh?', pasteDisposable)
+
+    // console.log('lmaoooo', await vscode.commands.getCommands())
 
     /*************************************************************************************/
     /******************************************* MISC ************************************/
@@ -352,6 +363,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(createHistoryDisposable)
     // context.subscriptions.push(copyDisposable)
     // context.subscriptions.push(cutDisposable)
+    context.subscriptions.push(pasteDisposable)
 
     context.subscriptions.push(hoverProviderDisposable)
 }

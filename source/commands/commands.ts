@@ -22,6 +22,7 @@ import {
     astHelper,
     setTempMergedAnchors,
     tempMergedAnchors,
+    searchEvents,
     // trackedFiles,
     // setTrackedFiles,
 } from '../extension'
@@ -30,6 +31,7 @@ import {
     Annotation,
     GitDiffPathLog,
     HistoryAnchorObject,
+    WebCopyData,
 } from '../constants/constants'
 import * as anchor from '../anchorFunctions/anchor'
 import * as vscode from 'vscode'
@@ -44,6 +46,7 @@ import {
 } from '../foldingRangeProvider/foldingRangeProvider'
 // import parseGitDiff from 'parse-git-diff'
 import { parse } from 'diff2html'
+import { formatTimestamp } from '../view/app/utils/viewUtils'
 // import { DefaultLogFields, ListLogLine } from 'simple-git'
 // import { GitDiff } from 'parse-git-diff/build/types'
 
@@ -284,93 +287,18 @@ export const createNewAnnotation = async () => {
             text
         )
         .then((html: string) => {
+            const createdTimestamp = new Date().getTime()
             const projectName: string = utils.getProjectName(
                 activeTextEditor.document.uri.fsPath
             )
-            const programmingLang: string = activeTextEditor.document.uri
-                .toString()
-                .split('.')[
-                activeTextEditor.document.uri.toString().split('.').length - 1
-            ]
-            const visiblePath: string = vscode.workspace.workspaceFolders
-                ? utils.getVisiblePath(
-                      projectName,
-                      activeTextEditor.document.uri.fsPath
-                  )
-                : activeTextEditor.document.uri.fsPath
-            const anc = anchor.createAnchorFromRange(r)
-            const anchorId = uuidv4()
-
-            const createdTimestamp = new Date().getTime()
-
-            const stableGitUrl = utils.getGithubUrl(
-                visiblePath,
-                projectName,
-                true
-            )
-            const surrounding = anchor.getSurroundingCodeArea(
-                activeTextEditor.document,
-                r
-            )
-            const anchorType = anchor.getAnchorType(
-                anc,
-                activeTextEditor.document
+            const anchorObject = utils.createBasicAnchorObject(
+                activeTextEditor,
+                r,
+                newAnnoId,
+                createdTimestamp,
+                projectName
             )
 
-            const anchorObject: AnchorObject = {
-                anchor: anc,
-                anchorText: text,
-                html,
-                filename: activeTextEditor.document.uri.toString(),
-                gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
-                stableGitUrl,
-                gitRepo: gitInfo[projectName]?.repo
-                    ? gitInfo[projectName]?.repo
-                    : '',
-                gitBranch: gitInfo[projectName]?.branch
-                    ? gitInfo[projectName]?.branch
-                    : '',
-                gitCommit: gitInfo[projectName]?.commit
-                    ? gitInfo[projectName]?.commit
-                    : 'localChange',
-                anchorPreview: utils.getFirstLineOfHtml(
-                    html,
-                    !text.includes('\n')
-                ),
-                visiblePath,
-                anchorId: anchorId,
-                originalCode: html,
-                parentId: newAnnoId,
-                programmingLang,
-                anchored: true,
-                createdTimestamp: createdTimestamp,
-                priorVersions: [
-                    {
-                        id: anchorId,
-                        createdTimestamp: createdTimestamp,
-                        html: html,
-                        anchorText: text,
-                        commitHash: gitInfo[projectName]?.commit
-                            ? gitInfo[projectName]?.commit
-                            : 'localChange',
-                        branchName: gitInfo[projectName]?.branch
-                            ? gitInfo[projectName]?.branch
-                            : '',
-                        anchor: anc,
-                        stableGitUrl,
-                        path: visiblePath,
-                        surroundingCode: surrounding,
-                        anchorType,
-                    },
-                ],
-                path: astHelper.generateCodeContextPath(
-                    r,
-                    activeTextEditor.document
-                ),
-                potentialReanchorSpots: [],
-                surroundingCode: surrounding,
-                anchorType,
-            }
             setTempMergedAnchors(anchorObject)
             anchor.addTempAnnotationHighlight(
                 tempMergedAnchors,
@@ -432,132 +360,35 @@ export const addNewHighlight = (
         activeTextEditor.selection.start,
         activeTextEditor.selection.end
     )
-    const projectName: string = utils.getProjectName(
-        activeTextEditor.document.uri.fsPath
-    )
+
     // Get the branch and commit
     const newAnnoId: string = uuidv4()
-    const programmingLang: string = activeTextEditor.document.uri
-        .toString()
-        .split('.')[
-        activeTextEditor.document.uri.toString().split('.').length - 1
-    ]
-    const visiblePath: string = vscode.workspace.workspaceFolders
-        ? utils.getVisiblePath(
-              projectName,
-              activeTextEditor.document.uri.fsPath
-          )
-        : activeTextEditor.document.uri.fsPath
     return utils
         .getShikiCodeHighlighting(
             activeTextEditor.document.uri.toString(),
             text
         )
         .then((html) => {
-            const anchorId = uuidv4()
             const createdTimestamp = new Date().getTime()
-            const anc = anchor.createAnchorFromRange(r)
-
-            const stableGitUrl = utils.getGithubUrl(
-                visiblePath,
-                projectName,
-                true
+            const projectName: string = utils.getProjectName(
+                activeTextEditor.document.uri.fsPath
             )
-            const surrounding = anchor.getSurroundingCodeArea(
-                activeTextEditor.document,
-                r
-            )
-            const anchorType = anchor.getAnchorType(
-                anc,
-                activeTextEditor.document
-            )
-            const anchorObject: AnchorObject = {
-                anchor: anc,
-                anchorText: text,
-                html,
-                filename: activeTextEditor.document.uri.toString(),
-                gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
-                stableGitUrl,
-                gitRepo: gitInfo[projectName]?.repo
-                    ? gitInfo[projectName]?.repo
-                    : '',
-                gitBranch: gitInfo[projectName]?.branch
-                    ? gitInfo[projectName]?.branch
-                    : '',
-                gitCommit: gitInfo[projectName]?.commit
-                    ? gitInfo[projectName]?.commit
-                    : 'localChange',
-                anchorPreview: utils.getFirstLineOfHtml(
-                    html,
-                    !text.includes('\n')
-                ),
-                visiblePath,
-                anchorId: anchorId,
-                originalCode: html,
-                parentId: newAnnoId,
-                programmingLang,
-                anchored: true,
-                createdTimestamp: createdTimestamp,
-                priorVersions: [
-                    {
-                        id: anchorId,
-                        createdTimestamp: createdTimestamp,
-                        html: html,
-                        anchorText: text,
-                        commitHash: gitInfo[projectName]?.commit
-                            ? gitInfo[projectName]?.commit
-                            : 'localChange',
-                        branchName: gitInfo[projectName]?.branch
-                            ? gitInfo[projectName]?.branch
-                            : '',
-                        // startLine: anc.startLine,
-                        // endLine: anc.endLine,
-                        anchor: anc,
-                        stableGitUrl,
-                        path: visiblePath,
-                        surroundingCode: surrounding,
-                        anchorType,
-                    },
-                ],
-                path: astHelper.generateCodeContextPath(
-                    r,
-                    activeTextEditor.document
-                ),
-                potentialReanchorSpots: [],
-                surroundingCode: surrounding,
-                anchorType,
-            }
-            const temp = {
-                id: newAnnoId,
-                anchors: [anchorObject],
-                annotation: '',
-                deleted: false,
-                outOfDate: false,
+            const anchorObject = utils.createBasicAnchorObject(
+                activeTextEditor,
+                r,
+                newAnnoId,
                 createdTimestamp,
-                authorId: user?.uid,
-                gitRepo: gitInfo[projectName]?.repo
-                    ? gitInfo[projectName]?.repo
-                    : '',
-                gitBranch: gitInfo[projectName]?.branch
-                    ? gitInfo[projectName]?.branch
-                    : '',
-                gitCommit: gitInfo[projectName]?.commit
-                    ? gitInfo[projectName]?.commit
-                    : 'localChange',
-                projectName: projectName,
-                githubUsername: gitInfo.author,
-                replies: [],
-                outputs: [],
-                codeSnapshots: [],
-                sharedWith: 'private',
-                selected: selected ? selected : false,
-                needToUpdate: true,
-                lastEditTime: createdTimestamp,
-            }
-            console.log('made this highlight', temp)
-            setAnnotationList(
-                annotationList.concat([utils.buildAnnotation(temp)])
+                projectName
             )
+            const temp = utils.createBasicAnnotation(
+                anchorObject,
+                createdTimestamp,
+                newAnnoId,
+                projectName,
+                selected
+            )
+            // console.log('made this highlight', temp)
+            setAnnotationList(annotationList.concat([temp]))
             view?.updateDisplay(
                 utils.removeOutOfDateAnnotations(annotationList)
             )
@@ -801,7 +632,7 @@ export const createHistoryAnnotation = async () => {
     }
 
     // console.log('selection', activeTextEditor.selection)
-    const text = activeTextEditor.document.getText(activeTextEditor.selection)
+    // const text = activeTextEditor.document.getText(activeTextEditor.selection)
     const file = activeTextEditor.document.uri.fsPath
     const projectName = utils.getProjectName(
         activeTextEditor.document.uri.toString()
@@ -810,7 +641,7 @@ export const createHistoryAnnotation = async () => {
         projectName,
         activeTextEditor.document.uri.fsPath
     )
-    const relativePath = `./${visiblePath}`.replace(/\\/g, '/')
+    // const relativePath = `./${visiblePath}`.replace(/\\/g, '/')
     // console.log('hewwo???', relativePath)
     // console.log('utils.git', utils.git)
     const line = activeTextEditor.selection.start.line + 1
@@ -839,97 +670,26 @@ export const createHistoryAnnotation = async () => {
         // console.log('wowie!', outputs)
         // console.log('regresult', regResult)
         const newAnnoId = uuidv4()
-        const anchorId = uuidv4()
         const createdTimestamp = new Date().getTime()
-        const anc = anchor.createAnchorFromRange(activeTextEditor.selection)
-
-        const stableGitUrl = utils.getGithubUrl(visiblePath, projectName, true)
-        const surrounding = anchor.getSurroundingCodeArea(
-            activeTextEditor.document,
-            activeTextEditor.selection
+        // const anc = anchor.createAnchorFromRange(activeTextEditor.selection)
+        // const createdTimestamp = new Date().getTime()
+        const projectName: string = utils.getProjectName(
+            activeTextEditor.document.uri.fsPath
         )
-        const anchorType = anchor.getAnchorType(anc, activeTextEditor.document)
-        const anchorObject: HistoryAnchorObject = {
-            anchor: anc,
-            anchorText: text,
-            html: '',
-            filename: activeTextEditor.document.uri.toString(),
-            gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
-            stableGitUrl,
-            gitRepo: gitInfo[projectName]?.repo
-                ? gitInfo[projectName]?.repo
-                : '',
-            gitBranch: gitInfo[projectName]?.branch
-                ? gitInfo[projectName]?.branch
-                : '',
-            gitCommit: gitInfo[projectName]?.commit
-                ? gitInfo[projectName]?.commit
-                : 'localChange',
-            anchorPreview: '',
-            visiblePath,
-            anchorId: anchorId,
-            originalCode: '',
-            parentId: newAnnoId,
-            programmingLang: outputs[0].gitDiff[0].language,
-            anchored: true,
-            createdTimestamp: createdTimestamp,
-            priorVersions: [
-                {
-                    id: anchorId,
-                    createdTimestamp: createdTimestamp,
-                    html: '',
-                    anchorText: text,
-                    commitHash: gitInfo[projectName]?.commit
-                        ? gitInfo[projectName]?.commit
-                        : 'localChange',
-                    branchName: gitInfo[projectName]?.branch
-                        ? gitInfo[projectName]?.branch
-                        : '',
-                    // startLine: anc.startLine,
-                    // endLine: anc.endLine,
-                    anchor: anc,
-                    stableGitUrl,
-                    path: visiblePath,
-                    surroundingCode: surrounding,
-                    anchorType,
-                },
-            ],
-            path: astHelper.generateCodeContextPath(
-                activeTextEditor.selection,
-                activeTextEditor.document
-            ),
-            potentialReanchorSpots: [],
-            surroundingCode: surrounding,
-            anchorType,
-            gitDiffPast: outputs,
-        }
-        const temp = {
-            id: newAnnoId,
-            anchors: [anchorObject],
-            annotation: '',
-            deleted: false,
-            outOfDate: false,
+        const anchorObject = utils.createBasicAnchorObject(
+            activeTextEditor,
+            activeTextEditor.selection,
+            newAnnoId,
             createdTimestamp,
-            authorId: user?.uid,
-            gitRepo: gitInfo[projectName]?.repo
-                ? gitInfo[projectName]?.repo
-                : '',
-            gitBranch: gitInfo[projectName]?.branch
-                ? gitInfo[projectName]?.branch
-                : '',
-            gitCommit: gitInfo[projectName]?.commit
-                ? gitInfo[projectName]?.commit
-                : 'localChange',
-            projectName: projectName,
-            githubUsername: gitInfo.author,
-            replies: [],
-            outputs: [],
-            codeSnapshots: [],
-            sharedWith: 'private',
-            selected: false,
-            needToUpdate: true,
-            lastEditTime: createdTimestamp,
-        }
+            projectName,
+            outputs
+        )
+        const temp = utils.createBasicAnnotation(
+            anchorObject,
+            createdTimestamp,
+            newAnnoId,
+            projectName
+        )
         setAnnotationList(annotationList.concat([utils.buildAnnotation(temp)]))
         view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList))
         anchor.addHighlightsToEditor(annotationList, activeTextEditor)
@@ -938,80 +698,104 @@ export const createHistoryAnnotation = async () => {
     }
 }
 
-// Allow user to create file-level annotation
-// export const createFileAnnotation = async (
-//     context: vscode.Uri
-// ): Promise<void> => {
-//     if (!view) {
-//         await vscode.commands.executeCommand('catseye.launch')
-//     } else if (!view?._panel?.visible) {
-//         view?._panel?.reveal(vscode.ViewColumn.Beside)
-//     }
-//     const newAnnoId: string = uuidv4()
-//     const projectName: string = utils.getProjectName(context.fsPath)
-//     const programmingLang: string = context.toString().split('.')[
-//         context.toString().split('.').length - 1
-//     ]
-//     const visiblePath: string = vscode.workspace.workspaceFolders
-//         ? utils.getVisiblePath(projectName, context.fsPath)
-//         : context.fsPath
-//     const createdTimestamp = new Date().getTime()
-//     const anchorObject: AnchorObject = {
-//         anchor: { startLine: 0, endLine: 0, startOffset: 0, endOffset: 0 },
-//         anchorText: visiblePath,
-//         html: visiblePath,
-//         filename: context.toString(),
-//         gitUrl: utils.getGithubUrl(visiblePath, projectName, false),
-//         stableGitUrl: utils.getGithubUrl(visiblePath, projectName, true),
-//         gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : '',
-//         gitBranch: gitInfo[projectName]?.branch
-//             ? gitInfo[projectName]?.branch
-//             : '',
-//         gitCommit: gitInfo[projectName]?.commit
-//             ? gitInfo[projectName]?.commit
-//             : 'localChange',
-//         anchorPreview: visiblePath,
-//         visiblePath,
-//         anchorId: uuidv4(),
-//         originalCode: visiblePath,
-//         parentId: newAnnoId,
-//         programmingLang,
-//         anchored: true,
-//         createdTimestamp,
-//         priorVersions: [],
-//         path: [],
-//         surroundingCode: {
-//             linesBefore: [],
-//             linesAfter: [],
-//         },
-//         potentialReanchorSpots: [],
-//         anchorType: AnchorType.file,
-//     }
-//     const temp = {
-//         id: newAnnoId,
-//         anchors: [anchorObject],
-//         annotation: '',
-//         deleted: false,
-//         outOfDate: false,
-//         createdTimestamp,
-//         authorId: user?.uid,
-//         gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : '',
-//         gitBranch: gitInfo[projectName]?.branch
-//             ? gitInfo[projectName]?.branch
-//             : '',
-//         gitCommit: gitInfo[projectName]?.commit
-//             ? gitInfo[projectName]?.commit
-//             : 'localChange',
-//         projectName: projectName,
-//         githubUsername: gitInfo.author,
-//         replies: [],
-//         outputs: [],
-//         codeSnapshots: [],
-//         sharedWith: 'private',
-//         selected: false,
-//         needToUpdate: true,
-//         lastEditTime: createdTimestamp,
-//     }
-//     setTempAnno(utils.buildAnnotation(temp))
-//     view?.createNewAnno(visiblePath, annotationList)
-// }
+export const overriddenClipboardPasteAction = async (
+    textEditor: vscode.TextEditor,
+    edit: vscode.TextEditorEdit,
+    args: any[]
+) => {
+    console.log('hewwo???', textEditor, edit, args)
+    const str = await vscode.env.clipboard.readText()
+    console.log('searchEvents')
+
+    const startPosition: vscode.Position = textEditor.selection.start
+    const wsEdit = new vscode.WorkspaceEdit()
+    wsEdit.replace(
+        textEditor.document.uri,
+        // getRangeOfSubstring(rawText, versionText),
+        textEditor.selection,
+        str
+    )
+    const applyEditBool = await vscode.workspace.applyEdit(wsEdit)
+    if (!applyEditBool) {
+        console.error('Could not paste')
+    }
+    if (searchEvents && searchEvents.length) {
+        console.log('searchEvents??', searchEvents)
+        let copyMatch: WebCopyData | undefined = undefined
+        let urlMatch: string = ''
+        const match = searchEvents.find((s) => {
+            for (let key of Object.keys(s.copyData)) {
+                if (s.copyData[key].includes(str)) {
+                    copyMatch = s.copyData
+                    urlMatch = key
+                    return true
+                }
+            }
+        })
+        if (match && copyMatch && urlMatch.length) {
+            console.log('hewwo!!!!!!!', match)
+            const annoId = uuidv4()
+            const time = new Date().getTime()
+            const info = utils.buildAnnotation({
+                ...utils.createBasicAnnotation(
+                    utils.createBasicAnchorObject(
+                        textEditor,
+                        new vscode.Range(
+                            startPosition,
+                            textEditor.selection.start
+                        ),
+                        annoId,
+                        time
+                    ),
+                    time,
+                    annoId
+                ),
+                annotation: `Copied from ${urlMatch} while searching ${match.search
+                    .map((s) => s.search)
+                    .join(', ')} on ${formatTimestamp(match.startTime)}`,
+                replies: [
+                    {
+                        authorId: user?.uid ?? '',
+                        createdTimestamp: time,
+                        deleted: false,
+                        githubUsername: gitInfo.username,
+                        id: uuidv4(),
+                        lastEditTime: time,
+                        replyContent: `Other programming-related sites visited during this session: ${[
+                            ...new Set(match.urls),
+                        ].join(', \n')}`,
+                    },
+                    {
+                        authorId: user?.uid ?? '',
+                        createdTimestamp: time,
+                        deleted: false,
+                        githubUsername: gitInfo.username,
+                        id: uuidv4(),
+                        lastEditTime: time,
+                        replyContent: `Other programming-related copies created during this session: ${prettyPrintCopyData(
+                            match.copyData
+                        )}`,
+                    },
+                ],
+            })
+            setAnnotationList(annotationList.concat(info))
+            if (view) {
+                view.updateDisplay(annotationList)
+                anchor.addHighlightsToEditor(annotationList, textEditor)
+            }
+        }
+    }
+
+    // const saveBool = await packageJsonDocument.save();
+    // textEditor.edit(edit)
+}
+
+const prettyPrintCopyData = (copyData: WebCopyData): string => {
+    let str = ''
+    for (let key in copyData) {
+        str = str.concat(
+            `At ${key}, copied: ${[...new Set(copyData[key])].join(', ')}`
+        )
+    }
+    return str
+}

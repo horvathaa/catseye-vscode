@@ -413,3 +413,22 @@ export interface HistoryAnchorObject extends AnchorObject {
 export const isHistoryAnchorObject = (obj: any): obj is HistoryAnchorObject => {
     return obj.hasOwnProperty('gitDiffPast')
 }
+
+export interface WebCopyData {
+    [url: string]: string[]
+}
+
+export interface WebSearchData {
+    search: string
+    searchTime: number
+}
+
+export interface WebSearchEvent {
+    id: string
+    copyData: WebCopyData
+    createdTimestamp: number
+    search: WebSearchData[]
+    startTime: number
+    uid: string
+    urls: string[]
+}

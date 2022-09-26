@@ -12,8 +12,9 @@ import {
     Annotation,
     AnnotationEvent,
     CommitObject,
+    WebSearchEvent,
 } from '../../constants/constants'
-import { currentGitHubCommit, user } from '../../extension'
+import { currentGitHubCommit, searchEvents, user } from '../../extension'
 import {
     getListFromSnapshots,
     makeObjectListFromAnnotations,
@@ -317,11 +318,14 @@ export const listenForSearch = () => {
     return db
         .collection(DB_COLLECTIONS.SEARCH)
         .where('uid', '==', user.uid)
-        .where('createdTimestamp', '<', new Date().getTime())
+        .where('createdTimestamp', '>', new Date().getTime())
         .onSnapshot((searchSnapshot) => {
             // console.log('got search')
             searchSnapshot.docChanges().forEach((change) => {
                 console.log('got these', change.doc.data())
+                const newEvent: WebSearchEvent =
+                    change.doc.data() as WebSearchEvent
+                searchEvents.push(newEvent)
             })
         })
 }

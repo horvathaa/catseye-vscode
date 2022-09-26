@@ -19,6 +19,7 @@ import {
     AnchorOnCommit,
     HistoryAnchorObject,
     isHistoryAnchorObject,
+    GitDiffPathLog,
 } from '../constants/constants'
 import {
     computeRangeFromOffset,
@@ -1507,4 +1508,127 @@ export const createAnchorOnCommitFromAnchorObject = (
         surroundingCode: currentAnchorObject.surroundingCode,
         anchorType: currentAnchorObject.anchorType,
     }
+}
+
+export const createBasicAnchorObject = (
+    activeTextEditor: vscode.TextEditor,
+    range: vscode.Range,
+    newAnnoId: string,
+    createdTime?: number,
+    project?: string,
+    gitDiffPast?: GitDiffPathLog[]
+): AnchorObject => {
+    const projectName: string = project
+        ? project
+        : getProjectName(activeTextEditor.document.uri.fsPath)
+    const programmingLang: string = activeTextEditor.document.uri
+        .toString()
+        .split('.')[
+        activeTextEditor.document.uri.toString().split('.').length - 1
+    ]
+    const visiblePath: string = vscode.workspace.workspaceFolders
+        ? getVisiblePath(projectName, activeTextEditor.document.uri.fsPath)
+        : activeTextEditor.document.uri.fsPath
+    const anc = createAnchorFromRange(range)
+    const anchorId = uuidv4()
+
+    const createdTimestamp = createdTime ? createdTime : new Date().getTime()
+
+    const stableGitUrl = getGithubUrl(visiblePath, projectName, true)
+    const surrounding = getSurroundingCodeArea(activeTextEditor.document, range)
+    const anchorType = getAnchorType(anc, activeTextEditor.document)
+    const mainObj = {
+        anchor: anc,
+        anchorText: activeTextEditor.document.getText(range),
+        html: '',
+        filename: activeTextEditor.document.uri.toString(),
+        gitUrl: getGithubUrl(visiblePath, projectName, false),
+        stableGitUrl,
+        gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : '',
+        gitBranch: gitInfo[projectName]?.branch
+            ? gitInfo[projectName]?.branch
+            : '',
+        gitCommit: gitInfo[projectName]?.commit
+            ? gitInfo[projectName]?.commit
+            : 'localChange',
+        anchorPreview: '',
+        visiblePath,
+        anchorId: anchorId,
+        originalCode: '',
+        parentId: newAnnoId,
+        programmingLang,
+        anchored: true,
+        createdTimestamp: createdTimestamp,
+        priorVersions: [
+            {
+                id: anchorId,
+                createdTimestamp: createdTimestamp,
+                html: '',
+                anchorText: '',
+                commitHash: gitInfo[projectName]?.commit
+                    ? gitInfo[projectName]?.commit
+                    : 'localChange',
+                branchName: gitInfo[projectName]?.branch
+                    ? gitInfo[projectName]?.branch
+                    : '',
+                anchor: anc,
+                stableGitUrl,
+                path: visiblePath,
+                surroundingCode: surrounding,
+                anchorType,
+            },
+        ],
+        path: astHelper.generateCodeContextPath(
+            range,
+            activeTextEditor.document
+        ),
+        potentialReanchorSpots: [],
+        surroundingCode: surrounding,
+        anchorType,
+    }
+
+    const anchorObject: AnchorObject | HistoryAnchorObject = gitDiffPast
+        ? { ...mainObj, gitDiffPast }
+        : mainObj
+    return anchorObject
+}
+
+export const createBasicAnnotation = (
+    anchorObject: AnchorObject,
+    createdTime?: number,
+    newAnnoId?: string,
+    project?: string,
+    selected?: boolean
+): Annotation => {
+    const createdTimestamp = createdTime ? createdTime : new Date().getTime()
+    const id = newAnnoId ? newAnnoId : uuidv4()
+    const projectName = project ? project : getProjectName()
+
+    return buildAnnotation({
+        id,
+        anchors: [anchorObject],
+        annotation: '',
+        deleted: false,
+        outOfDate: false,
+        createdTimestamp,
+        authorId: user?.uid ?? '',
+        gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : '',
+        gitBranch: gitInfo[projectName]?.branch
+            ? gitInfo[projectName]?.branch
+            : '',
+        gitCommit: gitInfo[projectName]?.commit
+            ? gitInfo[projectName]?.commit
+            : 'localChange',
+        projectName: projectName,
+        githubUsername: gitInfo.author,
+        replies: [],
+        outputs: [],
+        codeSnapshots: [],
+        sharedWith: 'private',
+        selected: selected ? selected : false,
+        needToUpdate: true,
+        lastEditTime: createdTimestamp,
+        types: [],
+        resolved: false,
+    })
 }

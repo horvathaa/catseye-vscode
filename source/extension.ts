@@ -124,6 +124,7 @@ export const setAnnotationList = (newAnnotationList: Annotation[]): void => {
         newAnnotationList,
         (a) => !a.deleted && !a.outOfDate
     )
+
     if (annosToRemove.length) {
         saveAnnotations(annosToRemove)
         vscode.window.visibleTextEditors.forEach((t) => {

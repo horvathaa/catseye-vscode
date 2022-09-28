@@ -141,13 +141,13 @@ const updateAnnotationsAnchorsOnSave = (
     document: vscode.TextDocument
 ): Annotation[] => {
     const gitUrl = utils.getStableGitHubUrl(document.uri.fsPath)
-    const anchors = anchor.getAnchorsWithGitUrl(
-        utils.getStableGitHubUrl(document.uri.fsPath)
-    )
+    const anchors = anchor.getAnchorsWithGitUrl(gitUrl)
+    console.log('anchors', anchors)
     let initialAnnotations = utils.getAnnotationsWithStableGitUrl(
         annotationList,
         gitUrl
     )
+    console.log('initialAnnotations', initialAnnotations)
     if (REANCHOR_DEBUG) {
         const newAnchors = anchors.map((a) =>
             computeMostSimilarAnchor(document, a)
@@ -176,6 +176,7 @@ export const handleDidSaveDidClose = (TextDocument: vscode.TextDocument) => {
     const gitUrl = utils.getStableGitHubUrl(TextDocument.uri.fsPath)
     const updatedAnnotations: Annotation[] =
         updateAnnotationsAnchorsOnSave(TextDocument)
+    console.log('updatedAnnotations', updatedAnnotations)
     setAnnotationList(
         utils.removeOutOfDateAnnotations(
             updatedAnnotations.concat(

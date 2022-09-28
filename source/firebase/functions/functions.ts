@@ -42,7 +42,7 @@ const eventsRef: firebase.firestore.CollectionReference = db.collection(
 export const saveAnnotations = (annotationList: Annotation[]): void => {
     const serializedObjects: { [key: string]: any }[] =
         makeObjectListFromAnnotations(annotationList)
-    console.log('hewwo?', serializedObjects)
+
     if (user) {
         serializedObjects.forEach((a: { [key: string]: any }) => {
             annotationsRef.doc(a.id).set(Object.assign({}, a))
@@ -329,3 +329,7 @@ export const listenForSearch = () => {
             })
         })
 }
+// myObject = { a: 1, b: 2, c: 3 }
+// myObject = { a: 1, b: 2, c: 3 }
+// newObject is now { 'a': 1, 'b': 4, 'c': 9 }
+// newObject is now { 'a': 1, 'b': 4, 'c': 9 }

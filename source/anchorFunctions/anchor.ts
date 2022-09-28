@@ -486,7 +486,9 @@ export const getAnchorsInCurrentFile = (
 
 export const getAnchorsWithGitUrl = (gitUrl: string): AnchorObject[] => {
     const filteredAnnos = annotationList.filter((a) =>
-        gitUrl.includes(a.gitRepo.split('.git')[1])
+        a.gitRepo.includes('.git')
+            ? gitUrl.includes(a.gitRepo.split('.git')[1])
+            : gitUrl.includes(a.gitRepo)
     )
     const candidateAnchors = filteredAnnos.flatMap((a) => a.anchors)
     return candidateAnchors.filter((a) => a.stableGitUrl === gitUrl)

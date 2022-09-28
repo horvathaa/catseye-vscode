@@ -500,11 +500,11 @@ export const handleSaveCloseEvent = async (
         outOfDateAnnotations,
         deletedAnnotations
     )
-    // console.log('annosToSave?', annosToSave)
     const annotationsInCurrentFile =
         currentFile !== 'all'
             ? getAllAnnotationsWithGitUrlInFile(annotationList, currentFile)
             : annotationList
+
     if (doc && vscode.workspace.workspaceFolders) {
         let newList = await updateHtml(annotationsInCurrentFile, doc)
 
@@ -516,6 +516,7 @@ export const handleSaveCloseEvent = async (
                       .filter((a) => !ids.includes(a.id))
                       .concat(newList)
         )
+
         setAnnotationList(visibleAnnotations)
 
         view?.updateDisplay(visibleAnnotations)

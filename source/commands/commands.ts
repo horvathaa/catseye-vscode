@@ -31,6 +31,7 @@ import {
     Annotation,
     GitDiffPathLog,
     HistoryAnchorObject,
+    Reply,
     WebCopyData,
 } from '../constants/constants'
 import * as anchor from '../anchorFunctions/anchor'
@@ -736,6 +737,48 @@ export const overriddenClipboardPasteAction = async (
             console.log('hewwo!!!!!!!', match)
             const annoId = uuidv4()
             const time = new Date().getTime()
+            const nonMatchingUrls: string[] = match.urls.filter(
+                (u) => u !== urlMatch
+            )
+            const otherSiteReply: Reply | null = nonMatchingUrls.length
+                ? {
+                      authorId: user?.uid ?? '',
+                      createdTimestamp: time,
+                      deleted: false,
+                      githubUsername: gitInfo.author,
+                      id: uuidv4(),
+                      lastEditTime: time,
+                      replyContent: `Other programming-related sites visited during this session: ${[
+                          ...new Set(nonMatchingUrls),
+                      ].join(', \n')}`,
+                  }
+                : null
+            const showCopyDataReply =
+                Object.keys(match.copyData).filter((u) => u !== urlMatch)
+                    .length > 0 || match.copyData[urlMatch].length > 1
+            const copyDataReply = showCopyDataReply
+                ? {
+                      authorId: user?.uid ?? '',
+                      createdTimestamp: time,
+                      deleted: false,
+                      githubUsername: gitInfo.author,
+                      id: uuidv4(),
+                      lastEditTime: time,
+                      replyContent: `Other programming-related copies created during this session: ${prettyPrintCopyData(
+                          match.copyData,
+                          urlMatch,
+                          copyMatch
+                      )}`,
+                  }
+                : null
+            const replies =
+                copyDataReply && otherSiteReply
+                    ? [otherSiteReply, copyDataReply]
+                    : otherSiteReply
+                    ? [otherSiteReply]
+                    : copyDataReply
+                    ? [copyDataReply]
+                    : []
             const info = utils.buildAnnotation({
                 ...utils.createBasicAnnotation(
                     utils.createBasicAnchorObject(
@@ -753,31 +796,9 @@ export const overriddenClipboardPasteAction = async (
                 annotation: `Copied from ${urlMatch} while searching ${match.search
                     .map((s) => s.search)
                     .join(', ')} on ${formatTimestamp(match.startTime)}`,
-                replies: [
-                    {
-                        authorId: user?.uid ?? '',
-                        createdTimestamp: time,
-                        deleted: false,
-                        githubUsername: gitInfo.username,
-                        id: uuidv4(),
-                        lastEditTime: time,
-                        replyContent: `Other programming-related sites visited during this session: ${[
-                            ...new Set(match.urls),
-                        ].join(', \n')}`,
-                    },
-                    {
-                        authorId: user?.uid ?? '',
-                        createdTimestamp: time,
-                        deleted: false,
-                        githubUsername: gitInfo.username,
-                        id: uuidv4(),
-                        lastEditTime: time,
-                        replyContent: `Other programming-related copies created during this session: ${prettyPrintCopyData(
-                            match.copyData
-                        )}`,
-                    },
-                ],
+                replies,
             })
+            console.log('making this', info)
             setAnnotationList(annotationList.concat(info))
             if (view) {
                 view.updateDisplay(annotationList)
@@ -790,12 +811,30 @@ export const overriddenClipboardPasteAction = async (
     // textEditor.edit(edit)
 }
 
-const prettyPrintCopyData = (copyData: WebCopyData): string => {
+const prettyPrintCopyData = (
+    copyData: WebCopyData,
+    urlMatch: string,
+    copyString: string
+): string => {
     let str = ''
     for (let key in copyData) {
-        str = str.concat(
-            `At ${key}, copied: ${[...new Set(copyData[key])].join(', ')}`
-        )
+        str =
+            key === urlMatch &&
+            copyData[key].filter((c) => c !== copyString).length
+                ? str.concat(
+                      `At ${key}, also copied: ${[
+                          ...new Set(
+                              copyData[key].filter((c) => c !== copyString)
+                          ),
+                      ].join(', ')}`
+                  )
+                : key === urlMatch
+                ? ''
+                : str.concat(
+                      `At ${key}, copied: ${[...new Set(copyData[key])].join(
+                          ', '
+                      )}`
+                  )
     }
     return str
 }

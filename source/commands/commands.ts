@@ -23,6 +23,7 @@ import {
     setTempMergedAnchors,
     tempMergedAnchors,
     searchEvents,
+    ghApi,
     // trackedFiles,
     // setTrackedFiles,
 } from '../extension'
@@ -48,6 +49,8 @@ import {
 // import parseGitDiff from 'parse-git-diff'
 import { parse } from 'diff2html'
 import { formatTimestamp } from '../view/app/utils/viewUtils'
+import { Octokit } from 'octokit'
+
 // import { DefaultLogFields, ListLogLine } from 'simple-git'
 // import { GitDiff } from 'parse-git-diff/build/types'
 
@@ -645,9 +648,10 @@ export const createHistoryAnnotation = async () => {
     // const relativePath = `./${visiblePath}`.replace(/\\/g, '/')
     // console.log('hewwo???', relativePath)
     // console.log('utils.git', utils.git)
-    const line = activeTextEditor.selection.start.line + 1
-    const rawOptions = ['log', '-C', `-L${line},+1:${file}`]
-    const regOpts = [`-L${line},+1:${file}`]
+    const startLine = activeTextEditor.selection.start.line + 1
+    const endLine = activeTextEditor.selection.end.line + 1
+    const rawOptions = ['log', '-C', `-L${startLine},${endLine}:${file}`]
+    const regOpts = [`-L${startLine},${endLine}:${file}`]
     // console.log('rawOptions', rawOptions)
     try {
         const result = await utils.git.raw(rawOptions)
@@ -668,8 +672,24 @@ export const createHistoryAnnotation = async () => {
             }
             // )
         })
-        // console.log('wowie!', outputs)
-        // console.log('regresult', regResult)
+        const octokit = new Octokit(ghApi)
+        const iterator = octokit.paginate.iterator(
+            octokit.rest.issues.listForRepo,
+            {
+                owner: 'horvathaa',
+                repo: 'catseye-vscode',
+                per_page: 100,
+            }
+        )
+
+        // iterate through each response
+        for await (const { data: issues } of iterator) {
+            for (const issue of issues) {
+                console.log('Issue #%d: %s', issue.number, issue.title)
+            }
+        }
+        console.log('wowie!', outputs)
+        console.log('regresult', regResult)
         const newAnnoId = uuidv4()
         const createdTimestamp = new Date().getTime()
         // const anc = anchor.createAnchorFromRange(activeTextEditor.selection)

@@ -9,6 +9,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode'
+import { Octokit, App } from 'octokit'
 import firebase from './firebase/firebase'
 import {
     AnchorObject,
@@ -31,6 +32,15 @@ import { addHighlightsToEditor } from './anchorFunctions/anchor'
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports
 export const gitApi = gitExtension?.getAPI(1)
 console.log('gitApi', gitApi)
+const path = require('path')
+require('dotenv').config({
+    path: path.resolve(__dirname).includes('\\')
+        ? path.resolve(__dirname, '..\\.env.local')
+        : path.resolve(__dirname, '../.env.local'),
+})
+export const ghApi = {
+    auth: process.env.GH_AUTH,
+}
 export let gitInfo: { [key: string]: any } = {}
 export let annotationList: Annotation[] = []
 export let copiedAnnotations: { [key: string]: any }[] = []
@@ -338,6 +348,24 @@ export async function activate(context: vscode.ExtensionContext) {
     )
 
     let hoverProviderDisposable = new HoverController()
+
+    const octokit = new Octokit(ghApi)
+    const iterator = octokit.paginate.iterator(
+        octokit.rest.issues.listForRepo,
+        {
+            owner: 'horvathaa',
+            repo: 'catseye-vscode',
+            per_page: 100,
+        }
+    )
+
+    // iterate through each response
+    for await (const { data: issues } of iterator) {
+        for (const issue of issues) {
+            console.log('Issue', issue)
+            console.log('hewwo', new Date(issue.created_at))
+        }
+    }
 
     /*************************************************************************************/
     /**************************************** DISPOSABLES ********************************/

@@ -2,6 +2,7 @@
 // Please do not change this file!
 interface CssExports {
   'bg-white': string;
+  'commit-separator': string;
   'd2h-added': string;
   'd2h-added-tag': string;
   'd2h-change': string;

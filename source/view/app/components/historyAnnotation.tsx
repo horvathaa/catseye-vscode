@@ -210,13 +210,6 @@ const HistoryAnnotation: React.FC<Props> = ({ annotation, vscode }) => {
                                 return null
                             })}
 
-                            {/* <AnchorVersions
-                                anchors={anno.anchors}
-                                scrollInEditor={scrollInEditor}
-                                requestReanchor={requestReanchor}
-                                scrollToRange={scrollToRange}
-                                requestManualReanchor={requestManualReanchor}
-                            /> */}
                             <div className={styles['ContentContainer']}>
                                 {edit ? (
                                     <div

@@ -50,6 +50,7 @@ import {
 import { parse } from 'diff2html'
 import { formatTimestamp } from '../view/app/utils/viewUtils'
 import { Octokit } from 'octokit'
+import { getGithubUrl } from '../utils/utils'
 
 // import { DefaultLogFields, ListLogLine } from 'simple-git'
 // import { GitDiff } from 'parse-git-diff/build/types'
@@ -635,8 +636,6 @@ export const createHistoryAnnotation = async () => {
         view?._panel?.reveal(vscode.ViewColumn.Beside)
     }
 
-    // console.log('selection', activeTextEditor.selection)
-    // const text = activeTextEditor.document.getText(activeTextEditor.selection)
     const file = activeTextEditor.document.uri.fsPath
     const projectName = utils.getProjectName(
         activeTextEditor.document.uri.toString()
@@ -645,50 +644,154 @@ export const createHistoryAnnotation = async () => {
         projectName,
         activeTextEditor.document.uri.fsPath
     )
-    // const relativePath = `./${visiblePath}`.replace(/\\/g, '/')
-    // console.log('hewwo???', relativePath)
-    // console.log('utils.git', utils.git)
+
     const startLine = activeTextEditor.selection.start.line + 1
     const endLine = activeTextEditor.selection.end.line + 1
     const rawOptions = ['log', '-C', `-L${startLine},${endLine}:${file}`]
     const regOpts = [`-L${startLine},${endLine}:${file}`]
-    // console.log('rawOptions', rawOptions)
     try {
         const result = await utils.git.raw(rawOptions)
-        // console.log('result?', result)
         const resRawSplit = result
             .split('diff')
             .filter((s) => s.includes('--git'))
             .map((s) => 'diff' + s)
-        // .filter((s) => s.includes('diff'))
-        // console.log('lol', resRawSplit)
-        const regResult = await utils.git.log(regOpts)
-        const outputs: GitDiffPathLog[] = regResult.all.map((log, i) => {
-            // console.log('hewwo?', parse(resRawSplit[i]))
-            // outputs.push(
-            return {
-                simpleGit: log,
-                gitDiff: parse(resRawSplit[i]),
-            }
-            // )
-        })
-        const octokit = new Octokit(ghApi)
-        const iterator = octokit.paginate.iterator(
-            octokit.rest.issues.listForRepo,
-            {
-                owner: 'horvathaa',
-                repo: 'catseye-vscode',
-                per_page: 100,
-            }
-        )
 
-        // iterate through each response
-        for await (const { data: issues } of iterator) {
-            for (const issue of issues) {
-                console.log('Issue #%d: %s', issue.number, issue.title)
-            }
-        }
-        console.log('wowie!', outputs)
+        const regResult = await utils.git.log(regOpts)
+        const octokit = new Octokit(ghApi)
+        const endOfUrl = utils
+            .getBaseGithubUrl(gitInfo[utils.getProjectName()].repo)
+            .split('https://github.com/')[1]
+        console.log('right?', endOfUrl)
+        const [owner, repo] = endOfUrl.split('/')
+        // const owner = gitInfo[utils.getProjectName()].repo.split('')
+
+        const outputs: GitDiffPathLog[] = await Promise.all(
+            regResult.all.map(async (log, i) => {
+                const octokitPullResponse = await octokit.request(
+                    `GET /repos/${owner}/${repo}/commits/${log.hash}/pulls`,
+                    {
+                        owner,
+                        repo,
+                        commit_sha: log.hash,
+                    }
+                )
+                const octokitResponseData: any = Array.isArray(
+                    octokitPullResponse
+                )
+                    ? octokitPullResponse.flatMap((o) => o.data)
+                    : octokitPullResponse.data
+                const prNumbers = octokitResponseData.map(
+                    (d: any) => `#${d.number}`
+                )
+                const linkedResponseIssuesOrPullRequests =
+                    octokitResponseData.flatMap((o: any) => [
+                        ...new Set(
+                            o.body.match(/#\d+/g)
+                                ? o.body
+                                      .match(/#\d+/g)
+                                      .concat(o.title.match(/#\d+/g) ?? [])
+                                : o.title.match(/#\d+/g)
+                                ? o.title.match(/#\d+/g)
+                                : []
+                        ),
+                    ])
+                console.log('lll', linkedResponseIssuesOrPullRequests)
+                const linkedIssuesOrPullRequests: any[] = (
+                    [
+                        ...new Set(
+                            linkedResponseIssuesOrPullRequests &&
+                            log.message.match(/#\d+/g)
+                                ? log.message
+                                      .match(/#\d+/g)
+                                      ?.concat(
+                                          linkedResponseIssuesOrPullRequests
+                                      )
+                                : log.message.match(/#\d+/g)
+                                ? log.message.match(/#\d+/g)
+                                : linkedResponseIssuesOrPullRequests
+                                ? linkedResponseIssuesOrPullRequests
+                                : []
+                        ),
+                    ] as any[]
+                ).filter((p: string) => !prNumbers.includes(p))
+                console.log('linked?', linkedIssuesOrPullRequests)
+                let lmao
+                if (linkedIssuesOrPullRequests) {
+                    lmao = await Promise.all(
+                        linkedIssuesOrPullRequests.map(async (m) => {
+                            const num = m.replace('#', '')
+                            const octokitIssueResponse = await octokit.request(
+                                `GET /repos/${owner}/${repo}/issues/${num}`,
+                                // `GET /repos/${owner}/${repo}/commits/${log.hash}/pulls`,
+                                {
+                                    owner,
+                                    repo,
+                                    issue_number: num,
+                                }
+                            )
+                            return Array.isArray(octokitIssueResponse)
+                                ? octokitIssueResponse.flatMap((o) => o.data)
+                                : octokitIssueResponse.data
+                            // {
+                            //     [m]:
+
+                            // }
+                        })
+                    )
+                    console.log('hewwwooooo???', lmao)
+                }
+
+                return {
+                    simpleGit: log,
+                    gitDiff: resRawSplit[i] ? parse(resRawSplit[i]) : [],
+                    githubData: octokitResponseData,
+                    linkedGithubData: lmao ?? [],
+                }
+            })
+        )
+        console.log('outputs', outputs)
+
+        // const iterator = octokit.paginate.iterator(
+        //     octokit.rest.issues.listForRepo,
+        //     {
+        //         owner: 'horvathaa',
+        //         repo: 'catseye-vscode',
+        //         per_page: 100,
+        //     }
+        // )
+
+        // // iterate through each response
+        // for await (const { data: issues } of iterator) {
+        //     for (const issue of issues) {
+        //         console.log('Issue', issue)
+        //         console.log('date', new Date(issue.created_at) < new Date())
+        //     }
+        // }
+        // console.log('wowie!', outputs)
+        // const endOfUrl = gitInfo[utils.getProjectName()].repo.split(
+        //     'https://github.com/'
+        // )[1]
+        // console.log('right?', endOfUrl)
+        // const [owner, repo] = endOfUrl.split('/')
+        // // const owner = gitInfo[utils.getProjectName()].repo.split('')
+        // for (const o of outputs) {
+        //     const response = await octokit.rest.git.getCommit({
+        //         owner,
+        //         repo,
+        //         commit_sha: o.simpleGit.hash,
+        //     })
+        //     console.log('response', response)
+        //     const response2 = await octokit.request(
+        //         `GET /repos/${owner}/${repo}/commits/${o.simpleGit.hash}/pulls`,
+        //         {
+        //             owner,
+        //             repo,
+        //             commit_sha: o.simpleGit.hash,
+        //         }
+        //     )
+        //     console.log('response2', response2)
+        // }
+
         console.log('regresult', regResult)
         const newAnnoId = uuidv4()
         const createdTimestamp = new Date().getTime()

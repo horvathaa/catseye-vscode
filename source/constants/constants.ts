@@ -1,6 +1,7 @@
 import { ListLogLine } from 'simple-git/dist/typings/response'
 import { DefaultLogFields } from 'simple-git/dist/typings/types'
 import { DiffFile } from 'diff2html/lib/types'
+
 import * as ts from 'typescript'
 import { CodeContext } from '../astHelper/nodeHelper'
 
@@ -404,6 +405,8 @@ export interface AnnotationAtEvent {
 export interface GitDiffPathLog {
     simpleGit: DefaultLogFields & ListLogLine
     gitDiff: DiffFile[]
+    githubData: any
+    linkedGithubData?: any
 }
 
 export interface HistoryAnchorObject extends AnchorObject {

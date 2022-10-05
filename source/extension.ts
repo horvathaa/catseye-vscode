@@ -350,6 +350,7 @@ export async function activate(context: vscode.ExtensionContext) {
     let hoverProviderDisposable = new HoverController()
 
     const octokit = new Octokit(ghApi)
+    console.log('octokittt', octokit)
     const iterator = octokit.paginate.iterator(
         octokit.rest.issues.listForRepo,
         {

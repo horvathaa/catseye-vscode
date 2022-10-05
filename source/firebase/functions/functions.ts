@@ -14,7 +14,12 @@ import {
     CommitObject,
     WebSearchEvent,
 } from '../../constants/constants'
-import { currentGitHubCommit, searchEvents, user } from '../../extension'
+import {
+    currentGitHubCommit,
+    searchEvents,
+    setAnnotationList,
+    user,
+} from '../../extension'
 import {
     getListFromSnapshots,
     makeObjectListFromAnnotations,
@@ -45,7 +50,15 @@ export const saveAnnotations = (annotationList: Annotation[]): void => {
 
     if (user) {
         serializedObjects.forEach((a: { [key: string]: any }) => {
-            annotationsRef.doc(a.id).set(Object.assign({}, a))
+            try {
+                annotationsRef.doc(a.id).set(Object.assign({}, a))
+            } catch (error) {
+                console.error(`Could not save annotation ${a.id} to Firestore`)
+                console.error(error)
+                setAnnotationList(
+                    annotationList.filter((anno) => anno.id !== a.id)
+                )
+            }
         })
     }
 }
@@ -81,7 +94,7 @@ export const getAnnotationsOnSignIn = async (
         await getCommitsByProject(currentGitProject)
     )
     const lastCommit = await getLastGitCommitHash()
-    console.log('wtf is going on', allCommits, 'kas', lastCommit)
+
     if (!lastCommit) return dataAnnotations
     const lastCommitObject: CommitObject | undefined = allCommits.find(
         (commit) => commit.commit === lastCommit

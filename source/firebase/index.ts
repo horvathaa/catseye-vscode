@@ -16,6 +16,7 @@ export const DB_COLLECTIONS = {
     GROUPS: 'groups',
     EVENTS: 'vscode-events',
     SEARCH: 'search-events',
+    OUTPUT: 'browser-output',
 }
 
 export let db = firebase.firestore()

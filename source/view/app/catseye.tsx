@@ -12,6 +12,7 @@ import {
     AnchorObject,
     Annotation,
     AuthorOptions,
+    BrowserOutput,
     // ColorTheme,
     FilterOptions,
     Option,
@@ -19,6 +20,7 @@ import {
     Reply,
     Scope,
     Sort,
+    WebSearchEvent,
 } from '../../constants/constants'
 
 import NewAnnotation from './components/newAnnotation'
@@ -32,6 +34,8 @@ import {
     sortAnnotationsByTime,
 } from './utils/viewUtils'
 import MergeAnnotations from './components/mergeAnnotations'
+import { SearchEvents } from './components/searchEvents'
+import { BrowserOutputs } from './components/browserOutputs'
 
 export const ThemeContext = React.createContext({ kind: 2 })
 
@@ -52,9 +56,7 @@ const CatseyePanel: React.FC<Props> = ({
 }) => {
     const [annotations, setAnnotations] = useState(window.data)
     const [showLogin, setShowLogin] = useState(showLogIn)
-    const [userName, setUsername] = useState(
-        window.username ? window.username : ''
-    )
+    const [userName, setUsername] = useState(window.username ?? '')
     const [uid, setUserId] = useState(window.userId ? window.userId : '')
     const [newAnchors, _setNewAnchors] = useState<AnchorObject[]>([])
     const newAnchorsRef = React.useRef(newAnchors)
@@ -78,7 +80,15 @@ const CatseyePanel: React.FC<Props> = ({
 
     const [currColorTheme, setCurrColorTheme] = React.useState<ColorTheme>(
         // kind: 2, // dark color theme
-        window.colorTheme
+        window.colorTheme ?? { kind: 2 }
+    )
+
+    const [searchEvents, setSearchEvents] = React.useState<WebSearchEvent[]>(
+        window.searchEvents ?? []
+    )
+
+    const [browserOutputs, setBrowserOutputs] = React.useState<BrowserOutput[]>(
+        window.browserOutputs ?? []
     )
 
     const fields = ['annotation']
@@ -124,6 +134,16 @@ const CatseyePanel: React.FC<Props> = ({
                 return
             case 'newColorTheme':
                 setCurrColorTheme(message.payload.theme)
+                break
+            case 'newSearchEvent':
+                setSearchEvents(
+                    searchEvents.concat(message.payload.searchEvent)
+                )
+                break
+            case 'newBrowserOutput':
+                setBrowserOutputs(
+                    browserOutputs.concat(message.payload.browserOutput)
+                )
                 break
         }
     }
@@ -402,8 +422,14 @@ const CatseyePanel: React.FC<Props> = ({
                 ) : null}
                 {!showLogin && (
                     <div style={{ padding: '0 8px' }}>
+                        <SearchEvents searchEvents={searchEvents} />
+                        <BrowserOutputs
+                            browserOutputs={browserOutputs}
+                            currentProject={currentProject}
+                            vscode={vscode}
+                        />
                         <TopBar
-                            key={currColorTheme.kind + '-top-bar'}
+                            key={currColorTheme?.kind + '-top-bar'}
                             saveAnnotationsToJson={saveAnnotationsToJson}
                             // showKeyboardShortcuts={showKeyboardShortcuts}
                             filtersUpdated={filtersUpdated}

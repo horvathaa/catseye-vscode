@@ -23,6 +23,7 @@ import {
     fbSignOut,
     signInWithGithubCredential,
     listenForSearch,
+    listenForOutput,
     // setUserGithubAccount,
 } from '../firebase/functions/functions'
 const path = require('path')
@@ -101,6 +102,7 @@ export const initializeAuth = async () => {
             if (user) {
                 await initializeAnnotations(user)
                 listenForSearch()
+                listenForOutput()
                 view &&
                     view._panel?.visible &&
                     view.updateDisplay(

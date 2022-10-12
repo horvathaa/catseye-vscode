@@ -19,6 +19,7 @@ import {
     isReply,
     ReanchorInformation,
     EventType,
+    BrowserOutput,
 } from '../constants/constants'
 import {
     user,
@@ -40,6 +41,8 @@ import {
     setShowResolved,
     setTempMergedAnchors,
     tempMergedAnchors,
+    browserOutputs,
+    setBrowserOutputs,
 } from '../extension'
 import {
     initializeAnnotations,
@@ -74,6 +77,7 @@ import {
 import {
     emitEvent,
     saveAnnotations as fbSaveAnnotations,
+    updateOutput,
 } from '../firebase/functions/functions'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -1149,4 +1153,14 @@ export const handleRemoveTempMergeAnchor = (
         ? vscode.window.activeTextEditor
         : vscode.window.visibleTextEditors[0]
     addTempAnnotationHighlight(tempMergedAnchors, textEditorToHighlight)
+}
+
+export const handleUpdateBrowserOutput = (
+    browserOutput: BrowserOutput
+): void => {
+    updateOutput(browserOutput)
+    const updatedBrowserOutputs = browserOutputs.map((o) =>
+        o.id === browserOutput.id ? browserOutput : o
+    )
+    setBrowserOutputs(updatedBrowserOutputs)
 }

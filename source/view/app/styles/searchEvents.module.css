@@ -1,0 +1,57 @@
+.p4 {
+    padding: 1rem;
+}
+
+.p2 {
+    padding: 0.5rem;
+}
+
+.p1 {
+    padding: 0.25rem;
+}
+
+.font-14 {
+    font-size: 14px;
+}
+
+.mb4 {
+    margin-bottom: 1rem;
+}
+
+.font-500 {
+    font-weight: 500;
+}
+
+.font-size-medium {
+    font-size: medium;
+}
+
+.border-1px-medium {
+    border: 1px solid;
+}
+
+.border-radius-8 {
+    border-radius: 8px;
+}
+
+.flex {
+    display: flex;
+}
+
+.flex-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.justify-end {
+    justify-content: end;
+    justify-self: end;
+}
+
+.align-center {
+    align-items: center;
+}
+
+.overflow-scroll {
+    overflow: scroll;
+}

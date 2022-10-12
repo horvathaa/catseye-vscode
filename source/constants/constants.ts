@@ -435,3 +435,13 @@ export interface WebSearchEvent {
     uid: string
     urls: string[]
 }
+
+export interface BrowserOutput {
+    id: string
+    data: string
+    uid: string
+    createdTimestamp: number
+    filename: string
+    annotation?: string
+    project?: string
+}

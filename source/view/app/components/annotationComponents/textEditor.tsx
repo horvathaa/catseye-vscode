@@ -38,6 +38,7 @@ interface Props {
         selectedRange: Selection
     ) => void
     setCursorAt?: number
+    style?: React.CSSProperties
 }
 // Having default props is weirdly supported in React, this way means showCancel is an optional
 // See: https://dev.to/bytebodger/default-props-in-react-typescript-2o5o
@@ -51,6 +52,7 @@ const TextEditor: React.FC<Props> = ({
     placeholder = '',
     onChange,
     setCursorAt,
+    style,
 }) => {
     const [text, setText] = React.useState<any>(content)
     const [willBePinned, setWillBePinned] = React.useState<boolean>(false)
@@ -263,6 +265,7 @@ const TextEditor: React.FC<Props> = ({
                 [styles['textboxContainer']]: true,
                 [styles['inlineReply']]: text.hasOwnProperty('replyContent'),
             })}
+            style={style}
         >
             <TextareaAutosize
                 id={setCursorAt !== undefined ? 'mergedTextArea' : ''}
@@ -291,7 +294,8 @@ const TextEditor: React.FC<Props> = ({
                         <SplitButton submissionHandler={handleSubmission} />
                     ) : (
                         <>
-                            {!showCancel && text.replyContent.length ? (
+                            {(!showCancel && text.replyContent.length) ||
+                            !showSplitButton ? (
                                 <button
                                     className={cn({
                                         [styles['submit']]: true,
@@ -306,17 +310,21 @@ const TextEditor: React.FC<Props> = ({
                                         }
 
                                         // TODO: Update timestamp
-                                        setText({
-                                            ...text,
-                                            createdTimestamp:
-                                                new Date().getTime(),
-                                        })
+                                        typeof text === 'string'
+                                            ? setText(text)
+                                            : setText({
+                                                  ...text,
+                                                  createdTimestamp:
+                                                      new Date().getTime(),
+                                              })
 
                                         submissionHandler(text)
-                                        setText({
-                                            ...text,
-                                            replyContent: '',
-                                        })
+                                        typeof text === 'string'
+                                            ? setText(text)
+                                            : setText({
+                                                  ...text,
+                                                  replyContent: '',
+                                              })
                                     }}
                                 >
                                     Submit

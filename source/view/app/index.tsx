@@ -8,7 +8,11 @@
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
 import CatseyePanel from './catseye'
-import { Annotation } from '../../constants/constants'
+import {
+    Annotation,
+    BrowserOutput,
+    WebSearchEvent,
+} from '../../constants/constants'
 import { ColorTheme } from 'vscode'
 
 declare global {
@@ -17,6 +21,8 @@ declare global {
         acquireVsCodeApi(): any
         data: Annotation[]
         colorTheme: ColorTheme
+        searchEvents: WebSearchEvent[]
+        browserOutputs: BrowserOutput[]
         userId: string
         username: string
         currentFile: string

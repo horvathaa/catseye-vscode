@@ -150,6 +150,11 @@ export const createView = async (context: vscode.ExtensionContext) => {
                         viewHelper.handleUpdateAnnotation(annoId, key, value)
                         break
                     }
+                    case 'updateBrowserOutput': {
+                        const { browserOutput } = message
+                        viewHelper.handleUpdateBrowserOutput(browserOutput)
+                        break
+                    }
                     case 'deleteAnnotation': {
                         const { annoId } = message
                         viewHelper.handleDeleteResolveAnnotation(annoId, false)
@@ -695,7 +700,7 @@ export const createHistoryAnnotation = async () => {
                                 : []
                         ),
                     ])
-                console.log('lll', linkedResponseIssuesOrPullRequests)
+                // console.log('lll', linkedResponseIssuesOrPullRequests)
                 const linkedIssuesOrPullRequests: any[] = (
                     [
                         ...new Set(

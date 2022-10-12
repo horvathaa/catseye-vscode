@@ -11,14 +11,19 @@ import {
     AnchorsToUpdate,
     Annotation,
     AnnotationEvent,
+    BrowserOutput,
     CommitObject,
     WebSearchEvent,
 } from '../../constants/constants'
 import {
+    browserOutputs,
     currentGitHubCommit,
     searchEvents,
     setAnnotationList,
+    setBrowserOutputs,
+    setSearchEvents,
     user,
+    view,
 } from '../../extension'
 import {
     getListFromSnapshots,
@@ -30,6 +35,7 @@ import {
 } from '../../utils/utils'
 import firebase from '../firebase'
 import { DB_COLLECTIONS } from '..'
+import * as vscode from 'vscode'
 
 const db: firebase.firestore.Firestore = firebase.firestore()
 const annotationsRef: firebase.firestore.CollectionReference = db.collection(
@@ -324,23 +330,105 @@ export const emitEvent = (event: AnnotationEvent | AnnotationEvent[]) => {
     }
 }
 
+// should merge this into a generic snapshot listener or something sigh
+
 export const listenForSearch = () => {
     if (!user) {
         return
     }
-    return db
-        .collection(DB_COLLECTIONS.SEARCH)
-        .where('uid', '==', user.uid)
-        .where('createdTimestamp', '>', new Date().getTime())
-        .onSnapshot((searchSnapshot) => {
-            // console.log('got search')
-            searchSnapshot.docChanges().forEach((change) => {
-                console.log('got these', change.doc.data())
-                const newEvent: WebSearchEvent =
-                    change.doc.data() as WebSearchEvent
-                searchEvents.push(newEvent)
+    return (
+        db
+            .collection(DB_COLLECTIONS.SEARCH)
+            .where('uid', '==', user.uid)
+            // .where('createdTimestamp', '>', new Date().getTime())
+            .onSnapshot((searchSnapshot) => {
+                // console.log('got search')
+                searchSnapshot.docChanges().forEach((change) => {
+                    const newEvent: WebSearchEvent =
+                        change.doc.data() as WebSearchEvent
+                    console.log('got these', change.doc.data())
+                    switch (change.type) {
+                        case 'added': {
+                            setSearchEvents(searchEvents.concat(newEvent))
+                            view?.sendNewSearchEvent(newEvent)
+                            break
+                        }
+                        case 'modified': {
+                            setSearchEvents(
+                                searchEvents.map((s) =>
+                                    s.id === newEvent.id ? newEvent : s
+                                )
+                            )
+                            // need something here for generic rerender of search
+                            break
+                        }
+                        case 'removed': {
+                            setSearchEvents(
+                                searchEvents.filter((s) => s.id !== newEvent.id)
+                            )
+                            break
+                        }
+                        default: {
+                            return
+                        }
+                    }
+                })
             })
-        })
+    )
+}
+
+export const listenForOutput = () => {
+    if (!user) {
+        return
+    }
+    return (
+        db
+            .collection(DB_COLLECTIONS.OUTPUT)
+            .where('uid', '==', user.uid)
+            // .where('createdTimestamp', '>', new Date().getTime())
+            .onSnapshot((outputSnapshot) => {
+                // console.log('got search')
+                outputSnapshot.docChanges().forEach((change) => {
+                    const newOutput: BrowserOutput =
+                        change.doc.data() as BrowserOutput
+                    console.log('got these o', change.doc.data())
+                    switch (change.type) {
+                        case 'added': {
+                            setBrowserOutputs(browserOutputs.concat(newOutput))
+                            view?.sendNewBrowserOutput(newOutput)
+                            break
+                        }
+                        case 'modified': {
+                            setBrowserOutputs(
+                                browserOutputs.map((o) =>
+                                    o.id === newOutput.id ? newOutput : o
+                                )
+                            )
+                            // need something here for generic rerender of search
+                            break
+                        }
+                        case 'removed': {
+                            setBrowserOutputs(
+                                browserOutputs.filter(
+                                    (o) => o.id !== newOutput.id
+                                )
+                            )
+                            break
+                        }
+                        default: {
+                            return
+                        }
+                    }
+                })
+            })
+    )
+}
+
+export const updateOutput = (updatedOutput: BrowserOutput) => {
+    return db
+        .collection(DB_COLLECTIONS.OUTPUT)
+        .doc(updatedOutput.id)
+        .set(updatedOutput)
 }
 // myObject = { a: 1, b: 2, c: 3 }
 // myObject = { a: 1, b: 2, c: 3 }

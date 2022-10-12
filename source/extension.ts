@@ -15,6 +15,7 @@ import {
     AnchorObject,
     Annotation,
     AnnotationEvent,
+    BrowserOutput,
     ChangeEvent,
     TsFile,
     WebSearchEvent,
@@ -59,7 +60,7 @@ export let currentColorTheme: string = vscode.workspace.getConfiguration(
     vscode.workspace.workspaceFolders &&
         vscode.workspace.workspaceFolders[0].uri
 ).colorTheme
-export let catseyeLog = vscode.window.createOutputChannel('catseye')
+export let catseyeLog = vscode.window.createOutputChannel('Catseye')
 export let currentGitHubProject: string = '' // also need to add call to update this when user switches projects
 export let currentGitHubCommit: string = ''
 export let changes: ChangeEvent[] = []
@@ -70,7 +71,8 @@ export let astHelper: AstHelper = new AstHelper()
 export let eventsToTransmitOnSave: AnnotationEvent[] = []
 export let showResolved: boolean = false
 export let tempMergedAnchors: AnchorObject[] = []
-export const searchEvents: WebSearchEvent[] = []
+export let searchEvents: WebSearchEvent[] = []
+export let browserOutputs: BrowserOutput[] = []
 
 export const annotationDecorations =
     vscode.window.createTextEditorDecorationType({
@@ -217,6 +219,14 @@ export const setEventsToTransmitOnSave = (
     )
 }
 
+export const setSearchEvents = (newSearchEvents: WebSearchEvent[]): void => {
+    searchEvents = newSearchEvents
+}
+
+export const setBrowserOutputs = (newBrowserOutputs: BrowserOutput[]): void => {
+    browserOutputs = newBrowserOutputs
+}
+
 export const setShowResolved = (newShowResolved: boolean): void => {
     showResolved = newShowResolved
 }
@@ -348,25 +358,6 @@ export async function activate(context: vscode.ExtensionContext) {
     )
 
     let hoverProviderDisposable = new HoverController()
-
-    const octokit = new Octokit(ghApi)
-    console.log('octokittt', octokit)
-    const iterator = octokit.paginate.iterator(
-        octokit.rest.issues.listForRepo,
-        {
-            owner: 'horvathaa',
-            repo: 'catseye-vscode',
-            per_page: 100,
-        }
-    )
-
-    // iterate through each response
-    for await (const { data: issues } of iterator) {
-        for (const issue of issues) {
-            console.log('Issue', issue)
-            console.log('hewwo', new Date(issue.created_at))
-        }
-    }
 
     /*************************************************************************************/
     /**************************************** DISPOSABLES ********************************/

@@ -10,6 +10,8 @@ import * as path from 'path'
 import {
     AnchorObject,
     Annotation,
+    BrowserOutput,
+    WebSearchEvent,
     // AnnotationAnchorPair,
 } from '../constants/constants'
 import {
@@ -18,6 +20,8 @@ import {
     gitInfo,
     activeEditor,
     catseyeLog,
+    searchEvents,
+    browserOutputs,
 } from '../extension'
 import {
     // getGithubUrl,
@@ -77,6 +81,8 @@ export default class ViewLoader {
         const currentProject = JSON.stringify(
             getProjectName(activeEditor?.document.uri.toString())
         )
+        const searchEventsToPass = JSON.stringify(searchEvents)
+        const browserOutputsToPass = JSON.stringify(browserOutputs)
         const currentFile = activeEditor
             ? JSON.stringify(
                   getStableGitHubUrl(activeEditor?.document.uri.fsPath)
@@ -94,11 +100,11 @@ export default class ViewLoader {
           <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.13.1/styles/github.min.css" />
           <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>catseye</title>
+          <title>Catseye</title>
 
           <meta http-equiv="Content-Security-Policy"
                       content="default-src 'none';
-                              img-src https:;
+                              img-src https: data:;
                               script-src 'unsafe-eval' 'unsafe-inline' vscode-resource:;
                               style-src vscode-resource: 'unsafe-inline';">
 
@@ -110,6 +116,8 @@ export default class ViewLoader {
             window.username = ${username}
             window.currentFile = ${currentFile}
             window.currentProject = ${currentProject}
+            window.searchEvents = ${searchEventsToPass}
+            window.browserOutputs = ${browserOutputsToPass}
           </script>
       </head>
       <body>
@@ -266,6 +274,28 @@ export default class ViewLoader {
                 command: 'newColorTheme',
                 payload: {
                     theme,
+                },
+            })
+        }
+    }
+
+    public sendNewSearchEvent(searchEvent: WebSearchEvent) {
+        if (this._panel && this._panel.webview) {
+            this._panel.webview.postMessage({
+                command: 'newSearchEvent',
+                payload: {
+                    searchEvent,
+                },
+            })
+        }
+    }
+
+    public sendNewBrowserOutput(browserOutput: BrowserOutput) {
+        if (this._panel && this._panel.webview) {
+            this._panel.webview.postMessage({
+                command: 'newBrowserOutput',
+                payload: {
+                    browserOutput,
                 },
             })
         }

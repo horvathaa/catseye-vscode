@@ -212,6 +212,7 @@ export class DebugAdapter implements DebugAdapterTracker {
     }
 
     private onVariablesRequest(r: DebugProtocol.VariablesRequest) {
+        console.log('r', r)
         return
     }
     // A debugger error should unlock the webview

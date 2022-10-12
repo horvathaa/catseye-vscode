@@ -78,17 +78,20 @@ const GitDiff: React.FC<GitProps> = ({ gitDiff, annoId, anchorId }) => {
                   const images = body.match(/!\[.*\]\(.*\)/g) ?? []
                   console.log('images', images)
                   const imgs = images?.map((i) => {
-                      const src = i
-                          .match(/\(.*\)/)[0]
-                          .replace('(', '')
-                          .replace(')', '')
-                      console.log('src', src)
-                      const alt = i
-                          .match(/\[.*\]/)[0]
-                          .replace('[', '')
-                          .replace(']', '')
-                      console.log('alt', alt)
-                      return <img src={src} alt={alt}></img>
+                      if (i) {
+                          const src = i
+                              .match(/\(.*\)/)[0]
+                              .replace('(', '')
+                              .replace(')', '')
+                          console.log('src', src)
+                          const alt = i
+                              .match(/\[.*\]/)[0]
+                              .replace('[', '')
+                              .replace(']', '')
+                          console.log('alt', alt)
+                          return <img src={src} alt={alt}></img>
+                      }
+                      return <img src={''} alt={''} />
                   })
                   //   console.log('imgs', imgs)
 
@@ -112,13 +115,13 @@ const GitDiff: React.FC<GitProps> = ({ gitDiff, annoId, anchorId }) => {
                   )
               }
 
-              const processLinkedInfo = function (body) {
-                  const issuesToPrint = gitDiff.linkedGithubData.filter(
+              const processLinkedInfo = function (body: string) {
+                  const issuesToPrint = gitDiff.linkedGithubData?.filter(
                       (l: any) => body.includes(`#${l.number}`)
                   )
                   return (
                       <div>
-                          {issuesToPrint.map((issue) => {
+                          {issuesToPrint.map((issue: any) => {
                               const isPullRequest =
                                   issue.pull_request !== undefined
                               return (

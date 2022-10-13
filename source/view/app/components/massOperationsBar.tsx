@@ -6,6 +6,7 @@
  */
 import * as React from 'react'
 import CheckIcon from '@mui/icons-material/Check'
+import { Collections } from '@mui/icons-material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import MergeIcon from '@mui/icons-material/Merge'
 import ShareIcon from '@mui/icons-material/Share'
@@ -109,6 +110,13 @@ const MassOperationsBar: React.FC<Props> = ({
                         }
                         name="Delete Selected Annotations"
                         icon={<DeleteIcon fontSize="small" />}
+                    />
+                    <CatseyeButton
+                        buttonClicked={(e) =>
+                            massOperationSelected(e, 'bundle')
+                        }
+                        name="Add Annotations To Bundle"
+                        icon={<Collections fontSize="small" />}
                     />
                 </Card>
             </ThemeProvider>

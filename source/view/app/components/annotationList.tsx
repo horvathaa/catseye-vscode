@@ -40,6 +40,7 @@ interface AnnoListProps {
     username: string
     userId: string
     consolidateAnnos: (anno: Annotation[]) => void // If bug, maybe need to be just ids
+    // addToBundle: ()
 }
 
 // NOTE: Currently types bar does not include "untyped" option
@@ -168,6 +169,12 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                 )
                 clearAnnos()
                 break
+            // case 'bundle':
+            //     selectedAnnotations.map((anno: Annotation) =>
+            //         addToBundle(e, vscode, anno)
+            //     )
+            //     clearAnnos()
+            //     break
             default:
                 console.log(`function: ${operation} does not exist`)
                 break

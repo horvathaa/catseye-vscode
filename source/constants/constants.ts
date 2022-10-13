@@ -74,6 +74,10 @@ export class Annotation {
         this.resolved = resolved ?? false
         this.lastEditTime = lastEditTime
     }
+
+    static isAnnotation(obj: any): obj is Annotation {
+        return obj.hasOwnProperty('replies') && obj.hasOwnProperty('anchors')
+    }
 }
 
 export interface Anchor {
@@ -436,6 +440,14 @@ export interface WebSearchEvent {
     urls: string[]
 }
 
+export const isWebSearchEvent = (obj: any): obj is WebSearchEvent => {
+    return (
+        obj.hasOwnProperty('search') &&
+        obj.hasOwnProperty('startTime') &&
+        obj.hasOwnProperty('urls')
+    )
+}
+
 export interface BrowserOutput {
     id: string
     data: string
@@ -444,4 +456,13 @@ export interface BrowserOutput {
     filename: string
     annotation?: string
     project?: string
+}
+
+export const isBrowserOutput = (obj: any): obj is BrowserOutput => {
+    return obj.hasOwnProperty('data') && obj.hasOwnProperty('filename')
+}
+
+export interface Bundle {
+    objs: (Annotation | WebSearchEvent | BrowserOutput)[]
+    annotation: string
 }

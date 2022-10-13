@@ -21,6 +21,7 @@ import {
     Scope,
     Sort,
     WebSearchEvent,
+    Bundle,
 } from '../../constants/constants'
 
 import NewAnnotation from './components/newAnnotation'
@@ -36,6 +37,7 @@ import {
 import MergeAnnotations from './components/mergeAnnotations'
 import { SearchEvents } from './components/searchEvents'
 import { BrowserOutputs } from './components/browserOutputs'
+import { Bundle as ReactBundle } from './components/bundle'
 
 export const ThemeContext = React.createContext({ kind: 2 })
 
@@ -54,6 +56,7 @@ const CatseyePanel: React.FC<Props> = ({
     username,
     userId,
 }) => {
+    const [bundle, setBundle] = useState<Bundle>({ objs: [], annotation: '' })
     const [annotations, setAnnotations] = useState(window.data)
     const [showLogin, setShowLogin] = useState(showLogIn)
     const [userName, setUsername] = useState(window.username ?? '')
@@ -190,6 +193,17 @@ const CatseyePanel: React.FC<Props> = ({
             command: 'saveAnnotationsToJson',
         })
         return
+    }
+
+    const addToBundle = (obj: any): void => {
+        setBundle({ ...bundle, objs: bundle.objs.concat(obj) })
+    }
+
+    const removeFromBundle = (obj: any): void => {
+        setBundle({
+            ...bundle,
+            objs: bundle.objs.filter((o) => o.id !== obj.id),
+        })
     }
 
     // would be nice to have
@@ -415,18 +429,40 @@ const CatseyePanel: React.FC<Props> = ({
                     <MergeAnnotations
                         vscode={vscode}
                         username={userName ?? ''}
-                        userId={userId ?? ''}
+                        userId={uid ?? ''}
                         notifyDone={notifyMergeDone}
                         annotations={annosToConsolidate}
                     />
                 ) : null}
                 {!showLogin && (
                     <div style={{ padding: '0 8px' }}>
-                        <SearchEvents searchEvents={searchEvents} />
+                        <ReactBundle
+                            bundle={bundle}
+                            vscode={vscode}
+                            username={userName}
+                            window={window}
+                            userId={uid}
+                            currentProject={currentProject}
+                            transmitUpdatedOutput={(obj: BrowserOutput) =>
+                                vscode.postMessage({
+                                    command: 'updateBrowserOutput',
+                                    browserOutput: obj,
+                                })
+                            }
+                            addToBundle={addToBundle}
+                            removeFromBundle={removeFromBundle}
+                        />
+                        <SearchEvents
+                            searchEvents={searchEvents}
+                            addToBundle={addToBundle}
+                            removeFromBundle={removeFromBundle}
+                        />
                         <BrowserOutputs
                             browserOutputs={browserOutputs}
                             currentProject={currentProject}
                             vscode={vscode}
+                            addToBundle={addToBundle}
+                            removeFromBundle={removeFromBundle}
                         />
                         <TopBar
                             key={currColorTheme?.kind + '-top-bar'}

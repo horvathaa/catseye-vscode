@@ -486,7 +486,9 @@ export const getAnchorsInCurrentFile = (
 
 export const getAnchorsWithGitUrl = (gitUrl: string): AnchorObject[] => {
     const filteredAnnos = annotationList.filter((a) =>
-        gitUrl.includes(a.gitRepo.split('.git')[1])
+        gitUrl.includes(
+            a.gitRepo.includes('.git') ? a.gitRepo.split('.git')[1] : a.gitRepo
+        )
     )
     const candidateAnchors = filteredAnnos.flatMap((a) => a.anchors)
     return candidateAnchors.filter((a) => a.stableGitUrl === gitUrl)
@@ -882,7 +884,8 @@ export const addHighlightsToEditor = (
     text: vscode.TextEditor
 ): void => {
     const annotationsToHighlight = annosToHighlight.filter(
-        (a) => !a.deleted && !a.outOfDate
+        (a) =>
+            !a.deleted && !a.outOfDate && !a.anchors.some((an) => an.readOnly)
     )
     const filenames = getAllAnnotationFilenames(annotationsToHighlight)
     const githubUrls = getAllAnnotationStableGitUrls(annotationsToHighlight)
@@ -953,6 +956,7 @@ export const addHighlightsToEditor = (
 
             valid.forEach((a: Annotation) => (a.outOfDate = false))
             // bring back annotations that are not in the file
+
             const newAnnotationList: Annotation[] = valid.concat(
                 annotationList.filter((a) => !updatedIds.includes(a.id))
             )

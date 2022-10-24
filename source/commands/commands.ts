@@ -37,6 +37,7 @@ import {
     catseyeFoldingRangeProvider,
     refreshFoldingRanges,
 } from '../foldingRangeProvider/foldingRangeProvider'
+
 // import { computeMostSimilarAnchor } from '../anchorFunctions/reanchor'
 
 // on launch, create auth session and sign in to FireStore

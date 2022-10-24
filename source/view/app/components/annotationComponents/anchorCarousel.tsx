@@ -12,6 +12,7 @@ import { PastVersions } from './pastVersions'
 import { PotentialVersions } from './potentialVersions'
 import { TbAnchor, TbAnchorOff } from 'react-icons/tb'
 import { IconButton, Tooltip } from '@mui/material'
+import { catseyeGreen } from '../../styles/vscodeStyles'
 
 interface Props {
     priorVersions?: AnchorOnCommit[]
@@ -190,7 +191,23 @@ const AnchorCarousel: React.FC<Props> = ({
                     displayBefore={displayBefore}
                     displayAfter={displayAfter}
                     anchorIcon={
-                        currentAnchorObject.anchored ? (
+                        currentAnchorObject.readOnly ? (
+                            <Tooltip title={'Read-Only Anchor'}>
+                                <div
+                                    style={{
+                                        backgroundColor: 'white',
+                                        border: '1px solid gray',
+                                        height: 'fit-content',
+                                    }}
+                                >
+                                    <IconButton size="small">
+                                        <TbAnchor
+                                            style={{ color: catseyeGreen }}
+                                        />
+                                    </IconButton>
+                                </div>
+                            </Tooltip>
+                        ) : currentAnchorObject.anchored ? (
                             <Tooltip title={'Currently anchored'}>
                                 <IconButton size="small">
                                     <TbAnchor />

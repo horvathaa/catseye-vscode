@@ -52,6 +52,7 @@ import * as vscode from 'vscode'
 import { v4 as uuidv4 } from 'uuid'
 import {
     getAnnotationsOnSignIn,
+    listenForAnnotationsByProject,
     saveCommit,
 } from '../firebase/functions/functions'
 import { saveAnnotations as fbSaveAnnotations } from '../firebase/functions/functions'
@@ -107,10 +108,12 @@ export const initializeAnnotations = async (
 ): Promise<void> => {
     // const currFilename: string | undefined =
     //     vscode.window.activeTextEditor?.document.uri.path.toString()
-    const annotations: Annotation[] =
-        //sortAnnotationsByLocation(
-        await getAnnotationsOnSignIn(user, currentGitHubProject)
-    //)
+    const annotations: Annotation[] = await getAnnotationsOnSignIn(
+        user,
+        currentGitHubProject
+    )
+    listenForAnnotationsByProject(currentGitHubProject, user.uid)
+
     setAnnotationList(annotations)
     const selectedAnnotations: Annotation[] = annotations.filter(
         (a) => a.selected
@@ -503,18 +506,17 @@ export const handleSaveCloseEvent = async (
             ? getAllAnnotationsWithGitUrlInFile(annotationList, currentFile)
             : annotationList
     if (doc && vscode.workspace.workspaceFolders) {
-        let newList = await updateHtml(annotationsInCurrentFile, doc)
+        // let newList = await updateHtml(annotationsInCurrentFile, doc)
 
-        const ids: string[] = newList.map((a) => a.id)
+        const ids: string[] = annotationsInCurrentFile.map((a) => a.id)
         const visibleAnnotations: Annotation[] = removeOutOfDateAnnotations(
             currentFile === 'all'
-                ? newList
+                ? annotationsInCurrentFile
                 : annotationList
                       .filter((a) => !ids.includes(a.id))
-                      .concat(newList)
+                      .concat(annotationsInCurrentFile)
         )
         setAnnotationList(visibleAnnotations)
-
         view?.updateDisplay(visibleAnnotations)
         if (annosToSave.some((a: Annotation) => a.needToUpdate)) {
             lastSavedAnnotations = annosToSave
@@ -566,10 +568,20 @@ export const makeObjectListFromAnnotations = (
     annotationList: Annotation[]
 ): { [key: string]: any }[] => {
     return annotationList.map((a) => {
+        const anchorsToSave = a.anchors.map((anch) => {
+            let anchToSave
+            if (anch.hasOwnProperty('readOnly')) {
+                const { readOnly, ...rest } = anch
+                anchToSave = rest
+            } else {
+                anchToSave = anch
+            }
+            return anchToSave
+        })
         return {
             id: a.id ? a.id : uuidv4(),
             annotation: a.annotation ? a.annotation : '',
-            anchors: a.anchors ? a.anchors : [], // ok to send on save/close bc CommitObject handles changes
+            anchors: anchorsToSave, // ok to send on save/close bc CommitObject handles changes
             authorId: a.authorId ? a.authorId : '',
             createdTimestamp: a.createdTimestamp
                 ? a.createdTimestamp
@@ -883,13 +895,13 @@ export const generateGitMetaData = async (
             : branchNames.includes('master')
             ? 'master'
             : '' // are there other common primary branch names? or another way of determining what this is lol
-        console.log('hewwop??', r?.state?.remotes[0]?.fetchUrl)
+
         const repo = r?.state?.remotes[0]?.fetchUrl
             ? normalizeRepoName(r?.state?.remotes[0]?.fetchUrl)
             : r?.state?.remotes[0]?.pushUrl
             ? normalizeRepoName(r?.state?.remotes[0]?.pushUrl)
             : ''
-        console.log('repo', repo)
+
         gitInfo[currentProjectName] = {
             repo,
             branch: r?.state?.HEAD?.name ? r?.state?.HEAD?.name : '',
@@ -905,7 +917,7 @@ export const generateGitMetaData = async (
     return gitInfo
 }
 
-const normalizeRepoName = (repoName: string): string => {
+export const normalizeRepoName = (repoName: string): string => {
     const endOfPath = repoName.split('github.com/')[1]
     const path = endOfPath.includes('.git')
         ? endOfPath.split('.git')[0]

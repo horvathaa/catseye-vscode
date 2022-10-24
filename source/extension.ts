@@ -149,7 +149,7 @@ export const setCurrentColorTheme = (newCurrentColorTheme: string): void => {
 export const setCurrentGitHubProject = (
     newCurrentGitHubProject: string
 ): void => {
-    currentGitHubProject = newCurrentGitHubProject
+    currentGitHubProject = utils.normalizeRepoName(newCurrentGitHubProject)
 }
 
 export const setCurrentGitHubCommit = (

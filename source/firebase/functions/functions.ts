@@ -13,7 +13,13 @@ import {
     AnnotationEvent,
     CommitObject,
 } from '../../constants/constants'
-import { currentGitHubCommit, user } from '../../extension'
+import {
+    annotationList,
+    currentGitHubCommit,
+    setAnnotationList,
+    user,
+    view,
+} from '../../extension'
 import {
     getListFromSnapshots,
     makeObjectListFromAnnotations,
@@ -61,16 +67,21 @@ export const getAnnotationsOnSignIn = async (
 ): Promise<Annotation[]> => {
     const userAnnotationDocs: firebase.firestore.QuerySnapshot =
         await getUserAnnotations(user.uid)
-    const collaboratorAnnotationDocs: firebase.firestore.QuerySnapshot =
-        await getAnnotationsByProject(currentGitProject, user.uid)
+    const collaboratorAnnotationDocs: Annotation[] =
+        // await getAnnotationsByProject(currentGitProject, user.uid)
+        []
     if (
-        (!userAnnotationDocs || userAnnotationDocs.empty) &&
-        (!collaboratorAnnotationDocs || collaboratorAnnotationDocs.empty)
+        !userAnnotationDocs ||
+        userAnnotationDocs.empty
+        //  &&
+        // (!collaboratorAnnotationDocs || collaboratorAnnotationDocs.empty)
     )
         return []
 
     const dataAnnotations = getListFromSnapshots(userAnnotationDocs).concat(
-        getListFromSnapshots(collaboratorAnnotationDocs)
+        // getListFromSnapshots(
+        collaboratorAnnotationDocs
+        // )
     )
 
     const allCommits: CommitObject[] = getListFromSnapshots(
@@ -262,6 +273,52 @@ export const getAnnotationsByProject = (
             currentGitHubCommit ? currentGitHubCommit : ''
         )
         .get()
+}
+
+// get annos
+// readonly ?? for anchors
+//
+export const listenForAnnotationsByProject = (gitRepo: string, uid: string) => {
+    return annotationsRef
+        .where('gitRepo', '==', gitRepo)
+        .where('authorId', '!=', uid)
+        .where('sharedWith', '==', 'group')
+        .where('deleted', '==', false)
+        .onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                const newAnnotation = change.doc.data() as Annotation
+                newAnnotation.anchors.forEach((a) => (a.readOnly = true))
+                switch (change.type) {
+                    case 'added': {
+                        setAnnotationList(annotationList.concat(newAnnotation))
+                        break
+                    }
+                    case 'modified': {
+                        setAnnotationList(
+                            annotationList.map((a) =>
+                                a.id === newAnnotation.id ? newAnnotation : a
+                            )
+                        )
+                        break
+                    }
+                    // this should not happen as there are currently no ways for non-admins to remove annotations
+                    // but still -- just in case!
+                    case 'removed': {
+                        setAnnotationList(
+                            annotationList.filter(
+                                (a) => a.id !== newAnnotation.id
+                            )
+                        )
+                        break
+                    }
+                    default: {
+                        break
+                    }
+                }
+
+                view?.updateDisplay(annotationList)
+            })
+        })
 }
 
 export const getUserAnnotations = (

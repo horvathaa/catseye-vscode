@@ -25,6 +25,7 @@ interface Props {
     pinAnnotation: (e: React.SyntheticEvent) => void
     shareAnnotation: (e: React.SyntheticEvent) => void
     addAnchor: () => void
+    userId: string
 }
 
 const CardHeader = ({
@@ -37,6 +38,7 @@ const CardHeader = ({
     pinAnnotation,
     shareAnnotation,
     addAnchor,
+    userId,
 }: Props) => {
     const [annotation, setAnnotation] = React.useState<Annotation>(anno)
     React.useEffect(() => {
@@ -50,6 +52,7 @@ const CardHeader = ({
     const codeSize = useMediaQuery(theme.breakpoints.up('code'))
     const smCodeSize = useMediaQuery(theme.breakpoints.up('sm'))
     const slicedText: number = codeSize ? 30 : 15
+    const isOwner = anno.authorId === userId
 
     return (
         <div
@@ -127,7 +130,7 @@ const CardHeader = ({
                             icon={<ShareIcon fontSize="small" />}
                         />
                     ) : null}
-                    {expanded === true ? (
+                    {expanded === true && isOwner ? (
                         <CatseyeButton
                             buttonClicked={addAnchor}
                             name="Add Anchor"
@@ -135,37 +138,43 @@ const CardHeader = ({
                         />
                     ) : null}
 
-                    {anno.selected ? (
+                    {isOwner ? (
+                        anno.selected ? (
+                            <CatseyeButton
+                                buttonClicked={pinAnnotation}
+                                name="Pin"
+                                icon={<PushPinIcon fontSize="small" />}
+                            />
+                        ) : (
+                            <CatseyeButton
+                                buttonClicked={pinAnnotation}
+                                name="Pin"
+                                icon={<PushPinOutlinedIcon fontSize="small" />}
+                            />
+                        )
+                    ) : null}
+                    {isOwner ? (
+                        anno.resolved ? (
+                            <CatseyeButton
+                                buttonClicked={resolveAnnotation}
+                                name="Un-resolve"
+                                icon={<CheckBoxIcon fontSize="small" />}
+                            />
+                        ) : (
+                            <CatseyeButton
+                                buttonClicked={resolveAnnotation}
+                                name="Resolve"
+                                icon={<CheckIcon fontSize="small" />}
+                            />
+                        )
+                    ) : null}
+                    {isOwner && (
                         <CatseyeButton
-                            buttonClicked={pinAnnotation}
-                            name="Pin"
-                            icon={<PushPinIcon fontSize="small" />}
-                        />
-                    ) : (
-                        <CatseyeButton
-                            buttonClicked={pinAnnotation}
-                            name="Pin"
-                            icon={<PushPinOutlinedIcon fontSize="small" />}
+                            buttonClicked={deleteAnnotation}
+                            name="Delete"
+                            icon={<DeleteIcon fontSize="small" />}
                         />
                     )}
-                    {anno.resolved ? (
-                        <CatseyeButton
-                            buttonClicked={resolveAnnotation}
-                            name="Un-resolve"
-                            icon={<CheckBoxIcon fontSize="small" />}
-                        />
-                    ) : (
-                        <CatseyeButton
-                            buttonClicked={resolveAnnotation}
-                            name="Resolve"
-                            icon={<CheckIcon fontSize="small" />}
-                        />
-                    )}
-                    <CatseyeButton
-                        buttonClicked={deleteAnnotation}
-                        name="Delete"
-                        icon={<DeleteIcon fontSize="small" />}
-                    />
                 </div>
             )}
         </div>

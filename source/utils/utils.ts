@@ -692,7 +692,7 @@ const getEndUrl = (visiblePath: string, projectName: string): string => {
 export const getBaseGithubUrl = (repo: string): string => {
     const url = new URL(repo)
     const host: string = url.host.includes('www.')
-        ? url.host.split('www.')[1]
+        ? url.host.split('www.')[1] // somehow this works for ghp_... repos? i guess?
         : url.host
     const pathname: string = url.pathname.includes('.git')
         ? url.pathname.split('.git')[0]
@@ -883,12 +883,15 @@ export const generateGitMetaData = async (
             : branchNames.includes('master')
             ? 'master'
             : '' // are there other common primary branch names? or another way of determining what this is lol
+        console.log('hewwop??', r?.state?.remotes[0]?.fetchUrl)
+        const repo = r?.state?.remotes[0]?.fetchUrl
+            ? normalizeRepoName(r?.state?.remotes[0]?.fetchUrl)
+            : r?.state?.remotes[0]?.pushUrl
+            ? normalizeRepoName(r?.state?.remotes[0]?.pushUrl)
+            : ''
+        console.log('repo', repo)
         gitInfo[currentProjectName] = {
-            repo: r?.state?.remotes[0]?.fetchUrl
-                ? r?.state?.remotes[0]?.fetchUrl
-                : r?.state?.remotes[0]?.pushUrl
-                ? r?.state?.remotes[0]?.pushUrl
-                : '',
+            repo,
             branch: r?.state?.HEAD?.name ? r?.state?.HEAD?.name : '',
             commit: r?.state?.HEAD?.commit ? r?.state?.HEAD?.commit : '',
             modifiedAnnotations: [],
@@ -900,6 +903,15 @@ export const generateGitMetaData = async (
     updateCurrentGitHubCommit(gitApi)
 
     return gitInfo
+}
+
+const normalizeRepoName = (repoName: string): string => {
+    const endOfPath = repoName.split('github.com/')[1]
+    const path = endOfPath.includes('.git')
+        ? endOfPath.split('.git')[0]
+        : endOfPath
+    // console.log('path', path)
+    return `https://github.com/${path}`
 }
 
 export const getProjectName = (filename?: string | undefined): string => {

@@ -346,7 +346,7 @@ export const listenForSearch = () => {
                 searchSnapshot.docChanges().forEach((change) => {
                     const newEvent: WebSearchEvent =
                         change.doc.data() as WebSearchEvent
-                    console.log('got these', change.doc.data())
+                    // console.log('got these', change.doc.data())
                     switch (change.type) {
                         case 'added': {
                             setSearchEvents(searchEvents.concat(newEvent))

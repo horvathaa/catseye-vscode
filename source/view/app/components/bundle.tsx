@@ -38,7 +38,7 @@ export const Bundle: React.FC<Props> = ({
         <div
             className={`${styles['p2']} ${styles['m2']} ${styles['border-1px-medium']} ${styles['border-radius-8']}`}
         >
-            <h2>Bundle</h2>
+            <h2 className={`${styles['p2']}`}>Bundle</h2>
             {bundle.objs.map((o) => {
                 const component = Annotation.isAnnotation(o) ? (
                     <ReactAnnotation

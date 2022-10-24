@@ -495,6 +495,7 @@ const CatseyePanel: React.FC<Props> = ({
                             username={userName}
                             userId={uid}
                             consolidateAnnos={consolidateAnnos}
+                            addToBundle={addToBundle}
                         />
                     </div>
                 )}

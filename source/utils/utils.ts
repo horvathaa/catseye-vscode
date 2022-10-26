@@ -412,61 +412,6 @@ export const getShikiCodeHighlighting = async (
     }
 }
 
-// We need to update the Shiki-generated HTML when the user makes an edit to annotated code
-const updateAnchorHtml = async (
-    anno: Annotation,
-    doc: vscode.TextDocument
-): Promise<Annotation> => {
-    const updatedAnchors: AnchorObject[] = await Promise.all(
-        anno.anchors.map(async (a: AnchorObject) => {
-            if (a.filename === doc.uri.toString()) {
-                const newVscodeRange: vscode.Range = new vscode.Range(
-                    new vscode.Position(
-                        a.anchor.startLine,
-                        a.anchor.startOffset
-                    ),
-                    new vscode.Position(a.anchor.endLine, a.anchor.endOffset)
-                )
-                const newAnchorText: string = doc.getText(newVscodeRange)
-                const newHtml: string = await getShikiCodeHighlighting(
-                    a.filename.toString(),
-                    newAnchorText
-                )
-                const firstLine: string = getFirstLineOfHtml(
-                    newHtml,
-                    !newAnchorText.includes('\n')
-                )
-                return {
-                    ...a,
-                    html: newHtml,
-                    anchorText: newAnchorText,
-                    anchorPreview: firstLine,
-                }
-            } else {
-                return a
-            }
-        })
-    )
-    return buildAnnotation({
-        ...anno,
-        anchors: updatedAnchors,
-        needToUpdate: true,
-    })
-}
-
-const updateHtml = async (
-    annos: Annotation[],
-    doc: vscode.TextDocument
-): Promise<Annotation[]> => {
-    let updatedList: Annotation[] = []
-    for (let x = 0; x < annos.length; x++) {
-        const newAnno = await updateAnchorHtml(annos[x], doc)
-        updatedList.push(newAnno)
-    }
-
-    return updatedList
-}
-
 export const getAllAnnotationsWithGitUrlInFile = (
     annotationList: Annotation[],
     currentUrl: string

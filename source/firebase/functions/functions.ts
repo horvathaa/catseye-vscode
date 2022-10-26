@@ -34,10 +34,8 @@ import {
     generateGitMetaData,
     initializeAnnotations,
 } from '../../utils/utils'
-import firebase, { clientId, clientSecret } from '../firebase'
+import firebase from '../firebase'
 import { DB_COLLECTIONS } from '..'
-import { Octokit } from 'octokit'
-import * as vscode from 'vscode'
 
 const db: firebase.firestore.Firestore = firebase.firestore()
 const annotationsRef: firebase.firestore.CollectionReference = db.collection(

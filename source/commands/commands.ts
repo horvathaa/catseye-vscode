@@ -207,6 +207,10 @@ export const createView = async (context: vscode.ExtensionContext) => {
                         viewHelper.handleOpenBugReportForm()
                         break
                     }
+                    case 'requestOpenSignInPage': {
+                        viewHelper.handleOpenSignInPage()
+                        break
+                    }
                     default: {
                         break
                     }
@@ -545,7 +549,7 @@ export const addNewHighlight = (
                 needToUpdate: true,
                 lastEditTime: createdTimestamp,
             }
-            console.log('made this highlight', temp)
+            // console.log('made this highlight', temp)
             setAnnotationList(
                 annotationList.concat([utils.buildAnnotation(temp)])
             )

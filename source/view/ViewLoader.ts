@@ -108,6 +108,7 @@ export default class ViewLoader {
             window.username = ${username}
             window.currentFile = ${currentFile}
             window.currentProject = ${currentProject}
+            window.login = ${user === null}
           </script>
       </head>
       <body>

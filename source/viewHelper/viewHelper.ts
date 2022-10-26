@@ -1150,3 +1150,12 @@ export const handleRemoveTempMergeAnchor = (
         : vscode.window.visibleTextEditors[0]
     addTempAnnotationHighlight(tempMergedAnchors, textEditorToHighlight)
 }
+
+export const handleOpenSignInPage = () => {
+    vscode.env.openExternal(
+        vscode.Uri.parse(
+            'http://localhost:3000/Login?how=github'
+            // 'https://adamite.netlify.app/Login?how=github'
+        )
+    )
+}

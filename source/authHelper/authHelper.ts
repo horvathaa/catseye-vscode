@@ -22,6 +22,7 @@ import {
     getUserGithubData,
     fbSignOut,
     signInWithGithubCredential,
+    waitForUser,
     // setUserGithubAccount,
 } from '../firebase/functions/functions'
 const path = require('path')
@@ -53,7 +54,7 @@ export const initializeAuth = async () => {
         throw e
     }
     catseyeLog.appendLine('creating session')
-
+    // console.log('session', session)
     if (session) {
         // get user auth token and account info
         const { accessToken, account } = session
@@ -62,27 +63,39 @@ export const initializeAuth = async () => {
         let result // operationMessage
         try {
             // use FireStore worker account to sign in so we can make cloud function calls
-            if (process.env.FB_SU_EMAIL && process.env.FB_SU_PASSWORD)
+            if (process.env.FB_SU_EMAIL && process.env.FB_SU_PASSWORD) {
                 await fbSignInWithEmailAndPassword(
                     process.env.FB_SU_EMAIL,
                     process.env.FB_SU_PASSWORD
                 )
+            }
         } catch (e) {
             catseyeLog.appendLine('Could not sign in to Firebase with SU')
             console.error(e)
             return
         }
+
         try {
+            // send id to match on in firestore, send oauth to show we are Legit, cloud function returns github firestore auth data
+            // use that data to login using sign in by credential
+            // reverse -- user signs in to github with vscode - we store this data and then, upon having them create an account
+            // using login credentials from webview (? not even sure that is legal tbh), pair accounts....?
             // using accessToken and user ID, query FireStore for matching user and token
             result = await getUserGithubData({ id: id, oauth: accessToken })
             catseyeLog.appendLine('Got user GitHub Data with Cloud Function')
         } catch (e) {
             console.error(e)
             catseyeLog.appendLine(
-                'Could not get user GitHub data from Firebase'
+                'Could not get user GitHub data from Firebase -- redirecting to website'
             )
-            await fbSignOut()
-            setUser(null)
+
+            vscode.env.openExternal(
+                vscode.Uri.parse('https://adamite.netlify.app/Login?how=github')
+            )
+            waitForUser(id)
+            // setGitInfo({ ...gitInfo, oauth: accessToken })
+            // await fbSignOut()
+            // setUser(null)
             return
         }
 

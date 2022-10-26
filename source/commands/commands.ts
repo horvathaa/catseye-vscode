@@ -37,6 +37,7 @@ import {
     catseyeFoldingRangeProvider,
     refreshFoldingRanges,
 } from '../foldingRangeProvider/foldingRangeProvider'
+
 // import { computeMostSimilarAnchor } from '../anchorFunctions/reanchor'
 
 // on launch, create auth session and sign in to FireStore
@@ -204,6 +205,10 @@ export const createView = async (context: vscode.ExtensionContext) => {
                     }
                     case 'requestOpenBugReportForm': {
                         viewHelper.handleOpenBugReportForm()
+                        break
+                    }
+                    case 'requestOpenSignInPage': {
+                        viewHelper.handleOpenSignInPage()
                         break
                     }
                     default: {
@@ -544,7 +549,7 @@ export const addNewHighlight = (
                 needToUpdate: true,
                 lastEditTime: createdTimestamp,
             }
-            console.log('made this highlight', temp)
+            // console.log('made this highlight', temp)
             setAnnotationList(
                 annotationList.concat([utils.buildAnnotation(temp)])
             )

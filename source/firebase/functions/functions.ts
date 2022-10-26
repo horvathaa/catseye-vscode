@@ -13,7 +13,17 @@ import {
     AnnotationEvent,
     CommitObject,
 } from '../../constants/constants'
-import { currentGitHubCommit, user } from '../../extension'
+import {
+    annotationList,
+    catseyeLog,
+    currentGitHubCommit,
+    gitApi,
+    setAnnotationList,
+    setGitInfo,
+    setUser,
+    user,
+    view,
+} from '../../extension'
 import {
     getListFromSnapshots,
     makeObjectListFromAnnotations,
@@ -21,9 +31,13 @@ import {
     getLastGitCommitHash,
     removeNulls,
     partitionAnnotationsOnSignIn,
+    generateGitMetaData,
+    initializeAnnotations,
 } from '../../utils/utils'
-import firebase from '../firebase'
+import firebase, { clientId, clientSecret } from '../firebase'
 import { DB_COLLECTIONS } from '..'
+import { Octokit } from 'octokit'
+import * as vscode from 'vscode'
 
 const db: firebase.firestore.Firestore = firebase.firestore()
 const annotationsRef: firebase.firestore.CollectionReference = db.collection(
@@ -35,6 +49,10 @@ const commitsRef: firebase.firestore.CollectionReference = db.collection(
 
 const eventsRef: firebase.firestore.CollectionReference = db.collection(
     DB_COLLECTIONS.EVENTS
+)
+
+const usersRef: firebase.firestore.CollectionReference = db.collection(
+    DB_COLLECTIONS.USERS
 )
 
 // Save annotations to FireStore
@@ -61,16 +79,21 @@ export const getAnnotationsOnSignIn = async (
 ): Promise<Annotation[]> => {
     const userAnnotationDocs: firebase.firestore.QuerySnapshot =
         await getUserAnnotations(user.uid)
-    const collaboratorAnnotationDocs: firebase.firestore.QuerySnapshot =
-        await getAnnotationsByProject(currentGitProject, user.uid)
+    const collaboratorAnnotationDocs: Annotation[] =
+        // await getAnnotationsByProject(currentGitProject, user.uid)
+        []
     if (
-        (!userAnnotationDocs || userAnnotationDocs.empty) &&
-        (!collaboratorAnnotationDocs || collaboratorAnnotationDocs.empty)
+        !userAnnotationDocs ||
+        userAnnotationDocs.empty
+        //  &&
+        // (!collaboratorAnnotationDocs || collaboratorAnnotationDocs.empty)
     )
         return []
 
     const dataAnnotations = getListFromSnapshots(userAnnotationDocs).concat(
-        getListFromSnapshots(collaboratorAnnotationDocs)
+        // getListFromSnapshots(
+        collaboratorAnnotationDocs
+        // )
     )
 
     const allCommits: CommitObject[] = getListFromSnapshots(
@@ -240,11 +263,20 @@ export const fbSignOut = async (): Promise<void> => {
 
 // Create and use credential given oauth data received from cloud function to sign in
 export const signInWithGithubCredential = async (
-    oauth: string
+    oauth: string,
+    id: string = ''
 ): Promise<firebase.User | null> => {
     const credential = firebase.auth.GithubAuthProvider.credential(oauth)
-    const { user } = await firebase.auth().signInWithCredential(credential)
-    return user
+    // console.log('hewwo?', credential)
+    try {
+        const { user } = await firebase.auth().signInWithCredential(credential)
+        return user
+        // console.log('this should not work', user)
+    } catch (e) {
+        console.error('wuh woh', e)
+    }
+
+    return null
 }
 
 // gitRepo is URL for project where annotation was made
@@ -262,6 +294,52 @@ export const getAnnotationsByProject = (
             currentGitHubCommit ? currentGitHubCommit : ''
         )
         .get()
+}
+
+// get annos
+// readonly ?? for anchors
+//
+export const listenForAnnotationsByProject = (gitRepo: string, uid: string) => {
+    return annotationsRef
+        .where('gitRepo', '==', gitRepo)
+        .where('authorId', '!=', uid)
+        .where('sharedWith', '==', 'group')
+        .where('deleted', '==', false)
+        .onSnapshot((snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                const newAnnotation = change.doc.data() as Annotation
+                newAnnotation.anchors.forEach((a) => (a.readOnly = true))
+                switch (change.type) {
+                    case 'added': {
+                        setAnnotationList(annotationList.concat(newAnnotation))
+                        break
+                    }
+                    case 'modified': {
+                        setAnnotationList(
+                            annotationList.map((a) =>
+                                a.id === newAnnotation.id ? newAnnotation : a
+                            )
+                        )
+                        break
+                    }
+                    // this should not happen as there are currently no ways for non-admins to remove annotations
+                    // but still -- just in case!
+                    case 'removed': {
+                        setAnnotationList(
+                            annotationList.filter(
+                                (a) => a.id !== newAnnotation.id
+                            )
+                        )
+                        break
+                    }
+                    default: {
+                        break
+                    }
+                }
+
+                view?.updateDisplay(annotationList)
+            })
+        })
 }
 
 export const getUserAnnotations = (
@@ -300,4 +378,43 @@ export const emitEvent = (event: AnnotationEvent | AnnotationEvent[]) => {
             ? event.forEach((e) => eventsRef.doc(e.id).set(e))
             : eventsRef.doc(event.id).set(event)
     }
+}
+
+export const waitForUser = async (githubId: string) => {
+    return usersRef
+        .where('githubId', '==', githubId)
+        .onSnapshot(async (snapshot) => {
+            snapshot.docChanges().forEach(async (change) => {
+                const doc = change.doc.data()
+                // console.log('whats up doc', doc)
+                if (
+                    // change.type === 'added' &&
+                    doc.uid
+                ) {
+                    await fbSignOut() // sign out su
+                    const user = await signInWithGithubCredential(
+                        doc.oauthGithub
+                    )
+                    // console.log('wha', user)
+                    catseyeLog.appendLine(
+                        'User created account -- now signed in'
+                    )
+                    setUser(user)
+                    setGitInfo(await generateGitMetaData(gitApi))
+                    if (user) {
+                        await initializeAnnotations(user)
+                        view &&
+                            view._panel?.visible &&
+                            view.updateDisplay(
+                                annotationList,
+                                undefined,
+                                undefined,
+                                user.uid
+                            )
+                    } else {
+                        setAnnotationList([])
+                    }
+                }
+            })
+        })
 }

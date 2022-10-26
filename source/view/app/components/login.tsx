@@ -13,45 +13,16 @@ interface Props {
 }
 
 const LogIn: React.FC<Props> = ({ vscode }) => {
-    const [email, setEmail] = React.useState('')
-    const [pass, setPass] = React.useState('')
-
-    const postEmailAndPass = () => {
-        vscode.postMessage({
-            command: 'emailAndPassReceived',
-            email: email,
-            pass: pass,
-        })
-    }
-
     return (
         <div className={styles['AuthContainer']}>
-            <div className={`${styles.welcome}`}>catseye for VS Code</div>
-            <div className={`${styles.InputFieldContainer} ${styles.row}`}>
-                <input
-                    type="text"
-                    value={email}
-                    placeholder="email"
-                    name="email"
-                    onChange={(e) => setEmail(e.target.value)}
-                />
-            </div>
-            <div className={`${styles.InputFieldContainer} ${styles.row}`}>
-                <input
-                    type="password"
-                    value={pass}
-                    placeholder="password"
-                    name="password"
-                    onChange={(e) => setPass(e.target.value)}
-                />
-            </div>
-            <div className={`${styles.InputFieldContainer} ${styles.row}`}>
+            <div className={`${styles.welcome}`}>Catseye</div>
+            <div className={`${styles.InputFieldContainer} ${styles.row} `}>
                 <button
-                    type="submit"
-                    value="submit"
-                    onClick={() => postEmailAndPass()}
+                    onClick={() =>
+                        vscode.postMessage({ command: 'requestOpenSignInPage' })
+                    }
                 >
-                    Submit
+                    Login with GitHub
                 </button>
             </div>
         </div>

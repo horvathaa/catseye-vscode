@@ -29,7 +29,7 @@ import { HoverController } from './hovers/hoverController'
 import { addHighlightsToEditor } from './anchorFunctions/anchor'
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports
 export const gitApi = gitExtension?.getAPI(1)
-console.log('gitApi', gitApi)
+// console.log('gitApi', gitApi)
 export let gitInfo: { [key: string]: any } = {}
 export let annotationList: Annotation[] = []
 export let copiedAnnotations: { [key: string]: any }[] = []
@@ -149,7 +149,7 @@ export const setCurrentColorTheme = (newCurrentColorTheme: string): void => {
 export const setCurrentGitHubProject = (
     newCurrentGitHubProject: string
 ): void => {
-    currentGitHubProject = newCurrentGitHubProject
+    currentGitHubProject = utils.normalizeRepoName(newCurrentGitHubProject)
 }
 
 export const setCurrentGitHubCommit = (

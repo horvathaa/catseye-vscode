@@ -52,6 +52,8 @@ const CatseyePanel: React.FC<Props> = ({
 }) => {
     const [annotations, setAnnotations] = useState(window.data)
     const [showLogin, setShowLogin] = useState(showLogIn)
+    console.log('showLogin', showLogin)
+    console.log('window', window)
     const [userName, setUsername] = useState(
         window.username ? window.username : ''
     )

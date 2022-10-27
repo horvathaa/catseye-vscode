@@ -23,6 +23,7 @@ import {
     setUser,
     user,
     view,
+    extensionContext,
 } from '../../extension'
 import {
     getListFromSnapshots,
@@ -36,6 +37,8 @@ import {
 } from '../../utils/utils'
 import firebase from '../firebase'
 import { DB_COLLECTIONS } from '..'
+import * as vscode from 'vscode'
+import { createView } from '../../commands/commands'
 
 const db: firebase.firestore.Firestore = firebase.firestore()
 const annotationsRef: firebase.firestore.CollectionReference = db.collection(
@@ -385,10 +388,7 @@ export const waitForUser = async (githubId: string) => {
             snapshot.docChanges().forEach(async (change) => {
                 const doc = change.doc.data()
                 // console.log('whats up doc', doc)
-                if (
-                    // change.type === 'added' &&
-                    doc.uid
-                ) {
+                if (doc.uid) {
                     await fbSignOut() // sign out su
                     const user = await signInWithGithubCredential(
                         doc.oauthGithub
@@ -401,14 +401,15 @@ export const waitForUser = async (githubId: string) => {
                     setGitInfo(await generateGitMetaData(gitApi))
                     if (user) {
                         await initializeAnnotations(user)
-                        view &&
-                            view._panel?.visible &&
-                            view.updateDisplay(
-                                annotationList,
-                                undefined,
-                                undefined,
-                                user.uid
-                            )
+                        extensionContext && createView(extensionContext, true)
+                        // view &&
+                        //     view._panel?.visible &&
+                        //     view.updateDisplay(
+                        //         annotationList,
+                        //         undefined,
+                        //         undefined,
+                        //         user.uid
+                        //     )
                     } else {
                         setAnnotationList([])
                     }

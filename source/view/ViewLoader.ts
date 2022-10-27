@@ -29,10 +29,16 @@ import { AnnotationAnchorDuplicatePair } from '../viewHelper/viewHelper'
 export default class ViewLoader {
     public _panel: vscode.WebviewPanel | undefined
     private readonly _extensionPath: string
+    private readonly _newUser: boolean
 
     // create the webview and point it to our compiled/bundled extension
-    constructor(fileUri: vscode.Uri, extensionPath: string) {
+    constructor(
+        fileUri: vscode.Uri,
+        extensionPath: string,
+        newUser: boolean = false
+    ) {
         this._extensionPath = extensionPath
+        this._newUser = newUser
         catseyeLog.appendLine(`Creating ViewLoader at ${extensionPath}`)
         if (annotationList) {
             catseyeLog.appendLine(`Creating WebviewPanel`)
@@ -109,6 +115,7 @@ export default class ViewLoader {
             window.currentFile = ${currentFile}
             window.currentProject = ${currentProject}
             window.login = ${user === null}
+            window.newUser = ${this._newUser}
           </script>
       </head>
       <body>
@@ -269,4 +276,11 @@ export default class ViewLoader {
             })
         }
     }
+    // public showNewUserDialogue() {
+    //     if (this._panel && this._panel.webview) {
+    //         this._panel.webview.postMessage({
+    //             command: 'newUser',
+    //         })
+    //     }
+    // }
 }

@@ -37,7 +37,6 @@ import {
 } from '../../utils/utils'
 import firebase from '../firebase'
 import { DB_COLLECTIONS } from '..'
-import * as vscode from 'vscode'
 import { createView } from '../../commands/commands'
 
 const db: firebase.firestore.Firestore = firebase.firestore()

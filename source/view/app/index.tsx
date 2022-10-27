@@ -23,6 +23,7 @@ declare global {
         currentProject: string
         selection: string
         login: boolean
+        newUser: boolean
         addEventListener(): any
     }
 }

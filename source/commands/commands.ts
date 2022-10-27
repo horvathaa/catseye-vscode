@@ -58,7 +58,10 @@ export const trackAndAuditFilesOnLaunch = (): void => {
 }
 
 // Creates catseye side panel and sets up its listeners
-export const createView = async (context: vscode.ExtensionContext) => {
+export const createView = async (
+    context: vscode.ExtensionContext,
+    newUser: boolean = false
+) => {
     if (vscode.workspace.workspaceFolders) {
         if (view) {
             catseyeLog.appendLine('Revealing catseye panel.')
@@ -66,10 +69,16 @@ export const createView = async (context: vscode.ExtensionContext) => {
             return
         }
         catseyeLog.appendLine('Creating new panel')
-        const newView: ViewLoader = new ViewLoader(
-            vscode.workspace.workspaceFolders[0].uri,
-            context.extensionPath
-        )
+        const newView: ViewLoader = newUser
+            ? new ViewLoader(
+                  vscode.workspace.workspaceFolders[0].uri,
+                  context.extensionPath,
+                  newUser
+              )
+            : new ViewLoader(
+                  vscode.workspace.workspaceFolders[0].uri,
+                  context.extensionPath
+              )
         setView(newView)
         let foldingRangeProviderDisposable =
             vscode.languages.registerFoldingRangeProvider(
@@ -77,6 +86,11 @@ export const createView = async (context: vscode.ExtensionContext) => {
                 catseyeFoldingRangeProvider
             )
         context.subscriptions.push(foldingRangeProviderDisposable)
+        // if (newUser) {
+        //     console.log('showing new user dialogue')
+        //     newView._panel?.reveal()
+        //     newView.showNewUserDialogue()
+        // }
         if (newView) {
             /***********************************************************************************/
             /**************************************** VIEW LISTENERS ******************************/

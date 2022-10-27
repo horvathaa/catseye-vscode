@@ -59,6 +59,7 @@ export let astHelper: AstHelper = new AstHelper()
 export let eventsToTransmitOnSave: AnnotationEvent[] = []
 export let showResolved: boolean = false
 export let tempMergedAnchors: AnchorObject[] = []
+export let extensionContext: vscode.ExtensionContext | null = null
 
 export const annotationDecorations =
     vscode.window.createTextEditorDecorationType({
@@ -216,10 +217,17 @@ export const setTempMergedAnchors = (
         : tempMergedAnchors.concat(newTempMergedAnchors)
 }
 
+export const setExtensionContext = (
+    newExtensionContext: vscode.ExtensionContext
+): void => {
+    extensionContext = newExtensionContext
+}
+
 // this method is called when the extension is activated
 // the extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
     catseyeLog.appendLine('Starting activate')
+    setExtensionContext(context)
     // initialize authentication and listeners for annotations
     commands.init()
     vscode.window.activeTextEditor &&

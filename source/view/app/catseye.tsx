@@ -32,6 +32,7 @@ import {
     sortAnnotationsByTime,
 } from './utils/viewUtils'
 import MergeAnnotations from './components/mergeAnnotations'
+import FirstTimeUser from './components/firstTimeUser'
 
 export const ThemeContext = React.createContext({ kind: 2 })
 
@@ -52,8 +53,8 @@ const CatseyePanel: React.FC<Props> = ({
 }) => {
     const [annotations, setAnnotations] = useState(window.data)
     const [showLogin, setShowLogin] = useState(showLogIn)
-    console.log('showLogin', showLogin)
-    console.log('window', window)
+    const [showFirstTimeUserContent, setShowFirstTimeUserContent] =
+        useState<boolean>(window.newUser)
     const [userName, setUsername] = useState(
         window.username ? window.username : ''
     )
@@ -390,6 +391,51 @@ const CatseyePanel: React.FC<Props> = ({
         setAnnosToConsolidate(annos)
     }
 
+    console.log('showFirstTimeUserContent', showFirstTimeUserContent)
+
+    const whatToRender = showFirstTimeUserContent ? (
+        <FirstTimeUser
+            setShowFirstTimeUserContent={setShowFirstTimeUserContent}
+        />
+    ) : showLogin ? (
+        <LogIn vscode={vscode} />
+    ) : (
+        <div style={{ padding: '0 8px' }}>
+            <TopBar
+                key={currColorTheme.kind + '-top-bar'}
+                saveAnnotationsToJson={saveAnnotationsToJson}
+                // showKeyboardShortcuts={showKeyboardShortcuts}
+                filtersUpdated={filtersUpdated}
+                vscode={vscode}
+                githubUsername={userName ?? ''}
+            />
+            {/* <MassOperationsBar
+    massOperationSelected={massOperationSelected}
+></MassOperationsBar> */}
+            {showNewAnnotation && newAnchors ? (
+                <NewAnnotation
+                    key={currColorTheme.kind + '-new-anno'}
+                    newAnnoId={newAnnotationId}
+                    newAnchors={newAnchors}
+                    vscode={vscode}
+                    notifyDone={notifyDone}
+                />
+            ) : null}
+            <AnnotationList
+                key={currColorTheme.kind + '-anno-list'}
+                title=""
+                parentId="main"
+                annotations={filtered}
+                // annotations={annotations}
+                vscode={vscode}
+                window={window}
+                username={userName}
+                userId={uid}
+                consolidateAnnos={consolidateAnnos}
+            />
+        </div>
+    )
+
     return (
         <React.Fragment>
             <ThemeContext.Provider value={currColorTheme}>
@@ -402,43 +448,7 @@ const CatseyePanel: React.FC<Props> = ({
                         annotations={annosToConsolidate}
                     />
                 ) : null}
-                {!showLogin && (
-                    <div style={{ padding: '0 8px' }}>
-                        <TopBar
-                            key={currColorTheme.kind + '-top-bar'}
-                            saveAnnotationsToJson={saveAnnotationsToJson}
-                            // showKeyboardShortcuts={showKeyboardShortcuts}
-                            filtersUpdated={filtersUpdated}
-                            vscode={vscode}
-                            githubUsername={userName ?? ''}
-                        />
-                        {/* <MassOperationsBar
-                        massOperationSelected={massOperationSelected}
-                    ></MassOperationsBar> */}
-                        {showNewAnnotation && newAnchors ? (
-                            <NewAnnotation
-                                key={currColorTheme.kind + '-new-anno'}
-                                newAnnoId={newAnnotationId}
-                                newAnchors={newAnchors}
-                                vscode={vscode}
-                                notifyDone={notifyDone}
-                            />
-                        ) : null}
-                        <AnnotationList
-                            key={currColorTheme.kind + '-anno-list'}
-                            title=""
-                            parentId="main"
-                            annotations={filtered}
-                            // annotations={annotations}
-                            vscode={vscode}
-                            window={window}
-                            username={userName}
-                            userId={uid}
-                            consolidateAnnos={consolidateAnnos}
-                        />
-                    </div>
-                )}
-                {showLogin && <LogIn vscode={vscode} />}
+                {whatToRender}
             </ThemeContext.Provider>
         </React.Fragment>
     )

@@ -82,7 +82,28 @@ export const initializeAuth = async () => {
             // using login credentials from webview (? not even sure that is legal tbh), pair accounts....?
             // using accessToken and user ID, query FireStore for matching user and token
             result = await getUserGithubData({ id: id, oauth: accessToken })
-            catseyeLog.appendLine('Got user GitHub Data with Cloud Function')
+            if (result.data === '') {
+                catseyeLog.appendLine(
+                    'Could not get user GitHub data from Firebase -- redirecting to website'
+                )
+
+                vscode.env.openExternal(
+                    vscode.Uri.parse(
+                        // 'https://adamite.netlify.app/Login?how=github'
+                        'http://localhost:3000/Login?how=github'
+                    )
+                )
+                waitForUser(id)
+                // setGitInfo({ ...gitInfo, oauth: accessToken })
+                // await fbSignOut()
+                // setUser(null)
+                return
+            } else {
+                catseyeLog.appendLine(
+                    'Got user GitHub Data with Cloud Function'
+                )
+            }
+            // console.log('lmao wtf', result)
         } catch (e) {
             console.error(e)
             catseyeLog.appendLine(

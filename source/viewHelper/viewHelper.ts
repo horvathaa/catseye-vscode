@@ -259,7 +259,9 @@ export const handleAddAnchor = async (id: string): Promise<void> => {
 
 const getLocalPathFromGitHubUrl = async (url: string): Promise<string> => {
     const gitProjects = Object.keys(gitInfo).filter((g) => g !== 'author') // if the user does not have the workspace open, i don't think this will work
+    console.log('gitProjects', gitProjects)
     const match = gitProjects.find((g) => url.includes(g))
+    console.log('match', match)
     if (!match) return url
     const urlSplit = url.split(match)[1]
     const cleanString = urlSplit.split(
@@ -295,6 +297,7 @@ const scroll = (
             async (reason: any) => {
                 console.error('rejected', reason)
                 const uri = await getLocalPathFromGitHubUrl(gitUrl) // this only works if the user has the specified github project open in vs code :-/
+                console.log('uri', uri)
                 vscode.workspace
                     .openTextDocument(vscode.Uri.parse(uri))
                     .then((doc: vscode.TextDocument) => {
@@ -1154,8 +1157,8 @@ export const handleRemoveTempMergeAnchor = (
 export const handleOpenSignInPage = () => {
     vscode.env.openExternal(
         vscode.Uri.parse(
-            'http://localhost:3000/Login?how=github'
-            // 'https://adamite.netlify.app/Login?how=github'
+            // 'http://localhost:3000/Login?how=github'
+            'https://adamite.netlify.app/Login?how=github'
         )
     )
 }

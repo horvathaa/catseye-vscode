@@ -89,8 +89,8 @@ export const initializeAuth = async () => {
 
                 vscode.env.openExternal(
                     vscode.Uri.parse(
-                        // 'https://adamite.netlify.app/Login?how=github'
-                        'http://localhost:3000/Login?how=github'
+                        'https://adamite.netlify.app/Login?how=github'
+                        // 'http://localhost:3000/Login?how=github'
                     )
                 )
                 waitForUser(id)

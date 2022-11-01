@@ -97,7 +97,11 @@ export const setTempAnno = (newAnno: Annotation | null): void => {
 }
 
 export const setUser = (newUser: firebase.User | null): void => {
+    const oldUser = user
     user = newUser
+    if (oldUser === null && user && view) {
+        view.updateDisplay(annotationList, undefined, undefined, user.uid) // user was not logged in but now is
+    }
 }
 
 export const setView = (newView: ViewLoader | undefined): void => {

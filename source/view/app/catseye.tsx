@@ -23,7 +23,7 @@ import {
 
 import NewAnnotation from './components/newAnnotation'
 import AnnotationList from './components/annotationList'
-import LogIn from './components/login'
+// import LogIn from './components/login'
 import TopBar from './components/topbar'
 import { defaultFilterOptions } from './utils/viewUtilsTsx'
 import {
@@ -39,7 +39,7 @@ export const ThemeContext = React.createContext({ kind: 2 })
 interface Props {
     vscode: any
     window: Window
-    showLogIn: boolean
+    // showLogIn: boolean
     username?: string
     userId?: string
 }
@@ -47,12 +47,12 @@ interface Props {
 const CatseyePanel: React.FC<Props> = ({
     vscode,
     window,
-    showLogIn,
+    // showLogIn,
     username,
     userId,
 }) => {
     const [annotations, setAnnotations] = useState(window.data)
-    const [showLogin, setShowLogin] = useState(showLogIn)
+    // const [showLogin, setShowLogin] = useState(showLogIn)
     const [showFirstTimeUserContent, setShowFirstTimeUserContent] =
         useState<boolean>(window.newUser)
     const [userName, setUsername] = useState(
@@ -94,9 +94,9 @@ const CatseyePanel: React.FC<Props> = ({
     const handleIncomingMessages = (e: MessageEvent<any>) => {
         const message = e.data
         switch (message.command) {
-            case 'login':
-                setShowLogin(true)
-                return
+            // case 'login':
+            //     setShowLogin(true)
+            //     return
             case 'update':
                 if (message.payload.annotationList)
                     setAnnotations(message.payload.annotationList)
@@ -141,7 +141,7 @@ const CatseyePanel: React.FC<Props> = ({
     }, [])
 
     React.useEffect(() => {
-        if (!showLogIn && (!userName || !uid) && username && userId) {
+        if ((!userName || !uid) && username && userId) {
             setUsername(username)
             setUserId(userId)
         }
@@ -397,9 +397,10 @@ const CatseyePanel: React.FC<Props> = ({
         <FirstTimeUser
             setShowFirstTimeUserContent={setShowFirstTimeUserContent}
         />
-    ) : showLogin ? (
-        <LogIn vscode={vscode} />
     ) : (
+        // : showLogin ? (
+        //     <LogIn vscode={vscode} />
+        // )
         <div style={{ padding: '0 8px' }}>
             <TopBar
                 key={currColorTheme.kind + '-top-bar'}

@@ -33,13 +33,13 @@ const vscode = window.acquireVsCodeApi()
 // methods to recreate/re-render the webview
 window.addEventListener('message', (event) => {
     const message = event.data
-    console.log('got this message', message, 'window', window)
+    // console.log('got this message', message, 'window', window)
     if (message.command === 'init') {
         ReactDOM.render(
             <CatseyePanel
                 vscode={vscode}
                 window={window}
-                showLogIn={window.login}
+                // showLogIn={window.login}
             />,
             document.getElementById('root')
         )
@@ -49,7 +49,7 @@ window.addEventListener('message', (event) => {
             <CatseyePanel
                 vscode={vscode}
                 window={window}
-                showLogIn={window.login}
+                // showLogIn={window.login}
                 username={message.payload.username}
                 userId={message.payload.userId}
             />,
@@ -60,6 +60,10 @@ window.addEventListener('message', (event) => {
 
 // render the panel
 ReactDOM.render(
-    <CatseyePanel vscode={vscode} window={window} showLogIn={window.login} />,
+    <CatseyePanel
+        vscode={vscode}
+        window={window}
+        // showLogIn={window.login}
+    />,
     document.getElementById('root')
 )

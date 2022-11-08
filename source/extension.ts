@@ -9,7 +9,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode'
-import { Octokit, App } from 'octokit'
+// import { Octokit, App } from 'octokit'
 import firebase from './firebase/firebase'
 import {
     AnchorObject,
@@ -73,6 +73,7 @@ export let showResolved: boolean = false
 export let tempMergedAnchors: AnchorObject[] = []
 export let searchEvents: WebSearchEvent[] = []
 export let browserOutputs: BrowserOutput[] = []
+export let extensionContext: vscode.ExtensionContext | null = null
 
 export const annotationDecorations =
     vscode.window.createTextEditorDecorationType({
@@ -110,7 +111,11 @@ export const setTempAnno = (newAnno: Annotation | null): void => {
 }
 
 export const setUser = (newUser: firebase.User | null): void => {
+    const oldUser = user
     user = newUser
+    if (oldUser === null && user && view) {
+        view.updateDisplay(annotationList, undefined, undefined, user.uid) // user was not logged in but now is
+    }
 }
 
 export const setView = (newView: ViewLoader | undefined): void => {
@@ -164,7 +169,7 @@ export const setCurrentColorTheme = (newCurrentColorTheme: string): void => {
 export const setCurrentGitHubProject = (
     newCurrentGitHubProject: string
 ): void => {
-    currentGitHubProject = newCurrentGitHubProject
+    currentGitHubProject = utils.normalizeRepoName(newCurrentGitHubProject)
 }
 
 export const setCurrentGitHubCommit = (
@@ -239,10 +244,17 @@ export const setTempMergedAnchors = (
         : tempMergedAnchors.concat(newTempMergedAnchors)
 }
 
+export const setExtensionContext = (
+    newExtensionContext: vscode.ExtensionContext
+): void => {
+    extensionContext = newExtensionContext
+}
+
 // this method is called when the extension is activated
 // the extension is activated the very first time the command is executed
 export async function activate(context: vscode.ExtensionContext) {
     catseyeLog.appendLine('Starting activate')
+    setExtensionContext(context)
     // initialize authentication and listeners for annotations
     commands.init()
     vscode.window.activeTextEditor &&

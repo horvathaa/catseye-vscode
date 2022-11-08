@@ -1,0 +1,35 @@
+.text-center {
+    text-align: center;
+}
+
+.list-none {
+    list-style: none;
+}
+
+.pl-0 {
+    padding-left: 0;
+}
+
+.m-4 {
+    margin: 2rem;
+}
+
+.border-1 {
+    border: 1px solid;
+}
+
+.my-2 {
+    margin: 1rem 0;
+}
+
+.ml-2 {
+    margin-left: 1rem;
+}
+
+.flex {
+    display: flex;
+}
+
+.flex-col {
+    flex-direction: column;
+}

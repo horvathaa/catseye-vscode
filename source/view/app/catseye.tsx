@@ -26,7 +26,7 @@ import {
 
 import NewAnnotation from './components/newAnnotation'
 import AnnotationList from './components/annotationList'
-import LogIn from './components/login'
+// import LogIn from './components/login'
 import TopBar from './components/topbar'
 import { defaultFilterOptions } from './utils/viewUtilsTsx'
 import {
@@ -38,13 +38,14 @@ import MergeAnnotations from './components/mergeAnnotations'
 import { SearchEvents } from './components/searchEvents'
 import { BrowserOutputs } from './components/browserOutputs'
 import { Bundle as ReactBundle } from './components/bundle'
+import FirstTimeUser from './components/firstTimeUser'
 
 export const ThemeContext = React.createContext({ kind: 2 })
 
 interface Props {
     vscode: any
     window: Window
-    showLogIn: boolean
+    // showLogIn: boolean
     username?: string
     userId?: string
 }
@@ -52,14 +53,18 @@ interface Props {
 const CatseyePanel: React.FC<Props> = ({
     vscode,
     window,
-    showLogIn,
+    // showLogIn,
     username,
     userId,
 }) => {
     const [bundle, setBundle] = useState<Bundle>({ objs: [], annotation: '' })
     const [annotations, setAnnotations] = useState(window.data)
-    const [showLogin, setShowLogin] = useState(showLogIn)
-    const [userName, setUsername] = useState(window.username ?? '')
+    // const [showLogin, setShowLogin] = useState(showLogIn)
+    const [showFirstTimeUserContent, setShowFirstTimeUserContent] =
+        useState<boolean>(window.newUser)
+    const [userName, setUsername] = useState(
+        window.username ? window.username : ''
+    )
     const [uid, setUserId] = useState(window.userId ? window.userId : '')
     const [newAnchors, _setNewAnchors] = useState<AnchorObject[]>([])
     const newAnchorsRef = React.useRef(newAnchors)
@@ -104,9 +109,9 @@ const CatseyePanel: React.FC<Props> = ({
     const handleIncomingMessages = (e: MessageEvent<any>) => {
         const message = e.data
         switch (message.command) {
-            case 'login':
-                setShowLogin(true)
-                return
+            // case 'login':
+            //     setShowLogin(true)
+            //     return
             case 'update':
                 if (message.payload.annotationList)
                     setAnnotations(message.payload.annotationList)
@@ -161,7 +166,7 @@ const CatseyePanel: React.FC<Props> = ({
     }, [])
 
     React.useEffect(() => {
-        if (!showLogIn && (!userName || !uid) && username && userId) {
+        if ((!userName || !uid) && username && userId) {
             setUsername(username)
             setUserId(userId)
         }
@@ -422,6 +427,81 @@ const CatseyePanel: React.FC<Props> = ({
         setAnnosToConsolidate(annos)
     }
 
+    console.log('showFirstTimeUserContent', showFirstTimeUserContent)
+
+    const whatToRender = showFirstTimeUserContent ? (
+        <FirstTimeUser
+            setShowFirstTimeUserContent={setShowFirstTimeUserContent}
+        />
+    ) : (
+        // : showLogin ? (
+        //     <LogIn vscode={vscode} />
+        // )
+        <div style={{ padding: '0 8px' }}>
+            <ReactBundle
+                bundle={bundle}
+                vscode={vscode}
+                username={userName}
+                window={window}
+                userId={uid}
+                currentProject={currentProject}
+                transmitUpdatedOutput={(obj: BrowserOutput) =>
+                    vscode.postMessage({
+                        command: 'updateBrowserOutput',
+                        browserOutput: obj,
+                    })
+                }
+                addToBundle={addToBundle}
+                removeFromBundle={removeFromBundle}
+            />
+            <SearchEvents
+                searchEvents={searchEvents}
+                addToBundle={addToBundle}
+                removeFromBundle={removeFromBundle}
+            />
+            <BrowserOutputs
+                browserOutputs={browserOutputs}
+                currentProject={currentProject}
+                vscode={vscode}
+                addToBundle={addToBundle}
+                removeFromBundle={removeFromBundle}
+            />
+            <TopBar
+                key={currColorTheme.kind + '-top-bar'}
+                saveAnnotationsToJson={saveAnnotationsToJson}
+                // showKeyboardShortcuts={showKeyboardShortcuts}
+                filtersUpdated={filtersUpdated}
+                vscode={vscode}
+                githubUsername={userName ?? ''}
+            />
+            {/* <MassOperationsBar
+    massOperationSelected={massOperationSelected}
+></MassOperationsBar> */}
+            {showNewAnnotation && newAnchors ? (
+                <NewAnnotation
+                    key={currColorTheme.kind + '-new-anno'}
+                    newAnnoId={newAnnotationId}
+                    newAnchors={newAnchors}
+                    vscode={vscode}
+                    notifyDone={notifyDone}
+                />
+            ) : null}
+            <AnnotationList
+                key={currColorTheme.kind + '-anno-list'}
+                title=""
+                parentId="main"
+                annotations={filtered}
+                addToBundle={addToBundle}
+                // annotations={annotations}
+                vscode={vscode}
+                window={window}
+                username={userName}
+                userId={uid}
+                consolidateAnnos={consolidateAnnos}
+            />
+        </div>
+    )
+
     return (
         <React.Fragment>
             <ThemeContext.Provider value={currColorTheme}>
@@ -434,72 +514,7 @@ const CatseyePanel: React.FC<Props> = ({
                         annotations={annosToConsolidate}
                     />
                 ) : null}
-                {!showLogin && (
-                    <div style={{ padding: '0 8px' }}>
-                        <ReactBundle
-                            bundle={bundle}
-                            vscode={vscode}
-                            username={userName}
-                            window={window}
-                            userId={uid}
-                            currentProject={currentProject}
-                            transmitUpdatedOutput={(obj: BrowserOutput) =>
-                                vscode.postMessage({
-                                    command: 'updateBrowserOutput',
-                                    browserOutput: obj,
-                                })
-                            }
-                            addToBundle={addToBundle}
-                            removeFromBundle={removeFromBundle}
-                        />
-                        <SearchEvents
-                            searchEvents={searchEvents}
-                            addToBundle={addToBundle}
-                            removeFromBundle={removeFromBundle}
-                        />
-                        <BrowserOutputs
-                            browserOutputs={browserOutputs}
-                            currentProject={currentProject}
-                            vscode={vscode}
-                            addToBundle={addToBundle}
-                            removeFromBundle={removeFromBundle}
-                        />
-                        <TopBar
-                            key={currColorTheme?.kind + '-top-bar'}
-                            saveAnnotationsToJson={saveAnnotationsToJson}
-                            // showKeyboardShortcuts={showKeyboardShortcuts}
-                            filtersUpdated={filtersUpdated}
-                            vscode={vscode}
-                            githubUsername={userName ?? ''}
-                        />
-                        {/* <MassOperationsBar
-                        massOperationSelected={massOperationSelected}
-                    ></MassOperationsBar> */}
-                        {showNewAnnotation && newAnchors ? (
-                            <NewAnnotation
-                                key={currColorTheme.kind + '-new-anno'}
-                                newAnnoId={newAnnotationId}
-                                newAnchors={newAnchors}
-                                vscode={vscode}
-                                notifyDone={notifyDone}
-                            />
-                        ) : null}
-                        <AnnotationList
-                            key={currColorTheme.kind + '-anno-list'}
-                            title=""
-                            parentId="main"
-                            annotations={filtered}
-                            // annotations={annotations}
-                            vscode={vscode}
-                            window={window}
-                            username={userName}
-                            userId={uid}
-                            consolidateAnnos={consolidateAnnos}
-                            addToBundle={addToBundle}
-                        />
-                    </div>
-                )}
-                {showLogin && <LogIn vscode={vscode} />}
+                {whatToRender}
             </ThemeContext.Provider>
         </React.Fragment>
     )

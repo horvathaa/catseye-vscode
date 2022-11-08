@@ -389,6 +389,7 @@ const ReactAnnotation: React.FC<Props> = ({
                             shareAnnotation(e, vscode, anno)
                         }
                         addAnchor={addAnchor}
+                        userId={userId}
                     />
                     <Collapse
                         in={expanded}
@@ -415,6 +416,9 @@ const ReactAnnotation: React.FC<Props> = ({
                                         <AnnotationTypesBar
                                             currentTypes={anno.types}
                                             editTypes={updateAnnotationTypes}
+                                            isReadOnly={
+                                                anno.authorId !== userId
+                                            }
                                         />
                                         <TextEditor
                                             content={anno.annotation}
@@ -444,20 +448,25 @@ const ReactAnnotation: React.FC<Props> = ({
                                                 editTypes={
                                                     updateAnnotationTypes
                                                 }
-                                            />
-                                            <CatseyeButton
-                                                buttonClicked={(
-                                                    e: React.SyntheticEvent
-                                                ) => {
-                                                    e.stopPropagation()
-                                                    setEdit(!edit)
-                                                }}
-                                                name="Edit Text"
-                                                noMargin={true}
-                                                icon={
-                                                    <EditIcon fontSize="small" />
+                                                isReadOnly={
+                                                    anno.authorId !== userId
                                                 }
                                             />
+                                            {anno.authorId === userId && (
+                                                <CatseyeButton
+                                                    buttonClicked={(
+                                                        e: React.SyntheticEvent
+                                                    ) => {
+                                                        e.stopPropagation()
+                                                        setEdit(!edit)
+                                                    }}
+                                                    name="Edit Text"
+                                                    noMargin={true}
+                                                    icon={
+                                                        <EditIcon fontSize="small" />
+                                                    }
+                                                />
+                                            )}
                                         </div>
                                         {anno.annotation.trim().length > 0 ? (
                                             <pre

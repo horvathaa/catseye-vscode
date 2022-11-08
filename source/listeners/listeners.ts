@@ -159,15 +159,22 @@ const updateAnnotationsAnchorsOnSave = (
     const annosWithNewSurroundingContext: Annotation[] =
         utils.updateAnnotationsWithAnchors(
             anchors.map((a): AnchorObject => {
-                return {
-                    ...a,
-                    surroundingCode: anchor.getSurroundingCodeArea(document, a),
-                }
+                return !a.readOnly
+                    ? {
+                          ...a,
+                          surroundingCode: anchor.getSurroundingCodeArea(
+                              document,
+                              a
+                          ),
+                      }
+                    : a
             })
         )
 
     return annosWithNewSurroundingContext.map((a) =>
-        astHelper.buildPathForAnnotation(a, document)
+        a.anchors.every((anch) => !anch.readOnly)
+            ? astHelper.buildPathForAnnotation(a, document)
+            : a
     )
 }
 
@@ -229,10 +236,19 @@ export const handleDidChangeTextDocument = (
     const stableGitPath = utils.getStableGitHubUrl(e.document.uri.fsPath)
 
     // const currentAnnotations = utils.getAllAnnotationsWithAnchorInFile(annotationList, e.document.uri.toString());
-    const currentAnnotations = utils.getAllAnnotationsWithGitUrlInFile(
+    let currentAnnotations = utils.getAllAnnotationsWithGitUrlInFile(
         annotationList,
         stableGitPath
     )
+    // .filter((a) => a.anchors.every((an) => !an.readOnly))
+    const currReadOnlyAnnotations = currentAnnotations.filter((a) =>
+        a.anchors.some((anch) => anch.readOnly)
+    )
+    if (currReadOnlyAnnotations.length) {
+        currentAnnotations = currentAnnotations.filter((a) =>
+            a.anchors.some((an) => !an.readOnly)
+        )
+    }
     const couldBeUndoOrPaste =
         utils.getAllAnnotationsWithGitUrlInFile(
             deletedAnnotations,
@@ -366,8 +382,9 @@ export const handleDidChangeTextDocument = (
             (a) => a.needToUpdate
         )
 
-        const notUpdatedAnnotations: Annotation[] =
-            utils.getAnnotationsNotWithGitUrl(annotationList, stableGitPath)
+        const notUpdatedAnnotations: Annotation[] = utils
+            .getAnnotationsNotWithGitUrl(annotationList, stableGitPath)
+            .concat(currReadOnlyAnnotations)
         const newAnnotationList: Annotation[] = translatedAnnotations.concat(
             notUpdatedAnnotations,
             rangeAdjustedAnnotations

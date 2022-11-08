@@ -55,6 +55,7 @@ import * as vscode from 'vscode'
 import { v4 as uuidv4 } from 'uuid'
 import {
     getAnnotationsOnSignIn,
+    listenForAnnotationsByProject,
     saveCommit,
 } from '../firebase/functions/functions'
 import { saveAnnotations as fbSaveAnnotations } from '../firebase/functions/functions'
@@ -110,10 +111,12 @@ export const initializeAnnotations = async (
 ): Promise<void> => {
     // const currFilename: string | undefined =
     //     vscode.window.activeTextEditor?.document.uri.path.toString()
-    const annotations: Annotation[] =
-        //sortAnnotationsByLocation(
-        await getAnnotationsOnSignIn(user, currentGitHubProject)
-    //)
+    const annotations: Annotation[] = await getAnnotationsOnSignIn(
+        user,
+        currentGitHubProject
+    )
+    listenForAnnotationsByProject(currentGitHubProject, user.uid)
+
     setAnnotationList(annotations)
     const selectedAnnotations: Annotation[] = annotations.filter(
         (a) => a.selected
@@ -412,61 +415,6 @@ export const getShikiCodeHighlighting = async (
     }
 }
 
-// We need to update the Shiki-generated HTML when the user makes an edit to annotated code
-const updateAnchorHtml = async (
-    anno: Annotation,
-    doc: vscode.TextDocument
-): Promise<Annotation> => {
-    const updatedAnchors: AnchorObject[] = await Promise.all(
-        anno.anchors.map(async (a: AnchorObject) => {
-            if (a.filename === doc.uri.toString()) {
-                const newVscodeRange: vscode.Range = new vscode.Range(
-                    new vscode.Position(
-                        a.anchor.startLine,
-                        a.anchor.startOffset
-                    ),
-                    new vscode.Position(a.anchor.endLine, a.anchor.endOffset)
-                )
-                const newAnchorText: string = doc.getText(newVscodeRange)
-                const newHtml: string = await getShikiCodeHighlighting(
-                    a.filename.toString(),
-                    newAnchorText
-                )
-                const firstLine: string = getFirstLineOfHtml(
-                    newHtml,
-                    !newAnchorText.includes('\n')
-                )
-                return {
-                    ...a,
-                    html: newHtml,
-                    anchorText: newAnchorText,
-                    anchorPreview: firstLine,
-                }
-            } else {
-                return a
-            }
-        })
-    )
-    return buildAnnotation({
-        ...anno,
-        anchors: updatedAnchors,
-        needToUpdate: true,
-    })
-}
-
-const updateHtml = async (
-    annos: Annotation[],
-    doc: vscode.TextDocument
-): Promise<Annotation[]> => {
-    let updatedList: Annotation[] = []
-    for (let x = 0; x < annos.length; x++) {
-        const newAnno = await updateAnchorHtml(annos[x], doc)
-        updatedList.push(newAnno)
-    }
-
-    return updatedList
-}
-
 export const getAllAnnotationsWithGitUrlInFile = (
     annotationList: Annotation[],
     currentUrl: string
@@ -506,19 +454,18 @@ export const handleSaveCloseEvent = async (
             : annotationList
 
     if (doc && vscode.workspace.workspaceFolders) {
-        let newList = await updateHtml(annotationsInCurrentFile, doc)
+        // let newList = await updateHtml(annotationsInCurrentFile, doc)
 
-        const ids: string[] = newList.map((a) => a.id)
+        const ids: string[] = annotationsInCurrentFile.map((a) => a.id)
         const visibleAnnotations: Annotation[] = removeOutOfDateAnnotations(
             currentFile === 'all'
-                ? newList
+                ? annotationsInCurrentFile
                 : annotationList
                       .filter((a) => !ids.includes(a.id))
-                      .concat(newList)
+                      .concat(annotationsInCurrentFile)
         )
 
         setAnnotationList(visibleAnnotations)
-
         view?.updateDisplay(visibleAnnotations)
         if (annosToSave.some((a: Annotation) => a.needToUpdate)) {
             lastSavedAnnotations = annosToSave
@@ -620,6 +567,16 @@ export const makeObjectListFromAnnotations = (
     annotationList: Annotation[]
 ): { [key: string]: any }[] => {
     return annotationList.map((a) => {
+        const anchorsToSave = a.anchors.map((anch) => {
+            let anchToSave
+            if (anch.hasOwnProperty('readOnly')) {
+                const { readOnly, ...rest } = anch
+                anchToSave = rest
+            } else {
+                anchToSave = anch
+            }
+            return anchToSave
+        })
         return {
             id: a.id ? a.id : uuidv4(),
             annotation: a.annotation ? a.annotation : '',
@@ -750,7 +707,7 @@ const getEndUrl = (visiblePath: string, projectName: string): string => {
 export const getBaseGithubUrl = (repo: string): string => {
     const url = new URL(repo)
     const host: string = url.host.includes('www.')
-        ? url.host.split('www.')[1]
+        ? url.host.split('www.')[1] // somehow this works for ghp_... repos? i guess?
         : url.host
     const pathname: string = url.pathname.includes('.git')
         ? url.pathname.split('.git')[0]
@@ -945,12 +902,15 @@ export const generateGitMetaData = async (
             : branchNames.includes('master')
             ? 'master'
             : '' // are there other common primary branch names? or another way of determining what this is lol
+
+        const repo = r?.state?.remotes[0]?.fetchUrl
+            ? normalizeRepoName(r?.state?.remotes[0]?.fetchUrl)
+            : r?.state?.remotes[0]?.pushUrl
+            ? normalizeRepoName(r?.state?.remotes[0]?.pushUrl)
+            : ''
+
         gitInfo[currentProjectName] = {
-            repo: r?.state?.remotes[0]?.fetchUrl
-                ? r?.state?.remotes[0]?.fetchUrl
-                : r?.state?.remotes[0]?.pushUrl
-                ? r?.state?.remotes[0]?.pushUrl
-                : '',
+            repo,
             branch: r?.state?.HEAD?.name ? r?.state?.HEAD?.name : '',
             commit: r?.state?.HEAD?.commit ? r?.state?.HEAD?.commit : '',
             modifiedAnnotations: [],
@@ -962,6 +922,15 @@ export const generateGitMetaData = async (
     updateCurrentGitHubCommit(gitApi)
 
     return gitInfo
+}
+
+export const normalizeRepoName = (repoName: string): string => {
+    const endOfPath = repoName.split('github.com/')[1]
+    const path = endOfPath.includes('.git')
+        ? endOfPath.split('.git')[0]
+        : endOfPath
+    // console.log('path', path)
+    return `https://github.com/${path}`
 }
 
 export const getProjectName = (filename?: string | undefined): string => {

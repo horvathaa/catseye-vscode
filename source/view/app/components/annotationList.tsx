@@ -211,6 +211,7 @@ const AnnotationList: React.FC<AnnoListProps> = ({
                                 key={`annotationList-${parentId}tsx-` + a.id}
                                 annotation={a}
                                 vscode={vscode}
+                                userId={userId}
                             />
                         ) : (
                             <ReactAnnotation

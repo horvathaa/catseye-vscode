@@ -1,22 +1,11 @@
-# Catseye in VS Code
+# Catseye in Visual Studio Code
 
-Description:
 
--   This extension was made to allow developers to store and annotate selected pieces of code. Other users can view and act upon annotations you have made.
 
-Important checks:
+Annotate your code like you annotate in Google Docs! Keep track of and share information with your teammates, all while staying in the code and not cluttering your code with extra comments.
 
--   Make sure to have the latest version of VS Code to test the extension
--   Use npm installs.
-
-How to Test the extension:
-
--   After installing the files, open up "extension.ts" and use the shortcut "Fn5" to run the file.
--   After installing the files, run the extension.ts file on VSCode and ensure it runs on the extension tester provided by VSCode and not the Chrome tester. From there another VSCode window will appear. For Mac users, use the shortcut COMMAND+SHIFT+P (CTRL+SHIFT+P for Windows) and type in the "catseye: Launch catseye" command to launch the extension.
-
-## Known Bugs
-
--   [ ] resolve/trash permissions sometimes don't show up right for replies
--   [ ] Types do not consistently save on edit
--   [ ] Sort order not implemented (ideally) should sort with the most recently updated up top
--   [ ] Merge not implemented
+Catseye can help you...
+- **Keep Track of Code-Related Information**. Keep track of your questions, bugs, and tasks by annotating the code you care about.
+- **Navigate Your Code Easily**. Catseye's annotation code anchors can be used as bookmarks for the parts of your code you want to go to.
+- **Collaborate**. Keep your conversations in the code with annotations -- ask questions, reply with answers, document issues, all while staying in the context of the code.
+- **Manage Your Information**. Catseye provides a suite of features to make finding and managing your annotations easy -- merge, filter, search and sort so you can find the information that's important to you.

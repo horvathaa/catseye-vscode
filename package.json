@@ -10,8 +10,8 @@
         "type": "git",
         "url": "https://github.com/horvathaa/catseye-vscode"
     },
-    "publisher": "ahorvath",
-    "version": "0.1.73",
+    "publisher": "catseye",
+    "version": "0.3.0",
     "engines": {
         "vscode": "^1.57.0"
     },
@@ -143,6 +143,7 @@
         "@vscode/debugprotocol": "^1.55.1",
         "glob": "^7.1.7",
         "mocha": "^8.4.0",
+        "octokit": "^2.0.10",
         "prettier": "2.7.1",
         "ts-loader": "^9.2.2",
         "typescript": "^4.3.2",

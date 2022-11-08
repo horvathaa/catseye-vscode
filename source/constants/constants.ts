@@ -125,6 +125,7 @@ export interface AnchorObject {
     potentialReanchorSpots: PotentialAnchorObject[] // consider making optional
     anchorType: AnchorType
     //add annotation field, ridding of multiple anchors
+    readOnly?: boolean
 }
 
 // create: using re-anchor algorithm (tbd how/when to run that)

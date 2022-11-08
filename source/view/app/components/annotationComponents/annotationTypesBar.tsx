@@ -19,12 +19,14 @@ import { breakpoints } from '../../utils/viewUtils'
 interface TypesProps {
     currentTypes: Type[]
     editTypes: (newTypes: Type[]) => void
+    isReadOnly?: boolean
     small?: boolean
 }
 
 const AnnotationTypesBar: React.FC<TypesProps> = ({
     currentTypes,
     editTypes,
+    isReadOnly = false,
     small = true,
 }) => {
     const [types, setTypes] = React.useState<Type[]>(currentTypes)
@@ -87,7 +89,7 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
             // Can't mutate the types array like done previously!
             updatedTypes = [selectedType].concat(types)
         }
-        console.log('updated in handleAnnoClick', updatedTypes)
+        // console.log('updated in handleAnnoClick', updatedTypes)
         setTypes(updatedTypes)
         editTypes(updatedTypes)
     }
@@ -104,6 +106,7 @@ const AnnotationTypesBar: React.FC<TypesProps> = ({
                         variant={types.includes(type) ? 'default' : 'outlined'}
                         size={small === true ? 'small' : undefined}
                         onClick={() => handleAnnoClick(type)}
+                        disabled={isReadOnly}
                     />
                 )
             })}

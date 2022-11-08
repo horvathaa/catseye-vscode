@@ -28,4 +28,7 @@ const config = {
 
 firebase.initializeApp(config)
 
+export const clientId = process.env.GH_CLIENT_ID
+export const clientSecret = process.env.GH_CLIENT_SECRET
+
 export default firebase

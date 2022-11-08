@@ -32,9 +32,10 @@ import { GitDiffCarousel } from './annotationComponents/gitDiffCarousel'
 interface Props {
     annotation: Annotation
     vscode: any
+    userId: string
 }
 
-const HistoryAnnotation: React.FC<Props> = ({ annotation, vscode }) => {
+const HistoryAnnotation: React.FC<Props> = ({ annotation, vscode, userId }) => {
     // const [dynamicCardStyle, setDynamicCardStyle] = React.useState(cardStyle)
     const [expanded, setExpanded] = React.useState(false)
     // const [anchored, setAnchored] = React.useState(true)
@@ -171,6 +172,7 @@ const HistoryAnnotation: React.FC<Props> = ({ annotation, vscode }) => {
                         expanded={expanded}
                         setExpanded={setExpanded}
                         // anchored={anchored}
+                        userId={userId}
                         anchored={true}
                         anno={anno}
                         deleteAnnotation={(e) =>

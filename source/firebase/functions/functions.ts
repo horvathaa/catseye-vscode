@@ -13,6 +13,7 @@ import {
     AnnotationEvent,
     BrowserOutput,
     CommitObject,
+    SerializedBundle,
     WebSearchEvent,
 } from '../../constants/constants'
 import {
@@ -500,6 +501,13 @@ export const updateOutput = (updatedOutput: BrowserOutput) => {
         .collection(DB_COLLECTIONS.OUTPUT)
         .doc(updatedOutput.id)
         .set(updatedOutput)
+}
+
+export const updateBundle = (bundle: SerializedBundle) => {
+    return db
+        .collection(DB_COLLECTIONS.BUNDLE)
+        .doc(bundle.id)
+        .set(bundle, { merge: true })
 }
 // myObject = { a: 1, b: 2, c: 3 }
 // myObject = { a: 1, b: 2, c: 3 }

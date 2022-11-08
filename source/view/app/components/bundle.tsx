@@ -5,6 +5,8 @@ import {
     isBrowserOutput,
     isWebSearchEvent,
     Bundle as BundleInterface,
+    BundleItemTypes,
+    BundleItem,
 } from '../../../constants/constants'
 import ReactAnnotation from './annotation'
 import { BrowserOutput } from './browserOutputs'
@@ -14,6 +16,7 @@ import TextEditor from './annotationComponents/textEditor'
 import CatseyeButton from './annotationComponents/CatseyeButton'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
+import SaveIcon from '@mui/icons-material/Save'
 
 interface Props {
     bundle: BundleInterface
@@ -64,7 +67,44 @@ export const Bundle: React.FC<Props> = ({
         <div
             className={`${styles['p2']} ${styles['m2']} ${styles['border-1px-medium']} ${styles['border-radius-8']}`}
         >
-            <h2 className={`${styles['p2']}`}>Bundle</h2>
+            <div
+                className={`${styles['flex']} ${styles['justify-content-space-between']}`}
+            >
+                <h2 className={`${styles['p2']}`}>Bundle</h2>
+                <CatseyeButton
+                    buttonClicked={() => {
+                        const convertedBundleArray = Array.from(
+                            internalBundle,
+                            ([key, value]): BundleItem => {
+                                const obj = bundle.objs.find(
+                                    (o) => o.id === key
+                                )
+                                if (!obj)
+                                    return {
+                                        id: '',
+                                        type: BundleItemTypes['Unknown'],
+                                        annotation: '',
+                                    }
+                                const type = Annotation.isAnnotation(obj)
+                                    ? BundleItemTypes['Annotation']
+                                    : isBrowserOutput(obj)
+                                    ? BundleItemTypes['BrowserOutput']
+                                    : isWebSearchEvent(obj)
+                                    ? BundleItemTypes['WebSearchEvent']
+                                    : BundleItemTypes['Unknown']
+                                return { id: key, type, annotation: value }
+                            }
+                        )
+                        // console.log('hewwo???', convertedBundleArray)
+                        vscode.postMessage({
+                            command: 'saveBundle',
+                            bundle: convertedBundleArray,
+                        })
+                    }}
+                    name="Save"
+                    icon={<SaveIcon fontSize="small" />}
+                />
+            </div>
             {bundle.objs.map((o) => {
                 const component = Annotation.isAnnotation(o) ? (
                     <ReactAnnotation
@@ -112,26 +152,34 @@ export const Bundle: React.FC<Props> = ({
                             }
                         />
                     ) : (
-                        <div style={{ display: 'flex' }}>
-                            {internalBundle.get(o.id)}
-                            <CatseyeButton
-                                buttonClicked={() =>
-                                    setEditingBundle(
-                                        new Map(editingBundle.set(o.id, true))
-                                    )
-                                }
-                                name="Edit"
-                                icon={<EditIcon fontSize="small" />}
-                            />
-                            <CatseyeButton
-                                buttonClicked={() =>
-                                    setInternalBundle(
-                                        new Map(internalBundle.set(o.id, ''))
-                                    )
-                                }
-                                name="Delete"
-                                icon={<DeleteIcon fontSize="small" />}
-                            />
+                        <div
+                            className={`${styles['p2']} ${styles['m2']} ${styles['flex']} ${styles['justify-content-space-between']}`}
+                        >
+                            <div>{internalBundle.get(o.id)}</div>
+                            <div>
+                                <CatseyeButton
+                                    buttonClicked={() =>
+                                        setEditingBundle(
+                                            new Map(
+                                                editingBundle.set(o.id, true)
+                                            )
+                                        )
+                                    }
+                                    name="Edit"
+                                    icon={<EditIcon fontSize="small" />}
+                                />
+                                <CatseyeButton
+                                    buttonClicked={() =>
+                                        setInternalBundle(
+                                            new Map(
+                                                internalBundle.set(o.id, '')
+                                            )
+                                        )
+                                    }
+                                    name="Delete"
+                                    icon={<DeleteIcon fontSize="small" />}
+                                />
+                            </div>
                         </div>
                     )
                 return (

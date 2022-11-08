@@ -230,6 +230,11 @@ export const createView = async (
                         viewHelper.handleManualReanchor(oldAnchor, annoId)
                         break
                     }
+                    case 'saveBundle': {
+                        const { bundle } = message
+                        viewHelper.handleSaveBundle(bundle)
+                        break
+                    }
                     case 'showResolvedUpdated': {
                         const { showResolved } = message
                         viewHelper.handleShowResolvedUpdated(showResolved)

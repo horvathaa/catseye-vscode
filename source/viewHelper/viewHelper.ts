@@ -20,6 +20,8 @@ import {
     ReanchorInformation,
     EventType,
     BrowserOutput,
+    BundleItem,
+    SerializedBundle,
 } from '../constants/constants'
 import {
     user,
@@ -77,6 +79,7 @@ import {
 import {
     emitEvent,
     saveAnnotations as fbSaveAnnotations,
+    updateBundle,
     updateOutput,
 } from '../firebase/functions/functions'
 import { v4 as uuidv4 } from 'uuid'
@@ -1070,6 +1073,16 @@ export const handleReanchor = (
                 addHighlightsToEditor(annotationList, currTextEditor)
         }
     }
+}
+
+export const handleSaveBundle = (bundle: BundleItem[]) => {
+    if (!user) return
+    const newBundle: SerializedBundle = {
+        uid: user.uid,
+        id: uuidv4(),
+        bundleItems: bundle,
+    }
+    updateBundle(newBundle)
 }
 
 export const handleManualReanchor = async (

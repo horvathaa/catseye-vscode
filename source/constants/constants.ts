@@ -464,7 +464,28 @@ export const isBrowserOutput = (obj: any): obj is BrowserOutput => {
 }
 
 export interface Bundle {
-    objs: (Annotation | WebSearchEvent | BrowserOutput)[]
+    objs: BundleItemType[]
     // annotation: string
     objAnnos: Map<string, string>
+}
+
+export interface BundleItem {
+    id: string
+    type: BundleItemTypes
+    annotation: string
+}
+
+export type BundleItemType = Annotation | WebSearchEvent | BrowserOutput
+
+export enum BundleItemTypes {
+    Annotation = 'vscode-annotations',
+    WebSearchEvent = 'search-events',
+    BrowserOutput = 'browser-output',
+    Unknown = '',
+}
+
+export interface SerializedBundle {
+    id: string
+    uid: string
+    bundleItems: BundleItem[]
 }

@@ -465,5 +465,6 @@ export const isBrowserOutput = (obj: any): obj is BrowserOutput => {
 
 export interface Bundle {
     objs: (Annotation | WebSearchEvent | BrowserOutput)[]
-    annotation: string
+    // annotation: string
+    objAnnos: Map<string, string>
 }

@@ -78,7 +78,7 @@ const GitDiff: React.FC<GitProps> = ({ gitDiff, annoId, anchorId }) => {
                   const images = body.match(/!\[.*\]\(.*\)/g) ?? []
                   console.log('images', images)
                   const imgs = images?.map((i) => {
-                      if (i) {
+                      if (i !== null) {
                           const src = i
                               .match(/\(.*\)/)[0]
                               .replace('(', '')

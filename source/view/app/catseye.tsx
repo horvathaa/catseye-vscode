@@ -57,7 +57,10 @@ const CatseyePanel: React.FC<Props> = ({
     username,
     userId,
 }) => {
-    const [bundle, setBundle] = useState<Bundle>({ objs: [], annotation: '' })
+    const [bundle, setBundle] = useState<Bundle>({
+        objs: [],
+        objAnnos: new Map(),
+    })
     const [annotations, setAnnotations] = useState(window.data)
     // const [showLogin, setShowLogin] = useState(showLogIn)
     const [showFirstTimeUserContent, setShowFirstTimeUserContent] =

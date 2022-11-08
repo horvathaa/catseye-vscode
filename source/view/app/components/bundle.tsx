@@ -10,6 +10,10 @@ import ReactAnnotation from './annotation'
 import { BrowserOutput } from './browserOutputs'
 import { SearchEvent } from './searchEvents'
 import styles from '../styles/browserOutputs.module.css'
+import TextEditor from './annotationComponents/textEditor'
+import CatseyeButton from './annotationComponents/CatseyeButton'
+import EditIcon from '@mui/icons-material/Edit'
+import DeleteIcon from '@mui/icons-material/Delete'
 
 interface Props {
     bundle: BundleInterface
@@ -34,6 +38,28 @@ export const Bundle: React.FC<Props> = ({
     addToBundle,
     removeFromBundle,
 }) => {
+    const [internalBundle, setInternalBundle] = React.useState<
+        Map<string, string>
+    >(new Map())
+    const [editingBundle, setEditingBundle] = React.useState<
+        Map<string, boolean>
+    >(new Map())
+
+    React.useEffect(() => {
+        let newMap = new Map()
+        let newEditMap = new Map()
+        bundle.objs.forEach((o) => {
+            internalBundle.has(o.id)
+                ? newMap.set(o.id, internalBundle.get(o.id))
+                : newMap.set(o.id, '')
+            editingBundle.has(o.id)
+                ? newEditMap.set(o.id, editingBundle.get(o.id))
+                : newEditMap.set(o.id, true)
+        })
+        setInternalBundle(newMap)
+        setEditingBundle(newEditMap)
+    }, [bundle])
+
     return (
         <div
             className={`${styles['p2']} ${styles['m2']} ${styles['border-1px-medium']} ${styles['border-radius-8']}`}
@@ -63,7 +89,57 @@ export const Bundle: React.FC<Props> = ({
                         removeFromBundle={removeFromBundle}
                     />
                 ) : null
-                return <div key={o.id + '-bundle'}>{component}</div>
+                const editContent =
+                    editingBundle.has(o.id) &&
+                    editingBundle.get(o.id) === true ? (
+                        <TextEditor
+                            content={internalBundle.get(o.id)}
+                            submissionHandler={(newContent) => {
+                                setInternalBundle(
+                                    new Map(
+                                        internalBundle.set(o.id, newContent)
+                                    )
+                                )
+                                setEditingBundle(
+                                    new Map(editingBundle.set(o.id, false))
+                                )
+                            }}
+                            showSplitButton={false}
+                            cancelHandler={() =>
+                                setEditingBundle(
+                                    new Map(editingBundle.set(o.id, false))
+                                )
+                            }
+                        />
+                    ) : (
+                        <div style={{ display: 'flex' }}>
+                            {internalBundle.get(o.id)}
+                            <CatseyeButton
+                                buttonClicked={() =>
+                                    setEditingBundle(
+                                        new Map(editingBundle.set(o.id, true))
+                                    )
+                                }
+                                name="Edit"
+                                icon={<EditIcon fontSize="small" />}
+                            />
+                            <CatseyeButton
+                                buttonClicked={() =>
+                                    setInternalBundle(
+                                        new Map(internalBundle.set(o.id, ''))
+                                    )
+                                }
+                                name="Delete"
+                                icon={<DeleteIcon fontSize="small" />}
+                            />
+                        </div>
+                    )
+                return (
+                    <div key={o.id + '-bundle'}>
+                        {component}
+                        {editContent}
+                    </div>
+                )
             })}
         </div>
     )

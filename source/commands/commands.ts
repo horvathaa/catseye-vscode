@@ -369,6 +369,35 @@ export const createNewAnnotation = async () => {
         })
 }
 
+export const createAutomatedAnnotation = (
+    range: vscode.Range,
+    editor: vscode.TextEditor,
+    annotationContent: string
+): void => {
+    const newAnnoId: string = uuidv4()
+    const createdTimestamp = new Date().getTime()
+    const projectName: string = utils.getProjectName(editor.document.uri.fsPath)
+    const anchorObject = utils.createBasicAnchorObject(
+        editor,
+        range,
+        newAnnoId,
+        createdTimestamp,
+        projectName
+    )
+    const temp = utils.createBasicAnnotation(
+        anchorObject,
+        createdTimestamp,
+        newAnnoId,
+        projectName,
+        false,
+        annotationContent
+    )
+    setAnnotationList(annotationList.concat([temp]))
+    view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList))
+    anchor.addHighlightsToEditor(annotationList, editor)
+    return
+}
+
 // create highlight annotation
 export const addNewHighlight = (
     selected?: boolean

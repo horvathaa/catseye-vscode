@@ -105,7 +105,10 @@ interface StartPosition {
     startLine: number
     startOffset: number
 }
-const getCodeLine = (text: string, start?: StartPosition): CodeLine[] => {
+export const getCodeLine = (
+    text: string,
+    start?: StartPosition
+): CodeLine[] => {
     //preprocessing potential new anchor ranges
     return text.split('\n').map((t, i) => {
         let n: number[] = []

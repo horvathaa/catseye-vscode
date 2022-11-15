@@ -463,7 +463,7 @@ export const listenForOutput = () => {
                 outputSnapshot.docChanges().forEach((change) => {
                     const newOutput: BrowserOutput =
                         change.doc.data() as BrowserOutput
-                    console.log('got these o', change.doc.data())
+                    // console.log('got these o', change.doc.data())
                     switch (change.type) {
                         case 'added': {
                             setBrowserOutputs(browserOutputs.concat(newOutput))

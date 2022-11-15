@@ -51,6 +51,9 @@ import {
 } from '../constants/constants'
 import { createEvent } from '../utils/utils'
 import { emitEvent } from '../firebase/functions/functions'
+import * as ts from 'typescript'
+import { getCodeLine } from '../anchorFunctions/reanchor'
+import { CommentConfigHandler } from '../commentConfigHandler/commentConfigHandler'
 
 // let timeSinceLastEdit: number = -1
 // let tempChanges: any[] = []
@@ -105,6 +108,101 @@ export const handleChangeActiveTextEditor = (
 ) => {
     if (vscode.workspace.workspaceFolders) {
         if (TextEditor) {
+            const codeLines = getCodeLine(TextEditor.document.getText())
+            // const tokenized = ts.createSourceFile(
+            //     TextEditor.document.fileName,
+            //     TextEditor.document.getText(),
+            //     ts.ScriptTarget.Latest
+            // )
+
+            const commentConfigHandler = new CommentConfigHandler()
+            console.log(
+                'handler',
+                commentConfigHandler,
+                'wtf',
+                TextEditor.document.languageId
+            )
+            const commentCfg = commentConfigHandler.getCommentConfig(
+                TextEditor.document.languageId
+            )
+            console.log('commentCfg', commentCfg)
+
+            function escapeRegex(string: string) {
+                return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+            }
+
+            const commentLineDelimiter = commentCfg?.lineComment
+            console.log('commentLineDelimeter', commentLineDelimiter)
+
+            const regex = new RegExp(
+                `\s*${escapeRegex(commentLineDelimiter ?? '//')}.*`,
+                'ig'
+            )
+            const blockRegexOpen = new RegExp(
+                `\s*${escapeRegex(
+                    commentCfg && commentCfg.blockComment
+                        ? commentCfg.blockComment[0]
+                        : '/*'
+                )}.*`,
+                'ig'
+            )
+
+            const blockRegexClose = new RegExp(
+                `\s*${escapeRegex(
+                    commentCfg && commentCfg.blockComment
+                        ? commentCfg.blockComment[1]
+                        : '*/'
+                )}.*`,
+                'ig'
+            )
+            const comments: any[] = []
+            const blockCommentQueue: any[] = []
+            codeLines.forEach((l) => {
+                const lineText = l.code.map((c) => c.token).join(' ')
+                // console.log('lineText', lineText)
+                const isLineComment = regex.test(lineText)
+                // ||
+                // blockRegexOpen.test(lineText) ||
+                // blockRegexClose.test(lineText)
+
+                if (isLineComment) {
+                    const type =
+                        l.code[0].token === commentCfg?.lineComment
+                            ? 'wholeLine'
+                            : 'trailing'
+                    l.code.find((c) => c.token === commentCfg?.lineComment) &&
+                        comments.push({ ...l, type, text: lineText })
+                } else if (blockRegexOpen.test(lineText)) {
+                    blockCommentQueue.push({
+                        ...l,
+                        type: 'blockComment',
+                        startLine: l.line,
+                        text: lineText,
+                    })
+                } else if (blockRegexClose.test(lineText)) {
+                    if (blockCommentQueue.length) {
+                        const newComment = {
+                            ...blockCommentQueue.pop(),
+                            endLine: l.line,
+                            text: lineText,
+                        }
+                        comments.push(newComment)
+                    }
+                }
+
+                // console.log(
+                //     `wtf -- ${
+                //         isLineComment
+                //             ? 'this is a comment'
+                //             : 'this is NOT a comment'
+                //     }`,
+                //     'line',
+                //     l
+                // )
+            })
+            // console.log('comments', comments)
+
+            // console.log('codeLines', codeLines, 'tokenized', tokenized)
             if (TextEditor.options?.tabSize)
                 setTabSize(TextEditor.options.tabSize)
             if (TextEditor.options?.insertSpaces)

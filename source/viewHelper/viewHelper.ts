@@ -1180,6 +1180,7 @@ export const handleUpdateBrowserOutput = (
     )
     setBrowserOutputs(updatedBrowserOutputs)
 }
+
 export const handleOpenSignInPage = () => {
     vscode.env.openExternal(
         vscode.Uri.parse(

@@ -1480,38 +1480,45 @@ export const createAnchorOnCommitFromAnchorObject = (
     }
 }
 
+// i find it VERY hard to believe that vscode does not have an equivalent method somewhere
+// but I can't find it!
+const isTextEditor = (obj: any): obj is vscode.TextEditor => {
+    return obj.hasOwnProperty('document')
+}
+
 export const createBasicAnchorObject = (
-    activeTextEditor: vscode.TextEditor,
+    activeTextEditor: vscode.TextEditor | vscode.TextDocument,
     range: vscode.Range,
     newAnnoId: string,
     createdTime?: number,
     project?: string,
     gitDiffPast?: GitDiffPathLog[]
 ): AnchorObject => {
+    const document = isTextEditor(activeTextEditor)
+        ? activeTextEditor.document
+        : activeTextEditor
     const projectName: string = project
         ? project
-        : getProjectName(activeTextEditor.document.uri.fsPath)
-    const programmingLang: string = activeTextEditor.document.uri
-        .toString()
-        .split('.')[
-        activeTextEditor.document.uri.toString().split('.').length - 1
+        : getProjectName(document.uri.fsPath)
+    const programmingLang: string = document.uri.toString().split('.')[
+        document.uri.toString().split('.').length - 1
     ]
     const visiblePath: string = vscode.workspace.workspaceFolders
-        ? getVisiblePath(projectName, activeTextEditor.document.uri.fsPath)
-        : activeTextEditor.document.uri.fsPath
+        ? getVisiblePath(projectName, document.uri.fsPath)
+        : document.uri.fsPath
     const anc = createAnchorFromRange(range)
     const anchorId = uuidv4()
 
     const createdTimestamp = createdTime ? createdTime : new Date().getTime()
 
     const stableGitUrl = getGithubUrl(visiblePath, projectName, true)
-    const surrounding = getSurroundingCodeArea(activeTextEditor.document, range)
-    const anchorType = getAnchorType(anc, activeTextEditor.document)
+    const surrounding = getSurroundingCodeArea(document, range)
+    const anchorType = getAnchorType(anc, document)
     const mainObj = {
         anchor: anc,
-        anchorText: activeTextEditor.document.getText(range),
+        anchorText: document.getText(range),
         html: '',
-        filename: activeTextEditor.document.uri.toString(),
+        filename: document.uri.toString(),
         gitUrl: getGithubUrl(visiblePath, projectName, false),
         stableGitUrl,
         gitRepo: gitInfo[projectName]?.repo ? gitInfo[projectName]?.repo : '',
@@ -1548,10 +1555,7 @@ export const createBasicAnchorObject = (
                 anchorType,
             },
         ],
-        path: astHelper.generateCodeContextPath(
-            range,
-            activeTextEditor.document
-        ),
+        path: astHelper.generateCodeContextPath(range, document),
         potentialReanchorSpots: [],
         surroundingCode: surrounding,
         anchorType,
@@ -1568,7 +1572,8 @@ export const createBasicAnnotation = (
     createdTime?: number,
     newAnnoId?: string,
     project?: string,
-    selected?: boolean
+    selected?: boolean,
+    annotationContent?: string
 ): Annotation => {
     const createdTimestamp = createdTime ? createdTime : new Date().getTime()
     const id = newAnnoId ? newAnnoId : uuidv4()
@@ -1577,7 +1582,7 @@ export const createBasicAnnotation = (
     return buildAnnotation({
         id,
         anchors: [anchorObject],
-        annotation: '',
+        annotation: annotationContent ?? '',
         deleted: false,
         outOfDate: false,
         createdTimestamp,

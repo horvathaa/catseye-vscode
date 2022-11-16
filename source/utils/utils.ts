@@ -1497,6 +1497,7 @@ export const createBasicAnchorObject = (
     const document = isTextEditor(activeTextEditor)
         ? activeTextEditor.document
         : activeTextEditor
+
     const projectName: string = project
         ? project
         : getProjectName(document.uri.fsPath)
@@ -1507,6 +1508,7 @@ export const createBasicAnchorObject = (
         ? getVisiblePath(projectName, document.uri.fsPath)
         : document.uri.fsPath
     const anc = createAnchorFromRange(range)
+
     const anchorId = uuidv4()
 
     const createdTimestamp = createdTime ? createdTime : new Date().getTime()
@@ -1514,6 +1516,7 @@ export const createBasicAnchorObject = (
     const stableGitUrl = getGithubUrl(visiblePath, projectName, true)
     const surrounding = getSurroundingCodeArea(document, range)
     const anchorType = getAnchorType(anc, document)
+
     const mainObj = {
         anchor: anc,
         anchorText: document.getText(range),

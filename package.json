@@ -52,6 +52,10 @@
             {
                 "command": "catseye.createHistoryAnnotation",
                 "title": "Catseye: Create History Annotation"
+            },
+            {
+                "command": "catseye.createAutomatedAnnotation",
+                "title": "Catseye: Create Automated Annotation"
             }
         ],
         "keybindings": [

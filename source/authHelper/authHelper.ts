@@ -36,7 +36,6 @@ require('dotenv').config({
 
 const SCOPES = ['read:user', 'user:email', 'repo']
 
-// Called on VS Code launch
 export const initializeAuth = async () => {
     let session: vscode.AuthenticationSession | undefined
     const authSessionOptions: vscode.AuthenticationGetSessionOptions = {
@@ -45,7 +44,6 @@ export const initializeAuth = async () => {
         // forceNewSession: true, // -- use for debugging and screenshot grabbing of first time user experience
     }
     try {
-        // create VS Code GitHub auth session
         session = await vscode.authentication.getSession(
             'github',
             SCOPES,
@@ -58,7 +56,6 @@ export const initializeAuth = async () => {
     catseyeLog.appendLine('creating session')
     // console.log('session', session)
     if (session) {
-        // get user auth token and account info
         const { accessToken, account } = session
         setGitInfo({ ...gitInfo, author: account.label })
         const id = account.id.toString()
@@ -122,7 +119,6 @@ export const initializeAuth = async () => {
             return
         }
 
-        // sign out of super user account
         await fbSignOut()
 
         try {

@@ -30,6 +30,7 @@ import { partition } from './utils/utils'
 import { saveAnnotations } from './firebase/functions/functions'
 import { HoverController } from './hovers/hoverController'
 import { addHighlightsToEditor } from './anchorFunctions/anchor'
+import { ConvertCommentHoverController } from './hovers/convertCommentHoverController'
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports
 export const gitApi = gitExtension?.getAPI(1)
 console.log('gitApi', gitApi)
@@ -341,6 +342,20 @@ export async function activate(context: vscode.ExtensionContext) {
         () => commands.createHistoryAnnotation()
     )
 
+    let createAutomatedAnnotationDisposable = vscode.commands.registerCommand(
+        'catseye.createAutomatedAnnotation',
+        (json) => {
+            const { range, documentUri, annotationContent, originalRange } =
+                json
+            commands.createAutomatedAnnotation(
+                range,
+                originalRange,
+                documentUri,
+                annotationContent
+            )
+        }
+    )
+
     // let copyDisposable = vscode.commands.registerTextEditorCommand(
     //     'editor.action.clipboardCopyAction',
     //     commands.overriddenClipboardPasteAction
@@ -355,8 +370,6 @@ export async function activate(context: vscode.ExtensionContext) {
         commands.overriddenClipboardPasteAction
     )
 
-    console.log('huh?', pasteDisposable)
-
     // console.log('lmaoooo', await vscode.commands.getCommands())
 
     /*************************************************************************************/
@@ -370,6 +383,7 @@ export async function activate(context: vscode.ExtensionContext) {
     )
 
     let hoverProviderDisposable = new HoverController()
+    let commentProviderDisposable = new ConvertCommentHoverController()
 
     /*************************************************************************************/
     /**************************************** DISPOSABLES ********************************/
@@ -394,11 +408,13 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(navigateBackSelectedDisposable)
     context.subscriptions.push(scrollDisposable)
     context.subscriptions.push(createHistoryDisposable)
+    context.subscriptions.push(createAutomatedAnnotationDisposable)
     // context.subscriptions.push(copyDisposable)
     // context.subscriptions.push(cutDisposable)
     context.subscriptions.push(pasteDisposable)
 
     context.subscriptions.push(hoverProviderDisposable)
+    context.subscriptions.push(commentProviderDisposable)
 }
 
 // // this method is called when your extension is deactivated

@@ -11,6 +11,7 @@ import {
 import { annotationList } from '../extension'
 import {
     createRangeFromAnchorObject,
+    createRangeFromObject,
     getAnchorsWithGitUrl,
 } from '../anchorFunctions/anchor'
 import {
@@ -19,7 +20,21 @@ import {
 } from '../utils/utils'
 import { CommentConfigHandler } from '../commentConfigHandler/commentConfigHandler'
 import { getCodeLine } from '../anchorFunctions/reanchor'
-const maxSmallIntegerV8 = 2 ** 30
+const maxSmallIntegerV8 = 2 ** 30 // whjy this again? why does this work for anno and not this im confused
+
+const createRangeFromTokenData = (obj: any): Range => {
+    if (obj.hasOwnProperty('endLine') && obj.hasOwnProperty('startLine')) {
+        return new Range(
+            new Position(obj.startLine, obj.startOffset),
+            new Position(obj.endLine, obj.endOffset)
+        )
+    } else {
+        return new Range(
+            new Position(obj.line, obj.startOffset),
+            new Position(obj.line, obj.endOffset)
+        )
+    }
+}
 export class ConvertCommentHoverController implements Disposable {
     private _hoverProviderDisposable: Disposable | undefined
 
@@ -31,27 +46,171 @@ export class ConvertCommentHoverController implements Disposable {
         this._hoverProviderDisposable?.dispose()
     }
 
-    private findAndTokenizeComments(document: TextDocument) {
+    // private findAndTokenizeComments(document: TextDocument, range: Range) {
+    //     console.log('wheiohiowefhoie')
+    //     const codeLines = getCodeLine(document.getText())
+    //     // const tokenized = ts.createSourceFile(
+    //     //     TextEditor.document.fileName,
+    //     //     TextEditor.document.getText(),
+    //     //     ts.ScriptTarget.Latest
+    //     // )
+
+    //     const commentConfigHandler = new CommentConfigHandler()
+    //     console.log('handler', commentConfigHandler, 'wtf', document.languageId)
+    //     const commentCfg = commentConfigHandler.getCommentConfig(
+    //         document.languageId
+    //     )
+    //     console.log('commentCfg', commentCfg)
+
+    //     function escapeRegex(string: string) {
+    //         return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+    //     }
+
+    //     const commentLineDelimiter = commentCfg?.lineComment
+    //     console.log('commentLineDelimeter', commentLineDelimiter)
+
+    //     const regex = new RegExp(
+    //         `\s*${escapeRegex(commentLineDelimiter ?? '//')}.*`,
+    //         'ig'
+    //     )
+    //     const blockRegexOpen = new RegExp(
+    //         `\s*${escapeRegex(
+    //             commentCfg && commentCfg.blockComment
+    //                 ? commentCfg.blockComment[0]
+    //                 : '/*'
+    //         )}.*`,
+    //         'ig'
+    //     )
+
+    //     const blockRegexClose = new RegExp(
+    //         `\s*${escapeRegex(
+    //             commentCfg && commentCfg.blockComment
+    //                 ? commentCfg.blockComment[1]
+    //                 : '*/'
+    //         )}.*`,
+    //         'ig'
+    //     )
+    //     const comments: any[] = []
+    //     const blockCommentQueue: any[] = []
+    //     codeLines.forEach((l) => {
+    //         const lineText = l.code.map((c) => c.token).join(' ')
+    //         // console.log('lineText', lineText)
+    //         const isLineComment = regex.test(lineText)
+    //         // ||
+    //         // blockRegexOpen.test(lineText) ||
+    //         // blockRegexClose.test(lineText)
+
+    //         if (isLineComment) {
+    //             const type =
+    //                 l.code[0].token === commentCfg?.lineComment
+    //                     ? 'wholeLine'
+    //                     : 'trailing'
+    //             const match = l.code.find(
+    //                 (c) => c.token === commentCfg?.lineComment
+    //             )
+    //             // &&
+    //             match &&
+    //                 comments.push({
+    //                     ...l,
+    //                     type,
+    //                     startOffset: match.offset,
+    //                     endOffset: l.code[l.code.length - 1].offset,
+    //                 })
+    //         } else if (blockRegexOpen.test(lineText)) {
+    //             const blockQuoteChar =
+    //                 commentCfg && commentCfg?.blockComment
+    //                     ? commentCfg.blockComment[0]
+    //                     : '/*'
+    //             const startBlock = l.code.find(
+    //                 (c) => c.token === blockQuoteChar
+    //             )
+    //             blockCommentQueue.push({
+    //                 ...l,
+    //                 type: 'blockComment',
+    //                 startLine: l.line,
+    //                 startOffset: startBlock?.offset ?? 0,
+    //             })
+    //         } else if (blockRegexClose.test(lineText)) {
+    //             if (blockCommentQueue.length) {
+    //                 const blockQuoteChar =
+    //                     commentCfg && commentCfg?.blockComment
+    //                         ? commentCfg.blockComment[1]
+    //                         : '/*'
+    //                 const endBlock = l.code.find(
+    //                     (c) => c.token === blockQuoteChar
+    //                 )
+    //                 const newComment = {
+    //                     ...blockCommentQueue.pop(),
+    //                     endLine: l.line,
+    //                     endOffset: endBlock?.offset ?? blockQuoteChar.length,
+    //                 }
+    //                 comments.push(newComment)
+    //             }
+    //         }
+    //     })
+    //     console.log('comments', comments)
+
+    //     const commentRangess = comments.map(
+    //         (c) =>
+    //             // document.validateRange(
+    //             createRangeFromTokenData(c)
+    //         // )
+    //     )
+    //     console.log('commentRanges', commentRangess)
+    //     const match = commentRangess.find((c) => c.contains(range))
+    //     console.log('match', match)
+    //     if (!match) return undefined
+
+    //     return new Hover('hi mom', match)
+
+    //     // const commentRanges = comments.map((c) => {
+    //     //     if (c.type === 'wholeLine') {
+    //     //         let commentContent = c.text.replace(commentLineDelimiter, '')
+    //     //         const attachLine = codeLines.find(
+    //     //             (codeLine) => codeLine.line === c.line + 1
+    //     //         )
+    //     //         if (attachLine) {
+    //     //             const range = document.validateRange(
+    //     //                 new Range(
+    //     //                     attachLine.line,
+    //     //                     attachLine.code[0].offset,
+    //     //                     attachLine.line,
+    //     //                     attachLine.code[attachLine.code.length - 1].offset
+    //     //                 )
+    //     //             )
+    //     //         }
+    //     //     }
+    //     // })
+    // }
+
+    async provideCommentAnnotationCreationHover(
+        document: TextDocument,
+        position: Position
+    ): Promise<Hover | undefined> {
+        const range = document.validateRange(
+            new Range(
+                position.line,
+                position.character,
+                position.line,
+                position.character
+            )
+        )
+
         const codeLines = getCodeLine(document.getText())
-        // const tokenized = ts.createSourceFile(
-        //     TextEditor.document.fileName,
-        //     TextEditor.document.getText(),
-        //     ts.ScriptTarget.Latest
-        // )
 
         const commentConfigHandler = new CommentConfigHandler()
-        console.log('handler', commentConfigHandler, 'wtf', document.languageId)
+        // console.log('handler', commentConfigHandler, 'wtf', document.languageId)
         const commentCfg = commentConfigHandler.getCommentConfig(
             document.languageId
         )
-        console.log('commentCfg', commentCfg)
+        // console.log('commentCfg', commentCfg)
 
         function escapeRegex(string: string) {
             return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
         }
 
-        const commentLineDelimiter = commentCfg?.lineComment
-        console.log('commentLineDelimeter', commentLineDelimiter)
+        const commentLineDelimiter = commentCfg?.lineComment ?? '//'
+        // console.log('commentLineDelimeter', commentLineDelimiter)
 
         const regex = new RegExp(
             `\s*${escapeRegex(commentLineDelimiter ?? '//')}.*`,
@@ -89,107 +248,197 @@ export class ConvertCommentHoverController implements Disposable {
                     l.code[0].token === commentCfg?.lineComment
                         ? 'wholeLine'
                         : 'trailing'
-                l.code.find((c) => c.token === commentCfg?.lineComment) &&
-                    comments.push({ ...l, type })
+                const match = l.code.find(
+                    (c) => c.token === commentCfg?.lineComment
+                )
+                let newRange = undefined
+                const text = l.code.map((c) => c.token).join(' ')
+                let commentContent =
+                    type === 'wholeLine'
+                        ? text.replace(commentLineDelimiter, '').trim()
+                        : text.split(commentLineDelimiter)[1].trim()
+                if (type === 'wholeLine') {
+                    const attachLine = codeLines.find(
+                        (codeLine) => codeLine.line === l.line + 1
+                    )
+                    if (attachLine && !attachLine.isEmptyLine) {
+                        newRange = document.validateRange(
+                            new Range(
+                                attachLine.line,
+                                attachLine.code[0].offset,
+                                attachLine.line,
+                                attachLine.code[attachLine.code.length - 1]
+                                    .offset +
+                                    attachLine.code[attachLine.code.length - 1]
+                                        .token.length
+                            )
+                        )
+                    } else {
+                        const aboveLine = codeLines.find(
+                            (codeLine) => codeLine.line === l.line - 1
+                        )
+                        if (aboveLine && !aboveLine.isEmptyLine) {
+                            newRange = document.validateRange(
+                                new Range(
+                                    aboveLine.line,
+                                    aboveLine.code[0].offset,
+                                    aboveLine.line,
+                                    aboveLine.code[aboveLine.code.length - 1]
+                                        .offset +
+                                        aboveLine.code[
+                                            aboveLine.code.length - 1
+                                        ].token.length
+                                )
+                            )
+                        }
+                    }
+                } else if (type === 'trailing') {
+                    newRange =
+                        match &&
+                        document.validateRange(
+                            new Range(
+                                l.line,
+                                l.code[0].offset,
+                                // match.offset,
+                                l.line,
+                                match.offset - 1
+                            )
+                        )
+                }
+                // &&
+                match &&
+                    newRange &&
+                    comments.push({
+                        ...l,
+                        type,
+                        startOffset: match.offset,
+                        endOffset:
+                            l.code[l.code.length - 1].offset +
+                            l.code[l.code.length - 1].token.length,
+                        newContent: { commentContent, range: newRange },
+                    })
             } else if (blockRegexOpen.test(lineText)) {
+                const blockQuoteChar =
+                    commentCfg && commentCfg?.blockComment
+                        ? commentCfg.blockComment[0]
+                        : '/*'
+                const startBlock = l.code.find(
+                    (c) => c.token === blockQuoteChar
+                )
                 blockCommentQueue.push({
                     ...l,
                     type: 'blockComment',
                     startLine: l.line,
+                    startOffset: startBlock?.offset ?? 0,
                 })
             } else if (blockRegexClose.test(lineText)) {
                 if (blockCommentQueue.length) {
+                    const blockQuoteChar =
+                        commentCfg && commentCfg?.blockComment
+                            ? commentCfg.blockComment[1]
+                            : '/*'
+                    const blockQuoteOpenChar =
+                        commentCfg && commentCfg?.blockComment
+                            ? commentCfg.blockComment[0]
+                            : '/*'
+                    const endBlock = l.code.find(
+                        (c) => c.token === blockQuoteChar
+                    )
+                    const blockContent = blockCommentQueue.pop()
+                    let commentContent = document
+                        .getText(
+                            new Range(
+                                blockContent.startLine,
+                                blockContent.startOffset,
+                                l.line,
+                                endBlock?.offset
+                                    ? endBlock.offset + endBlock.token.length
+                                    : blockQuoteChar.length
+                            )
+                        )
+                        .replace(blockQuoteChar, '')
+                        .replace(blockQuoteOpenChar, '')
+                        .trim()
+
+                    let attachLine
+                    let i = l.line
+                    let goingUp = false
+                    do {
+                        if (!goingUp) {
+                            attachLine = codeLines.find(
+                                (cl) => cl.line === i + 1
+                            )
+                            i++
+                        }
+                        if (!attachLine) {
+                            goingUp = true
+                            attachLine = codeLines.find(
+                                (cl) => cl.line === i - 1
+                            )
+                            i--
+                        }
+                    } while (!attachLine || attachLine.isEmptyLine)
+                    let newRange = new Range(
+                        attachLine.line,
+                        attachLine.code[0].offset,
+                        attachLine.line,
+                        attachLine.code[attachLine.code.length - 1].offset +
+                            attachLine.code[attachLine.code.length - 1].token
+                                .length
+                    )
                     const newComment = {
-                        ...blockCommentQueue.pop(),
+                        ...blockContent,
                         endLine: l.line,
+                        endOffset: endBlock?.offset ?? blockQuoteChar.length,
+                        newContent: { commentContent, range: newRange },
                     }
                     comments.push(newComment)
                 }
             }
         })
 
-        const commentRanges = comments.map((c) => {
-            if (c.type === 'wholeLine') {
-                let commentContent = c.text.replace(commentLineDelimiter, '')
-                const attachLine = codeLines.find(
-                    (codeLine) => codeLine.line === c.line + 1
-                )
-                if (attachLine) {
-                    const range = document.validateRange(
-                        new Range(
-                            attachLine.line,
-                            attachLine.code[0].offset,
-                            attachLine.line,
-                            attachLine.code[attachLine.code.length - 1].offset
-                        )
-                    )
-                }
-            }
-        })
-    }
-
-    async provideAnnotationCreationHover(
-        document: TextDocument,
-        position: Position
-    ): Promise<Hover | undefined> {
-        const range = document.validateRange(
-            new Range(
-                position.line,
-                position.character,
-                position.line,
-                maxSmallIntegerV8
+        const match = comments.find((c) => {
+            let commentRange = document.validateRange(
+                createRangeFromTokenData(c)
             )
-        )
-        const docGitUrl = getStableGitHubUrl(document.uri.fsPath)
-        const annosInFile = getAnnotationsWithStableGitUrl(
-            annotationList,
-            docGitUrl
-        )
-        const anchorsInFile = getAnchorsWithGitUrl(docGitUrl).filter(
-            (a) => a.anchored
-        )
-        const anchorsThatContainPosition = anchorsInFile.filter((a) => {
-            const range = createRangeFromAnchorObject(a)
-            return range.contains(position)
+            return commentRange.contains(range)
         })
-        if (!anchorsThatContainPosition.length) {
-            return undefined
-        }
-        const hoverArr: MarkdownString[] = anchorsThatContainPosition.flatMap(
-            (anchor) => {
-                let markdownArr = new Array<MarkdownString>()
-                markdownArr.push(
-                    new MarkdownString(
-                        annosInFile.find(
-                            (a) => a.id === anchor.parentId
-                        )?.annotation
-                    )
-                )
-                const showAnnoInWebviewCommand = Uri.parse(
-                    `command:catseye.showAnnoInWebview?${encodeURIComponent(
-                        JSON.stringify(anchor.parentId)
-                    )}`
-                )
-                let showAnnoInWebviewLink: MarkdownString = new MarkdownString()
-                showAnnoInWebviewLink.isTrusted = true
-                showAnnoInWebviewLink.appendMarkdown(
-                    `[Show Annotation](${showAnnoInWebviewCommand})`
-                )
-                return markdownArr.concat(showAnnoInWebviewLink)
-            }
+
+        if (!match) return undefined
+
+        let markdownArr = new Array<MarkdownString>()
+        const originalRange = document.validateRange(
+            createRangeFromTokenData(match)
+        )
+        const convertCommentToAnnotationCommand = Uri.parse(
+            `command:catseye.createAutomatedAnnotation?${encodeURIComponent(
+                JSON.stringify({
+                    range: match.newContent.range,
+                    annotationContent: match.newContent.commentContent,
+                    documentUri: document.uri.toString(),
+                    originalRange,
+                })
+            )}`
         )
 
-        return new Hover(hoverArr, range)
+        let convertCommentLink: MarkdownString = new MarkdownString()
+        convertCommentLink.isTrusted = true
+        convertCommentLink.appendMarkdown(
+            `[Convert Comment to Annotation](${convertCommentToAnnotationCommand})`
+        )
+        markdownArr.push(convertCommentLink)
+
+        return new Hover(markdownArr, originalRange)
     }
 
     private register() {
         const subscriptions = []
-
+        // console.log('hewwo??')
         subscriptions.push(
             languages.registerHoverProvider(
                 { scheme: 'file' },
                 {
-                    provideHover: this.provideAnnotationCreationHover,
+                    provideHover: this.provideCommentAnnotationCreationHover,
                 }
             )
         )

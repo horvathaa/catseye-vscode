@@ -369,21 +369,37 @@ export const createNewAnnotation = async () => {
         })
 }
 
-export const createAutomatedAnnotation = (
-    range: vscode.Range,
-    editor: vscode.TextEditor,
+export const createAutomatedAnnotation = async (
+    range: any,
+    originalRange: any,
+    documentUri: string,
     annotationContent: string
-): void => {
+): Promise<void> => {
+    const editor = vscode.window.visibleTextEditors.find(
+        (e) => e.document.uri.toString() === documentUri
+    )
+    const realRange = new vscode.Range(
+        new vscode.Position(range[0].line, range[0].character),
+        new vscode.Position(range[1].line, range[1].character)
+    )
+    const realOldRange = new vscode.Range(
+        new vscode.Position(originalRange[0].line, originalRange[0].character),
+        new vscode.Position(originalRange[1].line, originalRange[1].character)
+    )
+    // console.log('editor', editor)
+    if (!editor) return
     const newAnnoId: string = uuidv4()
     const createdTimestamp = new Date().getTime()
     const projectName: string = utils.getProjectName(editor.document.uri.fsPath)
+    // console.log('proj', projectName, 'r', realRange)
     const anchorObject = utils.createBasicAnchorObject(
         editor,
-        range,
+        realRange,
         newAnnoId,
         createdTimestamp,
         projectName
     )
+    // console.log('anch', anchorObject)
     const temp = utils.createBasicAnnotation(
         anchorObject,
         createdTimestamp,
@@ -392,9 +408,14 @@ export const createAutomatedAnnotation = (
         false,
         annotationContent
     )
+    // console.log('made this', temp)
+    const wsEdit = new vscode.WorkspaceEdit()
+    wsEdit.replace(editor.document.uri, realOldRange, '')
+    await vscode.workspace.applyEdit(wsEdit)
     setAnnotationList(annotationList.concat([temp]))
     view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList))
-    anchor.addHighlightsToEditor(annotationList, editor)
+
+    editor && view && anchor.addHighlightsToEditor(annotationList, editor)
     return
 }
 
@@ -771,7 +792,7 @@ export const createHistoryAnnotation = async () => {
                         ),
                     ] as any[]
                 ).filter((p: string) => !prNumbers.includes(p))
-                console.log('linked?', linkedIssuesOrPullRequests)
+                // console.log('linked?', linkedIssuesOrPullRequests)
                 let lmao
                 if (linkedIssuesOrPullRequests) {
                     lmao = await Promise.all(
@@ -795,7 +816,7 @@ export const createHistoryAnnotation = async () => {
                             // }
                         })
                     )
-                    console.log('hewwwooooo???', lmao)
+                    // console.log('hewwwooooo???', lmao)
                 }
 
                 return {

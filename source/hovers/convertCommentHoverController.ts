@@ -415,7 +415,7 @@ export class ConvertCommentHoverController implements Disposable {
                 JSON.stringify({
                     range: match.newContent.range,
                     annotationContent: match.newContent.commentContent,
-                    documentUri: document.uri.toString(),
+                    documentUri: document.uri.fsPath,
                     originalRange,
                 })
             )}`

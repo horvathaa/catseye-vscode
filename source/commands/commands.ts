@@ -376,8 +376,9 @@ export const createAutomatedAnnotation = async (
     annotationContent: string
 ): Promise<void> => {
     const editor = vscode.window.visibleTextEditors.find(
-        (e) => e.document.uri.toString() === documentUri
+        (e) => e.document.uri.fsPath === documentUri
     )
+    console.log('editor??', editor)
     const realRange = new vscode.Range(
         new vscode.Position(range[0].line, range[0].character),
         new vscode.Position(range[1].line, range[1].character)

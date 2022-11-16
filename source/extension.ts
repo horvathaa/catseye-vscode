@@ -347,6 +347,7 @@ export async function activate(context: vscode.ExtensionContext) {
         (json) => {
             const { range, documentUri, annotationContent, originalRange } =
                 json
+            console.log('json', json)
             commands.createAutomatedAnnotation(
                 range,
                 originalRange,

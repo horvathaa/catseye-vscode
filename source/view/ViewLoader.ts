@@ -77,7 +77,7 @@ export default class ViewLoader {
         })
         // These variables will be passed into the webview
         const annotationJson = JSON.stringify(annotationList)
-        const userId = JSON.stringify(user?.uid)
+        const userId = JSON.stringify(user ? user.uid : '')
         const username = JSON.stringify(gitInfo.author)
         const colorTheme = JSON.stringify(vscode.window.activeColorTheme)
         const currentProject = JSON.stringify(
@@ -125,9 +125,56 @@ export default class ViewLoader {
       </body>
     </html>`
 
-        catseyeLog.appendLine(`Webview content: ${webviewContent}`)
+        this.printLaunchDetailsToLog(
+            annotationJson,
+            userId,
+            username,
+            currentFile,
+            currentProject
+        )
+
+        // catseyeLog.appendLine(`Webview content: ${webviewContent}`)
 
         return webviewContent
+    }
+
+    private printLaunchDetailsToLog(
+        annotationJson: string,
+        userId: string,
+        username: string,
+        currentFile: string,
+        currentProject: string
+    ) {
+        if (annotationJson !== '[]') {
+            catseyeLog.appendLine("Annotation's serialized")
+        } else {
+            catseyeLog.appendLine('WARNING: No annotations found')
+        }
+        if (userId !== '') {
+            catseyeLog.appendLine('Received userId')
+        } else {
+            catseyeLog.appendLine('WARNING: No user ID found')
+        }
+        if (username !== '') {
+            catseyeLog.appendLine(`Got GitHub name ${username}`)
+        } else {
+            catseyeLog.appendLine('WARNING: Could not find GitHub username')
+        }
+        if (currentFile !== '') {
+            catseyeLog.appendLine(`Showing file ${currentFile}`)
+        } else {
+            catseyeLog.appendLine('WARNING: Could not identify current file')
+        }
+        if (currentProject !== '') {
+            catseyeLog.appendLine(
+                `User is working on project ${currentProject}`
+            )
+        } else {
+            catseyeLog.appendLine('WARNING: Could not identify current project')
+        }
+        if (this._newUser) {
+            catseyeLog.appendLine('Showing first-time user information')
+        }
     }
 
     // methods our extension can call to interface with the webview...

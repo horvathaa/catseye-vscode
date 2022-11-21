@@ -86,8 +86,7 @@ export const handleChangeVisibleTextEditors = (
     })
 
     if (!annotationsToHighlight.length) return
-    // console.log('textEditors', textEditors)
-    // console.log('docs?', vscode.workspace.textDocuments)
+
     if (view) {
         textEditors.forEach((t) => {
             anchor.addHighlightsToEditor(annotationsToHighlight, t)

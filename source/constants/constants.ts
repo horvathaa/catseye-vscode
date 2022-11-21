@@ -489,3 +489,5 @@ export interface SerializedBundle {
     uid: string
     bundleItems: BundleItem[]
 }
+
+export const CatseyeCommentCharacter: string = '%'

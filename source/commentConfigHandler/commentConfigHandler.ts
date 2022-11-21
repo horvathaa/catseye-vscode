@@ -56,9 +56,9 @@ export class CommentConfigHandler {
         }
 
         const file = this.languageToConfigPath.get(languageCode) as string
-        console.log('file', file)
+        // console.log('file', file)
         const content = fs.readFileSync(file, { encoding: 'utf8' })
-        console.log('content', content)
+        // console.log('content', content)
         try {
             // Using normal JSON because json5 behaved buggy.
             // Might need JSON5 in the future to parse language jsons with comments.

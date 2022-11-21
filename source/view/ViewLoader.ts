@@ -18,7 +18,6 @@ import {
     gitInfo,
     activeEditor,
     catseyeLog,
-    setUser,
 } from '../extension'
 import {
     // getGithubUrl,

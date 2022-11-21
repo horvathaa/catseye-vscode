@@ -47,6 +47,7 @@ import {
     astHelper,
     trackedFiles,
     setTrackedFiles,
+    catseyeLog,
 } from '../extension'
 import * as vscode from 'vscode'
 import { v4 as uuidv4 } from 'uuid'
@@ -108,10 +109,33 @@ export const initializeAnnotations = async (
 ): Promise<void> => {
     // const currFilename: string | undefined =
     //     vscode.window.activeTextEditor?.document.uri.path.toString()
+    catseyeLog.appendLine(`Initializing annotations for ${user.uid}`)
     const annotations: Annotation[] = await getAnnotationsOnSignIn(
         user,
         currentGitHubProject
     )
+    catseyeLog.appendLine(
+        `Got these annotations${
+            annotations.length > 5 ? ' (sampling most-recent five)' : ''
+        }: ${
+            annotations.length > 5
+                ? encodeURIComponent(
+                      JSON.stringify(
+                          annotations
+                              .sort(
+                                  (a, b) =>
+                                      a.createdTimestamp - b.createdTimestamp
+                              )
+                              .slice(0, 5)
+                              .map((a) => a.id)
+                      )
+                  )
+                : encodeURIComponent(
+                      JSON.stringify(annotations.map((a) => a.id))
+                  )
+        }`
+    )
+    catseyeLog.appendLine(`User has ${annotations.length} annotation(s)`)
     listenForAnnotationsByProject(currentGitHubProject, user.uid)
 
     setAnnotationList(annotations)

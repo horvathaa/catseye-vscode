@@ -79,22 +79,15 @@ export const getAnnotationsOnSignIn = async (
 ): Promise<Annotation[]> => {
     const userAnnotationDocs: firebase.firestore.QuerySnapshot =
         await getUserAnnotations(user.uid)
-    const collaboratorAnnotationDocs: Annotation[] =
-        // await getAnnotationsByProject(currentGitProject, user.uid)
-        []
-    if (
-        !userAnnotationDocs ||
-        userAnnotationDocs.empty
-        //  &&
-        // (!collaboratorAnnotationDocs || collaboratorAnnotationDocs.empty)
-    )
-        return []
 
-    const dataAnnotations = getListFromSnapshots(userAnnotationDocs).concat(
-        // getListFromSnapshots(
-        collaboratorAnnotationDocs
-        // )
-    )
+    if (!userAnnotationDocs || userAnnotationDocs.empty) {
+        catseyeLog.appendLine(
+            'User has no annotations -- setting annotationList to empty'
+        )
+        return []
+    }
+
+    const dataAnnotations = getListFromSnapshots(userAnnotationDocs)
 
     const allCommits: CommitObject[] = getListFromSnapshots(
         await getCommitsByProject(currentGitProject)
@@ -300,12 +293,16 @@ export const getAnnotationsByProject = (
 // readonly ?? for anchors
 //
 export const listenForAnnotationsByProject = (gitRepo: string, uid: string) => {
+    catseyeLog.appendLine(`Setting up annotation listener for ${gitRepo}`)
     return annotationsRef
         .where('gitRepo', '==', gitRepo)
         .where('authorId', '!=', uid)
         .where('sharedWith', '==', 'group')
         .where('deleted', '==', false)
         .onSnapshot((snapshot) => {
+            catseyeLog.appendLine(
+                `${gitRepo} experienced a change -- calling snapshot callback`
+            )
             snapshot.docChanges().forEach((change) => {
                 const newAnnotation = change.doc.data() as Annotation
                 newAnnotation.anchors.forEach((a) => (a.readOnly = true))
@@ -345,6 +342,7 @@ export const listenForAnnotationsByProject = (gitRepo: string, uid: string) => {
 export const getUserAnnotations = (
     uid: string
 ): Promise<firebase.firestore.QuerySnapshot> => {
+    catseyeLog.appendLine(`Getting annotations for ${uid}`)
     return annotationsRef
         .where('authorId', '==', uid)
         .where('deleted', '==', false)

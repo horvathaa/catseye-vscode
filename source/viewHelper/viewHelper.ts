@@ -393,7 +393,7 @@ export const handleScrollWithRangeAndFile = async (
 
 // Export annotation content above first anchor by inserting a new line and appending the content of the annotation
 // then running VS Code's "comment" command in order to turn the text into a code comment
-// there's def better ways of doing this
+// there's def better ways of doing this -- THERE IS AMBER. use workspaceedit + applyEdit lmao
 export const handleExportAnnotationAsComment = async (
     annoId: string
 ): Promise<void> => {

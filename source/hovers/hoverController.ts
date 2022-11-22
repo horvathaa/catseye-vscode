@@ -17,7 +17,7 @@ import {
     getAnnotationsWithStableGitUrl,
     getStableGitHubUrl,
 } from '../utils/utils'
-const maxSmallIntegerV8 = 2 ** 30
+export const maxSmallIntegerV8 = 2 ** 30
 export class HoverController implements Disposable {
     private _hoverProviderDisposable: Disposable | undefined
 

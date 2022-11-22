@@ -56,6 +56,10 @@
             {
                 "command": "catseye.createAutomatedAnnotation",
                 "title": "Catseye: Create Automated Annotation"
+            },
+            {
+                "command": "catseye.convertCodeCommentToAnnotation",
+                "title": "Catseye: Convert Code Comment to Annotation"
             }
         ],
         "keybindings": [
@@ -88,6 +92,11 @@
                 "command": "catseye.navigateBack",
                 "key": "ctrl+alt+[",
                 "mac": "cmd+alt+["
+            },
+            {
+                "command": "catseye.convertCodeCommentToAnnotation",
+                "key": "ctrl+alt+=",
+                "mac": "cmd+alt+="
             }
         ],
         "menus": {

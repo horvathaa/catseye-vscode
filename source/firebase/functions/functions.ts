@@ -449,43 +449,52 @@ export const listenForOutput = () => {
     if (!user) {
         return
     }
-    return db
-        .collection(DB_COLLECTIONS.OUTPUT)
-        .where('uid', '==', user.uid)
-        .where('createdTimestamp', '>', new Date().getTime())
-        .onSnapshot((outputSnapshot) => {
-            // console.log('got search')
-            outputSnapshot.docChanges().forEach((change) => {
-                const newOutput: BrowserOutput =
-                    change.doc.data() as BrowserOutput
-                // console.log('got these o', change.doc.data())
-                switch (change.type) {
-                    case 'added': {
-                        setBrowserOutputs(browserOutputs.concat(newOutput))
-                        view?.sendNewBrowserOutput(newOutput)
-                        break
-                    }
-                    case 'modified': {
-                        setBrowserOutputs(
-                            browserOutputs.map((o) =>
-                                o.id === newOutput.id ? newOutput : o
-                            )
-                        )
-                        // need something here for generic rerender of search
-                        break
-                    }
-                    case 'removed': {
-                        setBrowserOutputs(
-                            browserOutputs.filter((o) => o.id !== newOutput.id)
-                        )
-                        break
-                    }
-                    default: {
-                        return
-                    }
-                }
+    return (
+        db
+            .collection(DB_COLLECTIONS.OUTPUT)
+            .where('uid', '==', user.uid)
+            // .where('createdTimestamp', '>', new Date().getTime())
+            .onSnapshot((outputSnapshot) => {
+                // console.log('got search')
+                outputSnapshot
+                    .docChanges()
+                    .slice(0, 1)
+                    .forEach((change) => {
+                        const newOutput: BrowserOutput =
+                            change.doc.data() as BrowserOutput
+                        // console.log('got these o', change.doc.data())
+                        switch (change.type) {
+                            case 'added': {
+                                setBrowserOutputs(
+                                    browserOutputs.concat(newOutput)
+                                )
+                                view?.sendNewBrowserOutput(newOutput)
+                                break
+                            }
+                            case 'modified': {
+                                setBrowserOutputs(
+                                    browserOutputs.map((o) =>
+                                        o.id === newOutput.id ? newOutput : o
+                                    )
+                                )
+                                // need something here for generic rerender of search
+                                break
+                            }
+                            case 'removed': {
+                                setBrowserOutputs(
+                                    browserOutputs.filter(
+                                        (o) => o.id !== newOutput.id
+                                    )
+                                )
+                                break
+                            }
+                            default: {
+                                return
+                            }
+                        }
+                    })
             })
-        })
+    )
 }
 
 export const updateOutput = (updatedOutput: BrowserOutput) => {

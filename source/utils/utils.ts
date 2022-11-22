@@ -579,7 +579,6 @@ const convertHistoryAnchors = (
 ): { [key: string]: any }[] => {
     return anchors.map((a) => {
         if (isHistoryAnchorObject(a)) {
-            console.log('converting')
             return convertHistoryAnchor(a)
         }
         return a

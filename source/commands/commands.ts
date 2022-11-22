@@ -30,6 +30,7 @@ import {
 import {
     AnchorObject,
     Annotation,
+    CatseyeCommentCharacter,
     GitDiffPathLog,
     HistoryAnchorObject,
     Reply,
@@ -50,7 +51,10 @@ import {
 import { parse } from 'diff2html'
 import { formatTimestamp } from '../view/app/utils/viewUtils'
 import { Octokit } from 'octokit'
-import { getGithubUrl } from '../utils/utils'
+// import { getGithubUrl } from '../utils/utils'
+import { getCodeLine } from '../anchorFunctions/reanchor'
+import { CommentConfigHandler } from '../commentConfigHandler/commentConfigHandler'
+import { maxSmallIntegerV8 } from '../hovers/hoverController'
 
 // import { DefaultLogFields, ListLogLine } from 'simple-git'
 // import { GitDiff } from 'parse-git-diff/build/types'
@@ -369,6 +373,126 @@ export const createNewAnnotation = async () => {
         })
 }
 
+export interface ConvertCodeCommentContext {
+    triggeredByCommand: boolean
+}
+
+export const convertCodeCommentToAnnotation = (
+    context: ConvertCodeCommentContext,
+    e?: vscode.TextDocumentChangeEvent
+): void => {
+    const editor =
+        vscode.window.activeTextEditor ?? vscode.window.visibleTextEditors[0]
+    const startRange: vscode.Range = e
+        ? e.contentChanges[0].range
+        : editor.selection
+    const document = e ? e.document : editor.document
+    const text = document.getText(
+        new vscode.Range(
+            new vscode.Position(startRange.start.line, 0),
+            new vscode.Position(
+                startRange.start.line,
+                startRange.start.character
+            )
+        )
+    ) //e.contentChanges[0].range)
+
+    const codeLine = getCodeLine(text, {
+        startLine: startRange.start.line,
+        startOffset: 0,
+    })[0]
+    // console.log('codeLine', codeLine, 'text', text)
+    const commentCfg = new CommentConfigHandler().getCommentConfig(
+        document.languageId
+    )
+    const commentLineDelimiter = commentCfg?.lineComment ?? '//'
+    const commentToken = codeLine.code.find(
+        (c) => c.token === commentLineDelimiter
+    )
+    const catseyeCommentToken = codeLine.code.find(
+        (c) => c.token === CatseyeCommentCharacter
+    )
+    if (
+        commentToken &&
+        ((e && catseyeCommentToken) || context.triggeredByCommand)
+    ) {
+        const commentLineIndex = codeLine.code.findIndex(
+            (c) => c.token === commentLineDelimiter
+        )
+        const wholeLine = commentLineIndex === 0
+        let nextCodeLine
+        if (wholeLine) {
+            const nextLineContent = document.getText(
+                document.validateRange(
+                    new vscode.Range(
+                        new vscode.Position(startRange.start.line + 1, 0),
+                        new vscode.Position(
+                            startRange.start.line + 1,
+                            maxSmallIntegerV8
+                        )
+                    )
+                )
+            )
+            nextCodeLine = getCodeLine(nextLineContent, {
+                startLine: startRange.start.line + 1,
+                startOffset: 0,
+            })[0]
+            // console.log('lmao', nextCodeLine)
+            if (nextCodeLine.isEmptyLine) {
+                vscode.window.showInformationMessage(
+                    'Could not find appropriate anchor point'
+                )
+                return
+            }
+        }
+        // console.log('nextCodeLine', nextCodeLine)
+        const anchorLine = wholeLine && nextCodeLine ? nextCodeLine : codeLine
+        const endOfCodeIndex = commentLineIndex - 1
+        const endOfCode =
+            wholeLine && nextCodeLine
+                ? nextCodeLine.code[nextCodeLine.code.length - 1]
+                : codeLine.code[endOfCodeIndex]
+        const annotationContentTokens = catseyeCommentToken
+            ? codeLine.code.slice(
+                  codeLine.code.findIndex(
+                      (c) => c.token === CatseyeCommentCharacter
+                  ) + 1
+              )
+            : codeLine.code.slice(commentLineIndex + 1)
+        const annotationContent = annotationContentTokens
+            .map((c) => c.token)
+            .join(' ')
+            .trim()
+        const realRange = [
+            { line: anchorLine.line, character: anchorLine.code[0].offset },
+            {
+                line: anchorLine.line,
+                character: endOfCode.offset + endOfCode.token.length,
+            },
+        ]
+        const oldRange = [
+            { line: codeLine.line, character: commentToken.offset },
+            {
+                line: codeLine.line,
+                character:
+                    codeLine.code[codeLine.code.length - 1].offset +
+                    codeLine.code[codeLine.code.length - 1].token.length,
+            },
+        ]
+        createAutomatedAnnotation(
+            realRange,
+            oldRange,
+            document.uri.fsPath,
+            annotationContent
+        )
+    }
+    if (!commentToken && context.triggeredByCommand) {
+        vscode.window.showInformationMessage(
+            'No code comment found! Please place your cursor on the code comment you want to convert.'
+        )
+    }
+}
+
 export const createAutomatedAnnotation = async (
     range: any,
     originalRange: any,
@@ -378,7 +502,7 @@ export const createAutomatedAnnotation = async (
     const editor = vscode.window.visibleTextEditors.find(
         (e) => e.document.uri.fsPath === documentUri
     )
-    console.log('editor??', editor)
+    // console.log('editor??', editor)
     const realRange = new vscode.Range(
         new vscode.Position(range[0].line, range[0].character),
         new vscode.Position(range[1].line, range[1].character)
@@ -411,7 +535,7 @@ export const createAutomatedAnnotation = async (
     )
     // console.log('made this', temp)
     const wsEdit = new vscode.WorkspaceEdit()
-    wsEdit.replace(editor.document.uri, realOldRange, '')
+    wsEdit.delete(editor.document.uri, realOldRange)
     await vscode.workspace.applyEdit(wsEdit)
     setAnnotationList(annotationList.concat([temp]))
     view?.updateDisplay(utils.removeOutOfDateAnnotations(annotationList))

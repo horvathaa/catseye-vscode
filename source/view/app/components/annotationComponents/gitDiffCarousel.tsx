@@ -77,22 +77,24 @@ const GitDiff: React.FC<GitProps> = ({ gitDiff, annoId, anchorId }) => {
               const processBodyText = function (body: string) {
                   const images = body.match(/!\[.*\]\(.*\)/g) ?? []
                   console.log('images', images)
-                  const imgs = images?.map((i) => {
-                      if (i !== null) {
-                          const src = i
-                              .match(/\(.*\)/)[0]
-                              .replace('(', '')
-                              .replace(')', '')
-                          console.log('src', src)
-                          const alt = i
-                              .match(/\[.*\]/)[0]
-                              .replace('[', '')
-                              .replace(']', '')
-                          console.log('alt', alt)
-                          return <img src={src} alt={alt}></img>
-                      }
-                      return <img src={''} alt={''} />
-                  })
+                  const imgs = images
+                      ? images.map((i) => {
+                            if (i !== null) {
+                                const src = i
+                                    .match(/\(.*\)/)[0]
+                                    .replace('(', '')
+                                    .replace(')', '')
+                                console.log('src', src)
+                                const alt = i
+                                    .match(/\[.*\]/)[0]
+                                    .replace('[', '')
+                                    .replace(']', '')
+                                console.log('alt', alt)
+                                return <img src={src} alt={alt}></img>
+                            }
+                            return <img src={''} alt={''} />
+                        })
+                      : []
                   //   console.log('imgs', imgs)
 
                   const chunks = body.split(/!\[.*\]\(.*\)/g)

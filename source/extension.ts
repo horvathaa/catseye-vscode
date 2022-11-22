@@ -347,7 +347,6 @@ export async function activate(context: vscode.ExtensionContext) {
         (json) => {
             const { range, documentUri, annotationContent, originalRange } =
                 json
-            console.log('json', json)
             commands.createAutomatedAnnotation(
                 range,
                 originalRange,
@@ -356,6 +355,15 @@ export async function activate(context: vscode.ExtensionContext) {
             )
         }
     )
+
+    let convertCodeCommentToAnnotationDisposable =
+        vscode.commands.registerCommand(
+            'catseye.convertCodeCommentToAnnotation',
+            () =>
+                commands.convertCodeCommentToAnnotation({
+                    triggeredByCommand: true,
+                })
+        )
 
     // let copyDisposable = vscode.commands.registerTextEditorCommand(
     //     'editor.action.clipboardCopyAction',
@@ -410,6 +418,7 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(scrollDisposable)
     context.subscriptions.push(createHistoryDisposable)
     context.subscriptions.push(createAutomatedAnnotationDisposable)
+    context.subscriptions.push(convertCodeCommentToAnnotationDisposable)
     // context.subscriptions.push(copyDisposable)
     // context.subscriptions.push(cutDisposable)
     context.subscriptions.push(pasteDisposable)

@@ -135,7 +135,8 @@ export const getCodeLine = (
         return {
             code,
             line: start ? start.startLine + i : i,
-            isEmptyLine: code.length === 1 && code[0].token === '',
+            isEmptyLine:
+                (code.length === 1 && code[0].token === '') || !code.length,
         }
     })
 }

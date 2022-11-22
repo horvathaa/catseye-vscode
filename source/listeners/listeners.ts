@@ -55,7 +55,7 @@ import { emitEvent } from '../firebase/functions/functions'
 import * as ts from 'typescript'
 import { getCodeLine } from '../anchorFunctions/reanchor'
 import { CommentConfigHandler } from '../commentConfigHandler/commentConfigHandler'
-import { createAutomatedAnnotation } from '../commands/commands'
+import { convertCodeCommentToAnnotation } from '../commands/commands'
 
 // let timeSinceLastEdit: number = -1
 // let tempChanges: any[] = []
@@ -117,23 +117,23 @@ export const handleChangeActiveTextEditor = (
             // )
 
             const commentConfigHandler = new CommentConfigHandler()
-            console.log(
-                'handler',
-                commentConfigHandler,
-                'wtf',
-                TextEditor.document.languageId
-            )
+            // console.log(
+            //     'handler',
+            //     commentConfigHandler,
+            //     'wtf',
+            //     TextEditor.document.languageId
+            // )
             const commentCfg = commentConfigHandler.getCommentConfig(
                 TextEditor.document.languageId
             )
-            console.log('commentCfg', commentCfg)
+            // console.log('commentCfg', commentCfg)
 
             function escapeRegex(string: string) {
                 return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
             }
 
             const commentLineDelimiter = commentCfg?.lineComment
-            console.log('commentLineDelimeter', commentLineDelimiter)
+            // console.log('commentLineDelimeter', commentLineDelimiter)
 
             const regex = new RegExp(
                 `\s*${escapeRegex(commentLineDelimiter ?? '//')}.*`,
@@ -334,33 +334,9 @@ export const handleDidChangeTextDocument = (
 
     if (e.document.fileName.includes('extension-output-')) return // this listener also gets triggered when the output pane updates???? for some reason????
     const stableGitPath = utils.getStableGitHubUrl(e.document.uri.fsPath)
-    console.log('e', e)
 
     if (e.contentChanges.find((c) => c.text.includes('\n'))) {
-        const text = e.document.getText(
-            new vscode.Range(
-                new vscode.Position(e.contentChanges[0].range.start.line, 0),
-                new vscode.Position(
-                    e.contentChanges[0].range.start.line,
-                    e.contentChanges[0].range.start.character
-                )
-            )
-        ) //e.contentChanges[0].range)
-        const codeLine = getCodeLine(text, {
-            startLine: e.contentChanges[0].range.start.line,
-            startOffset: 0,
-        })[0]
-        console.log('codeLine', codeLine, 'text', text)
-        const commentCfg = new CommentConfigHandler().getCommentConfig(
-            e.document.languageId
-        )
-        const commentLineDelimiter = commentCfg?.lineComment ?? '//'
-        if (
-            codeLine.code.find((c) => c.token === commentLineDelimiter) &&
-            codeLine.code.find((c) => c.token === CatseyeCommentCharacter)
-        ) {
-            // createAutomatedAnnotation()
-        }
+        convertCodeCommentToAnnotation({ triggeredByCommand: false }, e)
     }
 
     // const currentAnnotations = utils.getAllAnnotationsWithAnchorInFile(annotationList, e.document.uri.toString());

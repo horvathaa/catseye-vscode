@@ -45,6 +45,7 @@ import {
     tempMergedAnchors,
     browserOutputs,
     setBrowserOutputs,
+    catseyeLog,
 } from '../extension'
 import {
     initializeAnnotations,
@@ -83,6 +84,8 @@ import {
     updateOutput,
 } from '../firebase/functions/functions'
 import { v4 as uuidv4 } from 'uuid'
+const { version } = require('../../package.json')
+const path = require('path')
 
 // Opens and reloads the webview -- this is invoked when the user uses the "catseye: Launch catseye" command (ctrl/cmd + shift + A).
 export const handleCatseyeWebviewLaunch = (): void => {
@@ -1149,10 +1152,35 @@ export const handleOpenDocumentation = (): void => {
     return
 }
 
-export const handleOpenBugReportForm = (): void => {
-    vscode.env.openExternal(
-        vscode.Uri.parse('https://forms.gle/Q2BSeAreCBAeGa29A')
-    )
+const getCatseyeLogContents = async (): Promise<string> => {
+    catseyeLog.show(true)
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            const catseyePane = vscode.window.visibleTextEditors.find(
+                (e) =>
+                    e.document.fileName ===
+                    'extension-output-catseye.catseye-#1-catseye'
+            )
+            if (catseyePane) {
+                resolve(catseyePane.document.getText())
+            } else {
+                reject('Could not find catseyeLog')
+            }
+        }, 1000)
+    })
+}
+
+export const handleOpenBugReportForm = async (): Promise<void> => {
+    const logContent = await getCatseyeLogContents()
+    const url = `https://docs.google.com/forms/d/e/1FAIpQLScdEnJe_TaLqtjkfU67Uhxrd02iPeEz9Onyp6vC-fQyhytu5w/viewform?usp=pp_url&entry.855458139=${
+        user ? user.email : 'insert+email+here'
+    }&entry.1266734177=${version}&entry.1994687673=I+think+I'm+experiencing+a+bug+with+Catseye&entry.1190297678=${
+        path.resolve(__dirname).includes('\\') ? 'PC' : 'Mac'
+    }&entry.115395172=1.73&entry.544420211=&entry.1359764492=&entry.828882268=${encodeURIComponent(
+        logContent
+    )}`
+
+    vscode.env.openExternal(vscode.Uri.parse(url))
     return
 }
 

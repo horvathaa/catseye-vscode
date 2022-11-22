@@ -416,6 +416,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(hoverProviderDisposable)
     context.subscriptions.push(commentProviderDisposable)
+    catseyeLog.appendLine('Activation complete')
 }
 
 // // this method is called when your extension is deactivated

@@ -244,6 +244,13 @@ export const createView = async (
                         viewHelper.handleShowResolvedUpdated(showResolved)
                         break
                     }
+                    case 'showAnnotateOutputContextMenuOption': {
+                        const { showMenu } = message
+                        viewHelper.handleShowAnnotateOutputContextMenuOption(
+                            showMenu
+                        )
+                        break
+                    }
                     case 'requestOpenDocumentation': {
                         viewHelper.handleOpenDocumentation()
                         break
@@ -695,6 +702,11 @@ export const showAnnoInWebview = (id: string) => {
         view?._panel?.reveal()
         view?.scrollToAnnotation(id)
     }
+}
+
+export const annotateOutput = () => {
+    console.log('wowza')
+    view?.addAnnotatedOutput()
 }
 
 // captures metadata at time of copy to help recreate the annotation later when pasted

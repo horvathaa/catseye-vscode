@@ -60,6 +60,10 @@
             {
                 "command": "catseye.convertCodeCommentToAnnotation",
                 "title": "Catseye: Convert Code Comment to Annotation"
+            },
+            {
+                "command": "catseye.annotateOutput",
+                "title": "Catseye: Annotate Output"
             }
         ],
         "keybindings": [
@@ -124,6 +128,12 @@
                     "when": "editorHasSelection",
                     "command": "catseye.createHistoryAnnotation",
                     "group": "2_catseye"
+                }
+            ],
+            "webview/context": [
+                {
+                    "command": "catseye.annotateOutput",
+                    "when": "activeWebviewPanelId == 'catseye' && catseye.showAnnotateOutput"
                 }
             ]
         }

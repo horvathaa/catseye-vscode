@@ -102,6 +102,9 @@ const CatseyePanel: React.FC<Props> = ({
         window.browserOutputs ?? []
     )
 
+    const [annotatingOutput, setAnnotatingOutput] =
+        React.useState<boolean>(false)
+
     const fields = ['annotation']
     const complex = ['anchors']
     const replies = ['replies']
@@ -155,6 +158,9 @@ const CatseyePanel: React.FC<Props> = ({
                 setBrowserOutputs(
                     browserOutputs.concat(message.payload.browserOutput)
                 )
+                break
+            case 'addAnnotatedOutput':
+                setAnnotatingOutput(true)
                 break
         }
     }
@@ -468,6 +474,8 @@ const CatseyePanel: React.FC<Props> = ({
                 vscode={vscode}
                 addToBundle={addToBundle}
                 removeFromBundle={removeFromBundle}
+                annotatingOutput={annotatingOutput}
+                setAnnotatingOutput={setAnnotatingOutput}
             />
             <TopBar
                 key={currColorTheme.kind + '-top-bar'}

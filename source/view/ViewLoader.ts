@@ -130,7 +130,6 @@ export default class ViewLoader {
       </head>
       <body>
           <div id="root"></div>
-
           <script src="${reactAppUri}"></script>
       </body>
     </html>`
@@ -352,6 +351,14 @@ export default class ViewLoader {
                 payload: {
                     browserOutput,
                 },
+            })
+        }
+    }
+
+    public addAnnotatedOutput() {
+        if (this._panel && this._panel.webview) {
+            this._panel.webview.postMessage({
+                command: 'addAnnotatedOutput',
             })
         }
     }

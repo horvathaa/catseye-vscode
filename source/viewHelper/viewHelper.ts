@@ -1209,11 +1209,18 @@ export const handleUpdateBrowserOutput = (
     setBrowserOutputs(updatedBrowserOutputs)
 }
 
+export const handleShowAnnotateOutputContextMenuOption = (
+    showMenu: boolean
+): void => {
+    vscode.commands.executeCommand(
+        'setContext',
+        'catseye.showAnnotateOutput',
+        showMenu
+    )
+}
+
 export const handleOpenSignInPage = () => {
     vscode.env.openExternal(
-        vscode.Uri.parse(
-            // 'http://localhost:3000/Login?how=github'
-            'https://adamite.netlify.app/Login?how=github'
-        )
+        vscode.Uri.parse('https://adamite.netlify.app/Login?how=github')
     )
 }

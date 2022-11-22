@@ -14,6 +14,8 @@ interface Props {
     vscode: any
     addToBundle: (obj: any) => void
     removeFromBundle: (obj: any) => void
+    annotatingOutput: boolean
+    setAnnotatingOutput: (bool: boolean) => void
 }
 
 interface OutputProps {
@@ -22,6 +24,7 @@ interface OutputProps {
     transmitUpdatedOutput: (bo: BrowserOutputInterface) => void
     addToBundle: (obj: any) => void
     removeFromBundle: (obj: any) => void
+    updateContext: (showMenuOption: boolean) => void
 }
 
 export const BrowserOutput: React.FC<OutputProps> = ({
@@ -30,6 +33,7 @@ export const BrowserOutput: React.FC<OutputProps> = ({
     transmitUpdatedOutput,
     addToBundle,
     removeFromBundle,
+    updateContext,
 }) => {
     const [bo, setBo] = React.useState<BrowserOutputInterface>(browserOutput)
     const [selected, setSelected] = React.useState<boolean>(false)
@@ -58,6 +62,11 @@ export const BrowserOutput: React.FC<OutputProps> = ({
         setSelected(newSel)
     }
 
+    const clickMe = (e: React.SyntheticEvent) => {
+        const neighbor = (e.target as HTMLBaseElement).previousElementSibling
+        console.log('eh', neighbor)
+    }
+
     const { padding, paddingBottom, ...rest } = cardStyle
     return (
         <div className={styles['flex']}>
@@ -80,8 +89,10 @@ export const BrowserOutput: React.FC<OutputProps> = ({
                     className={`${styles['wh-80']}`}
                     src={bo.data}
                     alt={'data'}
+                    onMouseEnter={() => updateContext(true)}
+                    onMouseLeave={() => updateContext(false)}
                 />
-
+                <div onClick={clickMe}>CLICK ME</div>
                 <div
                     className={`${styles['flex']} ${styles['wh-80']} ${styles['justify-content-space-between']} ${styles['p2']}`}
                 >
@@ -117,13 +128,38 @@ export const BrowserOutputs: React.FC<Props> = ({
     vscode,
     addToBundle,
     removeFromBundle,
+    annotatingOutput,
+    setAnnotatingOutput,
 }) => {
+    /* Yes, It's possible.
+
+If you add "mouseover" event to the document it will fire instantly and you can get the mouse position, of course if mouse pointer was over the document.
+
+   document.addEventListener('mouseover', setInitialMousePos, false);
+
+   function setInitialMousePos( event ) {
+       console.log( event.clientX, event.clientY);
+       document.removeEventListener('mouseover', setInitialMousePos, false);*/
+    React.useEffect(() => {
+        if (annotatingOutput) {
+            const hewwo = document.querySelectorAll(':hover')
+            console.log('hewwwwwoooo', hewwo)
+        }
+    }, [annotatingOutput])
+
     const transmitUpdatedOutput = (
         updatedBrowserOutput: BrowserOutputInterface
     ) => {
         vscode.postMessage({
             command: 'updateBrowserOutput',
             browserOutput: updatedBrowserOutput,
+        })
+    }
+
+    const updateContext = (showMenu: boolean) => {
+        vscode.postMessage({
+            command: 'showAnnotateOutputContextMenuOption',
+            showMenu,
         })
     }
 
@@ -139,6 +175,7 @@ export const BrowserOutputs: React.FC<Props> = ({
                         transmitUpdatedOutput={transmitUpdatedOutput}
                         addToBundle={addToBundle}
                         removeFromBundle={removeFromBundle}
+                        updateContext={updateContext}
                     />
                 ))}
         </div>

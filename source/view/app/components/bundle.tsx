@@ -9,7 +9,7 @@ import {
     BundleItem,
 } from '../../../constants/constants'
 import ReactAnnotation from './annotation'
-import { BrowserOutput } from './browserOutputs'
+// import { BrowserOutput } from './browserOutputs'
 import { SearchEvent } from './searchEvents'
 import styles from '../styles/browserOutputs.module.css'
 import TextEditor from './annotationComponents/textEditor'
@@ -115,14 +115,15 @@ export const Bundle: React.FC<Props> = ({
                         userId={userId}
                     />
                 ) : isBrowserOutput(o) ? (
-                    <BrowserOutput
-                        browserOutput={o}
-                        currentProject={currentProject}
-                        transmitUpdatedOutput={transmitUpdatedOutput}
-                        addToBundle={removeFromBundle}
-                        removeFromBundle={removeFromBundle}
-                    />
-                ) : isWebSearchEvent(o) ? (
+                    <></>
+                ) : // <BrowserOutput
+                //     browserOutput={o}
+                //     currentProject={currentProject}
+                //     transmitUpdatedOutput={transmitUpdatedOutput}
+                //     addToBundle={removeFromBundle}
+                //     removeFromBundle={removeFromBundle}
+                // />
+                isWebSearchEvent(o) ? (
                     <SearchEvent
                         searchEvent={o}
                         addToBundle={removeFromBundle}

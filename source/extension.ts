@@ -365,6 +365,14 @@ export async function activate(context: vscode.ExtensionContext) {
                 })
         )
 
+    let annotateOutputDisposable = vscode.commands.registerCommand(
+        'catseye.annotateOutput',
+        (e: any) => {
+            console.log('hewwo???', e)
+            commands.annotateOutput()
+        }
+    )
+
     // let copyDisposable = vscode.commands.registerTextEditorCommand(
     //     'editor.action.clipboardCopyAction',
     //     commands.overriddenClipboardPasteAction
@@ -387,8 +395,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.executeCommand(
         'setContext',
-        'catseye.showAnchorMenuOptions',
-        true
+        'catseye.showAnnotateOutput',
+        false
     )
 
     let hoverProviderDisposable = new HoverController()
@@ -419,6 +427,7 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(createHistoryDisposable)
     context.subscriptions.push(createAutomatedAnnotationDisposable)
     context.subscriptions.push(convertCodeCommentToAnnotationDisposable)
+    context.subscriptions.push(annotateOutputDisposable)
     // context.subscriptions.push(copyDisposable)
     // context.subscriptions.push(cutDisposable)
     context.subscriptions.push(pasteDisposable)

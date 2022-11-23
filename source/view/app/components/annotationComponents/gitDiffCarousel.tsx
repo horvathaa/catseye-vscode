@@ -80,15 +80,17 @@ const GitDiff: React.FC<GitProps> = ({ gitDiff, annoId, anchorId }) => {
                   const imgs = images
                       ? images.map((i) => {
                             if (i !== null) {
-                                const src = i
-                                    .match(/\(.*\)/)[0]
-                                    .replace('(', '')
-                                    .replace(')', '')
+                                const match = i.match(/\(.*\)/)
+                                const src = match.length
+                                    ? match[0].replace('(', '').replace(')', '')
+                                    : ''
                                 console.log('src', src)
-                                const alt = i
-                                    .match(/\[.*\]/)[0]
-                                    .replace('[', '')
-                                    .replace(']', '')
+                                const match2 = i.match(/\[.*\]/)
+                                const alt = match2.length
+                                    ? match2[0]
+                                          .replace('[', '')
+                                          .replace(']', '')
+                                    : ''
                                 console.log('alt', alt)
                                 return <img src={src} alt={alt}></img>
                             }

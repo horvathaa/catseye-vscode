@@ -458,7 +458,7 @@ export const listenForOutput = () => {
                 // console.log('got search')
                 outputSnapshot
                     .docChanges()
-                    .slice(0, 1)
+                    .slice(0, 2)
                     .forEach((change) => {
                         const newOutput: BrowserOutput =
                             change.doc.data() as BrowserOutput

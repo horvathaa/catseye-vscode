@@ -1156,6 +1156,7 @@ const getCatseyeLogContents = async (): Promise<string> => {
     catseyeLog.show(true)
     return new Promise((resolve, reject) => {
         setTimeout(() => {
+            console.log('vis text editors', vscode.window.visibleTextEditors)
             const catseyePane = vscode.window.visibleTextEditors.find(
                 (e) =>
                     e.document.fileName ===
@@ -1179,6 +1180,7 @@ export const handleOpenBugReportForm = async (): Promise<void> => {
     }&entry.115395172=1.73&entry.544420211=&entry.1359764492=&entry.828882268=${encodeURIComponent(
         logContent
     )}`
+    console.log('url', url)
 
     vscode.env.openExternal(vscode.Uri.parse(url))
     return

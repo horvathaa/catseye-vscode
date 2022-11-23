@@ -25,6 +25,7 @@ interface OutputProps {
     addToBundle: (obj: any) => void
     removeFromBundle: (obj: any) => void
     updateContext: (showMenuOption: boolean) => void
+    setAnnotatedOutput: (annotatedOutput: AnnotatedOutputHandler) => void
 }
 
 export const BrowserOutput: React.FC<OutputProps> = ({
@@ -34,6 +35,7 @@ export const BrowserOutput: React.FC<OutputProps> = ({
     addToBundle,
     removeFromBundle,
     updateContext,
+    setAnnotatedOutput,
 }) => {
     const [bo, setBo] = React.useState<BrowserOutputInterface>(browserOutput)
     const [selected, setSelected] = React.useState<boolean>(false)
@@ -78,6 +80,7 @@ export const BrowserOutput: React.FC<OutputProps> = ({
             <div
                 style={rest}
                 className={`${styles['m2']} ${styles['border-1px-medium']} ${styles['border-radius-8']} ${styles['flex-col']} ${styles['flex']} ${styles['justify-content-center']} ${styles['align-items-center']} ${styles['p2']}`}
+                id={bo.id}
             >
                 <div
                     className={`${styles['p2']} ${styles['align-self-start']}`}
@@ -87,10 +90,32 @@ export const BrowserOutput: React.FC<OutputProps> = ({
                 </div>
                 <img
                     className={`${styles['wh-80']}`}
+                    id={bo.id + '-img'}
                     src={bo.data}
                     alt={'data'}
-                    onMouseEnter={() => updateContext(true)}
-                    onMouseLeave={() => updateContext(false)}
+                    onMouseEnter={(e) => {
+                        setAnnotatedOutput({
+                            outputToAnnotate: {
+                                id: bo.id,
+                                mousePos: { x: e.clientX, y: e.clientY },
+                            },
+                        })
+                        updateContext(true)
+                    }}
+                    onMouseLeave={() => {
+                        console.log('mouse left :-(')
+                        setAnnotatedOutput(null)
+                        updateContext(false)
+                    }}
+                    onMouseMove={(e) => {
+                        setAnnotatedOutput({
+                            outputToAnnotate: {
+                                id: bo.id,
+                                mousePos: { x: e.clientX, y: e.clientY },
+                            },
+                        })
+                        // updateContext(true)
+                    }}
                 />
                 <div onClick={clickMe}>CLICK ME</div>
                 <div
@@ -122,6 +147,27 @@ export const BrowserOutput: React.FC<OutputProps> = ({
     )
 }
 
+interface MousePosition {
+    x: number
+    y: number
+}
+
+interface AnnotatedOutput {
+    id: string
+    mousePos: MousePosition
+}
+
+interface AnnotatedOutputHandler {
+    outputToAnnotate: AnnotatedOutput | null
+}
+
+interface BrowserOutputElementMetadata {
+    id: string
+    parentEl: HTMLElement
+    imgEl: HTMLElement
+    imgBoundingBox: DOMRect
+}
+
 export const BrowserOutputs: React.FC<Props> = ({
     browserOutputs,
     currentProject,
@@ -131,19 +177,90 @@ export const BrowserOutputs: React.FC<Props> = ({
     annotatingOutput,
     setAnnotatingOutput,
 }) => {
-    /* Yes, It's possible.
+    const [annotatedOutput, _setAnnotatedOutput] =
+        React.useState<AnnotatedOutputHandler>(null)
+    const setAnnotatedOutput = (output) => {
+        console.log('output', output)
+        _setAnnotatedOutput(output)
+    }
+    const [outputAnnotationPosition, setOutputAnnotationPosition] =
+        React.useState<MousePosition>({ x: -1, y: -1 })
+    // console.log('outputPosition', outputAnnotationPosition)
+    /* 
+    Yes, It's possible.
 
-If you add "mouseover" event to the document it will fire instantly and you can get the mouse position, of course if mouse pointer was over the document.
+    If you add "mouseover" event to the document it will fire instantly and you can get the mouse position, of course if mouse pointer was over the document.
 
-   document.addEventListener('mouseover', setInitialMousePos, false);
+    document.addEventListener('mouseover', setInitialMousePos, false);
+    */
 
-   function setInitialMousePos( event ) {
-       console.log( event.clientX, event.clientY);
-       document.removeEventListener('mouseover', setInitialMousePos, false);*/
+    // const checkIfMousePosIsInBoundingBox = (
+    //     mousePos: MousePosition,
+    //     browserOutputMetadata: BrowserOutputElementMetadata
+    // ): boolean => {
+    //     console.log(
+    //         'top less than',
+    //         browserOutputMetadata.imgBoundingBox.top <= mousePos.y
+    //     )
+    //     console.log(
+    //         'bottom greater than',
+    //         browserOutputMetadata.imgBoundingBox.top + window.scrollY >=
+    //             mousePos.y
+    //     )
+    //     return (
+    //         browserOutputMetadata.imgBoundingBox.top <= mousePos.y &&
+    //         browserOutputMetadata.imgBoundingBox.top + window.scrollY >=
+    //             mousePos.y &&
+    //         // browserOutputMetadata.imgBoundingBox.bottom >= mousePos.y &&
+    //         browserOutputMetadata.imgBoundingBox.left <= mousePos.x &&
+    //         // browserOutputMetadata.imgBoundingBox.right >= mousePos.x
+    //         browserOutputMetadata.imgBoundingBox.left + window.scrollX >=
+    //             mousePos.x
+    //     )
+    // }
+
+    const getAnnotatedOutput = (newMousePos: MousePosition) => {
+        const parent = document.getElementById('browser-outputs-parent')
+        if (parent) {
+            const ids = browserOutputs.map((b) => b.id)
+            const browserOutputEls: BrowserOutputElementMetadata[] = ids.map(
+                (i) => {
+                    const parentEl = document.getElementById(i)
+                    const imgEl = document.getElementById(i + '-img')
+
+                    return {
+                        id: i,
+                        parentEl,
+                        imgEl,
+                        imgBoundingBox: imgEl.getBoundingClientRect(),
+                    }
+                }
+            )
+            console.log(browserOutputEls)
+            // const match = browserOutputEls.find((b) =>
+            //     checkIfMousePosIsInBoundingBox(newMousePos, b)
+            // )
+            // match ? console.log('match', match) : console.log('no match', match)
+        }
+    }
+
+    // function getOutputMousePos(event: MouseEvent) {
+    //     const newMousePos = { x: event.clientX, y: event.clientY }
+    //     setOutputAnnotationPosition(newMousePos)
+    //     document.removeEventListener('mouseover', getOutputMousePos, false)
+    //     setAnnotatingOutput(false)
+    //     getAnnotatedOutput(newMousePos)
+    // }
+
     React.useEffect(() => {
         if (annotatingOutput) {
-            const hewwo = document.querySelectorAll(':hover')
-            console.log('hewwwwwoooo', hewwo)
+            console.log('annotating this guy NOW', annotatedOutput)
+            setAnnotatingOutput(false)
+            // const hewwo = document.querySelectorAll(':hover')
+            // document.addEventListener('mouseover', getOutputMousePos)
+
+            // console.log('hewwwwwoooo', hewwo)
+            // document.removeEventListener('mouseover')
         }
     }, [annotatingOutput])
 
@@ -164,7 +281,7 @@ If you add "mouseover" event to the document it will fire instantly and you can 
     }
 
     return (
-        <div>
+        <div id={'browser-outputs-parent'}>
             {browserOutputs
                 .sort((a, b) => b.createdTimestamp - a.createdTimestamp)
                 .map((o) => (
@@ -176,6 +293,7 @@ If you add "mouseover" event to the document it will fire instantly and you can 
                         addToBundle={addToBundle}
                         removeFromBundle={removeFromBundle}
                         updateContext={updateContext}
+                        setAnnotatedOutput={setAnnotatedOutput}
                     />
                 ))}
         </div>

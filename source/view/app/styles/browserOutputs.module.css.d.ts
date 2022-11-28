@@ -3,7 +3,6 @@
 interface CssExports {
   'align-items-center': string;
   'align-self-start': string;
-  'annotatable-output': string;
   'border-1px-medium': string;
   'border-radius-8': string;
   'content': string;

@@ -82,7 +82,7 @@ const ReactAnnotation: React.FC<Props> = ({
 
     const annoRef: React.MutableRefObject<Annotation> = React.useRef(anno)
     // const tryingSomethingNew = 'rgb(48 47 47)'
-    console.log('editorBackground', editorBackground)
+    // console.log('editorBackground', editorBackground)
     // MUI doesn't accept CSS version of this for some reason..?
 
     React.useEffect(() => {

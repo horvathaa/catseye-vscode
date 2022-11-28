@@ -455,6 +455,7 @@ export interface BrowserOutput {
     uid: string
     createdTimestamp: number
     filename: string
+    outputAnnotations?: OutputAnnotation[]
     annotation?: string
     project?: string
 }
@@ -491,3 +492,11 @@ export interface SerializedBundle {
 }
 
 export const CatseyeCommentCharacter: string = '%'
+
+export interface OutputAnnotation {
+    id: string
+    xPosRelativeToImg: number
+    yPosRelativeToImg: number
+    annotation: string
+    outputNumber: number
+}

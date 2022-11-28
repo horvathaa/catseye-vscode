@@ -436,8 +436,6 @@ const CatseyePanel: React.FC<Props> = ({
         setAnnosToConsolidate(annos)
     }
 
-    console.log('showFirstTimeUserContent', showFirstTimeUserContent)
-
     const whatToRender = showFirstTimeUserContent ? (
         <FirstTimeUser
             setShowFirstTimeUserContent={setShowFirstTimeUserContent}

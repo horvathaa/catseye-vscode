@@ -3,16 +3,21 @@
 interface CssExports {
   'align-items-center': string;
   'align-self-start': string;
+  'annotatable-output': string;
   'border-1px-medium': string;
   'border-radius-8': string;
+  'content': string;
+  'dot': string;
   'flex': string;
   'flex-col': string;
+  'font-medium': string;
   'justify-content-center': string;
   'justify-content-space-between': string;
   'm2': string;
   'p1': string;
   'p2': string;
   'p4': string;
+  'w-100': string;
   'wh-80': string;
 }
 export const cssExports: CssExports;

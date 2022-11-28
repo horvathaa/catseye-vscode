@@ -19,6 +19,10 @@
     height: 80%;
 }
 
+.w-100 {
+    width: 100%;
+}
+
 .align-self-start {
     align-self: flex-start;
 }
@@ -49,4 +53,31 @@
 
 .justify-content-space-between {
     justify-content: space-between;
+}
+
+.dot.content {
+    color: white;
+    border-color: #606060;
+    border-style: solid;
+    border-width: 0.1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: larger;
+    font-weight: 500;
+    /* display: inline-block; */
+}
+
+.dot {
+    height: 35px;
+    width: 35px;
+    background-color: #bbb;
+    border-radius: 50%;
+}
+
+.font-medium {
+    font-size: medium;
+}
+
+.annotatable-output {
 }

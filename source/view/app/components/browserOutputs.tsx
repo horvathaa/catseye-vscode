@@ -1,7 +1,10 @@
 import { Edit } from '@mui/icons-material'
 import { Checkbox } from '@mui/material'
 import * as React from 'react'
-import { BrowserOutput as BrowserOutputInterface } from '../../../constants/constants'
+import {
+    BrowserOutput as BrowserOutputInterface,
+    OutputAnnotation,
+} from '../../../constants/constants'
 import styles from '../styles/browserOutputs.module.css'
 import { cardStyle } from '../styles/vscodeStyles'
 import { formatTimestamp } from '../utils/viewUtils'
@@ -25,7 +28,64 @@ interface OutputProps {
     addToBundle: (obj: any) => void
     removeFromBundle: (obj: any) => void
     updateContext: (showMenuOption: boolean) => void
-    setAnnotatedOutput: (annotatedOutput: AnnotatedOutputHandler) => void
+    annotatingOutput: boolean
+    setAnnotatingOutput: (setVal: boolean) => void
+}
+
+interface OutputContentProps {
+    o: OutputAnnotation
+    updateOutputAnnotation: (o: OutputAnnotation) => void
+}
+
+const OutputContent: React.FC<OutputContentProps> = ({
+    o,
+    updateOutputAnnotation,
+}) => {
+    const [editing, setEditing] = React.useState<boolean>(o.annotation === '')
+    const handleEnter = (annotation: string) => {
+        const updatedBo = { ...o, annotation }
+        updateOutputAnnotation(updatedBo)
+        // transmitUpdatedOutput(updatedBo)
+        setEditing(false)
+    }
+    return (
+        <div
+            key={o.id + o.outputNumber}
+            className={`${styles['flex']} ${styles['w-100']}`}
+        >
+            <div
+                className={`${styles['dot']} ${styles['content']} ${styles['m2']}`}
+            >
+                {o.outputNumber}
+            </div>
+            <div
+                className={`${styles['justify-content-space-between']} ${styles['flex']} ${styles['w-100']}`}
+            >
+                {editing ? (
+                    <TextEditor
+                        content={o.annotation ?? ''}
+                        submissionHandler={handleEnter}
+                        cancelHandler={() => {
+                            setEditing(false)
+                        }}
+                        showSplitButton={false}
+                        style={{ width: '80%' }}
+                    />
+                ) : (
+                    <div
+                        className={`${styles['p2']} ${styles['font-medium']} ${styles['align-items-center']} ${styles['flex']} ${styles['w-100']}`}
+                    >
+                        {o.annotation}
+                    </div>
+                )}
+                <CatseyeButton
+                    buttonClicked={() => setEditing(!editing)}
+                    name="Annotate Output"
+                    icon={<Edit fontSize="small" />}
+                />
+            </div>
+        </div>
+    )
 }
 
 export const BrowserOutput: React.FC<OutputProps> = ({
@@ -35,17 +95,36 @@ export const BrowserOutput: React.FC<OutputProps> = ({
     addToBundle,
     removeFromBundle,
     updateContext,
-    setAnnotatedOutput,
+    setAnnotatingOutput,
+    annotatingOutput,
 }) => {
     const [bo, setBo] = React.useState<BrowserOutputInterface>(browserOutput)
     const [selected, setSelected] = React.useState<boolean>(false)
-    const [editing, setEditing] = React.useState<boolean>(false)
-    const handleEnter = (annotation: string) => {
-        const updatedBo = { ...bo, annotation }
-        setBo(updatedBo)
-        transmitUpdatedOutput(updatedBo)
-        setEditing(false)
+
+    const [annotatedOutput, setAnnotatedOutput] =
+        React.useState<AnnotatedOutputHandler>(null)
+    const [outputAnnotations, _setOutputAnnotations] = React.useState<
+        OutputAnnotation[]
+    >(bo.outputAnnotations ?? [])
+    const outputAnnotationsRef = React.useRef(outputAnnotations)
+    const setOutputAnnotations = (newOutputAnnotations: OutputAnnotation[]) => {
+        outputAnnotationsRef.current = newOutputAnnotations
+        _setOutputAnnotations(newOutputAnnotations)
+
+        const newBrowserOutput = {
+            ...bo,
+            outputAnnotations: newOutputAnnotations,
+        }
+        setBo(newBrowserOutput)
+        transmitUpdatedOutput(newBrowserOutput)
     }
+
+    const updateOutputAnnotation = (o: OutputAnnotation) => {
+        setOutputAnnotations(
+            outputAnnotations.map((out) => (out.id === o.id ? o : out))
+        )
+    }
+
     React.useEffect(() => {
         setBo(
             browserOutput.project
@@ -53,6 +132,94 @@ export const BrowserOutput: React.FC<OutputProps> = ({
                 : { ...browserOutput, project: currentProject }
         )
     }, [browserOutput])
+
+    const setPositionForElement = (
+        divEl: HTMLElement,
+        o: OutputAnnotation
+    ): void => {
+        const imgElBox = document
+            .getElementById(bo.id + '-img')
+            .getBoundingClientRect()
+
+        divEl.style.top = `${
+            Math.floor(imgElBox.height * o.yPosRelativeToImg) +
+            imgElBox.top +
+            window.scrollY
+        }px`
+
+        divEl.style.left = `${
+            Math.floor(imgElBox.width * o.xPosRelativeToImg) +
+            imgElBox.left +
+            window.scrollX
+        }px`
+    }
+
+    const appendOutputNodeToDOMGivenRelativePosition = (
+        o: OutputAnnotation
+    ): void => {
+        const parentEl = document.getElementById(bo.id)
+        console.log('parentEl?', parentEl)
+        const divEl = document.createElement('div')
+        divEl.id = o.id
+        divEl.classList.add(styles['dot'], styles['content'])
+        divEl.innerHTML = `${o.outputNumber}`
+        divEl.style.zIndex = '100'
+        divEl.style.position = 'absolute'
+        setPositionForElement(divEl, o)
+        parentEl.appendChild(divEl)
+    }
+
+    const handleResize = () => {
+        outputAnnotationsRef.current.forEach((o) => {
+            const divEl = document.getElementById(o.id)
+            setPositionForElement(divEl, o)
+        })
+    }
+
+    const handleLoadAndAnnotateImages = () => {
+        const img = document.getElementById(bo.id + '-img') as HTMLImageElement
+        if (img && img.complete) {
+            bo.outputAnnotations?.forEach((o) =>
+                appendOutputNodeToDOMGivenRelativePosition(o)
+            )
+        }
+    }
+
+    React.useEffect(() => {
+        window.addEventListener('resize', handleResize)
+        window.addEventListener('load', handleLoadAndAnnotateImages)
+        return () => {
+            window.removeEventListener('resize', handleResize)
+            window.removeEventListener('load', handleLoadAndAnnotateImages)
+        }
+    }, [])
+
+    React.useEffect(() => {
+        if (annotatingOutput && annotatedOutput) {
+            const imgEl = document.getElementById(bo.id + '-img')
+
+            const imgElBoundingBox = imgEl.getBoundingClientRect()
+            const xPosRelativeToImg =
+                (annotatedOutput.outputToAnnotate.mousePos.x -
+                    imgElBoundingBox.left) /
+                imgElBoundingBox.width
+            const yPosRelativeToImg =
+                (annotatedOutput.outputToAnnotate.mousePos.y -
+                    imgElBoundingBox.top) /
+                imgElBoundingBox.height
+
+            const newOutputAnnotation: OutputAnnotation = {
+                id: `${bo.id}-${outputAnnotations.length + 1}`,
+                xPosRelativeToImg,
+                yPosRelativeToImg,
+                annotation: '',
+                outputNumber: outputAnnotations.length + 1,
+            }
+            setOutputAnnotations(outputAnnotations.concat(newOutputAnnotation))
+            appendOutputNodeToDOMGivenRelativePosition(newOutputAnnotation)
+            setAnnotatingOutput(false)
+        }
+    }, [annotatingOutput])
 
     const handleSelected = () => {
         const newSel = !selected
@@ -62,11 +229,6 @@ export const BrowserOutput: React.FC<OutputProps> = ({
             removeFromBundle(bo)
         }
         setSelected(newSel)
-    }
-
-    const clickMe = (e: React.SyntheticEvent) => {
-        const neighbor = (e.target as HTMLBaseElement).previousElementSibling
-        console.log('eh', neighbor)
     }
 
     const { padding, paddingBottom, ...rest } = cardStyle
@@ -79,7 +241,7 @@ export const BrowserOutput: React.FC<OutputProps> = ({
             />
             <div
                 style={rest}
-                className={`${styles['m2']} ${styles['border-1px-medium']} ${styles['border-radius-8']} ${styles['flex-col']} ${styles['flex']} ${styles['justify-content-center']} ${styles['align-items-center']} ${styles['p2']}`}
+                className={`${styles['annotatable-output']} ${styles['m2']} ${styles['border-1px-medium']} ${styles['border-radius-8']} ${styles['flex-col']} ${styles['flex']} ${styles['justify-content-center']} ${styles['align-items-center']} ${styles['p2']}`}
                 id={bo.id}
             >
                 <div
@@ -102,10 +264,26 @@ export const BrowserOutput: React.FC<OutputProps> = ({
                         })
                         updateContext(true)
                     }}
-                    onMouseLeave={() => {
-                        console.log('mouse left :-(')
-                        setAnnotatedOutput(null)
-                        updateContext(false)
+                    onMouseLeave={(e) => {
+                        const boundingBox = (
+                            e.target as HTMLElement
+                        ).getBoundingClientRect()
+                        const mousePos = {
+                            x: e.clientX,
+                            y: e.clientY,
+                        }
+
+                        if (
+                            mousePos.x > boundingBox.left &&
+                            mousePos.x < boundingBox.right &&
+                            mousePos.y > boundingBox.top &&
+                            mousePos.y < boundingBox.bottom
+                        ) {
+                            return
+                        } else {
+                            setAnnotatedOutput(null)
+                            updateContext(false)
+                        }
                     }}
                     onMouseMove={(e) => {
                         setAnnotatedOutput({
@@ -114,33 +292,19 @@ export const BrowserOutput: React.FC<OutputProps> = ({
                                 mousePos: { x: e.clientX, y: e.clientY },
                             },
                         })
-                        // updateContext(true)
                     }}
                 />
-                <div onClick={clickMe}>CLICK ME</div>
                 <div
-                    className={`${styles['flex']} ${styles['wh-80']} ${styles['justify-content-space-between']} ${styles['p2']}`}
+                    className={`${styles['flex-col']} ${styles['wh-80']} ${styles['justify-content-space-between']} ${styles['p2']}`}
                 >
-                    {editing ? (
-                        <TextEditor
-                            content={bo.annotation ?? ''}
-                            submissionHandler={handleEnter}
-                            cancelHandler={() => {
-                                setEditing(false)
-                            }}
-                            showSplitButton={false}
-                            style={{ width: '80%' }}
-                        />
-                    ) : bo.annotation ? (
-                        bo.annotation
-                    ) : (
-                        ''
-                    )}
-                    <CatseyeButton
-                        buttonClicked={() => setEditing(!editing)}
-                        name="Annotate Output"
-                        icon={<Edit fontSize="small" />}
-                    />
+                    {outputAnnotations.map((o) => {
+                        return (
+                            <OutputContent
+                                o={o}
+                                updateOutputAnnotation={updateOutputAnnotation}
+                            />
+                        )
+                    })}
                 </div>
             </div>
         </div>
@@ -161,13 +325,6 @@ interface AnnotatedOutputHandler {
     outputToAnnotate: AnnotatedOutput | null
 }
 
-interface BrowserOutputElementMetadata {
-    id: string
-    parentEl: HTMLElement
-    imgEl: HTMLElement
-    imgBoundingBox: DOMRect
-}
-
 export const BrowserOutputs: React.FC<Props> = ({
     browserOutputs,
     currentProject,
@@ -177,93 +334,6 @@ export const BrowserOutputs: React.FC<Props> = ({
     annotatingOutput,
     setAnnotatingOutput,
 }) => {
-    const [annotatedOutput, _setAnnotatedOutput] =
-        React.useState<AnnotatedOutputHandler>(null)
-    const setAnnotatedOutput = (output) => {
-        console.log('output', output)
-        _setAnnotatedOutput(output)
-    }
-    const [outputAnnotationPosition, setOutputAnnotationPosition] =
-        React.useState<MousePosition>({ x: -1, y: -1 })
-    // console.log('outputPosition', outputAnnotationPosition)
-    /* 
-    Yes, It's possible.
-
-    If you add "mouseover" event to the document it will fire instantly and you can get the mouse position, of course if mouse pointer was over the document.
-
-    document.addEventListener('mouseover', setInitialMousePos, false);
-    */
-
-    // const checkIfMousePosIsInBoundingBox = (
-    //     mousePos: MousePosition,
-    //     browserOutputMetadata: BrowserOutputElementMetadata
-    // ): boolean => {
-    //     console.log(
-    //         'top less than',
-    //         browserOutputMetadata.imgBoundingBox.top <= mousePos.y
-    //     )
-    //     console.log(
-    //         'bottom greater than',
-    //         browserOutputMetadata.imgBoundingBox.top + window.scrollY >=
-    //             mousePos.y
-    //     )
-    //     return (
-    //         browserOutputMetadata.imgBoundingBox.top <= mousePos.y &&
-    //         browserOutputMetadata.imgBoundingBox.top + window.scrollY >=
-    //             mousePos.y &&
-    //         // browserOutputMetadata.imgBoundingBox.bottom >= mousePos.y &&
-    //         browserOutputMetadata.imgBoundingBox.left <= mousePos.x &&
-    //         // browserOutputMetadata.imgBoundingBox.right >= mousePos.x
-    //         browserOutputMetadata.imgBoundingBox.left + window.scrollX >=
-    //             mousePos.x
-    //     )
-    // }
-
-    const getAnnotatedOutput = (newMousePos: MousePosition) => {
-        const parent = document.getElementById('browser-outputs-parent')
-        if (parent) {
-            const ids = browserOutputs.map((b) => b.id)
-            const browserOutputEls: BrowserOutputElementMetadata[] = ids.map(
-                (i) => {
-                    const parentEl = document.getElementById(i)
-                    const imgEl = document.getElementById(i + '-img')
-
-                    return {
-                        id: i,
-                        parentEl,
-                        imgEl,
-                        imgBoundingBox: imgEl.getBoundingClientRect(),
-                    }
-                }
-            )
-            console.log(browserOutputEls)
-            // const match = browserOutputEls.find((b) =>
-            //     checkIfMousePosIsInBoundingBox(newMousePos, b)
-            // )
-            // match ? console.log('match', match) : console.log('no match', match)
-        }
-    }
-
-    // function getOutputMousePos(event: MouseEvent) {
-    //     const newMousePos = { x: event.clientX, y: event.clientY }
-    //     setOutputAnnotationPosition(newMousePos)
-    //     document.removeEventListener('mouseover', getOutputMousePos, false)
-    //     setAnnotatingOutput(false)
-    //     getAnnotatedOutput(newMousePos)
-    // }
-
-    React.useEffect(() => {
-        if (annotatingOutput) {
-            console.log('annotating this guy NOW', annotatedOutput)
-            setAnnotatingOutput(false)
-            // const hewwo = document.querySelectorAll(':hover')
-            // document.addEventListener('mouseover', getOutputMousePos)
-
-            // console.log('hewwwwwoooo', hewwo)
-            // document.removeEventListener('mouseover')
-        }
-    }, [annotatingOutput])
-
     const transmitUpdatedOutput = (
         updatedBrowserOutput: BrowserOutputInterface
     ) => {
@@ -293,7 +363,8 @@ export const BrowserOutputs: React.FC<Props> = ({
                         addToBundle={addToBundle}
                         removeFromBundle={removeFromBundle}
                         updateContext={updateContext}
-                        setAnnotatedOutput={setAnnotatedOutput}
+                        setAnnotatingOutput={setAnnotatingOutput}
+                        annotatingOutput={annotatingOutput}
                     />
                 ))}
         </div>

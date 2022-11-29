@@ -8,19 +8,10 @@ import {
     Position,
     TextDocument,
 } from 'vscode'
-import { annotationList } from '../extension'
-import {
-    createRangeFromAnchorObject,
-    createRangeFromObject,
-    getAnchorsWithGitUrl,
-} from '../anchorFunctions/anchor'
-import {
-    getAnnotationsWithStableGitUrl,
-    getStableGitHubUrl,
-} from '../utils/utils'
+
 import { CommentConfigHandler } from '../commentConfigHandler/commentConfigHandler'
 import { getCodeLine } from '../anchorFunctions/reanchor'
-const maxSmallIntegerV8 = 2 ** 30 // whjy this again? why does this work for anno and not this im confused
+// const maxSmallIntegerV8 = 2 ** 30 // whjy this again? why does this work for anno and not this im confused
 
 const createRangeFromTokenData = (obj: any): Range => {
     if (obj.hasOwnProperty('endLine') && obj.hasOwnProperty('startLine')) {

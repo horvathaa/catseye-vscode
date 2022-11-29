@@ -78,3 +78,16 @@
 .font-medium {
     font-size: medium;
 }
+
+.animation-class {
+    animation: 1s ease-in infinite hover-animation;
+}
+
+@keyframes hover-animation {
+    from {
+        filter: brightness(0.9);
+    }
+    to {
+        filter: brightness(0.8);
+    }
+}

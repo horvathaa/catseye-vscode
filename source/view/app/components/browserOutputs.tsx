@@ -1,5 +1,6 @@
-import { Edit } from '@mui/icons-material'
+import { Brightness1, Edit } from '@mui/icons-material'
 import { Checkbox } from '@mui/material'
+import { Delete } from '@mui/icons-material'
 import * as React from 'react'
 import {
     BrowserOutput as BrowserOutputInterface,
@@ -35,26 +36,46 @@ interface OutputProps {
 interface OutputContentProps {
     o: OutputAnnotation
     updateOutputAnnotation: (o: OutputAnnotation) => void
+    deleteOutputAnnotation: (o: OutputAnnotation) => void
 }
 
 const OutputContent: React.FC<OutputContentProps> = ({
     o,
     updateOutputAnnotation,
+    deleteOutputAnnotation,
 }) => {
     const [editing, setEditing] = React.useState<boolean>(o.annotation === '')
+
     const handleEnter = (annotation: string) => {
         const updatedBo = { ...o, annotation }
         updateOutputAnnotation(updatedBo)
-        // transmitUpdatedOutput(updatedBo)
         setEditing(false)
     }
+
+    const handleMouseEnter = () => {
+        const correspondingDiv = document.getElementById(o.id)
+        correspondingDiv.classList.add(styles['animation-class'])
+        const myDiv = document.getElementById(o.id + '-list-item')
+        myDiv.classList.add(styles['animation-class'])
+    }
+
+    const handleMouseLeave = () => {
+        const correspondingDiv = document.getElementById(o.id)
+        correspondingDiv.classList.remove(styles['animation-class'])
+        const myDiv = document.getElementById(o.id + '-list-item')
+        myDiv.classList.remove(styles['animation-class'])
+    }
+
     return (
         <div
             key={o.id + o.outputNumber}
             className={`${styles['flex']} ${styles['w-100']}`}
         >
             <div
+                id={o.id + '-list-item'}
                 className={`${styles['dot']} ${styles['content']} ${styles['m2']}`}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
             >
                 {o.outputNumber}
             </div>
@@ -78,11 +99,18 @@ const OutputContent: React.FC<OutputContentProps> = ({
                         {o.annotation}
                     </div>
                 )}
-                <CatseyeButton
-                    buttonClicked={() => setEditing(!editing)}
-                    name="Annotate Output"
-                    icon={<Edit fontSize="small" />}
-                />
+                <div className={styles['flex']}>
+                    <CatseyeButton
+                        buttonClicked={() => setEditing(!editing)}
+                        name="Annotate Output"
+                        icon={<Edit fontSize="small" />}
+                    />
+                    <CatseyeButton
+                        buttonClicked={() => deleteOutputAnnotation(o)}
+                        name="Delete Output Annotation"
+                        icon={<Delete fontSize="small" />}
+                    />
+                </div>
             </div>
         </div>
     )
@@ -125,6 +153,32 @@ export const BrowserOutput: React.FC<OutputProps> = ({
         )
     }
 
+    const deleteOutputAnnotation = (o: OutputAnnotation) => {
+        removeOutputNodeFromDOM(o)
+        console.log('o', o)
+        const needsRenumbering = outputAnnotations.slice(o.outputNumber)
+        console.log('needs renumbering', needsRenumbering)
+        const updated = needsRenumbering.map((n) => {
+            console.log('n', n)
+            const newNum = n.outputNumber - 1
+            const newId = `${bo.id}-${newNum}`
+            const outputAnnoDiv = document.getElementById(n.id)
+            console.log('old div', outputAnnoDiv)
+            outputAnnoDiv.id = newId
+            outputAnnoDiv.innerHTML = `${newNum}`
+            console.log('new div', outputAnnoDiv)
+            return { ...n, id: newId, outputNumber: newNum }
+        })
+        console.log('updated', updated)
+        console.log(
+            'new list',
+            outputAnnotations.slice(0, o.outputNumber - 1).concat(updated)
+        )
+        setOutputAnnotations(
+            outputAnnotations.slice(0, o.outputNumber - 1).concat(updated)
+        )
+    }
+
     React.useEffect(() => {
         setBo(
             browserOutput.project
@@ -154,11 +208,16 @@ export const BrowserOutput: React.FC<OutputProps> = ({
         }px`
     }
 
+    const removeOutputNodeFromDOM = (o: OutputAnnotation) => {
+        const parentEl = document.getElementById(bo.id)
+        const divEl = document.getElementById(o.id)
+        parentEl.removeChild(divEl)
+    }
+
     const appendOutputNodeToDOMGivenRelativePosition = (
         o: OutputAnnotation
     ): void => {
         const parentEl = document.getElementById(bo.id)
-        console.log('parentEl?', parentEl)
         const divEl = document.createElement('div')
         divEl.id = o.id
         divEl.classList.add(styles['dot'], styles['content'])
@@ -207,13 +266,13 @@ export const BrowserOutput: React.FC<OutputProps> = ({
                 (annotatedOutput.outputToAnnotate.mousePos.y -
                     imgElBoundingBox.top) /
                 imgElBoundingBox.height
-
+            const num = outputAnnotations.length + 1
             const newOutputAnnotation: OutputAnnotation = {
-                id: `${bo.id}-${outputAnnotations.length + 1}`,
+                id: `${bo.id}-${num}`,
                 xPosRelativeToImg,
                 yPosRelativeToImg,
                 annotation: '',
-                outputNumber: outputAnnotations.length + 1,
+                outputNumber: num,
             }
             setOutputAnnotations(outputAnnotations.concat(newOutputAnnotation))
             appendOutputNodeToDOMGivenRelativePosition(newOutputAnnotation)
@@ -302,6 +361,7 @@ export const BrowserOutput: React.FC<OutputProps> = ({
                             <OutputContent
                                 o={o}
                                 updateOutputAnnotation={updateOutputAnnotation}
+                                deleteOutputAnnotation={deleteOutputAnnotation}
                             />
                         )
                     })}

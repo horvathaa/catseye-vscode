@@ -3,6 +3,7 @@
 interface CssExports {
   'align-items-center': string;
   'align-self-start': string;
+  'animation-class': string;
   'border-1px-medium': string;
   'border-radius-8': string;
   'content': string;
@@ -10,6 +11,7 @@ interface CssExports {
   'flex': string;
   'flex-col': string;
   'font-medium': string;
+  'hover-animation': string;
   'justify-content-center': string;
   'justify-content-space-between': string;
   'm2': string;

@@ -1,4 +1,4 @@
-import { Brightness1, Edit } from '@mui/icons-material'
+import { Edit } from '@mui/icons-material'
 import { Checkbox } from '@mui/material'
 import { Delete } from '@mui/icons-material'
 import * as React from 'react'

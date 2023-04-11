@@ -148,6 +148,7 @@ export const handleUpdatingTranslatedAnnotations = (
             }),
         })
     }
+    // need to remove nulls because null anchor means it has been unanchored
     const translatedAnchors = removeNulls(translate)
     const translatedPotentialAnchors: PotentialAnchorObject[] = removeNulls(
         potentialAnchorsToTranslate.map((a: PotentialAnchorObject) => {
@@ -890,7 +891,7 @@ export const addHighlightsToEditor = (
     const filenames = getAllAnnotationFilenames(annotationsToHighlight)
     const githubUrls = getAllAnnotationStableGitUrls(annotationsToHighlight)
     const projectName = getProjectName(text?.document.uri.toString())
-    const textUrl = text
+    const textUrl: string = text
         ? getGithubUrl(
               getVisiblePath(projectName, text.document.uri.fsPath),
               projectName,

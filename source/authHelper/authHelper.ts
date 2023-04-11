@@ -61,7 +61,6 @@ export const initializeAuth = async () => {
         const id = account.id.toString()
         let result // operationMessage
         try {
-            // use FireStore worker account to sign in so we can make cloud function calls
             if (process.env.FB_SU_EMAIL && process.env.FB_SU_PASSWORD) {
                 await fbSignInWithEmailAndPassword(
                     process.env.FB_SU_EMAIL,

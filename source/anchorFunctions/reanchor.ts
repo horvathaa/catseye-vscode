@@ -226,6 +226,7 @@ export const computeMostSimilarAnchor = (
     let newPotentialAnchors = newAnchors.map(
         (weightedAnchor: WeightedAnchor) => {
             const { weight, ...restAnchor } = weightedAnchor
+
             const newRange = createRangeFromObject(restAnchor.anchor)
             const potentialAnchorText = document.getText(newRange)
             const html = '' // should maybe bring back shiki but for now No

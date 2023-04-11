@@ -80,7 +80,7 @@ export default class ViewLoader {
             scheme: 'vscode-resource',
         })
         // These variables will be passed into the webview
-        const annotationJson = JSON.stringify(annotationList)
+        const annotationJson: string = JSON.stringify(annotationList)
         const userId = JSON.stringify(user ? user.uid : '')
         const username = JSON.stringify(gitInfo.author)
         const colorTheme = JSON.stringify(vscode.window.activeColorTheme)

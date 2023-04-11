@@ -31,6 +31,15 @@ import { saveAnnotations } from './firebase/functions/functions'
 import { HoverController } from './hovers/hoverController'
 import { addHighlightsToEditor } from './anchorFunctions/anchor'
 import { ConvertCommentHoverController } from './hovers/convertCommentHoverController'
+import {
+    handleChangeActiveTextEditor,
+    handleChangeVisibleTextEditors,
+    handleDidChangeActiveColorTheme,
+    handleDidChangeTextDocument,
+    handleDidChangeTextEditorSelection,
+    handleDidSaveDidClose,
+} from './listeners/listeners'
+import { handleOnDidStartDebugSession } from './debug/debug'
 const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports
 export const gitApi = gitExtension?.getAPI(1)
 console.log('gitApi', gitApi)
@@ -267,37 +276,33 @@ export async function activate(context: vscode.ExtensionContext) {
 
     let didChangeVisibleListenerDisposable =
         vscode.window.onDidChangeVisibleTextEditors(
-            eventHandlers.handleChangeVisibleTextEditors
+            handleChangeVisibleTextEditors
         )
     let didChangeActiveEditorListenerDisposable =
-        vscode.window.onDidChangeActiveTextEditor(
-            eventHandlers.handleChangeActiveTextEditor
-        )
+        vscode.window.onDidChangeActiveTextEditor(handleChangeActiveTextEditor)
     let didChangeTextEditorSelectionDisposable =
         vscode.window.onDidChangeTextEditorSelection(
-            eventHandlers.handleDidChangeTextEditorSelection
+            handleDidChangeTextEditorSelection
         )
     let didChangeActiveColorTheme = vscode.window.onDidChangeActiveColorTheme(
-        eventHandlers.handleDidChangeActiveColorTheme
+        handleDidChangeActiveColorTheme
     )
 
     let didSaveListenerDisposable = vscode.workspace.onDidSaveTextDocument(
-        eventHandlers.handleDidSaveDidClose
+        handleDidSaveDidClose
     )
     let didCloseListenerDisposable = vscode.workspace.onDidCloseTextDocument(
-        eventHandlers.handleDidSaveDidClose
+        handleDidSaveDidClose
     )
     let didChangeTextDocumentDisposable =
-        vscode.workspace.onDidChangeTextDocument(
-            eventHandlers.handleDidChangeTextDocument
-        )
+        vscode.workspace.onDidChangeTextDocument(handleDidChangeTextDocument)
 
     // let didOpenTextDocumentDisposable = vscode.workspace.onDidOpenTextDocument(
     //     eventHandlers.handleDidOpenTextDocument
     // )
 
     let didStartDebugSessionDisposable = vscode.debug.onDidStartDebugSession(
-        debug.handleOnDidStartDebugSession
+        handleOnDidStartDebugSession
     )
 
     /*************************************************************************************/

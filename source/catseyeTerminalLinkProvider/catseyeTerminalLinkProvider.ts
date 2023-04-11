@@ -24,8 +24,12 @@ export class CatseyeTerminalLinkProvider implements TerminalLinkProvider {
         context: TerminalLinkContext,
         token: CancellationToken
     ): ProviderResult<CatseyeTerminalLink[]> {
+        const line = 0
+        const view = undefined
+        const someObj = { ...context, line: { line: 1 } }
+        console.log('wowza!', someObj.line)
         if (view) {
-            const startIndex: number = 0
+            const startIndex: number = someObj.line.line
             const lengthOfLink: number = context.line.length
             const tooltip: string = 'Add to Selected Annotation'
             return [

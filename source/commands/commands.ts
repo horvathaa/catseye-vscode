@@ -825,6 +825,7 @@ export const overriddenFindAction = (
     args: any[]
 ) => {
     console.log('finding...', textEditor, args, edit)
+    console.log(' yawn')
     vscode.commands.executeCommand('editor.action.startFindReplaceAction')
     // vscode.commands.getCommands().then((value: string[]) => utils.writeConsoleLogToFile(value))
 }
@@ -837,6 +838,7 @@ export const overridenRevealDefinitionAction = (
 ) => {
     console.log('this is what we are doing')
     vscode.commands.executeCommand('editor.action.showReferences')
+    console.log('not using')
 }
 
 export const createHistoryAnnotation = async () => {
@@ -864,6 +866,8 @@ export const createHistoryAnnotation = async () => {
     const endLine = activeTextEditor.selection.end.line + 1
     const rawOptions = ['log', '-C', `-L${startLine},${endLine}:${file}`]
     const regOpts = [`-L${startLine},${endLine}:${file}`]
+    console.log('regOpts', regOpts)
+
     try {
         const result = await utils.git.raw(rawOptions)
         const resRawSplit = result
